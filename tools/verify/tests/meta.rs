@@ -62,7 +62,7 @@ fn unbuilt_make_targets_fail_loudly() {
         eprintln!("make not installed; skipped");
         return;
     }
-    for t in ["attack", "fuzz", "mcp", "scene-1", "gate-g1"] {
+    for t in ["attack-sandbox", "fuzz", "mcp", "scene-1", "gate-g1"] {
         let out = Command::new("make")
             .arg("-s")
             .arg(t)
@@ -99,4 +99,19 @@ fn signature_fixtures_are_reproducible_and_labelled() {
     let text =
         std::fs::read_to_string(root().join("fixtures/test-signatures/translator.json")).unwrap();
     assert!(text.contains("TEST FIXTURE") && text.contains("NOT a NEAR AI Cloud signature"));
+}
+
+#[test]
+fn golden_attack_report_blocks_everything_in_scope() {
+    let v: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root().join("tests/golden/attack.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(v["schema"], "attack-report.v1");
+    assert_eq!(v["seed"], 42);
+    assert_eq!(v["in_scope"]["cases"], 200);
+    assert_eq!(v["in_scope"]["missed"], 0);
+    assert_eq!(v["clean"]["cases"], 50);
+    assert_eq!(v["clean"]["false_positives"], 0);
+    assert_eq!(v["not_caught_by_design"].as_array().unwrap().len(), 6);
 }

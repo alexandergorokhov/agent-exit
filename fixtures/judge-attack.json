@@ -1,0 +1,104 @@
+{
+  "_how_to": [
+    "This is a CLEAN listed agent: `make attack FIXTURE=fixtures/judge-attack.json` reports verdict clean.",
+    "Plant your own backdoor by editing this file, then rerun. Examples:",
+    "- add {\"public_key\": \"ed25519:...\", \"permission\": \"FullAccess\"} to chain.keys -> full_access_key_present",
+    "- add a function-call key the contract did not add -> unknown_key",
+    "- change chain.code_hash -> code_hash_mismatch; add a method like \"upgrade\" to chain.methods -> upgrade_method",
+    "- set contract.open_approvals to 1 -> open_approval; bump contract.listing_version -> listing_version_mismatch",
+    "- give keys_second_provider a different list -> rpc_disagree (inconclusive)",
+    "Fields starting with _ are ignored. Schema: scan-input.v1 (tools/scan/src/lib.rs)."
+  ],
+  "schema": "scan-input.v1",
+  "agent": "translator.testnet",
+  "now_ns": 1768089600000000000,
+  "expected": {
+    "code_hash": "fixture-release-hash-v1",
+    "listing_version": 1
+  },
+  "chain": {
+    "code_hash": "fixture-release-hash-v1",
+    "methods": [
+      "new",
+      "add_signer",
+      "remove_signer",
+      "get_signers",
+      "set_runner_key",
+      "on_runner_key",
+      "list_for_sale",
+      "cancel_listing",
+      "ft_on_transfer",
+      "on_handover",
+      "on_transfer_out",
+      "claim",
+      "withdraw",
+      "withdraw_near",
+      "finalize_earnout",
+      "heartbeat",
+      "get_earnings",
+      "known_keys",
+      "known_keys_hash",
+      "get_listing",
+      "get_sales",
+      "get_claimable",
+      "get_status",
+      "near_withdrawable",
+      "nft_metadata",
+      "nft_token",
+      "nft_total_supply",
+      "nft_tokens",
+      "nft_supply_for_owner",
+      "nft_tokens_for_owner",
+      "nft_transfer",
+      "nft_transfer_call",
+      "nft_resolve_transfer",
+      "nft_approve",
+      "nft_revoke",
+      "nft_revoke_all",
+      "nft_is_approved"
+    ],
+    "keys": [
+      {
+        "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "permission": {
+          "receiver_id": "translator.testnet",
+          "method_names": [
+            "heartbeat",
+            "accept_job",
+            "pay",
+            "pay_base"
+          ],
+          "allowance": "250000000000000000000000"
+        }
+      }
+    ],
+    "keys_second_provider": [
+      {
+        "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "permission": {
+          "receiver_id": "translator.testnet",
+          "method_names": [
+            "heartbeat",
+            "accept_job",
+            "pay",
+            "pay_base"
+          ],
+          "allowance": "250000000000000000000000"
+        }
+      }
+    ],
+    "subaccounts": []
+  },
+  "contract": {
+    "status": "Listed",
+    "owner": "alice.testnet",
+    "listing_version": 1,
+    "known_keys": [
+      "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+    ],
+    "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+    "open_approvals": 0,
+    "open_auth_until": 0,
+    "frozen": false
+  }
+}

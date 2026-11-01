@@ -1,0 +1,212 @@
+{
+  "seed": 42,
+  "in_scope": {
+    "cases": 200,
+    "caught": 200,
+    "missed": 0
+  },
+  "families": [
+    {
+      "id": "A1",
+      "attack": "extra full-access key",
+      "expected_finding": "full_access_key_present",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A2",
+      "attack": "extra function-call key to the agent with owner-like methods",
+      "expected_finding": "unknown_key",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A3",
+      "attack": "extra function-call key to a foreign contract",
+      "expected_finding": "unknown_key",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A4",
+      "attack": "runner-looking key added with the setup key, not by the contract",
+      "expected_finding": "unknown_key",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A5",
+      "attack": "patched wasm (code hash differs)",
+      "expected_finding": "code_hash_mismatch",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A6",
+      "attack": "same interface plus an upgrade / self-deploy method",
+      "expected_finding": "upgrade_method",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A6x",
+      "attack": "extra method that is not in the published contract",
+      "expected_finding": "unexpected_method",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A7",
+      "attack": "seller changed terms after the buyer was quoted",
+      "expected_finding": "listing_version_mismatch",
+      "cases": 13,
+      "caught": 13,
+      "missed": 0
+    },
+    {
+      "id": "A8",
+      "attack": "open approval on the deed",
+      "expected_finding": "open_approval",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "A9",
+      "attack": "pre-signed Base authorization still valid",
+      "expected_finding": "open_base_auth",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "A21",
+      "attack": "setup full-access key never deleted",
+      "expected_finding": "full_access_key_present",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "E31",
+      "attack": "one RPC provider hides a key",
+      "expected_finding": "rpc_disagree",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "K1",
+      "attack": "runner key scope widened beyond runner methods",
+      "expected_finding": "runner_key_scope",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "K2",
+      "attack": "contract lists a key the account does not have",
+      "expected_finding": "known_key_missing",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "K3",
+      "attack": "known_keys_hash forged",
+      "expected_finding": "known_keys_hash_mismatch",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    },
+    {
+      "id": "A23",
+      "attack": "agent already frozen (backdoor proven)",
+      "expected_finding": "frozen",
+      "cases": 12,
+      "caught": 12,
+      "missed": 0
+    }
+  ],
+  "clean": {
+    "cases": 50,
+    "false_positives": 0,
+    "false_positive_rate": 0.0,
+    "with_warnings_only": 12
+  },
+  "missed_examples": [],
+  "not_caught_by_design": [
+    {
+      "id": "N1",
+      "not_caught": "Copies of off-chain code, prompts, model weights",
+      "why": "Not on-chain; the earn-out prices it in"
+    },
+    {
+      "id": "N2",
+      "not_caught": "Outside API keys and accounts (LLM keys, market tokens, customer contacts)",
+      "why": "Not on-chain"
+    },
+    {
+      "id": "N3",
+      "not_caught": "Sybil payers on aged, fresh or exchange-funded accounts",
+      "why": "Look like customers on-chain; the meter only flags self, sub-accounts and round trips; earn-out share <= 50% makes wash-paying cost money"
+    },
+    {
+      "id": "N4",
+      "not_caught": "A hidden full-access key used directly by a buyer who skipped the scan",
+      "why": "The contract cannot list its own keys; the SDK and MCP never skip the scan; a hidden key calling the contract freezes it (A23)"
+    },
+    {
+      "id": "N5",
+      "not_caught": "Customers moving off-platform after the sale",
+      "why": "Business risk, not a key"
+    },
+    {
+      "id": "N6",
+      "not_caught": "A compromised MPC network, NEAR AI signer or both RPC providers",
+      "why": "Trust assumptions"
+    }
+  ],
+  "contract_layer": [
+    {
+      "id": "A7",
+      "what": "buy with the listing version the buyer scanned after the seller changed terms: refused ListingChanged, full refund",
+      "blocked": true
+    },
+    {
+      "id": "A2-A4",
+      "what": "buy with a known_keys_hash that no longer matches: refused KeysChanged, full refund",
+      "blocked": true
+    },
+    {
+      "id": "A8",
+      "what": "list with an open deed approval: refused OpenApproval",
+      "blocked": true
+    },
+    {
+      "id": "A14",
+      "what": "fake token calls ft_on_transfer: UnknownToken",
+      "blocked": true
+    },
+    {
+      "id": "A16",
+      "what": "deed moved outside buy(): runner keys deleted, agent paused",
+      "blocked": true
+    },
+    {
+      "id": "A23",
+      "what": "hidden key calls the contract as the agent: frozen, escrow back to buyer",
+      "blocked": true
+    }
+  ],
+  "schema": "attack-report.v1",
+  "n": 200,
+  "judge": null
+}

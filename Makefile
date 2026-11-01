@@ -9,6 +9,10 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 PROP_CASES ?= 10000
+N ?= 200
+SEED ?= 42
+CLEAN ?= 50
+FIXTURE ?=
 OUT := out
 
 define not_built
@@ -36,10 +40,21 @@ verify: ## Offline rerun: tests + fixed world -> out/verify.json, compared with 
 	@mkdir -p $(OUT)
 	PROP_CASES=$(PROP_CASES) cargo test --workspace --locked --offline --quiet
 	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json
+	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
 
 .PHONY: golden
 golden: ## Rewrite tests/golden/verify.json from the current code (review the diff!)
 	cargo run --quiet --locked --offline -p verify -- --json --out tests/golden/verify.json
+	cargo run --quiet --locked --offline -p attack -- --out tests/golden/attack.json > /dev/null
+
+.PHONY: attack
+attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/attack.json [N=200 SEED=42 CLEAN=50 FIXTURE=fixtures/judge-attack.json]
+	@mkdir -p $(OUT)
+	cargo run --quiet --locked --offline -p attack -- --n $(N) --seed $(SEED) --clean $(CLEAN) $(if $(FIXTURE),--fixture $(FIXTURE)) --out $(OUT)/attack.json > /dev/null
+
+.PHONY: scan
+scan: ## Scan one agent: make scan FILE=fixtures/scan/cheat.json (exit 0 clean, 2 blocked, 3 inconclusive)
+	cargo run --quiet --locked --offline -p scan -- $(FILE)
 
 .PHONY: lint
 lint: ## rustfmt check + clippy -D warnings
@@ -79,9 +94,7 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 test-sandbox: build-dev ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
 	cd tests/sandbox && cargo test --locked -- --test-threads=1 --nocapture
 
-.PHONY: attack attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record mcp web-dev web-deploy e2e
-attack: ## Seeded attack corpus (A1-A16 + 50 clean agents)
-	$(call not_built,attack,M2 B2)
+.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record mcp web-dev web-deploy e2e
 attack-sandbox: ## Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
 attack-testnet: ## [testnet] A1 A5 A17-A21 live

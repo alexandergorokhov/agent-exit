@@ -1,0 +1,14 @@
+[package]
+name = "attack"
+description = "make attack: seeded backdoor corpus through the client scan, plus the contract-side refusals, as attack-report.v1 JSON."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+scan = { path = "../scan" }
+agent-exit = { path = "../../contracts/agent", features = ["sim"] }
+agent-core = { path = "../../contracts/agent-core" }
+near-sdk = { workspace = true, features = ["unit-testing", "unstable"] }
+serde_json.workspace = true
