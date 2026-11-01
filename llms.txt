@@ -32,6 +32,7 @@
 - [contracts/agent/src/tests.rs](contracts/agent/src/tests.rs): unit tests named by scenario id
 - [contracts/agent-core/tests/prop.rs](contracts/agent-core/tests/prop.rs): property tests (invariants)
 - [contracts/agent/src/review_regressions.rs](contracts/agent/src/review_regressions.rs): security review 1 attacks as regression tests (A25-A30)
+- [contracts/agent/src/review2_regressions.rs](contracts/agent/src/review2_regressions.rs): security review 2 defects as regression tests (A31 and up)
 - [contracts/agent-core/tests/earnout.rs](contracts/agent-core/tests/earnout.rs): earn-out scenarios
 - [tools/verify/src/main.rs](tools/verify/src/main.rs): offline rerun kit
 - [tests/golden/verify.json](tests/golden/verify.json): expected `make verify` output

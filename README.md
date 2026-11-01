@@ -71,6 +71,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | A self-call signed by a key the contract never added freezes the agent and returns the open escrow to the buyer | offline | A23 |
 | Old seller after the sale: withdraw and deed transfer refused `NotOwner` | offline (contract part) | A19, A22 |
 | Security review 1 fixes: no key-batch gap lets the buyer or owner fake a backdoor (keys being added or deleted are `incoming`/`retiring` until a callback confirms; a call signed by one is `NotRunner`, never a freeze); admin, token and signer list are compiled in, shown in `get_status`, and the scan blocks a mismatch (`registry_mismatch`); a NEAR Verified signature binds payer, amount and job; selling, cancelling, key rotation and limits need 1 yoctoNEAR; the seller's unwithdrawn revenue is settled to the seller at the sale; round-trip tracking refuses new destinations instead of silently saturating | offline (regression tests are the reviewer's attacks with inverted asserts, `contracts/agent/src/review_regressions.rs`) + property tests | A25-A30 |
+| Security review 2 fixes: a round trip the buyer creates after the sale does not stop the seller's earn-out (only pre-sale round trips count against it; property: the seller's release equals what the honest customer payments alone release) | offline (`contracts/agent/src/review2_regressions.rs`) + property tests | A31 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
@@ -114,6 +115,10 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
   The meter flags only what it can see (self, sub-accounts, round trips).
   Because the earn-out releases at most 50% of each payment, wash-paying
   always costs the seller money.
+- After the sale the buyer could still refuse customer payments by raising
+  the price floor (`set_limits`). That costs the buyer the same revenue and
+  is not prevented; the earn-out floor covers it. Round trips the buyer
+  creates do not reduce the seller's earn-out (A31).
 - The registry admin and payment token are build-time constants (`AGENT_EXIT_ADMIN`, `AGENT_EXIT_TOKEN`); the defaults are the offline fixture accounts, and the testnet deploy sets real ones.
 - After 1,000 distinct payout destinations, the owner can only withdraw to themselves or to accounts already paid (`PaidToFull`), so the round-trip flag stays correct.
 - A contract cannot list its own access keys. A hidden full-access key is
@@ -136,7 +141,7 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
 - Mocked-runtime tests do not execute promises: they check the actions the
   contract schedules and drive callbacks by hand. Real `AccessKeyNotFound`
   errors and real token refunds need near-sandbox or testnet.
-- The agent wasm is about 380 KB and not size-optimised yet.
+- The agent wasm is about 440 KB and not size-optimised yet.
 
 ## Repository map
 

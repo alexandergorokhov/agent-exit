@@ -477,10 +477,19 @@
       "what": "round-trip tracking never saturates: once 1000 destinations are tracked, sending to a new one is refused (PaidToFull); tracked payers stay flagged",
       "pass": true,
       "detail": {}
+    },
+    {
+      "id": "A31",
+      "what": "buyer pays every customer 1 base unit after the sale: their payments are flagged round_trip for the next buyer but still release the seller's earn-out (only pre-sale round trips count against it)",
+      "pass": true,
+      "detail": {
+        "flagged_round_trip": "600.00",
+        "seller_released": "300.00"
+      }
     }
   ],
   "summary": {
-    "passed": 52,
+    "passed": 53,
     "failed": 0
   },
   "not_covered_here": [

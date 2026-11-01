@@ -781,6 +781,26 @@ fn run() -> Value {
         json!({}),
     );
 
+    // Security review 2 (A31 and up).
+    let mut s = sold_translator();
+    s.advance(DAY);
+    s.pay(PAYERS[0], 12 * USD);
+    for p in PAYERS {
+        s.by_1y(BOB).withdraw(U128(1), Some(acc(p)));
+    }
+    for p in PAYERS {
+        s.pay(p, 100 * USD);
+    }
+    let flagged = s.c.get_earnings().flagged_round_trip;
+    s.advance(31 * DAY);
+    s.by(MALLORY).finalize_earnout(1);
+    r.check(
+        "A31",
+        "buyer pays every customer 1 base unit after the sale: their payments are flagged round_trip for the next buyer but still release the seller's earn-out (only pre-sale round trips count against it)",
+        flagged == 600 * USD && s.m().sales[0].released == 300 * USD && s.m().sales[0].returned == 0,
+        json!({"flagged_round_trip": usd(flagged), "seller_released": usd(s.m().sales[0].released)}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({

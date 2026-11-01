@@ -2,7 +2,8 @@
 //! (design: threat model §3). Random action sequences run against the pure
 //! machine with a fixed RNG seed, so every run checks the same cases.
 //!
-//! Cases: `PROP_CASES` env var (default 2000; `make verify` uses 10000).
+//! Cases: `PROP_CASES` env var (default 2000; `make verify` uses 10000). The
+//! coverage gates scale with it (10 hits per 2000 cases) and hold from 200 up.
 
 use agent_core::*;
 use proptest::prelude::*;
@@ -188,7 +189,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     prop_assert_eq!(&w.m, &before);
                 }
                 PayResult::Recorded {
-                    counted,
+                    flags,
                     released,
                     to_owner,
                     to_treasury,
@@ -208,7 +209,9 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     if total > 0 {
                         RELEASES.fetch_add(1, Relaxed);
                     }
-                    if !counted {
+                    // Self and sub-account payments never release; a round
+                    // trip releases only if the buyer created it (A31).
+                    if flags.self_pay || flags.seller_subaccount {
                         prop_assert_eq!(total, 0);
                     }
                     // I11: at most one new payer and one new day per payment.
@@ -553,13 +556,16 @@ fn check_owner_only(
     Ok(())
 }
 
-fn runner() -> TestRunner {
-    let cases = std::env::var("PROP_CASES")
+fn cases() -> u32 {
+    std::env::var("PROP_CASES")
         .ok()
         .and_then(|v| v.parse().ok())
-        .unwrap_or(2_000);
+        .unwrap_or(2_000)
+}
+
+fn runner() -> TestRunner {
     let cfg = Config {
-        cases,
+        cases: cases(),
         failure_persistence: None,
         ..Config::default()
     };
@@ -586,9 +592,17 @@ fn prop_invariants_random_sequences() {
         for a in &acts {
             step(&mut w, a)?;
         }
+        // Every sequence ends past every earn-out window and closes each one,
+        // so finalization is covered at any PROP_CASES.
+        step(&mut w, &Act::Time(366 * 86_400))?;
+        for i in 0..w.m.sales.len() {
+            step(&mut w, &Act::Finalize(i))?;
+        }
         Ok(())
     })
     .unwrap();
+    // The gates scale with the case count (10 hits per 2000 cases, at least 1).
+    let need = (10 * cases() as usize / 2_000).clamp(1, 10);
     for (name, c) in [
         ("sales", &SALES),
         ("rollbacks", &ROLLBACKS),
@@ -602,7 +616,10 @@ fn prop_invariants_random_sequences() {
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");
-        assert!(n >= 10, "property test never reached {name} ({n})");
+        assert!(
+            n >= need,
+            "property test reached {name} {n} times, needs {need}"
+        );
     }
 }
 
@@ -662,4 +679,88 @@ fn prop_storage_bounded() {
     let e = m.earnings(T0);
     assert_eq!(e.gross, (meter::MAX_PAYERS as Amount + 5) * USD);
     assert_eq!(e.other_payers_gross, 5 * USD);
+}
+
+/// Buyer-side actions after a sale (A31).
+#[derive(Debug, Clone)]
+enum PostSale {
+    /// An honest customer pays.
+    Customer(usize, u64),
+    /// The buyer withdraws revenue to a customer (makes it a round trip).
+    WithdrawTo(usize, u64),
+    /// The buyer's runner pays a customer from the treasury.
+    SpendTo(usize, u64),
+    Time(u64),
+}
+
+const CUSTOMERS: [&str; 4] = ["c1.near", "c2.near", "c3.near", "c4.near"];
+
+/// A31 (review 2, H1): the seller's earn-out is never below what the honest
+/// customer payments alone release. Twin machines see the same customer
+/// payments and clock; one also runs arbitrary buyer withdraws and treasury
+/// payments to those customers. The seller's release (during the window and
+/// at finalization) must be the same.
+#[test]
+fn prop_buyer_cannot_shrink_earnout() {
+    let mut r = runner();
+    let post = prop_oneof![
+        5 => (0usize..4, 100_000u64..50_000_000).prop_map(|(c, x)| PostSale::Customer(c, x)),
+        2 => (0usize..4, 1u64..2_000_000).prop_map(|(c, x)| PostSale::WithdrawTo(c, x)),
+        2 => (0usize..4, 1u64..2_000_000).prop_map(|(c, x)| PostSale::SpendTo(c, x)),
+        1 => (0u64..10 * 86_400).prop_map(PostSale::Time),
+    ];
+    r.run(&prop::collection::vec(post, 1..60), |acts| {
+        let mut m = Machine::new("translator", "alice");
+        let d = m.set_runner_key("alice", "ed25519:a").unwrap();
+        m.runner_key_done(&[], &d, "ed25519:a", true);
+        // Pre-sale history so the seller has round trips of their own.
+        m.pay("c1.near", 5 * USD, false, T0);
+        m.withdraw("alice", USD, "c4.near").unwrap();
+        m.list("alice", 1_000 * USD, Terms::default(), "h", T0)
+            .unwrap();
+        let h = m.known_keys_hash();
+        let v = m.listing_version;
+        let plan = m
+            .begin_buy("bob", 1_000 * USD, v, &h, "ed25519:b", true, T0)
+            .unwrap();
+        m.finish_buy(plan.sale_id, true, T0).unwrap();
+        m.set_limits(
+            "bob",
+            Limits {
+                price_floor: 0,
+                daily_cap: 1_000 * USD,
+                allowed_payees: CUSTOMERS.iter().map(|c| c.to_string()).collect(),
+                owner_bps: 5_000,
+                treasury_bps: 5_000,
+            },
+        )
+        .unwrap();
+        let mut honest = m.clone();
+        let mut now = T0;
+        for a in &acts {
+            match a {
+                PostSale::Customer(c, x) => {
+                    m.pay(CUSTOMERS[*c], *x as Amount, false, now);
+                    honest.pay(CUSTOMERS[*c], *x as Amount, false, now);
+                }
+                PostSale::WithdrawTo(c, x) => {
+                    let _ = m.withdraw("bob", (*x as Amount).min(m.owner_free), CUSTOMERS[*c]);
+                }
+                PostSale::SpendTo(c, x) => {
+                    if m.runner_guard("translator", "ed25519:b").is_ok() {
+                        let _ = m.spend(CUSTOMERS[*c], *x as Amount, now);
+                    }
+                }
+                PostSale::Time(t) => now += t * NANOS_PER_SEC,
+            }
+            prop_assert_eq!(m.sales[0].released, honest.sales[0].released);
+        }
+        now += 31 * DAY_NS;
+        let got = m.finalize_earnout(1, now).unwrap();
+        let want = honest.finalize_earnout(1, now).unwrap();
+        prop_assert!(got.released >= want.released);
+        prop_assert_eq!(got.released, want.released);
+        Ok(())
+    })
+    .unwrap();
 }

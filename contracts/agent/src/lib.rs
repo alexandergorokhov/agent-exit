@@ -43,6 +43,8 @@ use near_sdk::{
 use std::collections::{BTreeSet, HashMap};
 
 #[cfg(test)]
+mod review2_regressions;
+#[cfg(test)]
 mod review_regressions;
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;

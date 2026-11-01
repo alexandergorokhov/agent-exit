@@ -179,6 +179,10 @@ pub struct Sale {
     pub returned: Amount,
     pub share_bps: u16,
     pub floor_bps: u16,
+    /// The seller's owner epoch. Only accounts the agent paid in this epoch
+    /// or earlier count as round trips for this earn-out: the buyer cannot
+    /// stop releases by paying customers after the sale (A31).
+    pub seller_epoch: u64,
     pub started_at: Ts,
     pub window_end: Ts,
     pub finalized: bool,
@@ -290,8 +294,9 @@ pub struct Machine {
     pub owner_free: Amount,
     /// Tokens the contract believes it holds (excludes transfers in flight).
     pub held: Amount,
-    /// Accounts the agent sent tokens to (for the `round_trip` flag), bounded.
-    pub paid_to: BTreeSet<Account>,
+    /// Accounts the agent sent tokens to (for the `round_trip` flag), with
+    /// the owner epoch of the first send. Bounded (A30).
+    pub paid_to: BTreeMap<Account, u64>,
     /// Latest `valid_before` of any Base authorization the agent signed (B3).
     pub open_auth_until: Ts,
     /// Owner's limits (feature 12); they move with the deed.
@@ -338,7 +343,7 @@ impl Machine {
             claimable: BTreeMap::new(),
             owner_free: 0,
             held: 0,
-            paid_to: BTreeSet::new(),
+            paid_to: BTreeMap::new(),
             open_auth_until: 0,
             limits: Limits::default(),
             treasury: 0,
@@ -647,6 +652,7 @@ impl Machine {
             returned: 0,
             share_bps: l.terms.share_bps,
             floor_bps: l.terms.floor_bps,
+            seller_epoch: self.owner_epoch - 1,
             started_at: now,
             window_end: now + l.terms.window_secs * NANOS_PER_SEC,
             finalized: false,
@@ -719,14 +725,27 @@ impl Machine {
     /// agent need no entry: their payments are flagged `self` anyway, so the
     /// owner can always withdraw to themselves (I10).
     fn note_paid_to(&mut self, to: &str) -> Res<()> {
-        if self.flags_for(to).self_pay || self.paid_to.contains(to) {
+        if self.flags_for(to).self_pay || self.paid_to.contains_key(to) {
             return Ok(());
         }
         if self.paid_to.len() >= MAX_PAID_TO {
             return Err(Error::PaidToFull);
         }
-        self.paid_to.insert(to.to_string());
+        self.paid_to.insert(to.to_string(), self.owner_epoch);
         Ok(())
+    }
+
+    /// Does a payment by `payer` release from `sale`'s earn-out? Not if it is
+    /// a self or sub-account payment, and not if the agent paid `payer` while
+    /// the seller (or an owner before them) held the deed. A round trip the
+    /// buyer creates after the sale does not count against the seller (A31).
+    pub fn releases_for(&self, payer: &str, flags: &Flags, sale: &Sale) -> bool {
+        !flags.self_pay
+            && !flags.seller_subaccount
+            && !self
+                .paid_to
+                .get(payer)
+                .is_some_and(|epoch| *epoch <= sale.seller_epoch)
     }
 
     // ----- payments and earn-out --------------------------------------------
@@ -742,7 +761,7 @@ impl Machine {
         Flags {
             self_pay: is_self,
             seller_subaccount: !is_self && sub,
-            round_trip: !is_self && !sub && self.paid_to.contains(payer),
+            round_trip: !is_self && !sub && self.paid_to.contains_key(payer),
         }
     }
 
@@ -764,23 +783,24 @@ impl Machine {
         self.owner_free += to_owner;
         self.treasury += to_treasury;
         let mut released = Vec::new();
-        if counted {
-            // Release from the oldest open earn-out, at most share_bps of this
-            // payment in total (S10: wash-paying always loses money).
-            if let Some(sale) = self
-                .sales
-                .iter_mut()
-                .find(|s| !s.finalized && s.remaining() > 0 && now < s.window_end)
-            {
+        // Release from the oldest open earn-out, at most share_bps of this
+        // payment in total (S10: wash-paying always loses money).
+        if let Some(idx) = self
+            .sales
+            .iter()
+            .position(|s| !s.finalized && s.remaining() > 0 && now < s.window_end)
+        {
+            if self.releases_for(payer, &flags, &self.sales[idx]) {
+                let sale = &mut self.sales[idx];
                 let r = money::release_for_payment(amount, sale.share_bps, sale.remaining());
                 if r > 0 {
                     sale.released += r;
                     released.push((sale.id, sale.seller.clone(), r));
                 }
             }
-            for (_, seller, r) in &released {
-                self.credit(seller, *r);
-            }
+        }
+        for (_, seller, r) in &released {
+            self.credit(seller, *r);
         }
         PayResult::Recorded {
             flags,
