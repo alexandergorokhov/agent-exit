@@ -262,3 +262,63 @@ fn a33_callback_gas_grows_with_state() {
     assert!(state_io.as_tgas() >= 7, "{state_io}");
     assert_eq!(*gas, GAS_ON_KEYS.saturating_add(state_io));
 }
+
+/// A34 (review 2 M2, R2 inverted): a hidden key proven while a buy is
+/// settling. Before the fix the sale still completed: the seller got 70% and
+/// the buyer a permanently frozen agent. Now the buy is undone: the buyer is
+/// refunded in full, the seller pays out nothing and keeps the frozen agent,
+/// and the buyer's key (added by the batch) is deleted.
+#[test]
+fn a34_freeze_during_settling_refunds_the_buyer() {
+    let mut s = listed_translator();
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    let v = s.runner(key(HIDDEN_KEY)).heartbeat();
+    assert_eq!(v["frozen"], true);
+    let unused = s.callback(true).on_handover(1).0;
+    assert_eq!(unused, 1_000 * USD, "the buyer gets everything back");
+    assert_eq!(s.m().owner, ALICE);
+    assert!(s.m().frozen);
+    assert!(s.m().sales.is_empty(), "no sale happened");
+    assert!(
+        ft_transfers().iter().all(|(to, _)| to != ALICE),
+        "no payout to the seller"
+    );
+    assert_eq!(
+        key_actions(AGENT),
+        vec![("delete".to_string(), key_str(BOB_RUNNER))]
+    );
+    assert_eq!(s.m().status, agent_core::Status::Active);
+    assert!(s.m().solvent());
+    assert_eq!(s.m().held, s.m().owner_free + s.m().treasury);
+    // Nobody can list a frozen agent again.
+    assert_eq!(
+        panic_text(|| {
+            s.by_1y(ALICE)
+                .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+        }),
+        "Frozen"
+    );
+}
+
+/// A34: on a frozen agent the runner can never spend the treasury again, so
+/// the owner may withdraw it (revenue first, then treasury).
+#[test]
+fn a34_owner_withdraws_treasury_of_frozen_agent() {
+    let mut s = business_world();
+    let treasury = s.m().treasury;
+    let free = s.m().owner_free;
+    assert!(treasury > 0);
+    assert_eq!(
+        panic_text(|| {
+            s.by_1y(BOB).withdraw(U128(free + treasury), None);
+        }),
+        "InsufficientFunds",
+        "not while the runner can still spend it"
+    );
+    s.runner(key(HIDDEN_KEY)).heartbeat();
+    assert!(s.m().frozen);
+    s.by_1y(BOB).withdraw(U128(free + treasury), None);
+    assert_eq!(s.m().treasury, 0);
+    assert_eq!(s.m().owner_free, 0);
+    assert!(s.m().solvent());
+}

@@ -22,6 +22,7 @@ static CAP_HITS: AtomicUsize = AtomicUsize::new(0);
 static LISTED_REFUSALS: AtomicUsize = AtomicUsize::new(0);
 static PENDING_CALLS: AtomicUsize = AtomicUsize::new(0);
 static RECOVERIES: AtomicUsize = AtomicUsize::new(0);
+static FROZEN_ROLLBACKS: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -74,6 +75,8 @@ enum Act {
     DropHandover,
     /// `recover_keys` by ACTORS[caller], or `recover_sale` (A33).
     Recover(usize, bool),
+    /// A hidden key signs a self-call while a buy is settling (A34).
+    HiddenWhileSettling,
 }
 
 /// A key batch waiting for its callback.
@@ -113,6 +116,7 @@ fn act() -> impl Strategy<Value = Act> {
         1 => any::<bool>().prop_map(Act::PendingKeyCall),
         1 => (0usize..4).prop_map(Act::DropKeys),
         1 => Just(Act::DropHandover),
+        1 => Just(Act::HiddenWhileSettling),
         2 => (a.clone(), any::<bool>()).prop_map(|(c, sale)| Act::Recover(c, sale)),
     ]
 }
@@ -307,11 +311,35 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     SALES.fetch_add(1, Relaxed);
                     w.in_flight.push((TransferKind::SellerPayout, s, payout));
                 }
-                BuyResult::RolledBack { unused } => {
-                    // I6: state as before the buy (only the sale id was used),
-                    // full refund.
+                BuyResult::RolledBack {
+                    unused,
+                    frozen,
+                    delete_keys,
+                } => {
+                    // I6: full refund either way.
                     prop_assert_eq!(unused, p.amount);
                     ROLLBACKS.fetch_add(1, Relaxed);
+                    if frozen {
+                        // A34: frozen while settling: no sale, the seller
+                        // keeps the agent, the buyer's key is being deleted.
+                        let before_buy = w.before_buy.take().unwrap();
+                        prop_assert!(w.m.frozen);
+                        prop_assert_eq!(&w.m.owner, &seller);
+                        prop_assert_eq!(w.m.sales.len(), before_buy.sales.len());
+                        prop_assert!(w.m.sales.iter().all(|s| s.id != p.sale_id));
+                        prop_assert!(w.m.listing.is_none());
+                        prop_assert!(
+                            w.m.status != Status::Listed && w.m.status != Status::Settling
+                        );
+                        prop_assert_eq!(delete_keys.is_empty(), !ok);
+                        prop_assert!(!w.m.known_keys.contains(&p.buyer_pk));
+                        if !delete_keys.is_empty() {
+                            w.key_batches.push(KeyBatch::Deletion(delete_keys));
+                        }
+                        FROZEN_ROLLBACKS.fetch_add(1, Relaxed);
+                        return check_invariants(w);
+                    }
+                    prop_assert!(delete_keys.is_empty());
                     let mut expect = w.before_buy.take().unwrap();
                     expect.next_sale_id = w.m.next_sale_id;
                     // Payments may have arrived while settling; compare the rest.
@@ -320,9 +348,12 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.owner_free = w.m.owner_free;
                     expect.treasury = w.m.treasury;
                     expect.paid_to = w.m.paid_to.clone();
+                    // Only payments while settling may have changed these;
+                    // the rolled-back sale left no record (A34).
                     expect.claimable = w.m.claimable.clone();
                     expect.sales = w.m.sales.clone();
-                    expect.frozen = w.m.frozen;
+                    prop_assert!(w.m.sales.iter().all(|s| s.id != p.sale_id));
+                    prop_assert!(!w.m.frozen);
                     prop_assert_eq!(&w.m, &expect);
                 }
             }
@@ -450,6 +481,11 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
         Act::DropKeys(i) => {
             if !w.key_batches.is_empty() {
                 w.key_batches.remove(i % w.key_batches.len());
+            }
+        }
+        Act::HiddenWhileSettling => {
+            if settling {
+                return step(w, &Act::Runner(false));
             }
         }
         Act::DropHandover => {
@@ -698,6 +734,7 @@ fn prop_invariants_random_sequences() {
         ("spends refused while listed", &LISTED_REFUSALS),
         ("pending-key calls", &PENDING_CALLS),
         ("recoveries", &RECOVERIES),
+        ("frozen while settling", &FROZEN_ROLLBACKS),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");

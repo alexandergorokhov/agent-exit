@@ -627,10 +627,17 @@ impl AgentExit {
             .finish_buy(sale_id, ok, now)
             .unwrap_or_else(|e| fail(e));
         match res {
-            BuyResult::RolledBack { unused } => {
+            BuyResult::RolledBack {
+                unused,
+                frozen,
+                delete_keys,
+            } => {
+                // A34: frozen while settling = the buy is undone too.
+                self.delete_keys(&delete_keys);
                 emit(
                     "sale_rolled_back",
-                    json!({"sale_id": sale_id, "refund": amt(unused)}),
+                    json!({"sale_id": sale_id, "refund": amt(unused), "frozen": frozen,
+                           "delete_keys": delete_keys}),
                 );
                 U128(unused)
             }

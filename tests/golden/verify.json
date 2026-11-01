@@ -508,10 +508,18 @@
         "recover_after_secs": 3600,
         "gas_per_state_byte": 70000000
       }
+    },
+    {
+      "id": "A34",
+      "what": "a backdoor proven while a buy settles undoes the buy (buyer refunded in full, no seller payout, buyer key deleted); the owner of a frozen agent can withdraw its treasury",
+      "pass": true,
+      "detail": {
+        "buyer_refund": "1000.00"
+      }
     }
   ],
   "summary": {
-    "passed": 55,
+    "passed": 56,
     "failed": 0
   },
   "not_covered_here": [

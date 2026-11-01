@@ -875,6 +875,25 @@ fn run() -> Value {
         json!({"recover_after_secs": agent_core::RECOVER_AFTER_NS / agent_core::NANOS_PER_SEC, "gas_per_state_byte": agent_exit::GAS_PER_STATE_BYTE}),
     );
 
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.runner(key(HIDDEN_KEY)).heartbeat();
+    let refund = s.callback(true).on_handover(1).0;
+    let undone = refund == 1_000 * USD
+        && s.m().owner == ALICE
+        && s.m().sales.is_empty()
+        && ft_transfers().iter().all(|(to, _)| to != ALICE);
+    let mut s2 = business_world();
+    let all = s2.m().owner_free + s2.m().treasury;
+    s2.runner(key(HIDDEN_KEY)).heartbeat();
+    s2.by_1y(BOB).withdraw(U128(all), None);
+    r.check(
+        "A34",
+        "a backdoor proven while a buy settles undoes the buy (buyer refunded in full, no seller payout, buyer key deleted); the owner of a frozen agent can withdraw its treasury",
+        undone && s2.m().treasury == 0,
+        json!({"buyer_refund": usd(refund)}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({

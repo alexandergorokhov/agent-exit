@@ -9,8 +9,8 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 |---|---|---|
 | 1. Fetch crates and npm packages (only networked step) | `make setup` | exits 0 |
 | 2. Rerun everything | `make verify` | stderr lines `verify: output equals tests/golden/verify.json` and `attack: output equals tests/golden/attack.json`; exit 0 |
-| 3. Read the result | `cat out/verify.json` | JSON, `"schema": "verify-output.v1"`, `"summary": {"passed": 55, "failed": 0}` |
-| 4. One table per scenario id | `cargo run -q -p verify` | 55 `PASS` rows, ids from SCENARIOS (S*, E*, A*) |
+| 3. Read the result | `cat out/verify.json` | JSON, `"schema": "verify-output.v1"`, `"summary": {"passed": 56, "failed": 0}` |
+| 4. One table per scenario id | `cargo run -q -p verify` | 56 `PASS` rows, ids from SCENARIOS (S*, E*, A*) |
 | 5. Lint | `make lint` | exit 0 |
 | 6. Attack corpus | `make attack` | stderr `in scope: 200/200 blocked; clean agents blocked (false positives): 0/50`, every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
 | 7. Plant your own backdoor | edit `fixtures/judge-attack.json` (e.g. add a `"FullAccess"` key), then `make attack FIXTURE=fixtures/judge-attack.json` | stderr `judge fixture ...: blocked ["full_access_key_present"]`; the `judge` section of `out/attack.json` |

@@ -271,8 +271,15 @@ pub enum BuyResult {
         seller_revenue: Amount,
     },
     /// Key batch failed: everything is as before; `unused` (the full amount)
-    /// goes back to the buyer.
-    RolledBack { unused: Amount },
+    /// goes back to the buyer. Or a backdoor was proven while settling
+    /// (A34): the buyer is refunded in full, the seller keeps the frozen
+    /// agent, the listing is withdrawn and `delete_keys` (the buyer's key,
+    /// if the batch added it) are deleted.
+    RolledBack {
+        unused: Amount,
+        frozen: bool,
+        delete_keys: Vec<Key>,
+    },
 }
 
 /// Why a token transfer leaves the contract; decides where a failed one is
@@ -745,11 +752,36 @@ impl Machine {
         };
         self.pending = None;
         self.incoming.remove(&p.buyer_pk);
+        if self.frozen {
+            // A34: a hidden key was proven while settling. Nobody should
+            // receive a permanently frozen agent: undo the buy, refund in full.
+            self.held -= p.amount;
+            self.listing = None;
+            self.listing_version += 1;
+            self.status = self.status_before_listing.clone();
+            let mut delete_keys = Vec::new();
+            if keys_ok {
+                // The batch deleted the seller's keys and added the buyer's.
+                self.known_keys.clear();
+                self.retiring.insert(p.buyer_pk.clone());
+                delete_keys.push(p.buyer_pk.clone());
+                self.keys_since = now;
+            }
+            return Ok(BuyResult::RolledBack {
+                unused: p.amount,
+                frozen: true,
+                delete_keys,
+            });
+        }
         if !keys_ok {
             // Roll back: listing, keys and owner were never changed.
             self.status = Status::Listed;
             self.held -= p.amount;
-            return Ok(BuyResult::RolledBack { unused: p.amount });
+            return Ok(BuyResult::RolledBack {
+                unused: p.amount,
+                frozen: false,
+                delete_keys: vec![],
+            });
         }
         let l = &p.listing;
         let (paid_now, escrow) = money::split_price(l.price, l.terms.earnout_bps);
@@ -785,14 +817,6 @@ impl Machine {
             finalized: false,
             cut: false,
         };
-        let mut sale = sale;
-        if self.frozen {
-            // A hidden key was proven while settling: the buyer gets the escrow back.
-            sale.returned = sale.escrow;
-            sale.finalized = true;
-            sale.cut = true;
-            self.credit(&p.buyer, sale.escrow);
-        }
         self.sales.push(sale.clone());
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
         self.held -= unused + paid_now;
@@ -834,14 +858,19 @@ impl Machine {
     }
 
     /// Owner takes revenue out, to themselves or another account.
+    /// On a frozen agent the runner can never spend the treasury again, so
+    /// the owner may withdraw it too (A34): revenue first, then treasury.
     pub fn withdraw(&mut self, caller: &str, amount: Amount, to: &str) -> Res<Amount> {
         self.only_owner(caller)?;
         self.not_settling()?;
-        if amount == 0 || amount > self.owner_free {
+        let treasury = if self.frozen { self.treasury } else { 0 };
+        if amount == 0 || amount > self.owner_free + treasury {
             return Err(Error::InsufficientFunds);
         }
         self.note_paid_to(to)?;
-        self.owner_free -= amount;
+        let from_free = amount.min(self.owner_free);
+        self.owner_free -= from_free;
+        self.treasury -= amount - from_free;
         self.held -= amount;
         Ok(amount)
     }
