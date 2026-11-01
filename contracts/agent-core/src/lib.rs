@@ -86,6 +86,10 @@ pub type Res<T> = Result<T, Error>;
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(borsh::BorshSchema, schemars::JsonSchema)
+)]
 pub struct Terms {
     /// Part of the price held in escrow (3000 = 30%).
     pub earnout_bps: u16,
@@ -124,6 +128,7 @@ impl Terms {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Listing {
     pub version: u64,
     pub seller: Account,
@@ -139,6 +144,7 @@ pub struct Listing {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub enum Status {
     /// Owned, not listed, never sold.
     Active,
@@ -150,6 +156,7 @@ pub enum Status {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Pending {
     pub sale_id: u64,
     pub buyer: Account,
@@ -160,6 +167,7 @@ pub struct Pending {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Sale {
     pub id: u64,
     pub seller: Account,
@@ -249,6 +257,7 @@ pub enum RunnerCheck {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Machine {
     pub agent: Account,
     pub owner: Account,

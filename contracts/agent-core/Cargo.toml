@@ -12,5 +12,11 @@ serde_json.workspace = true
 sha2.workspace = true
 hex.workspace = true
 
+# Schema derives for the contract ABI (`cargo near build` generates it from a
+# native build). Not compiled into the wasm.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+borsh = { workspace = true, features = ["unstable__schema"] }
+schemars = "0.8.22"
+
 [dev-dependencies]
 proptest = "1"

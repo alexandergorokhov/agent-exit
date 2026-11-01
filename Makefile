@@ -108,10 +108,10 @@ build: ## Reproducible wasm build with cargo-near (Docker) -> contracts/res
 	cd contracts/res && sha256sum *.wasm > SHA256SUMS
 
 .PHONY: build-dev
-build-dev: ## Non-reproducible wasm build with cargo-near (no Docker)
+build-dev: ## Non-reproducible wasm build with cargo-near, ABI included (no Docker)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/agent && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near
-	cd contracts/xusd && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near
+	cd contracts/agent && cargo near build non-reproducible-wasm --out-dir ../../target/near
+	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near
 
 .PHONY: hash
 hash: ## Compare committed wasm with contracts/res/SHA256SUMS
@@ -123,8 +123,8 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 .PHONY: test-sandbox
 test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/xusd && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near-sandbox
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near-sandbox
+	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
 .PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-dev web-deploy e2e

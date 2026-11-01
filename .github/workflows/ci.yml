@@ -48,6 +48,30 @@ jobs:
       - name: contracts type-check for wasm32
         run: cargo check --locked --target wasm32-unknown-unknown -p agent-exit -p xusd
 
+  near-build:
+    # The default cargo-near build (ABI generated from a native build): every
+    # type in a public method or the contract state needs JsonSchema or
+    # BorshSchema, which a plain wasm type-check does not catch.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - run: rustup target add wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-near@0.22.0
+      - name: cargo near build (agent, with ABI)
+        working-directory: contracts/agent
+        run: cargo near build non-reproducible-wasm
+      - name: cargo near build (xusd, with ABI)
+        working-directory: contracts/xusd
+        run: cargo near build non-reproducible-wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contracts-wasm-abi
+          path: target/near/
+
   audit:
     runs-on: ubuntu-latest
     steps:

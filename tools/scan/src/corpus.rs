@@ -46,7 +46,7 @@ pub fn runner_key(agent: &str, pk: &str) -> AccessKey {
         permission: Permission::FunctionCall {
             receiver_id: agent.into(),
             method_names: RUNNER_METHODS.iter().map(|s| s.to_string()).collect(),
-            allowance: Some("250000000000000000000000".into()),
+            allowance: Some("5000000000000000000000000".into()),
         },
     }
 }

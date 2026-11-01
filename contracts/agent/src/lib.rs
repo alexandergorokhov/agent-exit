@@ -35,6 +35,7 @@ use near_contract_standards::non_fungible_token::{Token, TokenId};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{self, json, Value};
+use near_sdk::NearSchema;
 use near_sdk::{
     env, near, require, AccountId, Allowance, Gas, NearToken, PanicOnDefault, Promise,
     PromiseError, PromiseOrValue, PublicKey,
@@ -66,8 +67,15 @@ pub const PAYMENT_TOKEN: &str = match option_env!("AGENT_EXIT_TOKEN") {
 };
 /// Methods the runner's function-call key may call (receiver = the agent).
 pub const RUNNER_METHODS: &str = "heartbeat,accept_job,pay,pay_base";
-/// Gas the runner key may burn before the owner tops it up.
-pub const RUNNER_ALLOWANCE: NearToken = NearToken::from_millinear(250);
+/// Gas budget of the runner's function-call key. The node checks it against
+/// the attached gas at a pessimistic gas price before every call, so the
+/// runner attaches only what a call needs (`RUNNER_GAS_*`). 5 NEAR covers
+/// thousands of heartbeats; the owner refreshes it by rotating the key.
+pub const RUNNER_ALLOWANCE: NearToken = NearToken::from_near(5);
+/// Gas a runner attaches: `heartbeat` (state read and write only).
+pub const RUNNER_GAS_HEARTBEAT: Gas = Gas::from_tgas(30);
+/// Gas a runner attaches: `pay` (ft_transfer 10 TGas + callback 10 TGas + execution).
+pub const RUNNER_GAS_PAY: Gas = Gas::from_tgas(60);
 /// NEAR kept on the account on top of storage staking (E17).
 pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 /// Longest `ft_transfer_call` msg accepted (E10).
@@ -101,8 +109,9 @@ pub enum Msg {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, NearSchema)]
 #[serde(crate = "near_sdk::serde", rename_all = "snake_case")]
+#[abi(json)]
 pub enum OutKind {
     SellerPayout,
     Claim,
@@ -111,8 +120,9 @@ pub enum OutKind {
 }
 
 /// Revenue split of every incoming payment; must add up to 10,000 bps.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, NearSchema)]
 #[serde(crate = "near_sdk::serde", deny_unknown_fields)]
+#[abi(json)]
 pub struct Split {
     pub owner_bps: u16,
     pub treasury_bps: u16,
@@ -120,8 +130,9 @@ pub struct Split {
 
 /// `set_limits` arguments (`limits.v1`). Amounts are token base units as
 /// strings; a negative or non-numeric amount fails to parse (E33).
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, NearSchema)]
 #[serde(crate = "near_sdk::serde", deny_unknown_fields)]
+#[abi(json)]
 pub struct LimitsArgs {
     /// Smallest accepted incoming payment.
     pub price_floor: U128,

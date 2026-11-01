@@ -28,6 +28,7 @@ pub const FRESH_WINDOW_NS: u64 = 7 * DAY_NS;
     BorshSerialize,
     BorshDeserialize,
 )]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Flags {
     /// Paid by the agent itself, its owner or any past owner.
     #[serde(rename = "self")]
@@ -47,6 +48,7 @@ impl Flags {
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Bucket {
     pub gross: Amount,
     pub counted: Amount,
@@ -70,6 +72,7 @@ impl Bucket {
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct PayerStats {
     pub totals: Bucket,
     pub first_ts: Ts,
@@ -80,6 +83,7 @@ pub struct PayerStats {
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Meter {
     pub total: Bucket,
     pub flagged_self: Amount,
@@ -93,6 +97,7 @@ pub struct Meter {
 
 /// The `get_earnings` view (schema `earnings.v1`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(schemars::JsonSchema))]
 pub struct Earnings {
     pub schema: String,
     pub gross: Amount,
@@ -112,6 +117,7 @@ pub struct Earnings {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(schemars::JsonSchema))]
 pub struct DayRow {
     pub day: u64,
     pub gross: Amount,

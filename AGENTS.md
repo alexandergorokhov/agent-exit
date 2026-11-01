@@ -109,6 +109,24 @@ caps what one session may spend. Keys only from env, never from files.
 | contract view `get_status` | `agent-status.v1` |
 | deed metadata `extra` | `deed-extra.v1` |
 
+## Gas per runner call
+
+The runner signs with a function-call access key whose gas allowance is
+5 NEAR (`RUNNER_ALLOWANCE`). Before each call the node charges the
+*attached* gas against that allowance at a pessimistic gas price, so
+attaching 300 TGas to every call can fail with `InvalidTransaction` even on
+a fresh key. Attach only what the call needs:
+
+| Runner call | Attach | Why |
+|---|---|---|
+| `heartbeat` | 30 TGas (`RUNNER_GAS_HEARTBEAT`) | state read and write only |
+| `pay` | 60 TGas (`RUNNER_GAS_PAY`) | `ft_transfer` 10 TGas + callback 10 TGas + execution |
+
+Unused gas is refunded, and only burnt gas reduces the allowance: 5 NEAR
+covers thousands of heartbeats. To refresh the allowance the owner rotates
+the key with `set_runner_key` (1 yoctoNEAR), which adds the new key with a
+fresh 5 NEAR allowance and deletes the old one.
+
 ## Rules for agents working in this repo
 
 - Never weaken or delete a test to make it pass.

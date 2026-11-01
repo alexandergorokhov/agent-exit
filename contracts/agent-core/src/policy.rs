@@ -30,6 +30,7 @@ pub enum Policy {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Limits {
     /// Smallest accepted incoming payment (0 = none).
     pub price_floor: Amount,
@@ -89,6 +90,7 @@ impl Limits {
     BorshSerialize,
     BorshDeserialize,
 )]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
 pub struct Spent {
     pub owner_epoch: u64,
     pub day: u64,

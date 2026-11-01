@@ -80,10 +80,18 @@ impl World {
         args: Value,
         yocto: u128,
     ) -> Result<Value, String> {
+        // Runner keys are function-call keys with a gas allowance that the
+        // node checks against the attached gas at a pessimistic gas price:
+        // attach what the method needs (AGENTS.md "Gas per runner call").
+        let tgas = match method {
+            "heartbeat" => 30,
+            "pay" => 60,
+            _ => 300,
+        };
         let r = Contract(contract.clone())
             .call_function(method, args)
             .transaction()
-            .gas(NearGas::from_tgas(300))
+            .gas(NearGas::from_tgas(tgas))
             .deposit(NearToken::from_yoctonear(yocto))
             .with_signer(who.id.clone(), who.signer.clone())
             .send_to(&self.net)
@@ -167,10 +175,7 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
 
     Contract::deploy(agent.id.clone())
         .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
-        .with_init_call(
-            "new",
-            json!({"owner_id": alice.id}),
-        )
+        .with_init_call("new", json!({"owner_id": alice.id}))
         .unwrap()
         .with_signer(agent.signer.clone())
         .send_to(&w.net)
