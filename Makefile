@@ -75,9 +75,11 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 
 # ------------------------------------------------------------- not built yet
 
-.PHONY: test-sandbox attack attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record mcp web-dev web-deploy e2e
-test-sandbox: ## near-sandbox integration tests
-	$(call not_built,test-sandbox,M2 B1 sandbox harness; runs on a machine where the near-sandbox binary downloads)
+.PHONY: test-sandbox
+test-sandbox: build-dev ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
+	cd tests/sandbox && cargo test --locked -- --test-threads=1 --nocapture
+
+.PHONY: attack attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record mcp web-dev web-deploy e2e
 attack: ## Seeded attack corpus (A1-A16 + 50 clean agents)
 	$(call not_built,attack,M2 B2)
 attack-sandbox: ## Attack corpus against near-sandbox

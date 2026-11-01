@@ -37,6 +37,7 @@ itself through rustup) and `make`. No NEAR account, no network after the first
 | `make test` | All tests (`PROP_CASES=10000` property cases, fixed seed). |
 | `make lint` | `rustfmt --check` and `clippy -D warnings`. |
 | `make audit` | `cargo audit` (needs `cargo install cargo-audit`). Four advisories in near-sdk's native test runtime are ignored in `.cargo/audit.toml`; the same target proves those crates are not in the contract wasm. |
+| `make test-sandbox` | Builds the wasm (`cargo-near`) and runs `tests/sandbox` on a real local node: key list before/after the buy, the old runner key and the deleted setup key failing with the node's error (S5, A17, A21), and a failed key batch refunding the buyer (E5). **Written and compiling; not yet run** (the cloud build box cannot raise the open-file limit near-sandbox needs). |
 | `make help` | Every target. Targets for later batches print `not built yet` and exit 1. |
 
 AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
@@ -46,7 +47,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Claim | How it is shown | Scenario ids |
 |---|---|---|
 | The meter separates real from faked earnings: the fixed world shows gross 500.00, counted 360.00, flagged 140.00 (self 100.00, seller sub-account 40.00); a cheat agent with 500.00 gross counts 0.00 | offline (contract in mocked runtime) | S2, S4, A10, A11, A12 |
-| One `buy()` moves the deed, deletes the seller's runner key, adds the buyer's function-call key, pays 700.00 and escrows 300.00 | offline: the contract emits exactly that key batch and payout. **Real key deletion on a node: sandbox/testnet, not run yet** | S5, A17 |
+| One `buy()` moves the deed, deletes the seller's runner key, adds the buyer's function-call key, pays 700.00 and escrows 300.00 | offline: the contract emits exactly that key batch and payout. Real key deletion on a node: `make test-sandbox` (written, not run yet) | S5, A17 |
 | All-or-nothing: if the key batch fails, state is restored and the buyer is refunded in full; if the payout fails it becomes claimable | offline (callbacks driven with success and failure) | E5, E6, I1, I6 |
 | Stale listing, changed keys, underpay, low gas, malformed msg, a second buy while settling: refused with a full refund | offline | E1-E4, E7, E10, A7 |
 | Earn-out: 50% of each counted post-sale payment, floor 20% of escrow at window end, cap at escrow; wash payments release nothing | offline + property tests | S7-S10, E20, E21 |

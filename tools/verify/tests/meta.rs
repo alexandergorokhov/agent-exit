@@ -62,7 +62,7 @@ fn unbuilt_make_targets_fail_loudly() {
         eprintln!("make not installed; skipped");
         return;
     }
-    for t in ["attack", "test-sandbox", "mcp", "scene-1", "gate-g1"] {
+    for t in ["attack", "fuzz", "mcp", "scene-1", "gate-g1"] {
         let out = Command::new("make")
             .arg("-s")
             .arg(t)

@@ -1,0 +1,18 @@
+[package]
+name = "agent-exit-sandbox"
+description = "near-sandbox integration tests for Agent Exit (real node: real key deletion, real token refunds)."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# Kept out of the main workspace so `make verify` stays light and offline.
+[workspace]
+
+[dependencies]
+
+[dev-dependencies]
+near-sandbox = "0.4"
+near-api = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+serde_json = "1"

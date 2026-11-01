@@ -59,3 +59,20 @@ jobs:
       - run: rustup target add wasm32-unknown-unknown
       - name: cargo audit + ignored advisories stay out of the wasm
         run: make audit
+
+  sandbox:
+    # Real local node (near-sandbox). Not yet confirmed green on Actions, so it
+    # does not block the other jobs until its first green run.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-near@0.22.0
+      - name: make test-sandbox
+        run: |
+          ulimit -n 65535 || true
+          make test-sandbox
