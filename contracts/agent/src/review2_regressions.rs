@@ -354,3 +354,43 @@ fn a35_resolve_reports_a_refused_return_truthfully() {
     assert!(!logs().iter().any(|l| l.contains("agent_exit:returned")));
     assert_eq!(events("deed_return_refused")[0]["reason"], "KeysPending");
 }
+
+/// A36 (review 2 M4): the seller withdraws 1 base unit to 1,000 junk
+/// accounts before listing. The round-trip table is counted per owner, so
+/// the buyer still gets a full quota: the owner can withdraw to a new
+/// account and the runner can pay a new payee. `get_status` shows the size.
+#[test]
+fn a36_buyer_does_not_inherit_a_full_round_trip_table() {
+    let mut s = translator_world();
+    for i in 0..agent_core::MAX_PAID_TO {
+        s.by_1y(ALICE)
+            .withdraw(U128(1), Some(acc(&format!("junk{i}.testnet"))));
+    }
+    assert_eq!(
+        panic_text(|| {
+            s.by_1y(ALICE)
+                .withdraw(U128(1), Some(acc("one-more.testnet")));
+        }),
+        "PaidToFull",
+        "the seller's own quota is used up"
+    );
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    s.callback(true).on_handover(1);
+    let st = s.by(MALLORY).get_status();
+    assert_eq!(st["paid_to_total"], 1_000);
+    assert_eq!(st["paid_to_owner"], 0);
+    // Bob earns, withdraws to a new account, and his runner pays a new payee.
+    s.pay(PAYERS[0], 100 * USD);
+    s.by_1y(BOB)
+        .withdraw(U128(10 * USD), Some(acc("bobs-bank.testnet")));
+    s.by_1y(BOB).set_limits(demo_limits());
+    s.pay(PAYERS[1], 100 * USD);
+    let v = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(5 * USD));
+    assert_eq!(v["ok"], true);
+    // The seller-era entries still count against the seller's earn-out.
+    assert!(s.m().paid_to.get("junk7.testnet") == Some(&1));
+}

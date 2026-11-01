@@ -8,6 +8,7 @@
     "- set contract.open_approvals to 1 -> open_approval; bump contract.listing_version -> listing_version_mismatch",
     "- give keys_second_provider a different list -> rpc_disagree (inconclusive)",
     "- set listing.terms.earnout_bps below 3000, floor_bps above 5000 or window_secs below 2592000 -> terms_below_minimum",
+    "- set contract.paid_to_total above 2000 -> paid_to_bloated (the buyer would inherit a full round-trip table)",
     "Fields starting with _ are ignored. Schema: scan-input.v1 (tools/scan/src/lib.rs)."
   ],
   "schema": "scan-input.v1",
@@ -102,7 +103,8 @@
     "open_auth_until": 0,
     "frozen": false,
     "admin": "admin.testnet",
-    "token": "xusd.testnet"
+    "token": "xusd.testnet",
+    "paid_to_total": 0
   },
   "listing": {
     "listing_version": 1,

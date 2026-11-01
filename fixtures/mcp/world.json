@@ -27,6 +27,8 @@
           "min_window_secs": 2592000
         },
         "terms_config": "prod",
+        "paid_to_total": 0,
+        "paid_to_owner": 0,
         "incoming_keys": [],
         "retiring_keys": [],
         "known_keys": [
@@ -264,7 +266,8 @@
           "open_auth_until": 0,
           "frozen": false,
           "admin": "admin.testnet",
-          "token": "xusd.testnet"
+          "token": "xusd.testnet",
+          "paid_to_total": 0
         },
         "listing": {
           "listing_version": 1,
@@ -299,6 +302,8 @@
           "min_window_secs": 2592000
         },
         "terms_config": "prod",
+        "paid_to_total": 0,
+        "paid_to_owner": 0,
         "incoming_keys": [],
         "retiring_keys": [],
         "known_keys": [
@@ -541,7 +546,8 @@
           "open_auth_until": 0,
           "frozen": false,
           "admin": "admin.testnet",
-          "token": "xusd.testnet"
+          "token": "xusd.testnet",
+          "paid_to_total": 0
         },
         "listing": {
           "listing_version": 1,
@@ -633,6 +639,8 @@
             "min_window_secs": 2592000
           },
           "terms_config": "prod",
+          "paid_to_total": 0,
+          "paid_to_owner": 0,
           "incoming_keys": [],
           "retiring_keys": [],
           "known_keys": [
@@ -858,7 +866,8 @@
             "open_auth_until": 0,
             "frozen": false,
             "admin": "admin.testnet",
-            "token": "xusd.testnet"
+            "token": "xusd.testnet",
+            "paid_to_total": 0
           },
           "listing": null
         }
@@ -920,6 +929,8 @@
             "min_window_secs": 2592000
           },
           "terms_config": "prod",
+          "paid_to_total": 0,
+          "paid_to_owner": 0,
           "incoming_keys": [],
           "retiring_keys": [],
           "known_keys": [
@@ -1173,7 +1184,8 @@
             "open_auth_until": 0,
             "frozen": false,
             "admin": "admin.testnet",
-            "token": "xusd.testnet"
+            "token": "xusd.testnet",
+            "paid_to_total": 0
           },
           "listing": {
             "listing_version": 3,

@@ -524,10 +524,19 @@
       "detail": {
         "owner": "carol.testnet"
       }
+    },
+    {
+      "id": "A36",
+      "what": "a seller who filled the round-trip table (1000 junk destinations) does not leave the buyer with PaidToFull: the quota is per owner; get_status shows paid_to_total and the scan blocks a table the buyer could not fill",
+      "pass": true,
+      "detail": {
+        "paid_to_total": 1001,
+        "paid_to_owner": 1
+      }
     }
   ],
   "summary": {
-    "passed": 57,
+    "passed": 58,
     "failed": 0
   },
   "not_covered_here": [

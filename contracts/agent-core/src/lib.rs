@@ -383,7 +383,13 @@ pub struct Recovery {
     pub sale: Option<Pending>,
 }
 
+/// New payout destinations each owner may add (A30). Counted per owner
+/// epoch, so a seller who filled the table cannot leave the buyer with
+/// `PaidToFull` (A36).
 pub const MAX_PAID_TO: usize = 1_000;
+/// Hard cap over all owners. `get_status.paid_to_total` shows the size and
+/// the scan blocks an agent whose buyer would not get a full quota (A36).
+pub const MAX_PAID_TO_TOTAL: usize = 3_000;
 
 /// Hash of a key set as the buyer saw it: sha256 over the sorted keys joined
 /// by `\n`, hex encoded.
@@ -884,11 +890,19 @@ impl Machine {
         if self.flags_for(to).self_pay || self.paid_to.contains_key(to) {
             return Ok(());
         }
-        if self.paid_to.len() >= MAX_PAID_TO {
+        if self.paid_to_this_owner() >= MAX_PAID_TO || self.paid_to.len() >= MAX_PAID_TO_TOTAL {
             return Err(Error::PaidToFull);
         }
         self.paid_to.insert(to.to_string(), self.owner_epoch);
         Ok(())
+    }
+
+    /// Payout destinations the current owner added (A36).
+    pub fn paid_to_this_owner(&self) -> usize {
+        self.paid_to
+            .values()
+            .filter(|e| **e == self.owner_epoch)
+            .count()
     }
 
     /// Does a payment by `payer` release from `sale`'s earn-out? Not if it is

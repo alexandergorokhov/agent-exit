@@ -10,16 +10,16 @@
       "id": "A1",
       "attack": "extra full-access key",
       "expected_finding": "full_access_key_present",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A2",
       "attack": "extra function-call key to the agent with owner-like methods",
       "expected_finding": "unknown_key",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
@@ -90,64 +90,72 @@
       "id": "A21",
       "attack": "setup full-access key never deleted",
       "expected_finding": "full_access_key_present",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "E31",
       "attack": "one RPC provider hides a key",
       "expected_finding": "rpc_disagree",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "K1",
       "attack": "runner key scope widened beyond runner methods",
       "expected_finding": "runner_key_scope",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "K2",
       "attack": "contract lists a key the account does not have",
       "expected_finding": "known_key_missing",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "K3",
       "attack": "known_keys_hash forged",
       "expected_finding": "known_keys_hash_mismatch",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "A23",
       "attack": "agent already frozen (backdoor proven)",
       "expected_finding": "frozen",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "A26",
       "attack": "deployed with the seller's own admin or payment token",
       "expected_finding": "registry_mismatch",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
       "id": "A32",
       "attack": "earn-out terms below the buyer's minimum (no escrow, seller floor, short window)",
       "expected_finding": "terms_below_minimum",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
+      "missed": 0
+    },
+    {
+      "id": "A36",
+      "attack": "seller filled the round-trip table so the buyer inherits PaidToFull",
+      "expected_finding": "paid_to_bloated",
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     }
   ],

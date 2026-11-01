@@ -217,7 +217,17 @@ pub struct ContractView {
     pub admin: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// `get_status.paid_to_total`: payout destinations tracked for the
+    /// round-trip flag. Missing = cannot check = block (A36).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub paid_to_total: Option<u64>,
 }
+
+/// Payout destinations the agent tracks across all owners, and the quota
+/// each new owner gets (same as the contract's `MAX_PAID_TO_TOTAL` and
+/// `MAX_PAID_TO`). Above `TOTAL - QUOTA` the buyer would get less (A36).
+pub const PAID_TO_TOTAL: u64 = 3_000;
+pub const PAID_TO_QUOTA: u64 = 1_000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScanInput {
@@ -409,6 +419,21 @@ pub fn scan(i: &ScanInput) -> Report {
                 ),
             ));
         }
+    }
+
+    // A36: the round-trip table the buyer inherits leaves them a full quota.
+    match i.contract.paid_to_total {
+        Some(n) if n <= PAID_TO_TOTAL - PAID_TO_QUOTA => {}
+        got => f.push(block(
+            "paid_to_bloated",
+            match got {
+                Some(n) => format!(
+                    "{n} payout destinations tracked; the buyer could add only {} of {PAID_TO_QUOTA}",
+                    PAID_TO_TOTAL.saturating_sub(n)
+                ),
+                None => "paid_to_total not shown".into(),
+            },
+        )),
     }
 
     // Contract state.

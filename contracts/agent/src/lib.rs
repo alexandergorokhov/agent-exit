@@ -881,6 +881,8 @@ impl AgentExit {
             "signers": self.signers,
             "terms_min": self.m.terms_min,
             "terms_config": self.m.terms_min.config(),
+            "paid_to_total": self.m.paid_to.len(),
+            "paid_to_owner": self.m.paid_to_this_owner(),
             "incoming_keys": self.m.incoming,
             "retiring_keys": self.m.retiring,
             "known_keys": self.m.known_keys,

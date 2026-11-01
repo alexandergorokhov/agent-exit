@@ -42,7 +42,7 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make verify` | Unit + property tests pass, then the fixed world replays through the real contract code and `out/verify.json` equals `tests/golden/verify.json`, and the attack report equals `tests/golden/attack.json` (`... output equals ...` lines on stderr). About 2 min, offline. |
 | `cargo run -q -p verify` | A PASS/FAIL table, one row per scenario id (S*, E*, A*). |
 | `cargo run -q -p verify -- --json` | The same as JSON (`verify-output.v1`). |
-| `make attack` | 200 seeded backdoored agents (18 families) and 50 clean agents through the client scan, plus the contract's own refusals. Table on stderr, `out/attack.json` (`attack-report.v1`): `in scope: 200/200 blocked; ... false positives: 0/50`, and the "not caught by design" rows N1-N6. `N=`, `SEED=`, `CLEAN=` change the corpus. |
+| `make attack` | 200 seeded backdoored agents (19 families) and 50 clean agents through the client scan, plus the contract's own refusals. Table on stderr, `out/attack.json` (`attack-report.v1`): `in scope: 200/200 blocked; ... false positives: 0/50`, and the "not caught by design" rows N1-N6. `N=`, `SEED=`, `CLEAN=` change the corpus. |
 | `make attack FIXTURE=fixtures/judge-attack.json` | Scan **your own** planted agent: edit the fixture (instructions inside it), rerun, see its verdict and findings in the `judge` section. As committed it is clean. |
 | `make scan FILE=fixtures/scan/cheat.json` | One scan report (`scan-report.v1`); exit 0 clean, 2 blocked, 3 inconclusive. The cheat agent is blocked for `full_access_key_present`. |
 | `make mcp-test` | The MCP server's tests offline (18 tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
@@ -76,6 +76,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Recovery when a callback fails after its key batch ran: `recover_sale` (anyone, an hour after the buy) undoes a stuck buy whose `on_handover` never ran (the token already refunded the buyer; the seller keeps the deed); `recover_keys` (owner, an hour after the batch) clears keys stuck `incoming`/`retiring`; every key deletion is its own receipt, so one key that is already gone cannot fail the rest; callback gas grows with the state size; used NEAR AI signatures live in per-entry storage, not the state blob | offline (fault injection: the callback never runs) + property tests (dropped callbacks, then recovery) | A33 |
 | A backdoor proven while a buy settles undoes the buy: the buyer is refunded in full, the seller is paid nothing and keeps the frozen agent, and the buyer's key is deleted; the owner of a frozen agent can withdraw its treasury | offline + property tests | A34 |
 | `nft_resolve_transfer` tells the truth: if returning the deed is refused, it reports that the receiver kept it and emits no NEP-171 transfer back | offline | A35 |
+| The round-trip table does not cripple the buyer: each owner gets a quota of 1,000 new payout destinations (3,000 in all); `get_status` shows `paid_to_total` and the scan blocks an agent whose buyer would get less than a full quota (`paid_to_bloated`) | offline + `make attack` family A36 | A36 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
@@ -124,7 +125,7 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
   is not prevented; the earn-out floor covers it. Round trips the buyer
   creates do not reduce the seller's earn-out (A31).
 - The registry admin and payment token are build-time constants (`AGENT_EXIT_ADMIN`, `AGENT_EXIT_TOKEN`); the defaults are the offline fixture accounts, and the testnet deploy sets real ones.
-- After 1,000 distinct payout destinations, the owner can only withdraw to themselves or to accounts already paid (`PaidToFull`), so the round-trip flag stays correct.
+- After 1,000 new payout destinations per owner (3,000 over all owners), the owner can only withdraw to themselves or to accounts already paid (`PaidToFull`), so the round-trip flag stays correct.
 - A contract cannot list its own access keys. A hidden full-access key is
   caught by the buyer's scan before the sale, not by the contract; if a
   hidden key ever calls the contract, the contract freezes (A23). The full

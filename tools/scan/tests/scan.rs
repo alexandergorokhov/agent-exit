@@ -129,6 +129,11 @@ fn each_rule_blocks_alone() {
             i.listing.as_mut().unwrap().terms.window_secs = 60
         }),
         ("price_changed", |i| i.expected.price = Some("1".into())),
+        // A36: the buyer would inherit a full round-trip table.
+        ("paid_to_bloated", |i| {
+            i.contract.paid_to_total = Some(2_001)
+        }),
+        ("paid_to_bloated", |i| i.contract.paid_to_total = None),
         ("listing_version_mismatch", |i| {
             i.listing.as_mut().unwrap().listing_version = 2
         }),

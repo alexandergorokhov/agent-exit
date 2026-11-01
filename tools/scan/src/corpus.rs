@@ -93,6 +93,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             frozen: false,
             admin: Some(PUBLISHED_ADMIN.into()),
             token: Some(PUBLISHED_TOKEN.into()),
+            paid_to_total: Some(rng.below(1_500)),
         },
         listing: Some(ListingView {
             listing_version: version,
@@ -130,7 +131,7 @@ const OWNER_LIKE: [&str; 5] = [
     "list_for_sale",
 ];
 
-pub const FAMILIES: [Family; 18] = [
+pub const FAMILIES: [Family; 19] = [
     Family {
         id: "A1",
         name: "extra full-access key",
@@ -364,6 +365,17 @@ pub const FAMILIES: [Family; 18] = [
                 0 => t.earnout_bps = r.below(3_000) as u16,
                 1 => t.floor_bps = 5_001 + r.below(5_000) as u16,
                 _ => t.window_secs = 60 + r.below(30 * 86_400 - 60),
+            }
+        },
+    },
+    Family {
+        id: "A36",
+        name: "seller filled the round-trip table so the buyer inherits PaidToFull",
+        expect: "paid_to_bloated",
+        mutate: |i, r| {
+            i.contract.paid_to_total = match r.below(4) {
+                0 => None,
+                _ => Some(PAID_TO_TOTAL - PAID_TO_QUOTA + 1 + r.below(PAID_TO_QUOTA)),
             }
         },
     },

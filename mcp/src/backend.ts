@@ -312,6 +312,7 @@ export class TestnetBackend implements Backend {
         frozen: status.frozen,
         admin: status.admin,
         token: status.token,
+        paid_to_total: status.paid_to_total,
       },
       ...(listing ? { listing: listingView(listing) } : {}),
     }, expect);

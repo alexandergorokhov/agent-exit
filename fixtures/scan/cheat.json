@@ -99,7 +99,8 @@
     "open_auth_until": 0,
     "frozen": false,
     "admin": "admin.testnet",
-    "token": "xusd.testnet"
+    "token": "xusd.testnet",
+    "paid_to_total": 0
   },
   "_note": "Example: the backdoored `cheat` agent of the fixed world, with one extra full-access key.",
   "listing": {

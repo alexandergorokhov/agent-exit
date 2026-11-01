@@ -913,6 +913,28 @@ fn run() -> Value {
         json!({"owner": s.m().owner}),
     );
 
+    let mut s = translator_world();
+    for i in 0..agent_core::MAX_PAID_TO {
+        s.by_1y(ALICE)
+            .withdraw(U128(1), Some(acc(&format!("junk{i}.testnet"))));
+    }
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.callback(true).on_handover(1);
+    s.pay(PAYERS[0], 100 * USD);
+    let fresh = !panics_with("PaidToFull", || {
+        s.by_1y(BOB)
+            .withdraw(U128(10 * USD), Some(acc("bobs-bank.testnet")));
+    });
+    let st = s.by(MALLORY).get_status();
+    r.check(
+        "A36",
+        "a seller who filled the round-trip table (1000 junk destinations) does not leave the buyer with PaidToFull: the quota is per owner; get_status shows paid_to_total and the scan blocks a table the buyer could not fill",
+        fresh && st["paid_to_total"] == 1_001 && st["paid_to_owner"] == 1,
+        json!({"paid_to_total": st["paid_to_total"], "paid_to_owner": st["paid_to_owner"]}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({

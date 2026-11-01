@@ -168,7 +168,8 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     prop_assert!(e.verified <= e.counted && e.counted <= e.gross);
     // I11: payer map bounded.
     prop_assert!(m.meter.payers.len() <= meter::MAX_PAYERS);
-    prop_assert!(m.paid_to.len() <= MAX_PAID_TO);
+    prop_assert!(m.paid_to.len() <= MAX_PAID_TO_TOTAL);
+    prop_assert!(m.paid_to_this_owner() <= MAX_PAID_TO);
     // A25: incoming / retiring / known never overlap.
     prop_assert!(m.incoming.is_disjoint(&m.known_keys));
     prop_assert!(m.retiring.is_disjoint(&m.known_keys));
