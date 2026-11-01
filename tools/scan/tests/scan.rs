@@ -86,6 +86,13 @@ fn each_rule_blocks_alone() {
             i.contract.open_auth_until = i.now_ns + 1
         }),
         ("frozen", |i| i.contract.frozen = true),
+        ("registry_mismatch", |i| {
+            i.contract.admin = Some("alice.testnet".into())
+        }),
+        ("registry_mismatch", |i| {
+            i.contract.token = Some("fake-usd.testnet".into())
+        }),
+        ("registry_mismatch", |i| i.contract.token = None),
         ("known_keys_hash_mismatch", |i| {
             i.contract.known_keys_hash = "00".into()
         }),
@@ -155,4 +162,11 @@ fn not_caught_list_is_documented() {
     for w in ["prompts", "API keys", "fresh"] {
         assert!(doc.contains(w), "{w}");
     }
+}
+
+#[test]
+fn a26_published_admin_and_token_match_the_contract() {
+    let src = std::fs::read_to_string(root().join("contracts/agent/src/lib.rs")).unwrap();
+    assert!(src.contains(&format!("None => \"{PUBLISHED_ADMIN}\"")));
+    assert!(src.contains(&format!("None => \"{PUBLISHED_TOKEN}\"")));
 }

@@ -26,13 +26,14 @@ pub const RUNNER_METHODS: [&str; 4] = ["heartbeat", "accept_job", "pay", "pay_ba
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
-pub const PUBLISHED_METHODS: [&str; 40] = [
+pub const PUBLISHED_METHODS: [&str; 41] = [
     "new",
     "add_signer",
     "remove_signer",
     "get_signers",
     "set_runner_key",
     "on_runner_key",
+    "on_keys_deleted",
     "list_for_sale",
     "cancel_listing",
     "ft_on_transfer",
@@ -68,6 +69,12 @@ pub const PUBLISHED_METHODS: [&str; 40] = [
     "nft_revoke_all",
     "nft_is_approved",
 ];
+
+/// Registry admin and payment token of the published release (A26). The
+/// contract compiles them in; a deployment showing other values is not the
+/// published release, whatever its code hash says.
+pub const PUBLISHED_ADMIN: &str = "admin.testnet";
+pub const PUBLISHED_TOKEN: &str = "xusd.testnet";
 
 /// Method names that let someone change the code or the keys: an upgrade
 /// path or a self-deploy. Their presence blocks even if the hash looks right.
@@ -127,6 +134,12 @@ pub struct Expected {
     pub code_hash: String,
     /// The listing version the buyer was quoted.
     pub listing_version: u64,
+    /// Registry admin of the release (default `PUBLISHED_ADMIN`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub admin: Option<String>,
+    /// Payment token of the release (default `PUBLISHED_TOKEN`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -156,6 +169,11 @@ pub struct ContractView {
     pub open_auth_until: u64,
     #[serde(default)]
     pub frozen: bool,
+    /// `get_status.admin` / `get_status.token`. Missing = cannot check = block.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub admin: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -325,6 +343,24 @@ pub fn scan(i: &ScanInput) -> Report {
             f.push(block(
                 "unexpected_method",
                 format!("method `{m}` is not in the published contract"),
+            ));
+        }
+    }
+
+    // A26: admin and token must be the published release's.
+    let want_admin = i.expected.admin.as_deref().unwrap_or(PUBLISHED_ADMIN);
+    let want_token = i.expected.token.as_deref().unwrap_or(PUBLISHED_TOKEN);
+    for (what, want, got) in [
+        ("admin", want_admin, i.contract.admin.as_deref()),
+        ("token", want_token, i.contract.token.as_deref()),
+    ] {
+        if got != Some(want) {
+            f.push(block(
+                "registry_mismatch",
+                format!(
+                    "{what} is {}, the published release uses {want}",
+                    got.unwrap_or("not shown")
+                ),
             ));
         }
     }

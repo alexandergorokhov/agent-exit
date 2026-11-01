@@ -65,6 +65,15 @@ fn claim(s: &Sim, who: &str) -> u128 {
     s.c.get_claimable(acc(who)).0
 }
 
+/// alice's unwithdrawn revenue at the sale (360.00 counted + 140.00 flagged),
+/// credited to her claimable by the sale since A29.
+const SELLER_REVENUE: u128 = 500 * USD;
+
+/// alice's earn-out so far: her claimable minus the revenue settled at the sale.
+fn earnout(s: &Sim) -> u128 {
+    claim(s, ALICE) - SELLER_REVENUE
+}
+
 fn run() -> Value {
     let mut r = Report { checks: vec![] };
 
@@ -93,7 +102,7 @@ fn run() -> Value {
     // S1: listing.
     let mut s = translator_world();
     let card = s
-        .by(ALICE)
+        .by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     r.check(
         "S1",
@@ -222,8 +231,8 @@ fn run() -> Value {
     let cl = claim(&s, ALICE);
     r.check(
         "E6",
-        "seller payout fails: 700.00 claimable, solvency holds",
-        cl == 700 * USD && s.m().solvent(),
+        "seller payout fails: 700.00 claimable (plus the 500.00 revenue settled at the sale), solvency holds",
+        cl == 700 * USD + SELLER_REVENUE && s.m().solvent(),
         json!({"claimable": usd(cl)}),
     );
 
@@ -275,10 +284,10 @@ fn run() -> Value {
         s.now = T0 + (10 + i) * DAY;
         s.pay(PAYERS[0], 25 * USD);
     }
-    let mid = claim(&s, ALICE);
+    let mid = earnout(&s);
     s.now = T0 + 41 * DAY;
     s.by(MALLORY).finalize_earnout(1);
-    let (a7, b7) = (claim(&s, ALICE), claim(&s, BOB));
+    let (a7, b7) = (earnout(&s), claim(&s, BOB));
     r.check(
         "S7",
         "4 x 25.00 after sale release 50.00; floor tops up 10.00; alice 60.00, bob 240.00",
@@ -289,7 +298,7 @@ fn run() -> Value {
     s.now = T0 + 41 * DAY;
     let f1 = s.by(MALLORY).finalize_earnout(1);
     let f2 = s.by(CAROL).finalize_earnout(1);
-    let (a8, b8) = (claim(&s, ALICE), claim(&s, BOB));
+    let (a8, b8) = (earnout(&s), claim(&s, BOB));
     r.check(
         "S8",
         "silence pays the floor: alice 60.00, bob 240.00",
@@ -309,7 +318,7 @@ fn run() -> Value {
     }
     s.now = T0 + 41 * DAY;
     s.by(MALLORY).finalize_earnout(1);
-    let (a9, b9) = (claim(&s, ALICE), claim(&s, BOB));
+    let (a9, b9) = (earnout(&s), claim(&s, BOB));
     r.check(
         "S9",
         "600.00 counted after sale: release caps at 300.00, nothing back to bob",
@@ -318,7 +327,7 @@ fn run() -> Value {
     );
     let mut s = sold_translator();
     s.pay(ALICE, 100 * USD);
-    let wash = claim(&s, ALICE);
+    let wash = earnout(&s);
     r.check(
         "S10",
         "alice pays 100.00 after the sale: flagged self, releases 0.00",
@@ -403,7 +412,7 @@ fn run() -> Value {
 
     // S15: resale.
     let mut s = sold_translator();
-    s.by(BOB)
+    s.by_1y(BOB)
         .list_for_sale(U128(2_000 * USD), CODE_HASH.into(), None);
     s.buy(CAROL, 2_000 * USD, CAROL_RUNNER);
     s.callback(true).on_handover(2);
@@ -445,7 +454,7 @@ fn run() -> Value {
         ok && plain,
         json!({"signer": test_signer(), "fixture": "fixtures/test-signatures/translator.json (TEST keys)"}),
     );
-    s.ft(PAYERS[2], 12 * USD, &job_msg(&job(0)), 100);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
     let e11 = note();
     r.check(
         "E11",
@@ -470,7 +479,7 @@ fn run() -> Value {
     let e13 = note();
     let mut forged = job(1);
     forged["response_sha256"] = json!("0".repeat(64));
-    s.ft(PAYERS[2], 12 * USD, &job_msg(&forged), 100);
+    s.ft(PAYERS[1], 12 * USD, &job_msg(&forged), 100);
     let e13b = note();
     r.check(
         "E13",
@@ -491,7 +500,7 @@ fn run() -> Value {
     s.by(ADMIN).add_signer(rogue);
     s.by(ADMIN).remove_signer(test_signer());
     let kept = s.c.get_earnings().verified;
-    s.ft(PAYERS[3], 12 * USD, &job_msg(&job(2)), 100);
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&job(2)), 100);
     let e14 = note();
     r.check(
         "E14",
@@ -589,7 +598,7 @@ fn run() -> Value {
     }
     s.runner(key(ALICE_RUNNER))
         .pay(acc(SUMMARIZER), U128(50 * USD));
-    s.by(ALICE)
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     s.buy(BOB, 1_000 * USD, BOB_RUNNER);
     let id = s.m().pending.as_ref().map(|p| p.sale_id).unwrap_or(0);
@@ -658,7 +667,7 @@ fn run() -> Value {
         s.pay(p, 60 * USD);
     }
     let card = s
-        .by(ALICE)
+        .by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     let paused = panics_with("Listed: spending paused", || {
         s.runner(key(ALICE_RUNNER))
@@ -675,6 +684,101 @@ fn run() -> Value {
         "seller drains the treasury while listed: pay fails 'Listed: spending paused'; buy refuses (full refund) if the treasury is below the listing's snapshot",
         paused && kept == 60 * USD && card["treasury_snapshot"] == "60000000" && stale,
         json!({"treasury_snapshot": card["treasury_snapshot"], "error": "Listed: spending paused", "stale_buy": "TreasuryChanged"}),
+    );
+
+    // Security review 1 (A25-A30).
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    let gap = panics_with("NotRunner", || {
+        s.runner(key(BOB_RUNNER)).heartbeat();
+    });
+    s.callback(true).on_handover(1);
+    let mut s2 = sold_translator();
+    s2.by_1y(BOB).set_runner_key(key(CAROL_RUNNER));
+    let rot = panics_with("NotRunner", || {
+        s2.runner(key(BOB_RUNNER)).heartbeat();
+    });
+    let mut s3 = sold_translator();
+    s3.by_1y(BOB)
+        .nft_transfer(acc(CAROL), DEED_ID.into(), None, None);
+    let xfer = panics_with("NotRunner", || {
+        s3.runner(key(BOB_RUNNER)).heartbeat();
+    });
+    r.check(
+        "A25",
+        "buyer or owner cannot freeze the agent with their own key in a key-batch gap (handover, rotation, deed transfer): NotRunner, escrow kept",
+        gap && rot && xfer
+            && !s.m().frozen && !s2.m().frozen && !s3.m().frozen
+            && claim(&s, BOB) == 0 && s.m().escrow_left() == 300 * USD,
+        json!({"escrow_left": usd(s.m().escrow_left())}),
+    );
+    let mut s = translator_world();
+    let st = s.by(ALICE).get_status();
+    let not_admin = panics_with("NotAdmin", || {
+        s.by(ALICE).add_signer(test_signer());
+    });
+    r.check(
+        "A26",
+        "admin, token and signer list are not init arguments: pinned in the code, shown in get_status, scan blocks a mismatch",
+        st["admin"] == agent_exit::REGISTRY_ADMIN && st["token"] == agent_exit::PAYMENT_TOKEN && not_admin,
+        json!({"admin": st["admin"], "token": st["token"]}),
+    );
+    let mut s = Sim::new(AGENT, ALICE);
+    s.ft("sock-puppet.testnet", 100_000 * USD, &job_msg(&job(0)), 100);
+    let wp = note();
+    s.ft(PAYERS[0], 100_000 * USD, &job_msg(&job(0)), 100);
+    let wa = note();
+    r.check(
+        "A27",
+        "a NEAR AI signature verifies only its own payer, amount and job: WrongPayer, WrongAmount",
+        wp == "WrongPayer" && wa == "WrongAmount" && s.c.get_earnings().verified == 0,
+        json!({"reasons": [wp, wa]}),
+    );
+    let mut s = translator_world();
+    let no_yocto = ["list", "key", "limits"].iter().all(|w| {
+        panics_with("1 yoctoNEAR", || match *w {
+            "list" => {
+                s.by(ALICE).list_for_sale(U128(USD), CODE_HASH.into(), None);
+            }
+            "key" => {
+                s.by(ALICE).set_runner_key(key(9));
+            }
+            _ => {
+                s.by(ALICE).set_limits(demo_limits());
+            }
+        })
+    });
+    r.check(
+        "A28",
+        "list_for_sale, cancel_listing, set_runner_key, set_limits, nft_transfer need 1 yoctoNEAR (a function-call key cannot sell the agent)",
+        no_yocto && s.m().status == Status::Active,
+        json!({}),
+    );
+    let mut s = sold_translator();
+    let bob_cannot = panics_with("InsufficientFunds", || {
+        s.by_1y(BOB).withdraw(U128(USD), None);
+    });
+    r.check(
+        "A29",
+        "the seller's unwithdrawn revenue (500.00) is settled to the seller at the sale, not passed to the buyer",
+        bob_cannot && claim(&s, ALICE) == 500 * USD && s.m().owner_free == 0,
+        json!({"seller_claimable": usd(claim(&s, ALICE))}),
+    );
+    let mut s = translator_world();
+    for i in 0..agent_core::MAX_PAID_TO {
+        s.by_1y(ALICE)
+            .withdraw(U128(1), Some(acc(&format!("junk{i}.testnet"))));
+    }
+    let full = panics_with("PaidToFull", || {
+        s.by_1y(ALICE)
+            .withdraw(U128(USD), Some(acc("friend.testnet")));
+    });
+    s.pay("junk7.testnet", 10 * USD);
+    r.check(
+        "A30",
+        "round-trip tracking never saturates: once 1000 destinations are tracked, sending to a new one is refused (PaidToFull); tracked payers stay flagged",
+        full && s.c.get_earnings().flagged_round_trip == 10 * USD,
+        json!({}),
     );
 
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();

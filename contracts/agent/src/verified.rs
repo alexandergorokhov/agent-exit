@@ -7,8 +7,11 @@
 //! - `env::ecrecover` -> 64-byte public key -> address = keccak256(pk)[12..];
 //! - the address must be in the admin-set signer list (not a constant: the
 //!   NEAR AI signer may rotate, gate G6);
-//! - the request (JSON, at most 4 KB) must name this agent and this job in
-//!   `metadata.agent` / `metadata.job_id`;
+//! - the request (JSON, at most 3 KB) must name this agent, this job, this
+//!   payer and this amount in `metadata.agent` / `metadata.job_id` /
+//!   `metadata.payer` / `metadata.amount` (base units, a string), so one
+//!   signature cannot verify a bigger payment or a payment by someone else
+//!   (A27);
 //! - each signature verifies at most once (id = sha256(r || s), so flipping
 //!   `v` does not make a new id; high-s signatures are refused by ecrecover's
 //!   malleability flag).
@@ -89,9 +92,12 @@ pub fn hex_decode(s: &str) -> Option<Vec<u8>> {
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn check(
     p: &NearAiProof,
     agent: &str,
+    payer: &str,
+    amount: u128,
     job_id: Option<&str>,
     signers: &BTreeSet<String>,
     used: &BTreeSet<[u8; 32]>,
@@ -119,6 +125,12 @@ pub fn check(
     }
     if req["metadata"]["job_id"] != job_id {
         return No("WrongJob");
+    }
+    if req["metadata"]["payer"] != payer {
+        return No("WrongPayer");
+    }
+    if req["metadata"]["amount"] != amount.to_string().as_str() {
+        return No("WrongAmount");
     }
     let Some(sig) = hex_decode(&p.signature) else {
         return No("BadSignature");

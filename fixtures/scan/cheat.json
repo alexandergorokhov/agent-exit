@@ -97,7 +97,9 @@
     "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
     "open_approvals": 0,
     "open_auth_until": 0,
-    "frozen": false
+    "frozen": false,
+    "admin": "admin.testnet",
+    "token": "xusd.testnet"
   },
   "_note": "Example: the backdoored `cheat` agent of the fixed world, with one extra full-access key."
 }

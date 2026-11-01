@@ -169,7 +169,7 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
         .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
         .with_init_call(
             "new",
-            json!({"owner_id": alice.id, "token_id": xusd.id, "admin_id": xusd.id}),
+            json!({"owner_id": alice.id}),
         )
         .unwrap()
         .with_signer(agent.signer.clone())
@@ -177,6 +177,15 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
         .await
         .unwrap()
         .assert_success();
+    // The token and admin are compiled in (A26): `make test-sandbox` builds
+    // the wasm with AGENT_EXIT_TOKEN=xusd.sandbox.
+    let st = w.view(&agent.id, "get_status", json!({})).await;
+    assert_eq!(
+        st["token"].as_str(),
+        Some(xusd.id.as_str()),
+        "build the sandbox wasm with AGENT_EXIT_TOKEN={}",
+        xusd.id
+    );
 
     let alice_runner = generate_secret_key().unwrap();
     w.call(
@@ -184,7 +193,7 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
         &agent.id,
         "set_runner_key",
         json!({"public_key": alice_runner.public_key().to_string()}),
-        0,
+        1,
     )
     .await
     .unwrap();
@@ -203,7 +212,7 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
         &agent.id,
         "list_for_sale",
         json!({"price": (1_000 * USD).to_string(), "code_hash": "sandbox"}),
-        0,
+        1,
     )
     .await
     .unwrap();

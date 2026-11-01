@@ -52,8 +52,8 @@ fn contract_layer() -> Vec<Value> {
 
     let mut s = listed_translator();
     let (v, h) = (s.m().listing_version, s.c.known_keys_hash());
-    s.by(ALICE).cancel_listing();
-    s.by(ALICE)
+    s.by_1y(ALICE).cancel_listing();
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_500 * USD), CODE_HASH.into(), None);
     let r = s.ft(BOB, 1_500 * USD, &Sim::buy_msg(v, &h, BOB_RUNNER), 300);
     row(
@@ -75,7 +75,7 @@ fn contract_layer() -> Vec<Value> {
     s.by_1y(ALICE)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     let a8 = panics_with("OpenApproval", || {
-        s.by(ALICE)
+        s.by_1y(ALICE)
             .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     });
     row(
@@ -98,6 +98,18 @@ fn contract_layer() -> Vec<Value> {
         "A16",
         "deed moved outside buy(): runner keys deleted, agent paused",
         key_actions(AGENT) == vec![("delete".to_string(), key_str(ALICE_RUNNER))] && s.m().paused,
+    );
+
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    let gap = panics_with("NotRunner", || {
+        s.runner(key(BOB_RUNNER)).heartbeat();
+    });
+    s.callback(true).on_handover(1);
+    row(
+        "A25",
+        "buyer signs with their own key before the handover callback to fake a backdoor: NotRunner, no freeze, escrow kept",
+        gap && !s.m().frozen && s.m().escrow_left() == 300 * USD,
     );
 
     let mut s = sold_translator();

@@ -79,6 +79,7 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
             "known_keys": st["known_keys"], "known_keys_hash": st["known_keys_hash"],
             "open_approvals": st["open_approvals"], "open_auth_until": 0,
             "frozen": st["frozen"],
+            "admin": st["admin"], "token": st["token"],
         },
     })
 }
@@ -107,7 +108,7 @@ fn build() -> String {
 
     // cheat, listed by alice at 500.00, with a hidden full-access key.
     let mut c = cheat_world();
-    c.by(ALICE)
+    c.by_1y(ALICE)
         .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
     let cheat = snapshot(
         &mut c,
@@ -136,7 +137,7 @@ fn build() -> String {
     let probes = json!({
         "withdraw": refusal(|| { t.by_1y(ALICE).withdraw(U128(USD), None); }),
         "set_limits": refusal(|| { t.by_1y(ALICE).set_limits(demo_limits()); }),
-        "list_for_sale": refusal(|| { t.by(ALICE).list_for_sale(U128(USD), CODE_HASH.into(), None); }),
+        "list_for_sale": refusal(|| { t.by_1y(ALICE).list_for_sale(U128(USD), CODE_HASH.into(), None); }),
         "nft_transfer": refusal(|| {
             t.by_1y(ALICE).nft_transfer(acc(ALICE), agent_exit::DEED_ID.into(), None, None);
         }),
@@ -146,7 +147,7 @@ fn build() -> String {
 
     // Recorded resale listing (S15): summarizer lists translator at 1,200.00.
     let resale_card = t
-        .by(SUMMARIZER)
+        .by_1y(SUMMARIZER)
         .list_for_sale(U128(1_200 * USD), CODE_HASH.into(), None);
     let after_relist = snapshot(&mut t, owners, None);
 

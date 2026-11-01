@@ -10,6 +10,10 @@ use crate::sim::*;
 use crate::*;
 use agent_core::Status;
 
+/// alice's unwithdrawn revenue in the fixed world at the sale: 360.00 counted
+/// + 140.00 flagged = 500.00. Since A29 it is credited to alice, not the buyer.
+const SELLER_REVENUE: u128 = 500 * USD;
+
 fn refused(reason: &str) -> bool {
     events("refused").iter().any(|e| e["reason"] == reason)
 }
@@ -44,7 +48,7 @@ fn s1_list_clean() {
     let mut s = translator_world();
     assert_eq!(s.c.known_keys(), vec![key_str(ALICE_RUNNER)]);
     let card = s
-        .by(ALICE)
+        .by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     assert_eq!(card["schema"], "listing.v1");
     assert_eq!(card["listing_version"], 1);
@@ -60,7 +64,7 @@ fn s1_list_clean() {
 #[test]
 fn s1_runner_key_is_function_call_only() {
     let mut s = Sim::new(AGENT, ALICE);
-    s.by(ALICE).set_runner_key(key(ALICE_RUNNER));
+    s.by_1y(ALICE).set_runner_key(key(ALICE_RUNNER));
     assert_eq!(
         key_actions(AGENT),
         vec![("add_fc".to_string(), key_str(ALICE_RUNNER))]
@@ -161,8 +165,8 @@ fn a7_terms_changed_after_scan() {
     let seen_version = s.m().listing_version;
     let h = s.c.known_keys_hash();
     // The seller re-lists at another price after bob scanned.
-    s.by(ALICE).cancel_listing();
-    s.by(ALICE)
+    s.by_1y(ALICE).cancel_listing();
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_500 * USD), CODE_HASH.into(), None);
     let r = s.ft(
         BOB,
@@ -232,10 +236,14 @@ fn e6_payout_fallback() {
     // alice is not registered on the token: the push fails.
     s.callback(false)
         .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
-    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 700 * USD);
+    // 700.00 payout + alice's unwithdrawn revenue settled at the sale (A29).
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 700 * USD + SELLER_REVENUE);
     assert!(s.m().solvent());
     s.by(ALICE).claim();
-    assert_eq!(ft_transfers(), vec![(ALICE.to_string(), 700 * USD)]);
+    assert_eq!(
+        ft_transfers(),
+        vec![(ALICE.to_string(), 700 * USD + SELLER_REVENUE)]
+    );
     assert_eq!(s.c.get_claimable(acc(ALICE)).0, 0);
 }
 
@@ -338,7 +346,7 @@ fn e25_approval_blocks_listing_and_is_cleared_on_transfer() {
     s.by_1y(ALICE)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     assert!(panics(|| {
-        s.by(ALICE)
+        s.by_1y(ALICE)
             .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     }));
     assert!(s.c.nft_is_approved(DEED_ID.into(), acc(MALLORY), None));
@@ -354,7 +362,7 @@ fn a8_open_approval_list_refused() {
     let mut s = translator_world();
     s.by_1y(ALICE)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
-    s.by(ALICE)
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
 }
 
@@ -363,7 +371,7 @@ fn a8_open_approval_list_refused() {
 fn e26_cancel_during_settling() {
     let mut s = listed_translator();
     s.buy(BOB, 1_000 * USD, BOB_RUNNER);
-    s.by(ALICE).cancel_listing();
+    s.by_1y(ALICE).cancel_listing();
 }
 
 #[test]
@@ -408,10 +416,10 @@ fn s7_earnout_partial_via_contract() {
         s.pay(PAYERS[0], 25 * USD);
         assert_eq!(events("earnout_release")[0]["amount"], "12500000");
     }
-    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 50 * USD);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, SELLER_REVENUE + 50 * USD);
     s.now = T0 + 41 * DAY;
     s.by(MALLORY).finalize_earnout(1);
-    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 60 * USD);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, SELLER_REVENUE + 60 * USD);
     assert_eq!(s.c.get_claimable(acc(BOB)).0, 240 * USD);
 }
 
@@ -421,7 +429,7 @@ fn s10_wash_after_sale_via_contract() {
     s.pay(ALICE, 100 * USD);
     assert_eq!(events("payment")[0]["flags"]["self"], true);
     assert!(events("earnout_release").is_empty());
-    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 0);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, SELLER_REVENUE);
 }
 
 #[test]
@@ -440,19 +448,29 @@ fn a16_e24_deed_moved_outside_buy_deletes_runner_keys() {
         MALLORY
     );
     // The new owner sets a runner key; the agent runs again.
-    s.by(MALLORY).set_runner_key(key(CAROL_RUNNER));
+    s.by_1y(MALLORY).set_runner_key(key(CAROL_RUNNER));
     s.callback(true)
-        .on_runner_key(vec![], key_str(CAROL_RUNNER));
+        .on_runner_key(vec![], vec![], key_str(CAROL_RUNNER));
     assert_eq!(s.runner(key(CAROL_RUNNER)).heartbeat()["ok"], true);
 }
 
 #[test]
-fn a16_old_runner_key_after_transfer_proves_backdoor() {
-    // The deleted key cannot sign on chain; if a self-call still arrives with
-    // it, the key was never really gone: freeze (A23 path).
+fn a16_old_runner_key_after_transfer() {
     let mut s = translator_world();
     s.by_1y(ALICE)
         .nft_transfer(acc(MALLORY), DEED_ID.into(), None, None);
+    // Before the delete is confirmed the key may still be on chain: a call
+    // signed by it is NotRunner, not a backdoor (A25).
+    let msg = panic_msg(|| {
+        s.runner(key(ALICE_RUNNER)).heartbeat();
+    });
+    assert_eq!(msg, "NotRunner");
+    assert!(!s.m().frozen);
+    s.callback(true)
+        .on_keys_deleted(vec![key_str(ALICE_RUNNER)]);
+    assert!(s.m().retiring.is_empty());
+    // After a confirmed delete the key cannot sign on chain; a self-call that
+    // still arrives with it means the key was never really gone: freeze (A23).
     assert_eq!(s.runner(key(ALICE_RUNNER)).heartbeat()["frozen"], true);
 }
 
@@ -526,7 +544,7 @@ fn s19_dynamic_metadata() {
 #[test]
 fn s15_resale_via_contract() {
     let mut s = sold_translator();
-    s.by(BOB)
+    s.by_1y(BOB)
         .list_for_sale(U128(2_000 * USD), CODE_HASH.into(), None);
     assert_eq!(s.buy(CAROL, 2_000 * USD, CAROL_RUNNER), None);
     assert_eq!(
@@ -560,12 +578,12 @@ fn i4_access_matrix_owner_methods() {
     type Call = fn(&mut Sim, &str);
     let calls: Vec<(&str, Call)> = vec![
         ("set_runner_key", |s, w| {
-            s.by(w).set_runner_key(key(77));
+            s.by_1y(w).set_runner_key(key(77));
         }),
         ("list_for_sale", |s, w| {
-            s.by(w).list_for_sale(U128(USD), CODE_HASH.into(), None);
+            s.by_1y(w).list_for_sale(U128(USD), CODE_HASH.into(), None);
         }),
-        ("cancel_listing", |s, w| s.by(w).cancel_listing()),
+        ("cancel_listing", |s, w| s.by_1y(w).cancel_listing()),
         ("withdraw", |s, w| {
             s.by_1y(w).withdraw(U128(USD), None);
         }),
@@ -591,7 +609,7 @@ fn i4_access_matrix_owner_methods() {
         for (name, f) in &calls {
             let mut s = sold_translator();
             if *name == "cancel_listing" {
-                s.by(BOB)
+                s.by_1y(BOB)
                     .list_for_sale(U128(2_000 * USD), CODE_HASH.into(), None);
             }
             let before = s.m().clone();
@@ -635,10 +653,14 @@ fn e11_same_signature_twice() {
     let mut s = Sim::new(AGENT, ALICE);
     let msg = job_msg(&job(0));
     s.ft(PAYERS[0], 12 * USD, &msg, 100);
-    s.ft(PAYERS[1], 12 * USD, &msg, 100);
+    // The same payer replays it.
+    s.ft(PAYERS[0], 12 * USD, &msg, 100);
     assert_eq!(verify_note(), "SignatureUsed");
+    // Another payer replays it: bound to the payer (A27).
+    s.ft(PAYERS[1], 12 * USD, &msg, 100);
+    assert_eq!(verify_note(), "WrongPayer");
     let x = s.c.get_earnings();
-    assert_eq!((x.counted, x.verified), (24 * USD, 12 * USD));
+    assert_eq!((x.counted, x.verified), (36 * USD, 12 * USD));
 }
 
 #[test]
@@ -651,7 +673,7 @@ fn e11_flipped_v_is_the_same_signature() {
     let sig = e["signature"].as_str().unwrap();
     let v = u8::from_str_radix(&sig[128..], 16).unwrap() - 27;
     e2["signature"] = json!(format!("{}{:02x}", &sig[..128], v));
-    s.ft(PAYERS[1], 12 * USD, &job_msg(&e2), 100);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&e2), 100);
     assert_eq!(verify_note(), "SignatureUsed");
 }
 
@@ -677,7 +699,7 @@ fn e12_signature_for_another_agent() {
 fn e13_forged_wrong_signer_bad_v_bad_length() {
     let mut s = Sim::new(AGENT, ALICE);
     // Signed by a key nobody allowlisted.
-    s.ft(PAYERS[0], 12 * USD, &job_msg(&fixtures()["rogue"]), 100);
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&fixtures()["rogue"]), 100);
     assert_eq!(verify_note(), "UnknownSigner");
     let e = job(0);
     let sig = e["signature"].as_str().unwrap().to_string();
@@ -689,13 +711,13 @@ fn e13_forged_wrong_signer_bad_v_bad_length() {
     for (bad, want) in cases {
         let mut x = e.clone();
         x["signature"] = json!(bad);
-        s.ft(PAYERS[1], 12 * USD, &job_msg(&x), 100);
+        s.ft(PAYERS[0], 12 * USD, &job_msg(&x), 100);
         assert_eq!(verify_note(), want);
     }
     // Tampered response hash: recovers some other address.
     let mut x = e.clone();
     x["response_sha256"] = json!("0".repeat(64));
-    s.ft(PAYERS[2], 12 * USD, &job_msg(&x), 100);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&x), 100);
     assert_eq!(verify_note(), "UnknownSigner");
     let earn = s.c.get_earnings();
     assert_eq!(earn.verified, 0);
@@ -728,6 +750,7 @@ fn a13_replayed_or_forged_not_verified_flagged_not_verified() {
     let mut s = Sim::new(AGENT, ALICE);
     s.ft(ALICE, 12 * USD, &job_msg(&job(0)), 100);
     assert_eq!(events("payment")[0]["verified"], false);
+    assert_eq!(verify_note(), "WrongPayer");
     // ...and does not burn the signature.
     s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
     assert_eq!(events("payment")[0]["verified"], true);
@@ -851,7 +874,7 @@ fn s13_constraints_owner_only() {
 fn s13_limits_refused_while_listed_and_move_with_the_deed() {
     let mut s = translator_world();
     s.by_1y(ALICE).set_limits(demo_limits());
-    s.by(ALICE)
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     let msg = panic_msg(|| {
         s.by_1y(ALICE).set_limits(demo_limits());
@@ -879,7 +902,7 @@ fn e18_cap_resets_at_sale() {
     assert!(panics(|| {
         s.runner(key(ALICE_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
     }));
-    s.by(ALICE)
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
     let id = s.m().pending.as_ref().unwrap().sale_id;
@@ -988,7 +1011,7 @@ fn listed_with_treasury() -> Sim {
         assert_eq!(s.pay(p, 60 * USD), Some(0));
     }
     let card = s
-        .by(ALICE)
+        .by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     assert_eq!(card["treasury_snapshot"], "60000000");
     s
@@ -1005,7 +1028,7 @@ fn a24_no_spending_while_listed() {
     assert_eq!(msg, "Listed: spending paused");
     assert_eq!(s.m(), &before);
     // Cancelling the listing resumes spending.
-    s.by(ALICE).cancel_listing();
+    s.by_1y(ALICE).cancel_listing();
     let r = s
         .runner(key(ALICE_RUNNER))
         .pay(acc(SUMMARIZER), U128(10 * USD));

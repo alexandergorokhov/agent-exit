@@ -18,14 +18,15 @@ pub const DAY: u64 = agent_core::DAY_NS;
 
 pub const AGENT: &str = "translator.testnet";
 pub const CHEAT: &str = "cheat.testnet";
-pub const TOKEN: &str = "xusd.testnet";
+/// The pinned payment token (A26).
+pub const TOKEN: &str = crate::PAYMENT_TOKEN;
 pub const ALICE: &str = "alice.testnet";
 pub const X_ALICE: &str = "x.alice.testnet";
 pub const BOB: &str = "bob.testnet";
 pub const CAROL: &str = "carol.testnet";
 pub const MALLORY: &str = "mallory.testnet";
 /// Registry admin: edits the NEAR AI signer list only.
-pub const ADMIN: &str = "admin.testnet";
+pub const ADMIN: &str = crate::REGISTRY_ADMIN;
 pub const PAYERS: [&str; 6] = [
     "p1.testnet",
     "p2.testnet",
@@ -85,12 +86,9 @@ impl Sim {
             balance: NearToken::from_near(10),
         };
         s.env(&s.call(agent));
-        s.c = AgentExit::new(
-            acc(owner),
-            acc(TOKEN),
-            acc(ADMIN),
-            Some(vec![test_signer()]),
-        );
+        s.c = AgentExit::new(acc(owner));
+        // The registry admin allowlists the LOCAL TEST signer.
+        s.by(ADMIN).add_signer(test_signer());
         s
     }
 
@@ -312,9 +310,9 @@ pub fn ft_transfers() -> Vec<(String, u128)> {
 /// ends on day 10.
 pub fn translator_world() -> Sim {
     let mut s = Sim::new(AGENT, ALICE);
-    s.by(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
+    s.by_1y(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
     s.callback(true)
-        .on_runner_key(vec![], key_str(ALICE_RUNNER));
+        .on_runner_key(vec![], vec![], key_str(ALICE_RUNNER));
     // 10 of the 30 payer payments carry a NEAR AI-shaped signature (TEST
     // FIXTURES): all 6 payers on day 0, p1-p4 on day 1. 10 x 12.00 = 120.00.
     let mut signed = 0;
@@ -341,9 +339,9 @@ pub fn translator_world() -> Sim {
 /// `cheat`: 500.00 gross, all from alice and alice's sub-accounts.
 pub fn cheat_world() -> Sim {
     let mut s = Sim::new(CHEAT, ALICE);
-    s.by(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
+    s.by_1y(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
     s.callback(true)
-        .on_runner_key(vec![], key_str(ALICE_RUNNER));
+        .on_runner_key(vec![], vec![], key_str(ALICE_RUNNER));
     for day in 0..5u64 {
         s.now = T0 + day * DAY;
         assert_eq!(s.pay(ALICE, 60 * USD), Some(0));
@@ -356,7 +354,7 @@ pub fn cheat_world() -> Sim {
 /// `translator` listed at 1,000.00 with default terms (30% earn-out).
 pub fn listed_translator() -> Sim {
     let mut s = translator_world();
-    s.by(ALICE)
+    s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     s
 }

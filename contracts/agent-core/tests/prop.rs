@@ -19,6 +19,7 @@ static FINALIZED: AtomicUsize = AtomicUsize::new(0);
 static SPENDS: AtomicUsize = AtomicUsize::new(0);
 static CAP_HITS: AtomicUsize = AtomicUsize::new(0);
 static LISTED_REFUSALS: AtomicUsize = AtomicUsize::new(0);
+static PENDING_CALLS: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -61,6 +62,21 @@ enum Act {
     SetLimits(usize, u64, u64, u8, u16),
     /// Runner pays ACTORS[payee] from the treasury; `known` = signed by the runner key.
     Spend(usize, u64, bool),
+    /// A key batch callback (rotation or deed-transfer deletion) runs.
+    KeysDone(usize, bool),
+    /// A self-call signed by a key in `incoming` or `retiring` (A25).
+    PendingKeyCall(bool),
+}
+
+/// A key batch waiting for its callback.
+#[derive(Debug, Clone)]
+enum KeyBatch {
+    Rotation {
+        old: Vec<Key>,
+        deleted: Vec<Key>,
+        new_key: Key,
+    },
+    Deletion(Vec<Key>),
 }
 
 fn act() -> impl Strategy<Value = Act> {
@@ -85,6 +101,8 @@ fn act() -> impl Strategy<Value = Act> {
         2 => (a.clone(), 0u64..5_000_000, 0u64..80_000_000, any::<u8>(), 0u16..=10_000)
             .prop_map(|(c, f, cap, mask, t)| Act::SetLimits(c, f, cap, mask, t)),
         4 => (a.clone(), 1u64..30_000_000, prop::bool::weighted(0.995)).prop_map(|(p, x, k)| Act::Spend(p, x, k)),
+        3 => (0usize..4, prop::bool::weighted(0.9)).prop_map(|(i, ok)| Act::KeysDone(i, ok)),
+        1 => any::<bool>().prop_map(Act::PendingKeyCall),
     ]
 }
 
@@ -97,6 +115,7 @@ struct World {
     /// Highest daily cap in force at any point of the current (epoch, day).
     max_cap_today: Amount,
     cap_day: (u64, u64),
+    key_batches: Vec<KeyBatch>,
 }
 
 fn pending_amount(m: &Machine) -> Amount {
@@ -133,6 +152,9 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     // I11: payer map bounded.
     prop_assert!(m.meter.payers.len() <= meter::MAX_PAYERS);
     prop_assert!(m.paid_to.len() <= MAX_PAID_TO);
+    // A25: incoming / retiring / known never overlap.
+    prop_assert!(m.incoming.is_disjoint(&m.known_keys));
+    prop_assert!(m.retiring.is_disjoint(&m.known_keys));
     // Settling <=> pending.
     prop_assert_eq!(m.status == Status::Settling, m.pending.is_some());
     // I10: the owner can always take out all revenue unless a buy is settling.
@@ -248,8 +270,15 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             let r = w.m.finish_buy(p.sale_id, ok, w.now).unwrap();
             match r {
                 BuyResult::Done {
-                    seller: s, payout, ..
+                    seller: s,
+                    payout,
+                    seller_revenue,
+                    ..
                 } => {
+                    // A29: the seller's unwithdrawn revenue went to the seller.
+                    prop_assert_eq!(w.m.owner_free, 0);
+                    prop_assert!(*w.m.claimable.get(&s).unwrap_or(&0) >= seller_revenue);
+                    prop_assert!(!w.m.incoming.contains(&p.buyer_pk));
                     // I1: paid => deed moved, seller keys gone, buyer key added.
                     prop_assert_eq!(&s, &seller);
                     prop_assert_eq!(&w.m.owner, &p.buyer);
@@ -272,6 +301,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.held = w.m.held;
                     expect.owner_free = w.m.owner_free;
                     expect.treasury = w.m.treasury;
+                    expect.paid_to = w.m.paid_to.clone();
                     expect.claimable = w.m.claimable.clone();
                     expect.sales = w.m.sales.clone();
                     expect.frozen = w.m.frozen;
@@ -316,19 +346,85 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             if settling {
                 prop_assert!(res.is_err());
             }
-            if res.is_ok() {
+            if let Ok(keys) = &res {
                 prop_assert!(w.m.known_keys.is_empty() && w.m.paused);
                 prop_assert_eq!(&w.m.owner, ACTORS[r]);
+                for k in keys {
+                    prop_assert!(w.m.retiring.contains(k));
+                }
+                if !keys.is_empty() {
+                    w.key_batches.push(KeyBatch::Deletion(keys.clone()));
+                }
             } else {
                 prop_assert_eq!(&w.m, &before);
             }
         }
         Act::SetKey(c, k) => {
-            let r = w.m.set_runner_key(ACTORS[c], &format!("ed25519:k{k}"));
+            let new_key = format!("ed25519:k{k}");
+            let old: Vec<Key> = w.m.known_keys.iter().cloned().collect();
+            let r = w.m.set_runner_key(ACTORS[c], &new_key);
             if ACTORS[c] != owner || settling {
                 prop_assert!(r.is_err());
             }
-            if r.is_err() {
+            match r {
+                Err(_) => prop_assert_eq!(&w.m, &before),
+                Ok(deleted) => {
+                    prop_assert!(w.m.known_keys.is_empty() && w.m.incoming.contains(&new_key));
+                    w.key_batches.push(KeyBatch::Rotation {
+                        old,
+                        deleted,
+                        new_key,
+                    });
+                }
+            }
+        }
+        Act::KeysDone(i, ok) => {
+            if !w.key_batches.is_empty() {
+                match w.key_batches.remove(i % w.key_batches.len()) {
+                    KeyBatch::Rotation {
+                        old,
+                        deleted,
+                        new_key,
+                    } => {
+                        w.m.runner_key_done(&old, &deleted, &new_key, ok);
+                        // An honest rotation never bricks the agent: the
+                        // runner key works again (success, or the old keys
+                        // restored), or the owner can rotate again.
+                        prop_assert!(!w.m.incoming.contains(&new_key));
+                        if ok {
+                            prop_assert!(w.m.known_keys.contains(&new_key));
+                        } else {
+                            for k in &old {
+                                prop_assert!(w.m.known_keys.contains(k));
+                            }
+                        }
+                        if !w.m.frozen
+                            && w.m.status != Status::Settling
+                            && w.m.status != Status::Listed
+                            && w.m.incoming.is_empty()
+                        {
+                            let mut c = w.m.clone();
+                            let owner = c.owner.clone();
+                            prop_assert!(c.set_runner_key(&owner, "ed25519:retry").is_ok());
+                        }
+                    }
+                    KeyBatch::Deletion(keys) => w.m.keys_deleted(&keys, ok),
+                }
+            }
+        }
+        Act::PendingKeyCall(incoming) => {
+            let pk = if incoming {
+                w.m.incoming.iter().next().cloned()
+            } else {
+                w.m.retiring.iter().next().cloned()
+            };
+            if let Some(pk) = pk {
+                // A25: never a freeze, never a refund.
+                let r = w.m.runner_guard("translator", &pk);
+                PENDING_CALLS.fetch_add(1, Relaxed);
+                if !before.frozen {
+                    prop_assert_eq!(r, Err(Error::NotRunner));
+                }
                 prop_assert_eq!(&w.m, &before);
             }
         }
@@ -475,7 +571,8 @@ fn prop_invariants_random_sequences() {
     let mut r = runner();
     r.run(&prop::collection::vec(act(), 1..120), |acts| {
         let mut m = Machine::new("translator", "alice");
-        m.set_runner_key("alice", "ed25519:alice-runner").unwrap();
+        let deleted = m.set_runner_key("alice", "ed25519:alice-runner").unwrap();
+        m.runner_key_done(&[], &deleted, "ed25519:alice-runner", true);
         let mut w = World {
             m,
             now: T0,
@@ -484,6 +581,7 @@ fn prop_invariants_random_sequences() {
             key_counter: 0,
             max_cap_today: 0,
             cap_day: (0, 0),
+            key_batches: vec![],
         };
         for a in &acts {
             step(&mut w, a)?;
@@ -500,6 +598,7 @@ fn prop_invariants_random_sequences() {
         ("treasury spends", &SPENDS),
         ("cap refusals", &CAP_HITS),
         ("spends refused while listed", &LISTED_REFUSALS),
+        ("pending-key calls", &PENDING_CALLS),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");

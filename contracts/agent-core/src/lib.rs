@@ -62,6 +62,10 @@ pub enum Error {
     SpendingPaused,
     /// The treasury is below what the listing showed (A24, stale listing).
     TreasuryChanged,
+    /// A key add or delete is still waiting for its callback (A25).
+    KeysPending,
+    /// `paid_to` is full: send only to accounts already paid or to the owner (A30).
+    PaidToFull,
     /// A runner payment or incoming payment outside the owner's limits.
     PolicyViolation(Policy),
 }
@@ -199,6 +203,8 @@ pub enum BuyResult {
         seller: Account,
         payout: Amount,
         unused: Amount,
+        /// The seller's unwithdrawn revenue, credited to the seller (A29).
+        seller_revenue: Amount,
     },
     /// Key batch failed: everything is as before; `unused` (the full amount)
     /// goes back to the buyer.
@@ -257,6 +263,12 @@ pub struct Machine {
     pub listing_version: u64,
     pub pending: Option<Pending>,
     pub known_keys: BTreeSet<Key>,
+    /// Keys being added by a key batch whose callback has not run yet (the
+    /// buyer's key during `buy`, the new key during a rotation). A signature
+    /// by one of them is `NotRunner`, never a backdoor (A25).
+    pub incoming: BTreeSet<Key>,
+    /// Keys being deleted whose deletion is not confirmed yet. Same rule.
+    pub retiring: BTreeSet<Key>,
     pub paused: bool,
     pub frozen: bool,
     pub approvals: BTreeMap<Account, u64>,
@@ -305,6 +317,8 @@ impl Machine {
             listing_version: 0,
             pending: None,
             known_keys: BTreeSet::new(),
+            incoming: BTreeSet::new(),
+            retiring: BTreeSet::new(),
             paused: true,
             frozen: false,
             approvals: BTreeMap::new(),
@@ -343,6 +357,15 @@ impl Machine {
         }
     }
 
+    /// No key batch is waiting for its callback.
+    fn keys_settled(&self) -> Res<()> {
+        if self.incoming.is_empty() && self.retiring.is_empty() {
+            Ok(())
+        } else {
+            Err(Error::KeysPending)
+        }
+    }
+
     /// Escrow still owed across all sales.
     pub fn escrow_left(&self) -> Amount {
         self.sales.iter().map(Sale::remaining).sum()
@@ -361,7 +384,9 @@ impl Machine {
     // ----- keys -------------------------------------------------------------
 
     /// Owner replaces the runner key. Returns the keys to delete; the contract
-    /// batches the `delete_key`s and `add_key(new)` on itself.
+    /// batches the `delete_key`s and `add_key(new)` on itself, then calls
+    /// `runner_key_done` with the batch outcome. Until then the old keys are
+    /// `retiring`, the new one `incoming`, and the runner cannot act (A25).
     pub fn set_runner_key(&mut self, caller: &str, new_key: &str) -> Res<Vec<Key>> {
         self.only_owner(caller)?;
         self.not_settling()?;
@@ -372,21 +397,50 @@ impl Machine {
             // Changing keys while listed would invalidate what buyers scanned.
             return Err(Error::AlreadyListed);
         }
-        if self.known_keys.contains(new_key) {
+        if !self.incoming.is_empty() {
+            return Err(Error::KeysPending);
+        }
+        if self.known_keys.contains(new_key) || self.retiring.contains(new_key) {
             return Err(Error::KeyAlreadyKnown);
         }
-        let old: Vec<Key> = self.known_keys.iter().cloned().collect();
-        self.known_keys.clear();
-        self.known_keys.insert(new_key.to_string());
-        self.paused = false;
-        Ok(old)
+        // Old runner keys and any key whose deletion was never confirmed are
+        // deleted in the same batch.
+        self.retiring.append(&mut self.known_keys);
+        self.incoming.insert(new_key.to_string());
+        self.paused = true;
+        Ok(self.retiring.iter().cloned().collect())
     }
 
-    /// The key batch from `set_runner_key` failed: restore the old key set.
-    pub fn runner_key_failed(&mut self, old: Vec<Key>, new_key: &str) {
-        self.known_keys.remove(new_key);
-        self.known_keys.extend(old);
+    /// Callback of `set_runner_key`. `old` = the runner keys before,
+    /// `deleted` = every key the batch deleted. On success the new key is the
+    /// runner key; on failure (the batch is all-or-nothing) the old keys are
+    /// restored. Either way the runner can act again: an honest rotation
+    /// never freezes or bricks the agent.
+    pub fn runner_key_done(&mut self, old: &[Key], deleted: &[Key], new_key: &str, ok: bool) {
+        self.incoming.remove(new_key);
+        if ok {
+            for k in deleted {
+                self.retiring.remove(k);
+            }
+            self.known_keys.insert(new_key.to_string());
+        } else {
+            for k in old {
+                self.retiring.remove(k);
+                self.known_keys.insert(k.clone());
+            }
+        }
         self.paused = self.known_keys.is_empty();
+    }
+
+    /// Callback after the `delete_key` batch of a deed transfer. Keys whose
+    /// deletion failed stay `retiring` (still on the account: the scan blocks
+    /// a sale until a rotation deletes them).
+    pub fn keys_deleted(&mut self, keys: &[Key], ok: bool) {
+        if ok {
+            for k in keys {
+                self.retiring.remove(k);
+            }
+        }
     }
 
     // ----- deed approvals (NEP-178) -----------------------------------------
@@ -433,6 +487,7 @@ impl Machine {
         if self.status == Status::Listed {
             return Err(Error::AlreadyListed);
         }
+        self.keys_settled()?;
         if !self.approvals.is_empty() || self.open_auth_until > now {
             return Err(Error::OpenApproval);
         }
@@ -515,11 +570,17 @@ impl Machine {
         if !gas_ok {
             return Err(Error::NotEnoughGas);
         }
+        self.keys_settled()?;
+        if self.known_keys.contains(buyer_pk) {
+            return Err(Error::KeyAlreadyKnown);
+        }
         let sale_id = self.next_sale_id;
         self.next_sale_id += 1;
         let prev_keys: Vec<Key> = self.known_keys.iter().cloned().collect();
         self.held += amount;
         self.status = Status::Settling;
+        // The batch adds this key before `finish_buy` runs (A25).
+        self.incoming.insert(buyer_pk.to_string());
         self.pending = Some(Pending {
             sale_id,
             buyer: buyer.to_string(),
@@ -542,6 +603,7 @@ impl Machine {
             _ => return Err(Error::WrongSettlement),
         };
         self.pending = None;
+        self.incoming.remove(&p.buyer_pk);
         if !keys_ok {
             // Roll back: listing, keys and owner were never changed.
             self.status = Status::Listed;
@@ -551,6 +613,9 @@ impl Machine {
         let l = &p.listing;
         let (paid_now, escrow) = money::split_price(l.price, l.terms.earnout_bps);
         let unused = p.amount - l.price;
+        // A29: the seller's unwithdrawn revenue stays the seller's.
+        let seller_revenue = std::mem::take(&mut self.owner_free);
+        self.credit(&l.seller, seller_revenue);
         // Deed moves, owner epoch bumps, seller keys are gone.
         self.past_owners.insert(self.owner.clone());
         self.owner = p.buyer.clone();
@@ -589,12 +654,12 @@ impl Machine {
         self.sales.push(sale.clone());
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
         self.held -= unused + paid_now;
-        self.note_paid_to(&l.seller);
         Ok(BuyResult::Done {
             sale: Box::new(sale),
             seller: l.seller.clone(),
             payout: paid_now,
             unused,
+            seller_revenue,
         })
     }
 
@@ -633,16 +698,26 @@ impl Machine {
         if amount == 0 || amount > self.owner_free {
             return Err(Error::InsufficientFunds);
         }
+        self.note_paid_to(to)?;
         self.owner_free -= amount;
         self.held -= amount;
-        self.note_paid_to(to);
         Ok(amount)
     }
 
-    fn note_paid_to(&mut self, to: &str) {
-        if self.paid_to.len() < MAX_PAID_TO {
-            self.paid_to.insert(to.to_string());
+    /// Remember who the agent paid, for the `round_trip` flag (A30). The set
+    /// is bounded but never silently stops tracking: once full, sending to a
+    /// new account is refused (`PaidToFull`). The owner, past owners and the
+    /// agent need no entry: their payments are flagged `self` anyway, so the
+    /// owner can always withdraw to themselves (I10).
+    fn note_paid_to(&mut self, to: &str) -> Res<()> {
+        if self.flags_for(to).self_pay || self.paid_to.contains(to) {
+            return Ok(());
         }
+        if self.paid_to.len() >= MAX_PAID_TO {
+            return Err(Error::PaidToFull);
+        }
+        self.paid_to.insert(to.to_string());
+        Ok(())
     }
 
     // ----- payments and earn-out --------------------------------------------
@@ -754,6 +829,7 @@ impl Machine {
         if amount > self.treasury {
             return Err(Error::InsufficientFunds);
         }
+        self.note_paid_to(payee)?;
         self.treasury -= amount;
         self.held -= amount;
         self.spent = Spent {
@@ -761,7 +837,6 @@ impl Machine {
             day,
             amount: spent + amount,
         };
-        self.note_paid_to(payee);
         Ok(spent + amount)
     }
 
@@ -802,6 +877,9 @@ impl Machine {
         approval_id: Option<u64>,
     ) -> Res<Vec<Key>> {
         self.not_settling()?;
+        if !self.incoming.is_empty() {
+            return Err(Error::KeysPending);
+        }
         if caller != self.owner {
             match (self.approvals.get(caller), approval_id) {
                 (Some(id), Some(given)) if *id == given => {}
@@ -821,8 +899,9 @@ impl Machine {
         self.past_owners.insert(self.owner.clone());
         self.owner = receiver.to_string();
         self.owner_epoch += 1;
+        // The keys stay `retiring` until `keys_deleted` confirms (A25).
         let keys: Vec<Key> = self.known_keys.iter().cloned().collect();
-        self.known_keys.clear();
+        self.retiring.append(&mut self.known_keys);
         self.paused = true;
         Ok(keys)
     }
@@ -838,6 +917,11 @@ impl Machine {
         }
         if self.frozen {
             return Err(Error::Frozen);
+        }
+        // A25: a key being added or deleted by a batch whose callback has not
+        // run is not a runner key, but not a backdoor either.
+        if self.incoming.contains(signer_pk) || self.retiring.contains(signer_pk) {
+            return Err(Error::NotRunner);
         }
         if !self.known_keys.contains(signer_pk) {
             self.frozen = true;

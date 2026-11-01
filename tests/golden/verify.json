@@ -171,10 +171,10 @@
     },
     {
       "id": "E6",
-      "what": "seller payout fails: 700.00 claimable, solvency holds",
+      "what": "seller payout fails: 700.00 claimable (plus the 500.00 revenue settled at the sale), solvency holds",
       "pass": true,
       "detail": {
-        "claimable": "700.00"
+        "claimable": "1200.00"
       }
     },
     {
@@ -429,10 +429,58 @@
         "error": "Listed: spending paused",
         "stale_buy": "TreasuryChanged"
       }
+    },
+    {
+      "id": "A25",
+      "what": "buyer or owner cannot freeze the agent with their own key in a key-batch gap (handover, rotation, deed transfer): NotRunner, escrow kept",
+      "pass": true,
+      "detail": {
+        "escrow_left": "300.00"
+      }
+    },
+    {
+      "id": "A26",
+      "what": "admin, token and signer list are not init arguments: pinned in the code, shown in get_status, scan blocks a mismatch",
+      "pass": true,
+      "detail": {
+        "admin": "admin.testnet",
+        "token": "xusd.testnet"
+      }
+    },
+    {
+      "id": "A27",
+      "what": "a NEAR AI signature verifies only its own payer, amount and job: WrongPayer, WrongAmount",
+      "pass": true,
+      "detail": {
+        "reasons": [
+          "WrongPayer",
+          "WrongAmount"
+        ]
+      }
+    },
+    {
+      "id": "A28",
+      "what": "list_for_sale, cancel_listing, set_runner_key, set_limits, nft_transfer need 1 yoctoNEAR (a function-call key cannot sell the agent)",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A29",
+      "what": "the seller's unwithdrawn revenue (500.00) is settled to the seller at the sale, not passed to the buyer",
+      "pass": true,
+      "detail": {
+        "seller_claimable": "500.00"
+      }
+    },
+    {
+      "id": "A30",
+      "what": "round-trip tracking never saturates: once 1000 destinations are tracked, sending to a new one is refused (PaidToFull); tracked payers stay flagged",
+      "pass": true,
+      "detail": {}
     }
   ],
   "summary": {
-    "passed": 46,
+    "passed": 52,
     "failed": 0
   },
   "not_covered_here": [

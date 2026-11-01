@@ -20,6 +20,8 @@ export interface Config {
   rpc: [string, string];
   agents: string[];
   expectedCodeHash: string | null;
+  expectedAdmin: string | null;
+  expectedToken: string | null;
   scanBin: string | null;
 }
 
@@ -80,6 +82,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     rpc,
     agents,
     expectedCodeHash: env.AGENT_EXIT_CODE_HASH ?? null,
+    expectedAdmin: env.AGENT_EXIT_ADMIN ?? null,
+    expectedToken: env.AGENT_EXIT_TOKEN ?? null,
     scanBin: findScan(repo),
   };
 }

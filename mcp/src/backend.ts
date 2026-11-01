@@ -258,6 +258,10 @@ export class TestnetBackend implements Backend {
         // Unset = the scan reports code_hash_mismatch and the buy is refused.
         code_hash: this.cfg.expectedCodeHash ?? "unset: AGENT_EXIT_CODE_HASH",
         listing_version: expectedVersion ?? status.listing_version,
+        // The published release's registry admin and token (A26); unset =
+        // the scanner's published constants.
+        ...(this.cfg.expectedAdmin ? { admin: this.cfg.expectedAdmin } : {}),
+        ...(this.cfg.expectedToken ? { token: this.cfg.expectedToken } : {}),
       },
       chain: {
         code_hash: account.code_hash,
@@ -275,6 +279,8 @@ export class TestnetBackend implements Backend {
         open_approvals: status.open_approvals,
         open_auth_until: 0,
         frozen: status.frozen,
+        admin: status.admin,
+        token: status.token,
       },
     };
   }

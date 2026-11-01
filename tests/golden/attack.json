@@ -10,64 +10,64 @@
       "id": "A1",
       "attack": "extra full-access key",
       "expected_finding": "full_access_key_present",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A2",
       "attack": "extra function-call key to the agent with owner-like methods",
       "expected_finding": "unknown_key",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A3",
       "attack": "extra function-call key to a foreign contract",
       "expected_finding": "unknown_key",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A4",
       "attack": "runner-looking key added with the setup key, not by the contract",
       "expected_finding": "unknown_key",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A5",
       "attack": "patched wasm (code hash differs)",
       "expected_finding": "code_hash_mismatch",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A6",
       "attack": "same interface plus an upgrade / self-deploy method",
       "expected_finding": "upgrade_method",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A6x",
       "attack": "extra method that is not in the published contract",
       "expected_finding": "unexpected_method",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
       "id": "A7",
       "attack": "seller changed terms after the buyer was quoted",
       "expected_finding": "listing_version_mismatch",
-      "cases": 13,
-      "caught": 13,
+      "cases": 12,
+      "caught": 12,
       "missed": 0
     },
     {
@@ -114,24 +114,32 @@
       "id": "K2",
       "attack": "contract lists a key the account does not have",
       "expected_finding": "known_key_missing",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "K3",
       "attack": "known_keys_hash forged",
       "expected_finding": "known_keys_hash_mismatch",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A23",
       "attack": "agent already frozen (backdoor proven)",
       "expected_finding": "frozen",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
+      "missed": 0
+    },
+    {
+      "id": "A26",
+      "attack": "deployed with the seller's own admin or payment token",
+      "expected_finding": "registry_mismatch",
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     }
   ],
@@ -139,7 +147,7 @@
     "cases": 50,
     "false_positives": 0,
     "false_positive_rate": 0.0,
-    "with_warnings_only": 12
+    "with_warnings_only": 13
   },
   "missed_examples": [],
   "not_caught_by_design": [
@@ -198,6 +206,11 @@
     {
       "id": "A16",
       "what": "deed moved outside buy(): runner keys deleted, agent paused",
+      "blocked": true
+    },
+    {
+      "id": "A25",
+      "what": "buyer signs with their own key before the handover callback to fake a backdoor: NotRunner, no freeze, escrow kept",
       "blocked": true
     },
     {

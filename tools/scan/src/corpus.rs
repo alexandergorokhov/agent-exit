@@ -70,6 +70,8 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
         expected: Expected {
             code_hash: FIXTURE_CODE_HASH.into(),
             listing_version: version,
+            admin: None,
+            token: None,
         },
         chain: Chain {
             code_hash: FIXTURE_CODE_HASH.into(),
@@ -87,6 +89,8 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             open_approvals: 0,
             open_auth_until: if rng.below(3) == 0 { NOW_NS - 1 } else { 0 },
             frozen: false,
+            admin: Some(PUBLISHED_ADMIN.into()),
+            token: Some(PUBLISHED_TOKEN.into()),
         },
     }
 }
@@ -114,7 +118,7 @@ const OWNER_LIKE: [&str; 5] = [
     "list_for_sale",
 ];
 
-pub const FAMILIES: [Family; 16] = [
+pub const FAMILIES: [Family; 17] = [
     Family {
         id: "A1",
         name: "extra full-access key",
@@ -322,6 +326,16 @@ pub const FAMILIES: [Family; 16] = [
         expect: "frozen",
         mutate: |i, _| {
             i.contract.frozen = true;
+        },
+    },
+    Family {
+        id: "A26",
+        name: "deployed with the seller's own admin or payment token",
+        expect: "registry_mismatch",
+        mutate: |i, r| match r.below(3) {
+            0 => i.contract.admin = Some(i.contract.owner.clone()),
+            1 => i.contract.token = Some(format!("fake{}.testnet", r.below(100))),
+            _ => i.contract.admin = None,
         },
     },
 ];

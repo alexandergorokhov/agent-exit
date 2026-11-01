@@ -23,11 +23,14 @@ fn address(sk: &SigningKey) -> String {
     format!("0x{}", hex::encode(&h[12..]))
 }
 
-fn sign(sk: &SigningKey, agent: &str, job: &str, prompt: &str) -> Value {
+/// 12.00 in base units: every fixture job costs 12.00.
+const AMOUNT: &str = "12000000";
+
+fn sign(sk: &SigningKey, agent: &str, job: &str, payer: &str, prompt: &str) -> Value {
     let request = json!({
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "metadata": {"agent": agent, "job_id": job},
+        "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": AMOUNT},
     })
     .to_string();
     let response = json!({"choices": [{"message": {"role": "assistant", "content": format!("answer to {job}")}}]})
@@ -44,7 +47,7 @@ fn sign(sk: &SigningKey, agent: &str, job: &str, prompt: &str) -> Value {
     let mut bytes = sig.to_bytes().to_vec();
     bytes.push(27 + rec.to_byte());
     json!({
-        "job_id": job, "model": MODEL, "request": request, "response": response,
+        "job_id": job, "payer": payer, "amount": AMOUNT, "model": MODEL, "request": request, "response": response,
         "response_sha256": resp_hash, "text": text, "signature": hex::encode(bytes),
         "signing_address": address(sk),
     })
@@ -54,12 +57,14 @@ fn build() -> String {
     let good = SigningKey::from_bytes(&TEST_SIGNER_SK.into()).expect("key");
     let rogue = SigningKey::from_bytes(&ROGUE_SK.into()).expect("key");
     let agent = "translator.testnet";
+    // Job i is paid by p((i-1) % 6 + 1): day 0 p1-p6, day 1 p1-p4.
     let entries: Vec<Value> = (1..=10)
         .map(|i| {
             sign(
                 &good,
                 agent,
                 &format!("job-{i}"),
+                &format!("p{}.testnet", (i - 1) % 6 + 1),
                 &format!("translate text {i}"),
             )
         })
@@ -71,9 +76,9 @@ fn build() -> String {
         "rogue_signer": address(&rogue),
         "agent": agent,
         "entries": entries,
-        "wrong_agent": sign(&good, "cheat.testnet", "job-x", "for another agent"),
-        "rogue": sign(&rogue, agent, "job-r", "signed by a key nobody allowlisted"),
-        "extra": sign(&good, agent, "job-11", "post-sale job"),
+        "wrong_agent": sign(&good, "cheat.testnet", "job-x", "p1.testnet", "for another agent"),
+        "rogue": sign(&rogue, agent, "job-r", "p3.testnet", "signed by a key nobody allowlisted"),
+        "extra": sign(&good, agent, "job-11", "p1.testnet", "post-sale job"),
     });
     serde_json::to_string_pretty(&v).expect("json") + "\n"
 }

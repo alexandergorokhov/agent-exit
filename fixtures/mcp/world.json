@@ -17,6 +17,12 @@
         "paused": false,
         "frozen": false,
         "token": "xusd.testnet",
+        "admin": "admin.testnet",
+        "signers": [
+          "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+        ],
+        "incoming_keys": [],
+        "retiring_keys": [],
         "known_keys": [
           "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
         ],
@@ -164,6 +170,7 @@
             "get_signers",
             "set_runner_key",
             "on_runner_key",
+            "on_keys_deleted",
             "list_for_sale",
             "cancel_listing",
             "ft_on_transfer",
@@ -241,7 +248,9 @@
           "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
           "open_approvals": 0,
           "open_auth_until": 0,
-          "frozen": false
+          "frozen": false,
+          "admin": "admin.testnet",
+          "token": "xusd.testnet"
         }
       }
     },
@@ -256,6 +265,12 @@
         "paused": false,
         "frozen": false,
         "token": "xusd.testnet",
+        "admin": "admin.testnet",
+        "signers": [
+          "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+        ],
+        "incoming_keys": [],
+        "retiring_keys": [],
         "known_keys": [
           "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
         ],
@@ -400,6 +415,7 @@
             "get_signers",
             "set_runner_key",
             "on_runner_key",
+            "on_keys_deleted",
             "list_for_sale",
             "cancel_listing",
             "ft_on_transfer",
@@ -485,7 +501,9 @@
           "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
           "open_approvals": 0,
           "open_auth_until": 0,
-          "frozen": false
+          "frozen": false,
+          "admin": "admin.testnet",
+          "token": "xusd.testnet"
         }
       }
     }
@@ -529,6 +547,7 @@
           "paid_now": "700000000",
           "escrow": "300000000",
           "overpay_refund": "0",
+          "seller_revenue_claimable": "500000000",
           "owner_epoch": 2,
           "window_end": "1770681600000000000",
           "known_keys": [
@@ -556,16 +575,22 @@
           "paused": false,
           "frozen": false,
           "token": "xusd.testnet",
+          "admin": "admin.testnet",
+          "signers": [
+            "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+          ],
+          "incoming_keys": [],
+          "retiring_keys": [],
           "known_keys": [
             "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
           ],
           "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
           "open_approvals": 0,
           "held": "800000000",
-          "owner_free": "500000000",
+          "owner_free": "0",
           "treasury": "0",
           "escrow_left": "300000000",
-          "claimable_total": "0",
+          "claimable_total": "500000000",
           "solvent": true
         },
         "earnings": {
@@ -697,6 +722,7 @@
               "get_signers",
               "set_runner_key",
               "on_runner_key",
+              "on_keys_deleted",
               "list_for_sale",
               "cancel_listing",
               "ft_on_transfer",
@@ -774,7 +800,9 @@
             "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
             "open_approvals": 0,
             "open_auth_until": 0,
-            "frozen": false
+            "frozen": false,
+            "admin": "admin.testnet",
+            "token": "xusd.testnet"
           }
         }
       }
@@ -819,16 +847,22 @@
           "paused": false,
           "frozen": false,
           "token": "xusd.testnet",
+          "admin": "admin.testnet",
+          "signers": [
+            "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+          ],
+          "incoming_keys": [],
+          "retiring_keys": [],
           "known_keys": [
             "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
           ],
           "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
           "open_approvals": 0,
           "held": "800000000",
-          "owner_free": "500000000",
+          "owner_free": "0",
           "treasury": "0",
           "escrow_left": "300000000",
-          "claimable_total": "0",
+          "claimable_total": "500000000",
           "solvent": true
         },
         "earnings": {
@@ -982,6 +1016,7 @@
               "get_signers",
               "set_runner_key",
               "on_runner_key",
+              "on_keys_deleted",
               "list_for_sale",
               "cancel_listing",
               "ft_on_transfer",
@@ -1059,7 +1094,9 @@
             "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
             "open_approvals": 0,
             "open_auth_until": 0,
-            "frozen": false
+            "frozen": false,
+            "admin": "admin.testnet",
+            "token": "xusd.testnet"
           }
         }
       }

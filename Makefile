@@ -121,8 +121,11 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 # ------------------------------------------------------------- not built yet
 
 .PHONY: test-sandbox
-test-sandbox: build-dev ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
-	cd tests/sandbox && cargo test --locked -- --test-threads=1 --nocapture
+test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
+	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
+	cd contracts/xusd && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near-sandbox
+	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
 .PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-dev web-deploy e2e
 attack-sandbox: ## Attack corpus against near-sandbox

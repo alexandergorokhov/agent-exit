@@ -41,6 +41,8 @@ use near_sdk::{
 };
 use std::collections::{BTreeSet, HashMap};
 
+#[cfg(test)]
+mod review_regressions;
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;
 #[cfg(test)]
@@ -48,6 +50,20 @@ mod tests;
 pub mod verified;
 
 pub const DEED_ID: &str = "deed";
+
+/// Registry admin (edits the NEAR AI signer list only) and the one accepted
+/// payment token. They are compiled into the wasm, not chosen at init, so the
+/// published code hash pins them (A26). Set at build time with
+/// `AGENT_EXIT_ADMIN` / `AGENT_EXIT_TOKEN`; the defaults are the offline
+/// fixture accounts.
+pub const REGISTRY_ADMIN: &str = match option_env!("AGENT_EXIT_ADMIN") {
+    Some(a) => a,
+    None => "admin.testnet",
+};
+pub const PAYMENT_TOKEN: &str = match option_env!("AGENT_EXIT_TOKEN") {
+    Some(t) => t,
+    None => "xusd.testnet",
+};
 /// Methods the runner's function-call key may call (receiver = the agent).
 pub const RUNNER_METHODS: &str = "heartbeat,accept_job,pay,pay_base";
 /// Gas the runner key may burn before the owner tops it up.
@@ -189,24 +205,17 @@ fn usd(a: Amount) -> String {
 #[near]
 impl AgentExit {
     /// Called once by the agent account itself at deploy (same tx as deploy).
+    /// The deployer (the seller) chooses only the first owner: the admin, the
+    /// token and the signer list are not init arguments (A26). The signer
+    /// list starts empty; only the pinned registry admin edits it.
     #[init]
     #[private]
-    pub fn new(
-        owner_id: AccountId,
-        token_id: AccountId,
-        admin_id: AccountId,
-        signers: Option<Vec<String>>,
-    ) -> Self {
-        let signers = signers
-            .unwrap_or_default()
-            .iter()
-            .map(|a| norm_address(a))
-            .collect();
+    pub fn new(owner_id: AccountId) -> Self {
         Self {
             m: Machine::new(env::current_account_id().as_str(), owner_id.as_str()),
-            token: token_id,
-            admin: admin_id,
-            signers,
+            token: PAYMENT_TOKEN.parse().expect("valid token"),
+            admin: REGISTRY_ADMIN.parse().expect("valid admin"),
+            signers: BTreeSet::new(),
             used_sigs: BTreeSet::new(),
         }
     }
@@ -238,15 +247,18 @@ impl AgentExit {
     /// Owner sets (or rotates) the runner's function-call key. The contract
     /// deletes every runner key it added before and adds this one, scoped to
     /// this account and `RUNNER_METHODS`, with no deposit allowed.
+    #[payable]
     pub fn set_runner_key(&mut self, public_key: PublicKey) -> Promise {
+        near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
         let new_key = String::from(&public_key);
-        let old = self
+        let old: Vec<String> = self.m.known_keys.iter().cloned().collect();
+        let deleted = self
             .m
             .set_runner_key(caller.as_str(), &new_key)
             .unwrap_or_else(|e| fail(e));
         let mut p = Promise::new(env::current_account_id());
-        for k in &old {
+        for k in &deleted {
             p = p.delete_key(pk(k));
         }
         p = p.add_access_key_allowance(
@@ -257,28 +269,53 @@ impl AgentExit {
         );
         emit(
             "runner_key_set",
-            json!({"owner": caller, "key": new_key, "removed": old}),
+            json!({"owner": caller, "key": new_key, "removed": deleted, "pending": true}),
         );
         p.then(
             Self::ext(env::current_account_id())
                 .with_static_gas(GAS_ON_KEYS)
-                .on_runner_key(old, new_key),
+                .on_runner_key(old, deleted, new_key),
         )
     }
 
+    /// Callback of the rotation batch (all-or-nothing): success makes the new
+    /// key the runner key, failure restores the old one (A25).
     #[private]
-    pub fn on_runner_key(&mut self, old: Vec<String>, new_key: String) -> bool {
+    pub fn on_runner_key(
+        &mut self,
+        old: Vec<String>,
+        deleted: Vec<String>,
+        new_key: String,
+    ) -> bool {
         let ok = promise_ok();
-        if !ok {
-            self.m.runner_key_failed(old, &new_key);
-            emit("runner_key_failed", json!({"key": new_key}));
-        }
+        self.m.runner_key_done(&old, &deleted, &new_key, ok);
+        emit(
+            if ok {
+                "runner_key_confirmed"
+            } else {
+                "runner_key_failed"
+            },
+            json!({"key": new_key, "deleted": if ok { deleted } else { vec![] }}),
+        );
+        ok
+    }
+
+    /// Callback after a deed transfer's `delete_key` batch: the keys stop
+    /// being `retiring` once their deletion is confirmed (A25).
+    #[private]
+    pub fn on_keys_deleted(&mut self, keys: Vec<String>) -> bool {
+        let ok = promise_ok();
+        self.m.keys_deleted(&keys, ok);
+        emit("keys_deleted", json!({"keys": keys, "ok": ok}));
         ok
     }
 
     // --------------------------------------------------------- owner: listing
 
+    /// Needs 1 yoctoNEAR: only a full-access key of the owner can list (A28).
+    #[payable]
     pub fn list_for_sale(&mut self, price: U128, code_hash: String, terms: Option<Terms>) -> Value {
+        near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
         let l = self
             .m
@@ -295,7 +332,9 @@ impl AgentExit {
         card
     }
 
+    #[payable]
     pub fn cancel_listing(&mut self) {
+        near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
         self.m
             .cancel_listing(caller.as_str())
@@ -349,6 +388,8 @@ impl AgentExit {
                     verified::check(
                         p,
                         self.m.agent.as_str(),
+                        sender_id.as_str(),
+                        amount.0,
                         job_id.as_deref(),
                         &self.signers,
                         &self.used_sigs,
@@ -476,6 +517,7 @@ impl AgentExit {
                 seller,
                 payout,
                 unused,
+                seller_revenue,
             } => {
                 let seller_id: AccountId = seller.parse().expect("valid");
                 let buyer_id: AccountId = sale.buyer.parse().expect("valid");
@@ -493,6 +535,7 @@ impl AgentExit {
                         "sale_id": sale.id, "seller": seller, "buyer": sale.buyer,
                         "price": amt(sale.price), "paid_now": amt(payout),
                         "escrow": amt(sale.escrow), "overpay_refund": amt(unused),
+                        "seller_revenue_claimable": amt(seller_revenue),
                         "owner_epoch": self.m.owner_epoch,
                         "window_end": U64(sale.window_end),
                         "known_keys": self.m.known_keys,
@@ -705,6 +748,10 @@ impl AgentExit {
             "paused": self.m.paused,
             "frozen": self.m.frozen,
             "token": self.token,
+            "admin": self.admin,
+            "signers": self.signers,
+            "incoming_keys": self.m.incoming,
+            "retiring_keys": self.m.retiring,
             "known_keys": self.m.known_keys,
             "known_keys_hash": self.m.known_keys_hash(),
             "open_approvals": self.m.approvals.len(),
@@ -1001,6 +1048,8 @@ impl AgentExit {
         );
     }
 
+    /// Delete `keys` and confirm in `on_keys_deleted`; until then they are
+    /// `retiring` and a signature by them is `NotRunner`, not a backdoor.
     fn delete_keys(&self, keys: &[String]) {
         if keys.is_empty() {
             return;
@@ -1009,7 +1058,12 @@ impl AgentExit {
         for k in keys {
             p = p.delete_key(pk(k));
         }
-        p.detach();
+        p.then(
+            Self::ext(env::current_account_id())
+                .with_static_gas(GAS_ON_KEYS)
+                .on_keys_deleted(keys.to_vec()),
+        )
+        .detach();
     }
 
     fn deed(&self) -> Token {
