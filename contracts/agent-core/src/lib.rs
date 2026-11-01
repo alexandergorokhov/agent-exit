@@ -9,6 +9,7 @@
 
 pub mod meter;
 pub mod money;
+pub mod policy;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub use meter::{Earnings, Flags, Meter};
+pub use policy::{Limits, Policy, Spent};
 
 pub type Amount = u128;
 /// Nanoseconds since the Unix epoch (NEAR block timestamp).
@@ -55,11 +57,17 @@ pub enum Error {
     WrongSettlement,
     KeyAlreadyKnown,
     SameOwner,
+    BadLimits,
+    /// A runner payment or incoming payment outside the owner's limits.
+    PolicyViolation(Policy),
 }
 
 impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{self:?}")
+        match self {
+            Error::PolicyViolation(p) => write!(f, "PolicyViolation:{p:?}"),
+            e => write!(f, "{e:?}"),
+        }
     }
 }
 
@@ -196,6 +204,8 @@ pub enum TransferKind {
     SellerPayout,
     Claim,
     OwnerWithdraw,
+    /// The runner paid a payee out of the treasury (feature 12).
+    TreasuryPay,
 }
 
 /// Outcome of a payment routed through `ft_on_transfer` with kind `pay`.
@@ -207,6 +217,9 @@ pub enum PayResult {
         counted: bool,
         verified: bool,
         released: Vec<(u64, Account, Amount)>,
+        /// The automatic split of this payment (feature 12).
+        to_owner: Amount,
+        to_treasury: Amount,
     },
 }
 
@@ -252,6 +265,12 @@ pub struct Machine {
     pub paid_to: BTreeSet<Account>,
     /// Latest `valid_before` of any Base authorization the agent signed (B3).
     pub open_auth_until: Ts,
+    /// Owner's limits (feature 12); they move with the deed.
+    pub limits: Limits,
+    /// The agent's own funds; only the runner spends them, inside the limits.
+    pub treasury: Amount,
+    /// Runner spending in the current (owner epoch, day).
+    pub spent: Spent,
 }
 
 pub const MAX_PAID_TO: usize = 1_000;
@@ -290,6 +309,9 @@ impl Machine {
             held: 0,
             paid_to: BTreeSet::new(),
             open_auth_until: 0,
+            limits: Limits::default(),
+            treasury: 0,
+            spent: Spent::default(),
         }
     }
 
@@ -576,6 +598,9 @@ impl Machine {
         match kind {
             TransferKind::SellerPayout | TransferKind::Claim => self.credit(to, amount),
             TransferKind::OwnerWithdraw => self.owner_free += amount,
+            // A failed supplier payment goes back to the treasury. The day's
+            // spending is not reduced (the cap counts attempts, conservative).
+            TransferKind::TreasuryPay => self.treasury += amount,
         }
     }
 
@@ -631,12 +656,17 @@ impl Machine {
         if amount < meter::MIN_PAYMENT {
             return PayResult::Refund("Dust");
         }
+        if amount < self.limits.price_floor {
+            return PayResult::Refund("PolicyViolation:PriceFloor");
+        }
         let flags = self.flags_for(payer);
         let counted = !flags.any();
         let verified = counted && verified;
         self.meter.record(payer, amount, flags, verified, now);
         self.held += amount;
-        self.owner_free += amount;
+        let (to_owner, to_treasury) = money::split_revenue(amount, self.limits.treasury_bps);
+        self.owner_free += to_owner;
+        self.treasury += to_treasury;
         let mut released = Vec::new();
         if counted {
             // Release from the oldest open earn-out, at most share_bps of this
@@ -661,7 +691,61 @@ impl Machine {
             counted,
             verified,
             released,
+            to_owner,
+            to_treasury,
         }
+    }
+
+    // ----- spending policy (feature 12) ---------------------------------------
+
+    /// Owner sets the limits. Refused while listed (buyers scanned them) or
+    /// settling; refused `BadLimits` if they fail the sanity checks (E33).
+    pub fn set_limits(&mut self, caller: &str, limits: Limits) -> Res<()> {
+        self.only_owner(caller)?;
+        self.not_settling()?;
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
+        if self.status == Status::Listed {
+            return Err(Error::AlreadyListed);
+        }
+        limits.check(&self.agent)?;
+        self.limits = limits;
+        Ok(())
+    }
+
+    pub fn spent_today(&self, now: Ts) -> Amount {
+        self.spent.today(self.owner_epoch, now / DAY_NS)
+    }
+
+    /// The runner pays `payee` out of the treasury. Call only after
+    /// `runner_guard` returned `Ok`. Checks, in order: payee allowed, daily
+    /// cap, treasury balance. Nothing changes on error.
+    pub fn spend(&mut self, payee: &str, amount: Amount, now: Ts) -> Res<Amount> {
+        if amount == 0 {
+            return Err(Error::InsufficientFunds);
+        }
+        if !self.limits.allowed_payees.contains(payee) {
+            return Err(Error::PolicyViolation(Policy::Payee));
+        }
+        let day = now / DAY_NS;
+        let spent = self.spent.today(self.owner_epoch, day);
+        match spent.checked_add(amount) {
+            Some(total) if total <= self.limits.daily_cap => {}
+            _ => return Err(Error::PolicyViolation(Policy::DailyCap)),
+        }
+        if amount > self.treasury {
+            return Err(Error::InsufficientFunds);
+        }
+        self.treasury -= amount;
+        self.held -= amount;
+        self.spent = Spent {
+            owner_epoch: self.owner_epoch,
+            day,
+            amount: spent + amount,
+        };
+        self.note_paid_to(payee);
+        Ok(spent + amount)
     }
 
     /// Close an earn-out after its window. Anyone may call; a second call is a
@@ -762,7 +846,7 @@ impl Machine {
 
     /// Solvency (I3): what the contract holds covers every bucket.
     pub fn solvent(&self) -> bool {
-        self.held >= self.escrow_left() + self.claimable_total() + self.owner_free
+        self.held >= self.escrow_left() + self.claimable_total() + self.owner_free + self.treasury
     }
 
     pub fn earnings(&self, now: Ts) -> Earnings {

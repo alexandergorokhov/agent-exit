@@ -367,10 +367,62 @@
       "detail": {
         "extra_schema": "deed-extra.v1"
       }
+    },
+    {
+      "id": "S11",
+      "what": "limits set; a 25.00 job splits 20.00 owner / 5.00 treasury (seller's share = earn-out release 12.50); runner pays summarizer 8.00",
+      "pass": true,
+      "detail": {
+        "to_owner": "20.00",
+        "to_treasury": "5.00",
+        "seller_earnout_release": "12.50",
+        "paid_summarizer": "8.00",
+        "treasury_left": "2.00"
+      }
+    },
+    {
+      "id": "S12",
+      "what": "over-limit payment fails: PolicyViolation:DailyCap (8.00 + 45.00 > 50.00); a payee not on the list fails; balances unchanged",
+      "pass": true,
+      "detail": {
+        "error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00"
+      }
+    },
+    {
+      "id": "S13",
+      "what": "only the owner sets limits: bob applies, the old seller and the runner get NotOwner",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E18",
+      "what": "cap resets at sale: same day, bob's epoch starts with the full 50.00",
+      "pass": true,
+      "detail": {
+        "cap_left_today": "50000000"
+      }
+    },
+    {
+      "id": "A15",
+      "what": "seller burns the daily cap before the sale: buyer's cap unaffected",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E19",
+      "what": "spending cap resets by block-timestamp UTC day",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E33",
+      "what": "set_limits with split != 100%, an absurd cap, the agent as payee or a negative amount: refused",
+      "pass": true,
+      "detail": {}
     }
   ],
   "summary": {
-    "passed": 38,
+    "passed": 45,
     "failed": 0
   },
   "not_covered_here": [
@@ -385,9 +437,14 @@
       "where": "near-sandbox (make test-sandbox) or testnet"
     },
     {
-      "id": "A1-A6,A9,A18,A20",
-      "part": "client scan, set_constraints, Base wallet",
-      "where": "batches B2-B4"
+      "id": "S6,A18,A20",
+      "part": "Chain Signatures Base wallet and pay_base",
+      "where": "batch B3"
+    },
+    {
+      "id": "S11,S12",
+      "part": "the same limits on a real node (sandbox/testnet)",
+      "where": "near-sandbox or testnet"
     }
   ]
 }

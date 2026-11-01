@@ -18,6 +18,27 @@ fn panics<F: FnOnce()>(f: F) -> bool {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err()
 }
 
+/// The contract's panic text of `f` (`env::panic_str` argument), or "" if it
+/// did not panic. The mocked runtime wraps it in `GuestPanic { panic_msg: .. }`.
+fn panic_msg<F: FnOnce()>(f: F) -> String {
+    let raw = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+        Ok(()) => return String::new(),
+        Err(e) => e
+            .downcast_ref::<String>()
+            .cloned()
+            .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_default(),
+    };
+    match raw.split_once("panic_msg: \"") {
+        Some((_, rest)) => rest
+            .rsplit_once("\" }")
+            .map(|x| x.0)
+            .unwrap_or(rest)
+            .to_string(),
+        None => raw,
+    }
+}
+
 #[test]
 fn s1_list_clean() {
     let mut s = translator_world();
@@ -721,4 +742,240 @@ fn signer_list_is_admin_only() {
     }
     assert!(panics(|| s.by(ADMIN).add_signer("0x1234".into())));
     assert_eq!(s.c.get_signers(), vec![test_signer()]);
+}
+
+// ------------------------------------------------ feature 12: limits
+
+#[test]
+fn s11_split_and_procure() {
+    let mut s = sold_translator();
+    let alice_before = s.c.get_claimable(acc(ALICE)).0;
+    // Beat 1: the owner sets the limits.
+    let v = s.by_1y(BOB).set_limits(demo_limits());
+    assert_eq!(v["schema"], "limits.v1");
+    assert_eq!(v["daily_cap"], "50000000");
+    assert_eq!(events("limits_set").len(), 1);
+    // A job paid 25.00 splits 20.00 owner / 5.00 treasury; the seller's share
+    // is the earn-out release (50% of the payment, from escrow).
+    let free0 = s.m().owner_free;
+    assert_eq!(
+        s.ft(PAYERS[0], 25 * USD, r#"{"kind":"pay","job_id":"j1"}"#, 100),
+        Some(0)
+    );
+    let sp = &events("split")[0];
+    assert_eq!(sp["to_owner"], "20000000");
+    assert_eq!(sp["to_treasury"], "5000000");
+    assert_eq!(sp["seller_earnout_release"], "12500000");
+    assert_eq!(s.m().owner_free - free0, 20 * USD);
+    assert_eq!(s.m().treasury, 5 * USD);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0 - alice_before, 12_500_000);
+    assert_eq!(
+        s.ft(PAYERS[1], 25 * USD, r#"{"kind":"pay","job_id":"j2"}"#, 100),
+        Some(0)
+    );
+    assert_eq!(s.m().treasury, 10 * USD);
+    // Beat 2: the runner pays summarizer 8.00 for a sub-task: allowed.
+    let r = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(8 * USD));
+    assert_eq!(r["ok"], true);
+    assert_eq!(ft_transfers(), vec![(SUMMARIZER.to_string(), 8 * USD)]);
+    assert_eq!(s.m().treasury, 2 * USD);
+    assert_eq!(s.c.get_limits()["spent_today"], "8000000");
+    assert_eq!(s.c.get_limits()["cap_left_today"], "42000000");
+    assert!(s.m().solvent());
+}
+
+#[test]
+fn s12_over_limit() {
+    let mut s = business_world();
+    s.runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(8 * USD));
+    let before = s.m().clone();
+    // Beat 3: 45.00 more today would be 53.00 > 50.00.
+    let msg = panic_msg(|| {
+        s.runner(key(BOB_RUNNER))
+            .pay(acc(SUMMARIZER), U128(45 * USD));
+    });
+    assert_eq!(
+        msg,
+        "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00"
+    );
+    assert_eq!(s.m(), &before, "balances unchanged");
+}
+
+#[test]
+fn s12_payee_not_allowed_and_treasury_short() {
+    let mut s = business_world();
+    let msg = panic_msg(|| {
+        s.runner(key(BOB_RUNNER)).pay(acc(MALLORY), U128(USD));
+    });
+    assert_eq!(
+        msg,
+        "PolicyViolation:Payee: mallory.testnet is not an allowed payee"
+    );
+    let msg = panic_msg(|| {
+        s.runner(key(BOB_RUNNER))
+            .pay(acc(SUMMARIZER), U128(11 * USD));
+    });
+    assert_eq!(msg, "InsufficientFunds: treasury 10.00 < 11.00");
+    assert_eq!(s.m().treasury, 10 * USD);
+}
+
+#[test]
+fn s13_constraints_owner_only() {
+    let mut s = sold_translator();
+    s.by_1y(BOB).set_limits(demo_limits());
+    assert_eq!(s.m().limits.daily_cap, 50 * USD);
+    // The seller cannot change the limits after the sale.
+    let msg = panic_msg(|| {
+        s.by_1y(ALICE).set_limits(demo_limits());
+    });
+    assert_eq!(msg, "NotOwner");
+    // Neither can the runner (a self-call by the agent).
+    let msg = panic_msg(|| {
+        let mut c = s.call(AGENT);
+        c.signer_pk = key(BOB_RUNNER);
+        c.deposit = NearToken::from_yoctonear(1);
+        s.env(&c);
+        s.c.set_limits(demo_limits());
+    });
+    assert_eq!(msg, "NotOwner");
+    // A function-call key cannot attach the 1 yoctoNEAR set_limits needs.
+    assert!(panics(|| {
+        s.by(BOB).set_limits(demo_limits());
+    }));
+}
+
+#[test]
+fn s13_limits_refused_while_listed_and_move_with_the_deed() {
+    let mut s = translator_world();
+    s.by_1y(ALICE).set_limits(demo_limits());
+    s.by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    let msg = panic_msg(|| {
+        s.by_1y(ALICE).set_limits(demo_limits());
+    });
+    assert_eq!(msg, "AlreadyListed");
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    let id = s.m().pending.as_ref().unwrap().sale_id;
+    s.callback(true).on_handover(id);
+    // The limits stay; bob now controls them.
+    assert_eq!(s.c.get_limits()["owner"], BOB);
+    assert_eq!(s.c.get_limits()["daily_cap"], "50000000");
+}
+
+#[test]
+fn e18_cap_resets_at_sale() {
+    // A15: alice burns the whole daily cap just before the sale.
+    let mut s = translator_world();
+    s.by_1y(ALICE).set_limits(demo_limits());
+    for p in PAYERS.iter().take(5) {
+        assert_eq!(s.pay(p, 60 * USD), Some(0));
+    }
+    assert_eq!(s.m().treasury, 60 * USD);
+    s.runner(key(ALICE_RUNNER))
+        .pay(acc(SUMMARIZER), U128(50 * USD));
+    assert!(panics(|| {
+        s.runner(key(ALICE_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
+    }));
+    s.by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    let id = s.m().pending.as_ref().unwrap().sale_id;
+    s.callback(true).on_handover(id);
+    // Same day, new owner epoch: bob's runner starts with the full 50.00.
+    assert_eq!(s.c.get_limits()["cap_left_today"], "50000000");
+    let r = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(10 * USD));
+    assert_eq!(r["ok"], true);
+}
+
+#[test]
+fn e19_cap_resets_by_utc_day() {
+    let mut s = business_world();
+    s.ft(PAYERS[2], 300 * USD, "", 100);
+    s.runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(50 * USD));
+    assert!(panics(|| {
+        s.runner(key(BOB_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
+    }));
+    // Next UTC day by block timestamp: the cap is fresh.
+    s.now = (s.now / DAY + 1) * DAY;
+    assert_eq!(s.by(BOB).get_limits()["cap_left_today"], "50000000");
+    // Treasury: 10.00 + 20% of 300.00 - 50.00 = 20.00.
+    let r = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(20 * USD));
+    assert_eq!(r["ok"], true);
+    assert_eq!(s.m().treasury, 0);
+}
+
+#[test]
+fn e33_bad_limits_refused() {
+    let mut s = sold_translator();
+    let mut bad = vec![];
+    let mut l = demo_limits();
+    l.split.owner_bps = 7_000; // 70% + 20% != 100%
+    bad.push(l);
+    let mut l = demo_limits();
+    l.daily_cap = U128(1_000_001 * USD); // absurd cap
+    bad.push(l);
+    let mut l = demo_limits();
+    l.price_floor = U128(u128::MAX);
+    bad.push(l);
+    let mut l = demo_limits();
+    l.allowed_payees = vec![acc(AGENT)]; // the agent paying itself
+    bad.push(l);
+    let mut l = demo_limits();
+    l.allowed_payees = (0..17).map(|i| acc(&format!("s{i}.testnet"))).collect();
+    bad.push(l);
+    for l in bad {
+        let msg = panic_msg(|| {
+            s.by_1y(BOB).set_limits(l.clone());
+        });
+        assert_eq!(msg, "BadLimits", "{l:?}");
+    }
+    // Negative or non-numeric amounts do not even parse.
+    for args in [
+        r#"{"price_floor":"-5","daily_cap":"50","allowed_payees":[],"split":{"owner_bps":10000,"treasury_bps":0}}"#,
+        r#"{"price_floor":"0","daily_cap":"lots","allowed_payees":[],"split":{"owner_bps":10000,"treasury_bps":0}}"#,
+        r#"{"price_floor":"0","daily_cap":"50","allowed_payees":[],"split":{"owner_bps":-1,"treasury_bps":10001}}"#,
+    ] {
+        assert!(serde_json::from_str::<LimitsArgs>(args).is_err(), "{args}");
+    }
+    assert_eq!(s.m().limits, agent_core::Limits::default());
+}
+
+#[test]
+fn price_floor_refunds_small_jobs() {
+    let mut s = business_world();
+    let free = s.m().owner_free;
+    assert_eq!(s.pay(PAYERS[3], 4 * USD), Some(4 * USD));
+    assert!(refused("PolicyViolation:PriceFloor"));
+    assert_eq!(s.m().owner_free, free);
+}
+
+#[test]
+fn failed_supplier_payment_returns_to_treasury() {
+    let mut s = business_world();
+    s.runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(8 * USD));
+    assert_eq!(s.m().treasury, 2 * USD);
+    s.callback(false)
+        .on_transfer_out(OutKind::TreasuryPay, acc(SUMMARIZER), U128(8 * USD));
+    assert_eq!(s.m().treasury, 10 * USD);
+    assert!(s.m().solvent());
+}
+
+#[test]
+fn hidden_key_cannot_spend_the_treasury() {
+    let mut s = business_world();
+    let r = s
+        .runner(key(HIDDEN_KEY))
+        .pay(acc(SUMMARIZER), U128(8 * USD));
+    assert_eq!(r["frozen"], true);
+    assert_eq!(s.m().treasury, 10 * USD);
+    assert!(ft_transfers().iter().all(|(to, _)| to != SUMMARIZER));
 }

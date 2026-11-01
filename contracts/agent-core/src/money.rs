@@ -26,6 +26,14 @@ pub fn split_price(price: Amount, earnout_bps: u16) -> (Amount, Amount) {
     (now, escrow)
 }
 
+/// Split an incoming payment into (owner's revenue, agent treasury) by the
+/// owner's limits. The treasury part rounds down, the owner gets the rest, so
+/// the two always add up to the payment exactly (feature 12, `prop_split_revenue`).
+pub fn split_revenue(amount: Amount, treasury_bps: u16) -> (Amount, Amount) {
+    let treasury = mul_bps(amount, treasury_bps.min(BPS as u16));
+    (amount - treasury, treasury)
+}
+
 /// Earn-out released by one counted post-sale payment: `share_bps` of the
 /// payment, never more than what is left in escrow.
 pub fn release_for_payment(payment: Amount, share_bps: u16, remaining: Amount) -> Amount {
@@ -70,6 +78,13 @@ mod tests {
         assert_eq!(now + escrow, price);
         assert_eq!(now, 699_999_999);
         assert_eq!(escrow, 300_000_000);
+    }
+
+    #[test]
+    fn s11_revenue_split_25() {
+        assert_eq!(split_revenue(25 * USD, 2_000), (20 * USD, 5 * USD));
+        assert_eq!(split_revenue(7, 3_333), (5, 2));
+        assert_eq!(split_revenue(7, 0), (7, 0));
     }
 
     #[test]

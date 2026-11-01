@@ -35,6 +35,9 @@ pub const PAYERS: [&str; 6] = [
     "p6.testnet",
 ];
 pub const CODE_HASH: &str = "sha256:fixture-code-hash";
+/// Another agent the translator buys sub-tasks from (feature 12) and that
+/// later buys the translator through MCP (S14).
+pub const SUMMARIZER: &str = "summarizer.testnet";
 
 /// Deterministic ed25519 public key for tests: 32 bytes of `n`.
 pub fn key(n: u8) -> PublicKey {
@@ -359,6 +362,47 @@ pub fn sold_translator() -> Sim {
     assert_eq!(s.callback(true).on_handover(sale_id).0, 0);
     s.callback(true)
         .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
+    s
+}
+
+/// The demo limits (feature 12): price floor 5.00, daily cap 50.00, payee
+/// `summarizer`, split 80% owner / 20% treasury.
+pub fn demo_limits() -> LimitsArgs {
+    LimitsArgs {
+        price_floor: U128(5 * USD),
+        daily_cap: U128(50 * USD),
+        allowed_payees: vec![acc(SUMMARIZER)],
+        split: Split {
+            owner_bps: 8_000,
+            treasury_bps: 2_000,
+        },
+    }
+}
+
+/// `translator` after the sale: bob set the demo limits, then two customers
+/// paid 25.00 for a job each (treasury 10.00). Demo beat 1 of 3.
+pub fn business_world() -> Sim {
+    let mut s = sold_translator();
+    s.by_1y(BOB).set_limits(demo_limits());
+    s.now += 3_600 * agent_core::NANOS_PER_SEC;
+    assert_eq!(
+        s.ft(
+            PAYERS[0],
+            25 * USD,
+            r#"{"kind":"pay","job_id":"job-b1"}"#,
+            100
+        ),
+        Some(0)
+    );
+    assert_eq!(
+        s.ft(
+            PAYERS[1],
+            25 * USD,
+            r#"{"kind":"pay","job_id":"job-b2"}"#,
+            100
+        ),
+        Some(0)
+    );
     s
 }
 

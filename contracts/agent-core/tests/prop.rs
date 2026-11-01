@@ -1,4 +1,4 @@
-//! Property tests for invariants I1, I2, I3, I4, I5, I6, I9, I10, I11 and S10
+//! Property tests for invariants I1, I2, I3, I4, I5, I6, I7, I9, I10, I11 and S10
 //! (design: threat model §3). Random action sequences run against the pure
 //! machine with a fixed RNG seed, so every run checks the same cases.
 //!
@@ -16,6 +16,8 @@ static ROLLBACKS: AtomicUsize = AtomicUsize::new(0);
 static BACKDOORS: AtomicUsize = AtomicUsize::new(0);
 static RELEASES: AtomicUsize = AtomicUsize::new(0);
 static FINALIZED: AtomicUsize = AtomicUsize::new(0);
+static SPENDS: AtomicUsize = AtomicUsize::new(0);
+static CAP_HITS: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -54,6 +56,10 @@ enum Act {
     Approve(usize, usize),
     Revoke(usize),
     Runner(bool),
+    /// Owner (or someone else) sets limits: caller, floor, cap, payees mask, treasury bps.
+    SetLimits(usize, u64, u64, u8, u16),
+    /// Runner pays ACTORS[payee] from the treasury; `known` = signed by the runner key.
+    Spend(usize, u64, bool),
 }
 
 fn act() -> impl Strategy<Value = Act> {
@@ -75,6 +81,9 @@ fn act() -> impl Strategy<Value = Act> {
         1 => (a.clone(), a.clone()).prop_map(|(c, r)| Act::Approve(c, r)),
         1 => a.clone().prop_map(Act::Revoke),
         1 => prop::bool::weighted(0.95).prop_map(Act::Runner),
+        2 => (a.clone(), 0u64..5_000_000, 0u64..80_000_000, any::<u8>(), 0u16..=10_000)
+            .prop_map(|(c, f, cap, mask, t)| Act::SetLimits(c, f, cap, mask, t)),
+        4 => (a.clone(), 1u64..30_000_000, prop::bool::weighted(0.97)).prop_map(|(p, x, k)| Act::Spend(p, x, k)),
     ]
 }
 
@@ -84,6 +93,9 @@ struct World {
     in_flight: Vec<(TransferKind, String, Amount)>,
     before_buy: Option<Machine>,
     key_counter: u64,
+    /// Highest daily cap in force at any point of the current (epoch, day).
+    max_cap_today: Amount,
+    cap_day: (u64, u64),
 }
 
 fn pending_amount(m: &Machine) -> Amount {
@@ -92,11 +104,16 @@ fn pending_amount(m: &Machine) -> Amount {
 
 fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     let m = &w.m;
-    // I3 (exact form): held = escrow left + claimable + owner revenue + buy in flight.
+    // I3 (exact form): held = escrow left + claimable + owner revenue +
+    // treasury + buy in flight.
     prop_assert_eq!(
         m.held,
-        m.escrow_left() + m.claimable_total() + m.owner_free + pending_amount(m)
+        m.escrow_left() + m.claimable_total() + m.owner_free + m.treasury + pending_amount(m)
     );
+    // I7: the runner never spent more than the cap in this (owner epoch, day),
+    // unless the owner lowered the cap after the spending.
+    let today = m.spent_today(w.now);
+    prop_assert!(today <= w.max_cap_today.max(m.limits.daily_cap));
     // I2: per sale, paid now + escrow = price; released + returned <= escrow.
     for s in &m.sales {
         prop_assert_eq!(s.paid_now + s.escrow, s.price);
@@ -126,6 +143,11 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
     let settling = w.m.status == Status::Settling;
     let before = w.m.clone();
     let owner = w.m.owner.clone();
+    let day_key = (w.m.owner_epoch, w.now / DAY_NS);
+    if day_key != w.cap_day {
+        w.cap_day = day_key;
+        w.max_cap_today = w.m.limits.daily_cap;
+    }
     match a.clone() {
         Act::Pay(p, x) => {
             let payer = ACTORS[p];
@@ -135,12 +157,24 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             let r = w.m.pay(payer, amount, x % 3 == 0, w.now);
             match r {
                 PayResult::Refund(_) => {
-                    prop_assert!(amount < meter::MIN_PAYMENT);
+                    prop_assert!(amount < meter::MIN_PAYMENT || amount < before.limits.price_floor);
                     prop_assert_eq!(&w.m, &before);
                 }
                 PayResult::Recorded {
-                    counted, released, ..
+                    counted,
+                    released,
+                    to_owner,
+                    to_treasury,
+                    ..
                 } => {
+                    // Feature 12: the split adds up exactly and lands in the buckets.
+                    prop_assert_eq!(to_owner + to_treasury, amount);
+                    prop_assert_eq!(w.m.owner_free, before.owner_free + to_owner);
+                    prop_assert_eq!(w.m.treasury, before.treasury + to_treasury);
+                    prop_assert_eq!(
+                        to_treasury,
+                        amount * before.limits.treasury_bps as Amount / 10_000
+                    );
                     // S10 property: release from one payment <= 50% of it.
                     let total: Amount = released.iter().map(|r| r.2).sum();
                     prop_assert!(total * 2 <= amount);
@@ -232,6 +266,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.meter = w.m.meter.clone();
                     expect.held = w.m.held;
                     expect.owner_free = w.m.owner_free;
+                    expect.treasury = w.m.treasury;
                     expect.claimable = w.m.claimable.clone();
                     expect.sales = w.m.sales.clone();
                     expect.frozen = w.m.frozen;
@@ -326,6 +361,61 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 Err(Error::NotRunner)
             );
         }
+        Act::SetLimits(c, floor, cap, mask, t) => {
+            let payees = (0..ACTORS.len())
+                .filter(|i| mask & (1 << (i % 8)) != 0)
+                .map(|i| ACTORS[i].to_string())
+                .collect();
+            let limits = Limits {
+                price_floor: floor as Amount,
+                daily_cap: cap as Amount,
+                allowed_payees: payees,
+                owner_bps: 10_000 - t,
+                treasury_bps: t,
+            };
+            let ok_shape = limits.check("translator").is_ok();
+            let r = w.m.set_limits(ACTORS[c], limits.clone());
+            check_owner_only(ACTORS[c], &owner, settling, r.is_ok(), &before, &w.m)?;
+            if r.is_ok() {
+                prop_assert!(ok_shape);
+                prop_assert_eq!(&w.m.limits, &limits);
+                w.max_cap_today = w.max_cap_today.max(limits.daily_cap);
+            }
+        }
+        Act::Spend(p, x, known) => {
+            let pk = if known {
+                w.m.known_keys.iter().next().cloned().unwrap_or_default()
+            } else {
+                "ed25519:hidden".to_string()
+            };
+            if let Ok(RunnerCheck::Ok) = w.m.runner_guard("translator", &pk) {
+                let payee = ACTORS[p];
+                let amount = x as Amount;
+                let spent_before = w.m.spent_today(w.now);
+                match w.m.spend(payee, amount, w.now) {
+                    Ok(total) => {
+                        SPENDS.fetch_add(1, Relaxed);
+                        // I7: inside the payees, the cap and the treasury.
+                        prop_assert!(before.limits.allowed_payees.contains(payee));
+                        prop_assert_eq!(total, spent_before + amount);
+                        prop_assert!(total <= before.limits.daily_cap);
+                        prop_assert!(amount <= before.treasury);
+                        prop_assert_eq!(w.m.treasury, before.treasury - amount);
+                        w.in_flight
+                            .push((TransferKind::TreasuryPay, payee.to_string(), amount));
+                    }
+                    Err(e) => {
+                        if e == Error::PolicyViolation(Policy::DailyCap) {
+                            CAP_HITS.fetch_add(1, Relaxed);
+                            prop_assert!(spent_before + amount > before.limits.daily_cap);
+                        }
+                        let mut expect = before.clone();
+                        expect.frozen = w.m.frozen;
+                        prop_assert_eq!(&w.m, &expect);
+                    }
+                }
+            }
+        }
     }
     check_invariants(w)
 }
@@ -377,6 +467,8 @@ fn prop_invariants_random_sequences() {
             in_flight: vec![],
             before_buy: None,
             key_counter: 0,
+            max_cap_today: 0,
+            cap_day: (0, 0),
         };
         for a in &acts {
             step(&mut w, a)?;
@@ -390,6 +482,8 @@ fn prop_invariants_random_sequences() {
         ("backdoors", &BACKDOORS),
         ("releases", &RELEASES),
         ("finalized", &FINALIZED),
+        ("treasury spends", &SPENDS),
+        ("cap refusals", &CAP_HITS),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");
@@ -404,6 +498,19 @@ fn prop_split_exact() {
         let (now, escrow) = money::split_price(price, bps);
         prop_assert_eq!(now + escrow, price);
         prop_assert!(escrow >= money::mul_bps(price, bps));
+        Ok(())
+    })
+    .unwrap();
+}
+
+/// Feature 12: owner part + treasury part == payment, for any split.
+#[test]
+fn prop_split_revenue_exact() {
+    let mut r = runner();
+    r.run(&(0u128..u64::MAX as u128, 0u16..=10_000), |(amount, t)| {
+        let (owner, treasury) = money::split_revenue(amount, t);
+        prop_assert_eq!(owner + treasury, amount);
+        prop_assert_eq!(treasury, money::mul_bps(amount, t));
         Ok(())
     })
     .unwrap();

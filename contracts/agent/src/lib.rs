@@ -13,12 +13,16 @@
 //!   a self key batch (delete the seller's runner keys, add the buyer's runner
 //!   key) and pays out only in the callback, all-or-nothing;
 //! - the earn-out escrow (30% of the price), released from counted post-sale
-//!   revenue; silence pays the floor; a proven backdoor cuts it.
+//!   revenue; silence pays the floor; a proven backdoor cuts it;
+//! - the spending policy (feature 12): the owner sets limits with
+//!   `set_limits`, every incoming payment is split between the owner's revenue
+//!   and the agent's treasury, and the runner key can `pay` out of the
+//!   treasury only to allowed payees and only up to the daily cap.
 //!
 //! All rules live in `agent-core`; this file wires them to the NEAR runtime.
 
 use agent_core::{
-    self as core, Amount, BuyResult, Machine, PayResult, RunnerCheck, Terms, TransferKind,
+    self as core, Amount, BuyResult, Limits, Machine, PayResult, RunnerCheck, Terms, TransferKind,
 };
 use near_contract_standards::fungible_token::core::ext_ft_core;
 use near_contract_standards::non_fungible_token::approval::ext_nft_approval_receiver;
@@ -87,6 +91,41 @@ pub enum OutKind {
     SellerPayout,
     Claim,
     OwnerWithdraw,
+    TreasuryPay,
+}
+
+/// Revenue split of every incoming payment; must add up to 10,000 bps.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde", deny_unknown_fields)]
+pub struct Split {
+    pub owner_bps: u16,
+    pub treasury_bps: u16,
+}
+
+/// `set_limits` arguments (`limits.v1`). Amounts are token base units as
+/// strings; a negative or non-numeric amount fails to parse (E33).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde", deny_unknown_fields)]
+pub struct LimitsArgs {
+    /// Smallest accepted incoming payment.
+    pub price_floor: U128,
+    /// Most the runner may pay per UTC day, counted per owner.
+    pub daily_cap: U128,
+    /// The only accounts the runner may pay.
+    pub allowed_payees: Vec<AccountId>,
+    pub split: Split,
+}
+
+impl From<LimitsArgs> for Limits {
+    fn from(a: LimitsArgs) -> Self {
+        Limits {
+            price_floor: a.price_floor.0,
+            daily_cap: a.daily_cap.0,
+            allowed_payees: a.allowed_payees.iter().map(|p| p.to_string()).collect(),
+            owner_bps: a.split.owner_bps,
+            treasury_bps: a.split.treasury_bps,
+        }
+    }
 }
 
 impl From<OutKind> for TransferKind {
@@ -95,6 +134,7 @@ impl From<OutKind> for TransferKind {
             OutKind::SellerPayout => TransferKind::SellerPayout,
             OutKind::Claim => TransferKind::Claim,
             OutKind::OwnerWithdraw => TransferKind::OwnerWithdraw,
+            OutKind::TreasuryPay => TransferKind::TreasuryPay,
         }
     }
 }
@@ -139,6 +179,11 @@ fn pk(s: &str) -> PublicKey {
 
 fn amt(a: Amount) -> String {
     a.to_string()
+}
+
+/// `53000000` -> `53.00` (6-decimal test dollar), for error messages.
+fn usd(a: Amount) -> String {
+    format!("{}.{:02}", a / core::USD, (a % core::USD) / 10_000)
 }
 
 #[near]
@@ -322,6 +367,8 @@ impl AgentExit {
                         counted,
                         verified,
                         released,
+                        to_owner,
+                        to_treasury,
                     } => {
                         if let (true, Some(verified::Outcome::Verified { sig_id, .. })) =
                             (verified, &check)
@@ -335,6 +382,18 @@ impl AgentExit {
                                 "counted": counted, "verified": verified, "verify": verify_note,
                                 "flags": flags,
                                 "day": now / core::DAY_NS,
+                            }),
+                        );
+                        // The automatic split. While an earn-out is open, the
+                        // seller's share of this payment is the earn-out release
+                        // (paid from escrow, not from the payment).
+                        let earnout: Amount = released.iter().map(|r| r.2).sum();
+                        emit(
+                            "split",
+                            json!({
+                                "amount": amt(amount.0), "to_owner": amt(to_owner),
+                                "to_treasury": amt(to_treasury),
+                                "seller_earnout_release": amt(earnout),
                             }),
                         );
                         for (sale_id, seller, r) in released {
@@ -510,7 +569,69 @@ impl AgentExit {
         self.sale_json(&s)
     }
 
+    // ------------------------------------------- owner: limits (feature 12)
+
+    /// The owner's one business method: sets the price floor, the daily
+    /// spending cap, the allowed payees and the revenue split. Needs 1
+    /// yoctoNEAR (a full-access key of the owner). Refused while listed:
+    /// buyers scanned these limits. After a sale the buyer holds the deed and
+    /// the seller gets `NotOwner`.
+    #[payable]
+    pub fn set_limits(&mut self, limits: LimitsArgs) -> Value {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        self.m
+            .set_limits(caller.as_str(), limits.into())
+            .unwrap_or_else(|e| fail(e));
+        let v = self.get_limits();
+        emit("limits_set", v.clone());
+        v
+    }
+
     // --------------------------------------------------------- runner
+
+    /// The runner pays `payee` out of the agent's treasury (procurement), only
+    /// to an allowed payee and only up to the daily cap. Refusals panic with
+    /// `PolicyViolation:Payee`, `PolicyViolation:DailyCap` or
+    /// `InsufficientFunds`, plus the numbers; nothing changes.
+    pub fn pay(&mut self, payee: AccountId, amount: U128) -> Value {
+        if let Some(v) = self.runner_guard() {
+            return v;
+        }
+        let now = env::block_timestamp();
+        let spent_before = self.m.spent_today(now);
+        let total = match self.m.spend(payee.as_str(), amount.0, now) {
+            Ok(t) => t,
+            Err(e) => {
+                let l = &self.m.limits;
+                let detail = match &e {
+                    core::Error::PolicyViolation(core::Policy::DailyCap) => format!(
+                        "{} + {} > daily cap {}",
+                        usd(spent_before),
+                        usd(amount.0),
+                        usd(l.daily_cap)
+                    ),
+                    core::Error::PolicyViolation(core::Policy::Payee) => {
+                        format!("{payee} is not an allowed payee")
+                    }
+                    core::Error::InsufficientFunds => {
+                        format!("treasury {} < {}", usd(self.m.treasury), usd(amount.0))
+                    }
+                    _ => String::new(),
+                };
+                env::panic_str(&format!("{e}: {detail}"))
+            }
+        };
+        let data = json!({
+            "payee": payee, "amount": amt(amount.0), "spent_today": amt(total),
+            "daily_cap": amt(self.m.limits.daily_cap), "treasury_left": amt(self.m.treasury),
+            "owner_epoch": self.m.owner_epoch,
+        });
+        emit("treasury_pay", data.clone());
+        self.send(OutKind::TreasuryPay, payee.as_str(), amount.0)
+            .detach();
+        json!({"ok": true, "paid": data})
+    }
 
     /// Runner liveness call. Like every runner method it must be a self-call
     /// signed by a key this contract added. A self-call signed by any other
@@ -524,6 +645,26 @@ impl AgentExit {
     }
 
     // --------------------------------------------------------- views
+
+    /// Limits, treasury and today's spending (`limits.v1`).
+    pub fn get_limits(&self) -> Value {
+        let l = &self.m.limits;
+        let now = env::block_timestamp();
+        let spent = self.m.spent_today(now);
+        json!({
+            "schema": "limits.v1",
+            "owner": self.m.owner,
+            "owner_epoch": self.m.owner_epoch,
+            "price_floor": amt(l.price_floor),
+            "daily_cap": amt(l.daily_cap),
+            "allowed_payees": l.allowed_payees,
+            "split": {"owner_bps": l.owner_bps, "treasury_bps": l.treasury_bps},
+            "treasury": amt(self.m.treasury),
+            "spent_today": amt(spent),
+            "cap_left_today": amt(l.daily_cap.saturating_sub(spent)),
+            "day": now / core::DAY_NS,
+        })
+    }
 
     pub fn get_earnings(&self) -> core::Earnings {
         self.m.earnings(env::block_timestamp())
@@ -565,6 +706,7 @@ impl AgentExit {
             "open_approvals": self.m.approvals.len(),
             "held": amt(self.m.held),
             "owner_free": amt(self.m.owner_free),
+            "treasury": amt(self.m.treasury),
             "escrow_left": amt(self.m.escrow_left()),
             "claimable_total": amt(self.m.claimable_total()),
             "solvent": self.m.solvent(),
@@ -880,6 +1022,10 @@ impl AgentExit {
             "escrow_left": amt(self.m.escrow_left()),
             "frozen": self.m.frozen,
             "known_keys_hash": self.m.known_keys_hash(),
+            "limits": {"daily_cap": amt(self.m.limits.daily_cap),
+                       "allowed_payees": self.m.limits.allowed_payees.len(),
+                       "treasury_bps": self.m.limits.treasury_bps},
+            "treasury": amt(self.m.treasury),
             "last_scan": Value::Null,
         });
         Token {

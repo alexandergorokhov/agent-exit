@@ -511,6 +511,146 @@ fn run() -> Value {
         json!({"extra_schema": extra["schema"]}),
     );
 
+    // Feature 12: spending policy enforced by the contract (3 demo beats).
+    let mut s = sold_translator();
+    let free0 = s.m().owner_free;
+    let rel0 = claim(&s, ALICE);
+    s.by_1y(BOB).set_limits(demo_limits());
+    s.now += 3_600 * agent_core::NANOS_PER_SEC;
+    s.ft(
+        PAYERS[0],
+        25 * USD,
+        r#"{"kind":"pay","job_id":"job-b1"}"#,
+        100,
+    );
+    let (to_owner, to_treasury) = (s.m().owner_free - free0, s.m().treasury);
+    let release = claim(&s, ALICE) - rel0;
+    s.ft(
+        PAYERS[1],
+        25 * USD,
+        r#"{"kind":"pay","job_id":"job-b2"}"#,
+        100,
+    );
+    let paid = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(8 * USD));
+    r.check(
+        "S11",
+        "limits set; a 25.00 job splits 20.00 owner / 5.00 treasury (seller's share = earn-out release 12.50); runner pays summarizer 8.00",
+        to_owner == 20 * USD
+            && to_treasury == 5 * USD
+            && release == 12_500_000
+            && paid["ok"] == true
+            && ft_transfers() == vec![(SUMMARIZER.to_string(), 8 * USD)]
+            && s.m().solvent(),
+        json!({"to_owner": usd(to_owner), "to_treasury": usd(to_treasury),
+               "seller_earnout_release": usd(release), "paid_summarizer": "8.00",
+               "treasury_left": usd(s.m().treasury)}),
+    );
+    let before = s.m().clone();
+    let over = panics_with(
+        "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00",
+        || {
+            s.runner(key(BOB_RUNNER))
+                .pay(acc(SUMMARIZER), U128(45 * USD));
+        },
+    );
+    let payee = panics_with("PolicyViolation:Payee", || {
+        s.runner(key(BOB_RUNNER)).pay(acc(MALLORY), U128(USD));
+    });
+    r.check(
+        "S12",
+        "over-limit payment fails: PolicyViolation:DailyCap (8.00 + 45.00 > 50.00); a payee not on the list fails; balances unchanged",
+        over && payee && s.m() == &before,
+        json!({"error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00"}),
+    );
+    let alice_no = panics_with("NotOwner", || {
+        s.by_1y(ALICE).set_limits(demo_limits());
+    });
+    let runner_no = panics_with("NotOwner", || {
+        let mut c = s.call(AGENT);
+        c.signer_pk = key(BOB_RUNNER);
+        c.deposit = NearToken::from_yoctonear(1);
+        s.env(&c);
+        s.c.set_limits(demo_limits());
+    });
+    r.check(
+        "S13",
+        "only the owner sets limits: bob applies, the old seller and the runner get NotOwner",
+        alice_no && runner_no && s.m().limits.daily_cap == 50 * USD,
+        json!({}),
+    );
+
+    // E18 / A15: the seller burns the cap just before the sale.
+    let mut s = translator_world();
+    s.by_1y(ALICE).set_limits(demo_limits());
+    for p in PAYERS.iter().take(5) {
+        s.pay(p, 60 * USD);
+    }
+    s.runner(key(ALICE_RUNNER))
+        .pay(acc(SUMMARIZER), U128(50 * USD));
+    s.by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    let id = s.m().pending.as_ref().map(|p| p.sale_id).unwrap_or(0);
+    s.callback(true).on_handover(id);
+    let left = s.by(BOB).get_limits()["cap_left_today"].clone();
+    r.check(
+        "E18",
+        "cap resets at sale: same day, bob's epoch starts with the full 50.00",
+        left == "50000000",
+        json!({"cap_left_today": left}),
+    );
+    r.check(
+        "A15",
+        "seller burns the daily cap before the sale: buyer's cap unaffected",
+        left == "50000000",
+        json!({}),
+    );
+
+    // E19: UTC day boundary.
+    let mut s = business_world();
+    s.ft(PAYERS[2], 300 * USD, "", 100);
+    s.runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(50 * USD));
+    let capped = panics_with("PolicyViolation:DailyCap", || {
+        s.runner(key(BOB_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
+    });
+    s.now = (s.now / DAY + 1) * DAY;
+    let next = s
+        .runner(key(BOB_RUNNER))
+        .pay(acc(SUMMARIZER), U128(20 * USD));
+    r.check(
+        "E19",
+        "spending cap resets by block-timestamp UTC day",
+        capped && next["ok"] == true,
+        json!({}),
+    );
+
+    // E33: bad limits.
+    let mut s = sold_translator();
+    let mut split = demo_limits();
+    split.split.owner_bps = 7_000;
+    let mut cap = demo_limits();
+    cap.daily_cap = U128(1_000_001 * USD);
+    let mut selfpay = demo_limits();
+    selfpay.allowed_payees = vec![acc(AGENT)];
+    let all_bad = [split, cap, selfpay].into_iter().all(|l| {
+        panics_with("BadLimits", || {
+            s.by_1y(BOB).set_limits(l);
+        })
+    });
+    let negative = serde_json::from_str::<agent_exit::LimitsArgs>(
+        r#"{"price_floor":"-5","daily_cap":"50","allowed_payees":[],"split":{"owner_bps":10000,"treasury_bps":0}}"#,
+    )
+    .is_err();
+    r.check(
+        "E33",
+        "set_limits with split != 100%, an absurd cap, the agent as payee or a negative amount: refused",
+        all_bad && negative,
+        json!({}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({
@@ -531,8 +671,10 @@ fn run() -> Value {
              "where": "owner's machine, day-1 gate G6"},
             {"id": "S5,E5,E6,A17,A21", "part": "real key errors, real token refunds, gas",
              "where": "near-sandbox (make test-sandbox) or testnet"},
-            {"id": "A1-A6,A9,A18,A20", "part": "client scan, set_constraints, Base wallet",
-             "where": "batches B2-B4"},
+            {"id": "S6,A18,A20", "part": "Chain Signatures Base wallet and pay_base",
+             "where": "batch B3"},
+            {"id": "S11,S12", "part": "the same limits on a real node (sandbox/testnet)",
+             "where": "near-sandbox or testnet"},
         ],
     })
 }
