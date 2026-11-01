@@ -1,0 +1,28 @@
+{
+  "name": "agent-exit-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server for Agent Exit: list, scan, buy and verify AI agents on NEAR (offline fixtures or testnet; never mainnet). All money is xUSD-FAKE.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "agent-exit-mcp": "dist/src/server.js"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "tsc -p . && node --test 'dist/test/*.test.js'",
+    "start": "node dist/src/server.js",
+    "agent-buys-agent": "node dist/scripts/agent-buys-agent.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.1",
+    "typescript": "5.9.3"
+  }
+}

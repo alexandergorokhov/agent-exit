@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/verify_lockout.output.v1.json",
+  "title": "verify_lockout output",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.verify_lockout.v1"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "testnet"
+      ]
+    },
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "account": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "locked_out": {
+      "type": "boolean"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "pass",
+          "detail"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pass": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "network",
+    "agent",
+    "account",
+    "locked_out",
+    "checks"
+  ],
+  "additionalProperties": false
+}

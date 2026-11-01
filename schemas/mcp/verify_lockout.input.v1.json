@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/verify_lockout.input.v1.json",
+  "title": "verify_lockout input",
+  "description": "Check that an account (usually the old seller) can no longer control the agent. Read-only.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. translator.testnet"
+    },
+    "account": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "account_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "description": "public keys that account used; offline: default from the recorded key history"
+    }
+  },
+  "required": [
+    "agent",
+    "account"
+  ],
+  "additionalProperties": false
+}

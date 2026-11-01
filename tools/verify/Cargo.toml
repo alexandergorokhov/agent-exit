@@ -10,6 +10,7 @@ default-run = "verify"
 [dependencies]
 agent-exit = { path = "../../contracts/agent", features = ["sim"] }
 agent-core = { path = "../../contracts/agent-core" }
+scan = { path = "../scan" }
 near-sdk = { workspace = true, features = ["unit-testing"] }
 serde_json.workspace = true
 k256 = { version = "0.13", features = ["ecdsa"] }

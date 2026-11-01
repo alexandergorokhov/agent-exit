@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/get_earnings.output.v1.json",
+  "title": "get_earnings output",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.get_earnings.v1"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "testnet"
+      ]
+    },
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "earnings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gross",
+        "counted",
+        "verified",
+        "flagged",
+        "flagged_self",
+        "flagged_seller_subaccount",
+        "flagged_round_trip",
+        "payments",
+        "counted_payers",
+        "days"
+      ],
+      "properties": {
+        "gross": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "counted": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "verified": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "flagged": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "flagged_self": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "flagged_seller_subaccount": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "flagged_round_trip": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$",
+          "description": "xUSD-FAKE dollars, 2 decimals"
+        },
+        "payments": {
+          "type": "integer"
+        },
+        "counted_payers": {
+          "type": "integer"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "day",
+              "gross",
+              "counted",
+              "verified",
+              "payments"
+            ],
+            "properties": {
+              "day": {
+                "type": "integer"
+              },
+              "gross": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]{2}$",
+                "description": "xUSD-FAKE dollars, 2 decimals"
+              },
+              "counted": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]{2}$",
+                "description": "xUSD-FAKE dollars, 2 decimals"
+              },
+              "verified": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]{2}$",
+                "description": "xUSD-FAKE dollars, 2 decimals"
+              },
+              "payments": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "meaning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "network",
+    "agent",
+    "earnings",
+    "meaning"
+  ],
+  "additionalProperties": false
+}

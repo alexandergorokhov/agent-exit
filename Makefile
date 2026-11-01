@@ -26,10 +26,11 @@ help: ## List targets
 # ---------------------------------------------------------------- offline core
 
 .PHONY: setup
-setup: ## Print toolchain versions; fetch crates (network once)
+setup: ## Print toolchain versions; fetch crates and npm packages (network once)
 	rustc --version
 	cargo --version
 	cargo fetch --locked
+	@command -v node >/dev/null && { node --version; cd mcp && npm ci --no-audit --no-fund; } || echo "node not installed: the MCP server (mcp/) needs Node >= 20" >&2
 
 .PHONY: test
 test: ## Unit + property tests (offline)
@@ -46,6 +47,35 @@ verify: ## Offline rerun: tests + fixed world -> out/verify.json, compared with 
 golden: ## Rewrite tests/golden/verify.json from the current code (review the diff!)
 	cargo run --quiet --locked --offline -p verify -- --json --out tests/golden/verify.json
 	cargo run --quiet --locked --offline -p attack -- --out tests/golden/attack.json > /dev/null
+
+.PHONY: mcp-golden
+mcp-golden: mcp-build ## Rewrite fixtures/mcp/world.json and tests/golden/agent-buys-agent.json (review the diff!)
+	cargo run --quiet --locked --offline -p verify --bin gen-mcp-world
+	node mcp/dist/scripts/agent-buys-agent.js --out tests/golden/agent-buys-agent.json
+
+# ---------------------------------------------------------------- MCP + Skill
+
+.PHONY: mcp-build
+mcp-build: ## Build the MCP server (TypeScript) and the scan binary it calls
+	@command -v node >/dev/null || { echo "node not installed: the MCP server needs Node >= 20" >&2; exit 1; }
+	cargo build --quiet --locked --offline -p scan
+	cd mcp && { test -d node_modules || npm ci --no-audit --no-fund; } && npx tsc -p .
+
+.PHONY: mcp
+mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_NETWORK=testnet; never mainnet)
+	@node mcp/dist/src/server.js
+
+.PHONY: mcp-test
+mcp-test: mcp-build ## MCP tests offline (S14, S15, E29, E30, schemas, skill) + agent-buys-agent vs its golden
+	@mkdir -p $(OUT)
+	cargo run --quiet --locked --offline -p verify --bin gen-mcp-world -- --check
+	cd mcp && node --test --test-concurrency=4 'dist/test/*.test.js'
+	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json
+
+.PHONY: agent-buys-agent
+agent-buys-agent: mcp-build ## Scripted offline run: summarizer buys translator via MCP -> out/agent-buys-agent.json
+	@mkdir -p $(OUT)
+	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json
 
 .PHONY: attack
 attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/attack.json [N=200 SEED=42 CLEAN=50 FIXTURE=fixtures/judge-attack.json]
@@ -68,7 +98,7 @@ audit: ## cargo audit (needs cargo-audit + advisory DB) and check ignored adviso
 	./scripts/ci/wasm-deps-clean.sh
 
 .PHONY: ci
-ci: lint verify ## What CI runs offline (audit runs as its own CI job)
+ci: lint verify mcp-test ## What CI runs offline (audit runs as its own CI job)
 
 .PHONY: build
 build: ## Reproducible wasm build with cargo-near (Docker) -> contracts/res
@@ -94,7 +124,7 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 test-sandbox: build-dev ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
 	cd tests/sandbox && cargo test --locked -- --test-threads=1 --nocapture
 
-.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record mcp web-dev web-deploy e2e
+.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-dev web-deploy e2e
 attack-sandbox: ## Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
 attack-testnet: ## [testnet] A1 A5 A17-A21 live
@@ -111,8 +141,6 @@ demo-setup: ## [testnet] Reset demo agents
 	$(call not_built,demo-setup,M2 B3)
 record: ## [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
-mcp: ## MCP server (stdio)
-	$(call not_built,mcp,M3 B4)
 web-dev: ## Local hosted page
 	$(call not_built,web-dev,M3 B5)
 web-deploy: ## [testnet] Vercel deploy

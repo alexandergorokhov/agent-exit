@@ -62,7 +62,7 @@ fn unbuilt_make_targets_fail_loudly() {
         eprintln!("make not installed; skipped");
         return;
     }
-    for t in ["attack-sandbox", "fuzz", "mcp", "scene-1", "gate-g1"] {
+    for t in ["attack-sandbox", "fuzz", "web-dev", "scene-1", "gate-g1"] {
         let out = Command::new("make")
             .arg("-s")
             .arg(t)
@@ -114,4 +114,36 @@ fn golden_attack_report_blocks_everything_in_scope() {
     assert_eq!(v["clean"]["cases"], 50);
     assert_eq!(v["clean"]["false_positives"], 0);
     assert_eq!(v["not_caught_by_design"].as_array().unwrap().len(), 6);
+}
+
+#[test]
+fn mcp_world_fixture_is_recorded_from_the_contract() {
+    let out = Command::new(env!("CARGO_BIN_EXE_gen-mcp-world"))
+        .arg("--check")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let v: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root().join("fixtures/mcp/world.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(v["schema"], "mcp-world.v1");
+    assert_eq!(v["network"], "offline");
+    assert!(v["_note"].as_str().unwrap().contains("xUSD-FAKE"));
+}
+
+#[test]
+fn golden_agent_buys_agent_passes() {
+    let v: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root().join("tests/golden/agent-buys-agent.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(v["schema"], "agent-buys-agent.v1");
+    assert_eq!(v["pass"], true);
+    assert_eq!(v["summary"]["cheat_buy_refused"], true);
+    assert_eq!(v["summary"]["seller_locked_out_after"], true);
 }

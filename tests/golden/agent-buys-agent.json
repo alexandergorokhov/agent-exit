@@ -1,0 +1,425 @@
+{
+  "schema": "agent-buys-agent.v1",
+  "money": "xUSD-FAKE, a fake test dollar with no value",
+  "network": "offline (results recorded from the real contract code; nothing sent)",
+  "buyer": "summarizer.testnet",
+  "steps": [
+    {
+      "why": "find agents for sale",
+      "tool": "list_agents",
+      "args": {
+        "status": "Listed"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.list_agents.v1",
+        "network": "offline",
+        "agents": [
+          {
+            "agent": "cheat.testnet",
+            "owner": "alice.testnet",
+            "status": "Listed",
+            "listing_version": 1,
+            "price": "500.00",
+            "gross": "500.00",
+            "counted": "0.00",
+            "verified": "0.00",
+            "flagged": "500.00",
+            "frozen": false
+          },
+          {
+            "agent": "translator.testnet",
+            "owner": "alice.testnet",
+            "status": "Listed",
+            "listing_version": 1,
+            "price": "1000.00",
+            "gross": "500.00",
+            "counted": "360.00",
+            "verified": "120.00",
+            "flagged": "140.00",
+            "frozen": false
+          }
+        ]
+      }
+    },
+    {
+      "why": "cheat claims 500.00 gross: how much is real?",
+      "tool": "get_earnings",
+      "args": {
+        "agent": "cheat.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.get_earnings.v1",
+        "network": "offline",
+        "agent": "cheat.testnet",
+        "earnings": {
+          "gross": "500.00",
+          "counted": "0.00",
+          "verified": "0.00",
+          "flagged": "500.00",
+          "flagged_self": "300.00",
+          "flagged_seller_subaccount": "200.00",
+          "flagged_round_trip": "0.00",
+          "payments": 10,
+          "counted_payers": 0,
+          "days": [
+            {
+              "day": 20454,
+              "gross": "100.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 2
+            },
+            {
+              "day": 20455,
+              "gross": "100.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 2
+            },
+            {
+              "day": 20456,
+              "gross": "100.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 2
+            },
+            {
+              "day": 20457,
+              "gross": "100.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 2
+            },
+            {
+              "day": 20458,
+              "gross": "100.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 2
+            }
+          ]
+        },
+        "meaning": "counted = paid by accounts that are not the owner, a past owner, their sub-accounts or a round trip; verified = counted payments whose NEAR AI signature the contract checked; flagged payments are shown but never counted"
+      }
+    },
+    {
+      "why": "scan the cheap one first",
+      "tool": "scan_agent",
+      "args": {
+        "agent": "cheat.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.scan_agent.v1",
+        "network": "offline",
+        "agent": "cheat.testnet",
+        "verdict": "blocked",
+        "safe_to_buy": false,
+        "findings": [
+          {
+            "code": "full_access_key_present",
+            "severity": "block",
+            "detail": "ed25519:5TeWSsjg2gbxCyWVniXeCmwM7UtHTCK7svzJr5xYJzHf has full access to the agent account"
+          }
+        ],
+        "buy_args": null,
+        "scanner": "tools/scan (scan-report.v1)"
+      }
+    },
+    {
+      "why": "try to buy it anyway: refused before any transaction",
+      "tool": "buy_agent",
+      "args": {
+        "agent": "cheat.testnet",
+        "max_price": 600,
+        "confirm": true,
+        "buyer_runner_pk": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+      },
+      "ok": false,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.error.v1",
+        "ok": false,
+        "error": {
+          "code": "SCAN_BLOCKED",
+          "message": "scan verdict blocked: not buying",
+          "details": {
+            "findings": [
+              {
+                "code": "full_access_key_present",
+                "severity": "block",
+                "detail": "ed25519:5TeWSsjg2gbxCyWVniXeCmwM7UtHTCK7svzJr5xYJzHf has full access to the agent account"
+              }
+            ]
+          }
+        },
+        "sent": false
+      }
+    },
+    {
+      "why": "translator: real customers?",
+      "tool": "get_earnings",
+      "args": {
+        "agent": "translator.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.get_earnings.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "earnings": {
+          "gross": "500.00",
+          "counted": "360.00",
+          "verified": "120.00",
+          "flagged": "140.00",
+          "flagged_self": "100.00",
+          "flagged_seller_subaccount": "40.00",
+          "flagged_round_trip": "0.00",
+          "payments": 33,
+          "counted_payers": 6,
+          "days": [
+            {
+              "day": 20454,
+              "gross": "72.00",
+              "counted": "72.00",
+              "verified": "72.00",
+              "payments": 6
+            },
+            {
+              "day": 20455,
+              "gross": "72.00",
+              "counted": "72.00",
+              "verified": "48.00",
+              "payments": 6
+            },
+            {
+              "day": 20456,
+              "gross": "72.00",
+              "counted": "72.00",
+              "verified": "0.00",
+              "payments": 6
+            },
+            {
+              "day": 20457,
+              "gross": "72.00",
+              "counted": "72.00",
+              "verified": "0.00",
+              "payments": 6
+            },
+            {
+              "day": 20458,
+              "gross": "72.00",
+              "counted": "72.00",
+              "verified": "0.00",
+              "payments": 6
+            },
+            {
+              "day": 20459,
+              "gross": "140.00",
+              "counted": "0.00",
+              "verified": "0.00",
+              "payments": 3
+            }
+          ]
+        },
+        "meaning": "counted = paid by accounts that are not the owner, a past owner, their sub-accounts or a round trip; verified = counted payments whose NEAR AI signature the contract checked; flagged payments are shown but never counted"
+      }
+    },
+    {
+      "why": "scan translator",
+      "tool": "scan_agent",
+      "args": {
+        "agent": "translator.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.scan_agent.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "verdict": "clean",
+        "safe_to_buy": true,
+        "findings": [],
+        "buy_args": {
+          "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+          "listing_version": 1
+        },
+        "scanner": "tools/scan (scan-report.v1)"
+      }
+    },
+    {
+      "why": "seller still in control before the sale",
+      "tool": "verify_lockout",
+      "args": {
+        "agent": "translator.testnet",
+        "account": "alice.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.verify_lockout.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "account": "alice.testnet",
+        "locked_out": false,
+        "checks": [
+          {
+            "id": "not_owner",
+            "pass": false,
+            "detail": "deed owner is alice.testnet"
+          },
+          {
+            "id": "no_key_on_account",
+            "pass": false,
+            "detail": "1 key(s) of alice.testnet checked against the account's key list and the contract's known keys"
+          },
+          {
+            "id": "no_full_access_key",
+            "pass": true,
+            "detail": "the account has no full-access key"
+          }
+        ]
+      }
+    },
+    {
+      "why": "buy translator inside max_price, confirmed",
+      "tool": "buy_agent",
+      "args": {
+        "agent": "translator.testnet",
+        "max_price": 1000,
+        "confirm": true,
+        "buyer_runner_pk": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.buy_agent.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "buyer": "summarizer.testnet",
+        "seller": "alice.testnet",
+        "sale_id": 1,
+        "price": "1000.00",
+        "paid_now": "700.00",
+        "escrow": "300.00",
+        "overpay_refund": "0.00",
+        "listing_version": 1,
+        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "scan_verdict": "clean",
+        "key_batch": [
+          {
+            "action": "delete",
+            "key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          },
+          {
+            "action": "add_fc",
+            "key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+          }
+        ],
+        "owner_after": "summarizer.testnet",
+        "session_spent": "1000.00",
+        "recorded": true
+      }
+    },
+    {
+      "why": "is the old seller locked out?",
+      "tool": "verify_lockout",
+      "args": {
+        "agent": "translator.testnet",
+        "account": "alice.testnet"
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.verify_lockout.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "account": "alice.testnet",
+        "locked_out": true,
+        "checks": [
+          {
+            "id": "not_owner",
+            "pass": true,
+            "detail": "deed owner is summarizer.testnet"
+          },
+          {
+            "id": "no_key_on_account",
+            "pass": true,
+            "detail": "1 key(s) of alice.testnet checked against the account's key list and the contract's known keys"
+          },
+          {
+            "id": "no_full_access_key",
+            "pass": true,
+            "detail": "the account has no full-access key"
+          },
+          {
+            "id": "refused_withdraw",
+            "pass": true,
+            "detail": "withdraw by alice.testnet: NotOwner"
+          },
+          {
+            "id": "refused_set_limits",
+            "pass": true,
+            "detail": "set_limits by alice.testnet: NotOwner"
+          },
+          {
+            "id": "refused_list_for_sale",
+            "pass": true,
+            "detail": "list_for_sale by alice.testnet: NotOwner"
+          },
+          {
+            "id": "refused_nft_transfer",
+            "pass": true,
+            "detail": "nft_transfer by alice.testnet: NotOwner"
+          }
+        ]
+      }
+    },
+    {
+      "why": "resale: list translator again at 1,200.00",
+      "tool": "list_for_sale",
+      "args": {
+        "agent": "translator.testnet",
+        "price": 1200,
+        "confirm": true
+      },
+      "ok": true,
+      "schema_valid": true,
+      "response": {
+        "schema_version": "agent-exit.mcp.list_for_sale.v1",
+        "network": "offline",
+        "agent": "translator.testnet",
+        "seller": "summarizer.testnet",
+        "price": "1200.00",
+        "paid_now": "840.00",
+        "escrow": "360.00",
+        "listing_version": 3,
+        "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+        "recorded": true
+      }
+    }
+  ],
+  "summary": {
+    "agents_listed": 2,
+    "cheat_buy_refused": true,
+    "translator_counted": "360.00",
+    "translator_verified": "120.00",
+    "translator_scan": "clean",
+    "seller_locked_out_before": false,
+    "bought": true,
+    "price": "1000.00",
+    "paid_now": "700.00",
+    "escrow": "300.00",
+    "owner_after": "summarizer.testnet",
+    "seller_locked_out_after": true,
+    "relisted_at": "1200.00",
+    "all_responses_schema_valid": true
+  },
+  "pass": true
+}

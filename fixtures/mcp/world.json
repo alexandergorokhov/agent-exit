@@ -1,0 +1,1064 @@
+{
+  "schema": "mcp-world.v1",
+  "_note": "RECORDED from the real contract code in near-sdk's mocked runtime by `cargo run -q -p verify --bin gen-mcp-world`. All money is xUSD-FAKE (no value). Not testnet, not mainnet.",
+  "network": "offline",
+  "token": "xusd.testnet",
+  "decimals": 6,
+  "expected_code_hash": "fixture-release-hash-v1",
+  "agents": {
+    "translator.testnet": {
+      "status": {
+        "schema": "agent-status.v1",
+        "agent": "translator.testnet",
+        "owner": "alice.testnet",
+        "owner_epoch": 1,
+        "status": "Listed",
+        "listing_version": 1,
+        "paused": false,
+        "frozen": false,
+        "token": "xusd.testnet",
+        "known_keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ],
+        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "open_approvals": 0,
+        "held": "500000000",
+        "owner_free": "500000000",
+        "treasury": "0",
+        "escrow_left": "0",
+        "claimable_total": "0",
+        "solvent": true
+      },
+      "earnings": {
+        "schema": "earnings.v1",
+        "gross": 500000000,
+        "counted": 360000000,
+        "verified": 120000000,
+        "flagged": 140000000,
+        "flagged_self": 100000000,
+        "flagged_seller_subaccount": 40000000,
+        "flagged_round_trip": 0,
+        "payments": 33,
+        "counted_payers": 6,
+        "fresh_payers": 0,
+        "counted_from_fresh_payers": 0,
+        "tracked_payers": 8,
+        "other_payers_gross": 0,
+        "days": [
+          {
+            "day": 20454,
+            "gross": 72000000,
+            "counted": 72000000,
+            "verified": 72000000,
+            "payments": 6
+          },
+          {
+            "day": 20455,
+            "gross": 72000000,
+            "counted": 72000000,
+            "verified": 48000000,
+            "payments": 6
+          },
+          {
+            "day": 20456,
+            "gross": 72000000,
+            "counted": 72000000,
+            "verified": 0,
+            "payments": 6
+          },
+          {
+            "day": 20457,
+            "gross": 72000000,
+            "counted": 72000000,
+            "verified": 0,
+            "payments": 6
+          },
+          {
+            "day": 20458,
+            "gross": 72000000,
+            "counted": 72000000,
+            "verified": 0,
+            "payments": 6
+          },
+          {
+            "day": 20459,
+            "gross": 140000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 3
+          }
+        ]
+      },
+      "listing": {
+        "schema": "listing.v1",
+        "agent": "translator.testnet",
+        "seller": "alice.testnet",
+        "listing_version": 1,
+        "price": "1000000000",
+        "paid_now": "700000000",
+        "escrow": "300000000",
+        "terms": {
+          "earnout_bps": 3000,
+          "share_bps": 5000,
+          "floor_bps": 2000,
+          "window_secs": 2592000
+        },
+        "code_hash": "sha256:fixture-code-hash",
+        "known_keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ],
+        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "token": "xusd.testnet",
+        "listed_at": "1768089600000000000"
+      },
+      "limits": {
+        "schema": "limits.v1",
+        "owner": "alice.testnet",
+        "owner_epoch": 1,
+        "price_floor": "0",
+        "daily_cap": "0",
+        "allowed_payees": [],
+        "split": {
+          "owner_bps": 10000,
+          "treasury_bps": 0
+        },
+        "treasury": "0",
+        "spent_today": "0",
+        "cap_left_today": "0",
+        "day": 20464
+      },
+      "sales": [],
+      "access_keys": [
+        {
+          "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+          "permission": {
+            "receiver_id": "translator.testnet",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "allowance": "250000000000000000000000"
+          }
+        }
+      ],
+      "key_owners": {
+        "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi": "alice.testnet"
+      },
+      "scan_input": {
+        "schema": "scan-input.v1",
+        "agent": "translator.testnet",
+        "now_ns": 1768089600000000000,
+        "expected": {
+          "code_hash": "fixture-release-hash-v1",
+          "listing_version": 1
+        },
+        "chain": {
+          "code_hash": "fixture-release-hash-v1",
+          "methods": [
+            "new",
+            "add_signer",
+            "remove_signer",
+            "get_signers",
+            "set_runner_key",
+            "on_runner_key",
+            "list_for_sale",
+            "cancel_listing",
+            "ft_on_transfer",
+            "on_handover",
+            "on_transfer_out",
+            "claim",
+            "withdraw",
+            "withdraw_near",
+            "finalize_earnout",
+            "set_limits",
+            "pay",
+            "heartbeat",
+            "get_limits",
+            "get_earnings",
+            "known_keys",
+            "known_keys_hash",
+            "get_listing",
+            "get_sales",
+            "get_claimable",
+            "get_status",
+            "near_withdrawable",
+            "nft_metadata",
+            "nft_token",
+            "nft_total_supply",
+            "nft_tokens",
+            "nft_supply_for_owner",
+            "nft_tokens_for_owner",
+            "nft_transfer",
+            "nft_transfer_call",
+            "nft_resolve_transfer",
+            "nft_approve",
+            "nft_revoke",
+            "nft_revoke_all",
+            "nft_is_approved"
+          ],
+          "keys": [
+            {
+              "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+              "permission": {
+                "receiver_id": "translator.testnet",
+                "method_names": [
+                  "heartbeat",
+                  "accept_job",
+                  "pay",
+                  "pay_base"
+                ],
+                "allowance": "250000000000000000000000"
+              }
+            }
+          ],
+          "keys_second_provider": [
+            {
+              "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+              "permission": {
+                "receiver_id": "translator.testnet",
+                "method_names": [
+                  "heartbeat",
+                  "accept_job",
+                  "pay",
+                  "pay_base"
+                ],
+                "allowance": "250000000000000000000000"
+              }
+            }
+          ],
+          "subaccounts": []
+        },
+        "contract": {
+          "status": "Listed",
+          "owner": "alice.testnet",
+          "listing_version": 1,
+          "known_keys": [
+            "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          ],
+          "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+          "open_approvals": 0,
+          "open_auth_until": 0,
+          "frozen": false
+        }
+      }
+    },
+    "cheat.testnet": {
+      "status": {
+        "schema": "agent-status.v1",
+        "agent": "cheat.testnet",
+        "owner": "alice.testnet",
+        "owner_epoch": 1,
+        "status": "Listed",
+        "listing_version": 1,
+        "paused": false,
+        "frozen": false,
+        "token": "xusd.testnet",
+        "known_keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ],
+        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "open_approvals": 0,
+        "held": "500000000",
+        "owner_free": "500000000",
+        "treasury": "0",
+        "escrow_left": "0",
+        "claimable_total": "0",
+        "solvent": true
+      },
+      "earnings": {
+        "schema": "earnings.v1",
+        "gross": 500000000,
+        "counted": 0,
+        "verified": 0,
+        "flagged": 500000000,
+        "flagged_self": 300000000,
+        "flagged_seller_subaccount": 200000000,
+        "flagged_round_trip": 0,
+        "payments": 10,
+        "counted_payers": 0,
+        "fresh_payers": 0,
+        "counted_from_fresh_payers": 0,
+        "tracked_payers": 2,
+        "other_payers_gross": 0,
+        "days": [
+          {
+            "day": 20454,
+            "gross": 100000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 2
+          },
+          {
+            "day": 20455,
+            "gross": 100000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 2
+          },
+          {
+            "day": 20456,
+            "gross": 100000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 2
+          },
+          {
+            "day": 20457,
+            "gross": 100000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 2
+          },
+          {
+            "day": 20458,
+            "gross": 100000000,
+            "counted": 0,
+            "verified": 0,
+            "payments": 2
+          }
+        ]
+      },
+      "listing": {
+        "schema": "listing.v1",
+        "agent": "cheat.testnet",
+        "seller": "alice.testnet",
+        "listing_version": 1,
+        "price": "500000000",
+        "paid_now": "350000000",
+        "escrow": "150000000",
+        "terms": {
+          "earnout_bps": 3000,
+          "share_bps": 5000,
+          "floor_bps": 2000,
+          "window_secs": 2592000
+        },
+        "code_hash": "sha256:fixture-code-hash",
+        "known_keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ],
+        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "token": "xusd.testnet",
+        "listed_at": "1768089600000000000"
+      },
+      "limits": {
+        "schema": "limits.v1",
+        "owner": "alice.testnet",
+        "owner_epoch": 1,
+        "price_floor": "0",
+        "daily_cap": "0",
+        "allowed_payees": [],
+        "split": {
+          "owner_bps": 10000,
+          "treasury_bps": 0
+        },
+        "treasury": "0",
+        "spent_today": "0",
+        "cap_left_today": "0",
+        "day": 20464
+      },
+      "sales": [],
+      "access_keys": [
+        {
+          "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+          "permission": {
+            "receiver_id": "cheat.testnet",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "allowance": "250000000000000000000000"
+          }
+        },
+        {
+          "public_key": "ed25519:5TeWSsjg2gbxCyWVniXeCmwM7UtHTCK7svzJr5xYJzHf",
+          "permission": "FullAccess"
+        }
+      ],
+      "key_owners": {
+        "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi": "alice.testnet"
+      },
+      "scan_input": {
+        "schema": "scan-input.v1",
+        "agent": "cheat.testnet",
+        "now_ns": 1768089600000000000,
+        "expected": {
+          "code_hash": "fixture-release-hash-v1",
+          "listing_version": 1
+        },
+        "chain": {
+          "code_hash": "fixture-release-hash-v1",
+          "methods": [
+            "new",
+            "add_signer",
+            "remove_signer",
+            "get_signers",
+            "set_runner_key",
+            "on_runner_key",
+            "list_for_sale",
+            "cancel_listing",
+            "ft_on_transfer",
+            "on_handover",
+            "on_transfer_out",
+            "claim",
+            "withdraw",
+            "withdraw_near",
+            "finalize_earnout",
+            "set_limits",
+            "pay",
+            "heartbeat",
+            "get_limits",
+            "get_earnings",
+            "known_keys",
+            "known_keys_hash",
+            "get_listing",
+            "get_sales",
+            "get_claimable",
+            "get_status",
+            "near_withdrawable",
+            "nft_metadata",
+            "nft_token",
+            "nft_total_supply",
+            "nft_tokens",
+            "nft_supply_for_owner",
+            "nft_tokens_for_owner",
+            "nft_transfer",
+            "nft_transfer_call",
+            "nft_resolve_transfer",
+            "nft_approve",
+            "nft_revoke",
+            "nft_revoke_all",
+            "nft_is_approved"
+          ],
+          "keys": [
+            {
+              "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+              "permission": {
+                "receiver_id": "cheat.testnet",
+                "method_names": [
+                  "heartbeat",
+                  "accept_job",
+                  "pay",
+                  "pay_base"
+                ],
+                "allowance": "250000000000000000000000"
+              }
+            },
+            {
+              "public_key": "ed25519:5TeWSsjg2gbxCyWVniXeCmwM7UtHTCK7svzJr5xYJzHf",
+              "permission": "FullAccess"
+            }
+          ],
+          "keys_second_provider": [
+            {
+              "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+              "permission": {
+                "receiver_id": "cheat.testnet",
+                "method_names": [
+                  "heartbeat",
+                  "accept_job",
+                  "pay",
+                  "pay_base"
+                ],
+                "allowance": "250000000000000000000000"
+              }
+            },
+            {
+              "public_key": "ed25519:5TeWSsjg2gbxCyWVniXeCmwM7UtHTCK7svzJr5xYJzHf",
+              "permission": "FullAccess"
+            }
+          ],
+          "subaccounts": []
+        },
+        "contract": {
+          "status": "Listed",
+          "owner": "alice.testnet",
+          "listing_version": 1,
+          "known_keys": [
+            "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          ],
+          "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+          "open_approvals": 0,
+          "open_auth_until": 0,
+          "frozen": false
+        }
+      }
+    }
+  },
+  "recorded_buys": [
+    {
+      "agent": "translator.testnet",
+      "buyer": "summarizer.testnet",
+      "buyer_runner_pk": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+      "amount": "1000000000",
+      "listing_version": 1,
+      "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+      "settling": [
+        {
+          "sale_id": 1,
+          "buyer": "summarizer.testnet",
+          "amount": "1000000000",
+          "delete_keys": [
+            "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          ],
+          "add_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+        }
+      ],
+      "key_batch": [
+        {
+          "action": "delete",
+          "key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        },
+        {
+          "action": "add_fc",
+          "key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+        }
+      ],
+      "overpay_refund": "0",
+      "sale": [
+        {
+          "sale_id": 1,
+          "seller": "alice.testnet",
+          "buyer": "summarizer.testnet",
+          "price": "1000000000",
+          "paid_now": "700000000",
+          "escrow": "300000000",
+          "overpay_refund": "0",
+          "owner_epoch": 2,
+          "window_end": "1770681600000000000",
+          "known_keys": [
+            "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+          ]
+        }
+      ],
+      "old_owner_probes": {
+        "account": "alice.testnet",
+        "results": {
+          "withdraw": "NotOwner",
+          "set_limits": "NotOwner",
+          "list_for_sale": "NotOwner",
+          "nft_transfer": "NotOwner"
+        }
+      },
+      "after": {
+        "status": {
+          "schema": "agent-status.v1",
+          "agent": "translator.testnet",
+          "owner": "summarizer.testnet",
+          "owner_epoch": 2,
+          "status": "Sold",
+          "listing_version": 2,
+          "paused": false,
+          "frozen": false,
+          "token": "xusd.testnet",
+          "known_keys": [
+            "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+          ],
+          "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+          "open_approvals": 0,
+          "held": "800000000",
+          "owner_free": "500000000",
+          "treasury": "0",
+          "escrow_left": "300000000",
+          "claimable_total": "0",
+          "solvent": true
+        },
+        "earnings": {
+          "schema": "earnings.v1",
+          "gross": 500000000,
+          "counted": 360000000,
+          "verified": 120000000,
+          "flagged": 140000000,
+          "flagged_self": 100000000,
+          "flagged_seller_subaccount": 40000000,
+          "flagged_round_trip": 0,
+          "payments": 33,
+          "counted_payers": 6,
+          "fresh_payers": 0,
+          "counted_from_fresh_payers": 0,
+          "tracked_payers": 8,
+          "other_payers_gross": 0,
+          "days": [
+            {
+              "day": 20454,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 72000000,
+              "payments": 6
+            },
+            {
+              "day": 20455,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 48000000,
+              "payments": 6
+            },
+            {
+              "day": 20456,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20457,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20458,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20459,
+              "gross": 140000000,
+              "counted": 0,
+              "verified": 0,
+              "payments": 3
+            }
+          ]
+        },
+        "listing": null,
+        "limits": {
+          "schema": "limits.v1",
+          "owner": "summarizer.testnet",
+          "owner_epoch": 2,
+          "price_floor": "0",
+          "daily_cap": "0",
+          "allowed_payees": [],
+          "split": {
+            "owner_bps": 10000,
+            "treasury_bps": 0
+          },
+          "treasury": "0",
+          "spent_today": "0",
+          "cap_left_today": "0",
+          "day": 20464
+        },
+        "sales": [
+          {
+            "sale_id": 1,
+            "seller": "alice.testnet",
+            "buyer": "summarizer.testnet",
+            "price": "1000000000",
+            "paid_now": "700000000",
+            "escrow": "300000000",
+            "released": "0",
+            "returned": "0",
+            "remaining": "300000000",
+            "window_end": "1770681600000000000",
+            "finalized": false,
+            "cut": false
+          }
+        ],
+        "access_keys": [
+          {
+            "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+            "permission": {
+              "receiver_id": "translator.testnet",
+              "method_names": [
+                "heartbeat",
+                "accept_job",
+                "pay",
+                "pay_base"
+              ],
+              "allowance": "250000000000000000000000"
+            }
+          }
+        ],
+        "key_owners": {
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi": "alice.testnet",
+          "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq": "summarizer.testnet"
+        },
+        "scan_input": {
+          "schema": "scan-input.v1",
+          "agent": "translator.testnet",
+          "now_ns": 1768089600000000000,
+          "expected": {
+            "code_hash": "fixture-release-hash-v1",
+            "listing_version": 2
+          },
+          "chain": {
+            "code_hash": "fixture-release-hash-v1",
+            "methods": [
+              "new",
+              "add_signer",
+              "remove_signer",
+              "get_signers",
+              "set_runner_key",
+              "on_runner_key",
+              "list_for_sale",
+              "cancel_listing",
+              "ft_on_transfer",
+              "on_handover",
+              "on_transfer_out",
+              "claim",
+              "withdraw",
+              "withdraw_near",
+              "finalize_earnout",
+              "set_limits",
+              "pay",
+              "heartbeat",
+              "get_limits",
+              "get_earnings",
+              "known_keys",
+              "known_keys_hash",
+              "get_listing",
+              "get_sales",
+              "get_claimable",
+              "get_status",
+              "near_withdrawable",
+              "nft_metadata",
+              "nft_token",
+              "nft_total_supply",
+              "nft_tokens",
+              "nft_supply_for_owner",
+              "nft_tokens_for_owner",
+              "nft_transfer",
+              "nft_transfer_call",
+              "nft_resolve_transfer",
+              "nft_approve",
+              "nft_revoke",
+              "nft_revoke_all",
+              "nft_is_approved"
+            ],
+            "keys": [
+              {
+                "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+                "permission": {
+                  "receiver_id": "translator.testnet",
+                  "method_names": [
+                    "heartbeat",
+                    "accept_job",
+                    "pay",
+                    "pay_base"
+                  ],
+                  "allowance": "250000000000000000000000"
+                }
+              }
+            ],
+            "keys_second_provider": [
+              {
+                "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+                "permission": {
+                  "receiver_id": "translator.testnet",
+                  "method_names": [
+                    "heartbeat",
+                    "accept_job",
+                    "pay",
+                    "pay_base"
+                  ],
+                  "allowance": "250000000000000000000000"
+                }
+              }
+            ],
+            "subaccounts": []
+          },
+          "contract": {
+            "status": "Sold",
+            "owner": "summarizer.testnet",
+            "listing_version": 2,
+            "known_keys": [
+              "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+            ],
+            "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+            "open_approvals": 0,
+            "open_auth_until": 0,
+            "frozen": false
+          }
+        }
+      }
+    }
+  ],
+  "recorded_listings": [
+    {
+      "agent": "translator.testnet",
+      "seller": "summarizer.testnet",
+      "price": "1200000000",
+      "listing": {
+        "schema": "listing.v1",
+        "agent": "translator.testnet",
+        "seller": "summarizer.testnet",
+        "listing_version": 3,
+        "price": "1200000000",
+        "paid_now": "840000000",
+        "escrow": "360000000",
+        "terms": {
+          "earnout_bps": 3000,
+          "share_bps": 5000,
+          "floor_bps": 2000,
+          "window_secs": 2592000
+        },
+        "code_hash": "sha256:fixture-code-hash",
+        "known_keys": [
+          "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+        ],
+        "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+        "token": "xusd.testnet",
+        "listed_at": "1768089600000000000"
+      },
+      "after": {
+        "status": {
+          "schema": "agent-status.v1",
+          "agent": "translator.testnet",
+          "owner": "summarizer.testnet",
+          "owner_epoch": 2,
+          "status": "Listed",
+          "listing_version": 3,
+          "paused": false,
+          "frozen": false,
+          "token": "xusd.testnet",
+          "known_keys": [
+            "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+          ],
+          "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+          "open_approvals": 0,
+          "held": "800000000",
+          "owner_free": "500000000",
+          "treasury": "0",
+          "escrow_left": "300000000",
+          "claimable_total": "0",
+          "solvent": true
+        },
+        "earnings": {
+          "schema": "earnings.v1",
+          "gross": 500000000,
+          "counted": 360000000,
+          "verified": 120000000,
+          "flagged": 140000000,
+          "flagged_self": 100000000,
+          "flagged_seller_subaccount": 40000000,
+          "flagged_round_trip": 0,
+          "payments": 33,
+          "counted_payers": 6,
+          "fresh_payers": 0,
+          "counted_from_fresh_payers": 0,
+          "tracked_payers": 8,
+          "other_payers_gross": 0,
+          "days": [
+            {
+              "day": 20454,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 72000000,
+              "payments": 6
+            },
+            {
+              "day": 20455,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 48000000,
+              "payments": 6
+            },
+            {
+              "day": 20456,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20457,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20458,
+              "gross": 72000000,
+              "counted": 72000000,
+              "verified": 0,
+              "payments": 6
+            },
+            {
+              "day": 20459,
+              "gross": 140000000,
+              "counted": 0,
+              "verified": 0,
+              "payments": 3
+            }
+          ]
+        },
+        "listing": {
+          "schema": "listing.v1",
+          "agent": "translator.testnet",
+          "seller": "summarizer.testnet",
+          "listing_version": 3,
+          "price": "1200000000",
+          "paid_now": "840000000",
+          "escrow": "360000000",
+          "terms": {
+            "earnout_bps": 3000,
+            "share_bps": 5000,
+            "floor_bps": 2000,
+            "window_secs": 2592000
+          },
+          "code_hash": "sha256:fixture-code-hash",
+          "known_keys": [
+            "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+          ],
+          "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+          "token": "xusd.testnet",
+          "listed_at": "1768089600000000000"
+        },
+        "limits": {
+          "schema": "limits.v1",
+          "owner": "summarizer.testnet",
+          "owner_epoch": 2,
+          "price_floor": "0",
+          "daily_cap": "0",
+          "allowed_payees": [],
+          "split": {
+            "owner_bps": 10000,
+            "treasury_bps": 0
+          },
+          "treasury": "0",
+          "spent_today": "0",
+          "cap_left_today": "0",
+          "day": 20464
+        },
+        "sales": [
+          {
+            "sale_id": 1,
+            "seller": "alice.testnet",
+            "buyer": "summarizer.testnet",
+            "price": "1000000000",
+            "paid_now": "700000000",
+            "escrow": "300000000",
+            "released": "0",
+            "returned": "0",
+            "remaining": "300000000",
+            "window_end": "1770681600000000000",
+            "finalized": false,
+            "cut": false
+          }
+        ],
+        "access_keys": [
+          {
+            "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+            "permission": {
+              "receiver_id": "translator.testnet",
+              "method_names": [
+                "heartbeat",
+                "accept_job",
+                "pay",
+                "pay_base"
+              ],
+              "allowance": "250000000000000000000000"
+            }
+          }
+        ],
+        "key_owners": {
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi": "alice.testnet",
+          "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq": "summarizer.testnet"
+        },
+        "scan_input": {
+          "schema": "scan-input.v1",
+          "agent": "translator.testnet",
+          "now_ns": 1768089600000000000,
+          "expected": {
+            "code_hash": "fixture-release-hash-v1",
+            "listing_version": 3
+          },
+          "chain": {
+            "code_hash": "fixture-release-hash-v1",
+            "methods": [
+              "new",
+              "add_signer",
+              "remove_signer",
+              "get_signers",
+              "set_runner_key",
+              "on_runner_key",
+              "list_for_sale",
+              "cancel_listing",
+              "ft_on_transfer",
+              "on_handover",
+              "on_transfer_out",
+              "claim",
+              "withdraw",
+              "withdraw_near",
+              "finalize_earnout",
+              "set_limits",
+              "pay",
+              "heartbeat",
+              "get_limits",
+              "get_earnings",
+              "known_keys",
+              "known_keys_hash",
+              "get_listing",
+              "get_sales",
+              "get_claimable",
+              "get_status",
+              "near_withdrawable",
+              "nft_metadata",
+              "nft_token",
+              "nft_total_supply",
+              "nft_tokens",
+              "nft_supply_for_owner",
+              "nft_tokens_for_owner",
+              "nft_transfer",
+              "nft_transfer_call",
+              "nft_resolve_transfer",
+              "nft_approve",
+              "nft_revoke",
+              "nft_revoke_all",
+              "nft_is_approved"
+            ],
+            "keys": [
+              {
+                "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+                "permission": {
+                  "receiver_id": "translator.testnet",
+                  "method_names": [
+                    "heartbeat",
+                    "accept_job",
+                    "pay",
+                    "pay_base"
+                  ],
+                  "allowance": "250000000000000000000000"
+                }
+              }
+            ],
+            "keys_second_provider": [
+              {
+                "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+                "permission": {
+                  "receiver_id": "translator.testnet",
+                  "method_names": [
+                    "heartbeat",
+                    "accept_job",
+                    "pay",
+                    "pay_base"
+                  ],
+                  "allowance": "250000000000000000000000"
+                }
+              }
+            ],
+            "subaccounts": []
+          },
+          "contract": {
+            "status": "Listed",
+            "owner": "summarizer.testnet",
+            "listing_version": 3,
+            "known_keys": [
+              "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+            ],
+            "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
+            "open_approvals": 0,
+            "open_auth_until": 0,
+            "frozen": false
+          }
+        }
+      }
+    }
+  ]
+}

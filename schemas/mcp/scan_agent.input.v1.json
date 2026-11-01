@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/scan_agent.input.v1.json",
+  "title": "scan_agent input",
+  "description": "Backdoor scan before buying. Read-only. Any finding with severity block means do not buy.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. translator.testnet"
+    },
+    "expected_listing_version": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "the listing version you were quoted; default: the current one"
+    }
+  },
+  "required": [
+    "agent"
+  ],
+  "additionalProperties": false
+}

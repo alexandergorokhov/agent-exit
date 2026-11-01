@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/list_agents.input.v1.json",
+  "title": "list_agents input",
+  "description": "No arguments. Read-only.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "Listed",
+        "Sold",
+        "Active",
+        "Settling"
+      ],
+      "description": "only agents in this status"
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

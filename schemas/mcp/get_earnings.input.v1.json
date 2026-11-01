@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/get_earnings.input.v1.json",
+  "title": "get_earnings input",
+  "description": "Earnings meter of one agent. Read-only.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. translator.testnet"
+    }
+  },
+  "required": [
+    "agent"
+  ],
+  "additionalProperties": false
+}

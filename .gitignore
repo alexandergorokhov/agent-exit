@@ -10,3 +10,4 @@ out/
 media/
 .DS_Store
 proptest-regressions/
+mcp/dist/

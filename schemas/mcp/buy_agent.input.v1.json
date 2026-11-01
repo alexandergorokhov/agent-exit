@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/buy_agent.input.v1.json",
+  "title": "buy_agent input",
+  "description": "Buy a listed agent. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Scans first and refuses on any finding.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. translator.testnet"
+    },
+    "max_price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000000,
+      "description": "most you will pay, in xUSD-FAKE dollars"
+    },
+    "confirm": {
+      "type": "boolean",
+      "description": "must be true"
+    },
+    "buyer_runner_pk": {
+      "type": "string",
+      "pattern": "^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$",
+      "description": "your runner's public key; the contract adds it as the only function-call key"
+    }
+  },
+  "required": [
+    "agent",
+    "max_price",
+    "confirm",
+    "buyer_runner_pk"
+  ],
+  "additionalProperties": false
+}

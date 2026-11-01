@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/error.v1.json",
+  "title": "error returned by any tool (isError: true)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ok",
+    "error"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.error.v1"
+    },
+    "ok": {
+      "type": "boolean",
+      "const": false
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "WRITE_DISABLED",
+            "CONFIRM_REQUIRED",
+            "OVER_MAX_PRICE",
+            "SESSION_CAP",
+            "SCAN_BLOCKED",
+            "SCAN_UNAVAILABLE",
+            "NOT_LISTED",
+            "NOT_OWNER",
+            "UNKNOWN_AGENT",
+            "BAD_INPUT",
+            "OFFLINE_NO_RECORDING",
+            "NOT_BUILT",
+            "NETWORK_REFUSED",
+            "RPC_ERROR"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {}
+      }
+    },
+    "sent": {
+      "type": "boolean",
+      "const": false,
+      "description": "nothing was sent to any chain"
+    }
+  }
+}

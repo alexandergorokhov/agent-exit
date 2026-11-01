@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agent-exit": {
+      "command": "node",
+      "args": ["mcp/dist/src/server.js"],
+      "env": {
+        "AGENT_EXIT_NETWORK": "offline"
+      }
+    }
+  }
+}

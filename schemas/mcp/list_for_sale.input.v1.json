@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/list_for_sale.input.v1.json",
+  "title": "list_for_sale input",
+  "description": "List an agent you own for sale (resale). WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1, AGENT_EXIT_ACCOUNT_ID = the owner, and confirm: true.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. translator.testnet"
+    },
+    "price": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 1000000,
+      "description": "xUSD-FAKE dollars"
+    },
+    "confirm": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "agent",
+    "price",
+    "confirm"
+  ],
+  "additionalProperties": false
+}
