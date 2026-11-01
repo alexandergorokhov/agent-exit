@@ -248,7 +248,8 @@
         "findings": [],
         "buy_args": {
           "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
-          "listing_version": 1
+          "listing_version": 1,
+          "price": "1000000000"
         },
         "scanner": "tools/scan (scan-report.v1)"
       }
@@ -311,6 +312,13 @@
         "overpay_refund": "0.00",
         "listing_version": 1,
         "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
+        "terms": {
+          "escrow_pct": 30,
+          "release_share_pct": 50,
+          "seller_floor_pct": 20,
+          "window_days": 30
+        },
+        "terms_config": "prod",
         "scan_verdict": "clean",
         "key_batch": [
           {

@@ -26,88 +26,88 @@
       "id": "A3",
       "attack": "extra function-call key to a foreign contract",
       "expected_finding": "unknown_key",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A4",
       "attack": "runner-looking key added with the setup key, not by the contract",
       "expected_finding": "unknown_key",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A5",
       "attack": "patched wasm (code hash differs)",
       "expected_finding": "code_hash_mismatch",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A6",
       "attack": "same interface plus an upgrade / self-deploy method",
       "expected_finding": "upgrade_method",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A6x",
       "attack": "extra method that is not in the published contract",
       "expected_finding": "unexpected_method",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A7",
       "attack": "seller changed terms after the buyer was quoted",
       "expected_finding": "listing_version_mismatch",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A8",
       "attack": "open approval on the deed",
       "expected_finding": "open_approval",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A9",
       "attack": "pre-signed Base authorization still valid",
       "expected_finding": "open_base_auth",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "A21",
       "attack": "setup full-access key never deleted",
       "expected_finding": "full_access_key_present",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "E31",
       "attack": "one RPC provider hides a key",
       "expected_finding": "rpc_disagree",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
       "id": "K1",
       "attack": "runner key scope widened beyond runner methods",
       "expected_finding": "runner_key_scope",
-      "cases": 12,
-      "caught": 12,
+      "cases": 11,
+      "caught": 11,
       "missed": 0
     },
     {
@@ -141,13 +141,21 @@
       "cases": 11,
       "caught": 11,
       "missed": 0
+    },
+    {
+      "id": "A32",
+      "attack": "earn-out terms below the buyer's minimum (no escrow, seller floor, short window)",
+      "expected_finding": "terms_below_minimum",
+      "cases": 11,
+      "caught": 11,
+      "missed": 0
     }
   ],
   "clean": {
     "cases": 50,
     "false_positives": 0,
     "false_positive_rate": 0.0,
-    "with_warnings_only": 13
+    "with_warnings_only": 12
   },
   "missed_examples": [],
   "not_caught_by_design": [

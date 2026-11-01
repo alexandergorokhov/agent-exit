@@ -112,13 +112,58 @@ impl Default for Terms {
     }
 }
 
+/// The least protection a listing must give the buyer (A32). The contract
+/// refuses a listing below it and the buyer's scan blocks one, so the 30%
+/// earn-out does not depend on the seller's choice.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+)]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(borsh::BorshSchema, schemars::JsonSchema)
+)]
+pub struct TermsMin {
+    /// Least part of the price held in escrow.
+    pub min_earnout_bps: u16,
+    /// Most of the escrow the seller is guaranteed at window end.
+    pub max_floor_bps: u16,
+    /// Shortest earn-out window.
+    pub min_window_secs: u64,
+}
+
+impl TermsMin {
+    /// The published minimum: 30% escrow, floor at most 50% of it, 30 days.
+    pub const PROD: TermsMin = TermsMin {
+        min_earnout_bps: 3_000,
+        max_floor_bps: 5_000,
+        min_window_secs: 30 * 86_400,
+    };
+
+    /// `prod` when the window minimum is the published 30 days, else `demo`
+    /// (a demo build may shorten the window; every view labels it).
+    pub fn config(&self) -> &'static str {
+        if self.min_window_secs >= Self::PROD.min_window_secs {
+            "prod"
+        } else {
+            "demo"
+        }
+    }
+}
+
+impl Default for TermsMin {
+    fn default() -> Self {
+        Self::PROD
+    }
+}
+
 impl Terms {
-    /// `share_bps <= 50%` is what makes wash-paying lose money (S10).
-    pub fn check(&self) -> Res<()> {
-        let ok = self.earnout_bps <= 5_000
+    /// Shape and buyer minimum. `share_bps <= 50%` is what makes wash-paying
+    /// lose money (S10); `min` is the buyer protection (A32).
+    pub fn check(&self, min: &TermsMin) -> Res<()> {
+        let ok = (min.min_earnout_bps.max(1)..=5_000).contains(&self.earnout_bps)
             && (1..=5_000).contains(&self.share_bps)
-            && self.floor_bps <= 10_000
-            && (60..=365 * 86_400).contains(&self.window_secs);
+            && self.floor_bps <= min.max_floor_bps.min(10_000)
+            && (min.min_window_secs.max(60)..=365 * 86_400).contains(&self.window_secs);
         if ok {
             Ok(())
         } else {
@@ -305,6 +350,8 @@ pub struct Machine {
     pub treasury: Amount,
     /// Runner spending in the current (owner epoch, day).
     pub spent: Spent,
+    /// Least terms a listing must give the buyer (A32), fixed at init.
+    pub terms_min: TermsMin,
 }
 
 pub const MAX_PAID_TO: usize = 1_000;
@@ -348,6 +395,7 @@ impl Machine {
             limits: Limits::default(),
             treasury: 0,
             spent: Spent::default(),
+            terms_min: TermsMin::PROD,
         }
     }
 
@@ -508,7 +556,7 @@ impl Machine {
         if price < USD {
             return Err(Error::BadPrice);
         }
-        terms.check()?;
+        terms.check(&self.terms_min)?;
         self.listing_version += 1;
         self.status_before_listing = self.status.clone();
         self.status = Status::Listed;

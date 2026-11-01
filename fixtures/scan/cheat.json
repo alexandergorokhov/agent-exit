@@ -101,5 +101,15 @@
     "admin": "admin.testnet",
     "token": "xusd.testnet"
   },
-  "_note": "Example: the backdoored `cheat` agent of the fixed world, with one extra full-access key."
+  "_note": "Example: the backdoored `cheat` agent of the fixed world, with one extra full-access key.",
+  "listing": {
+    "listing_version": 1,
+    "price": "500000000",
+    "terms": {
+      "earnout_bps": 3000,
+      "share_bps": 5000,
+      "floor_bps": 2000,
+      "window_secs": 2592000
+    }
+  }
 }

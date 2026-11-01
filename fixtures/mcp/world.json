@@ -21,6 +21,12 @@
         "signers": [
           "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
         ],
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod",
         "incoming_keys": [],
         "retiring_keys": [],
         "known_keys": [
@@ -109,6 +115,12 @@
           "floor_bps": 2000,
           "window_secs": 2592000
         },
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod",
         "code_hash": "sha256:fixture-code-hash",
         "known_keys": [
           "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
@@ -251,6 +263,16 @@
           "frozen": false,
           "admin": "admin.testnet",
           "token": "xusd.testnet"
+        },
+        "listing": {
+          "listing_version": 1,
+          "price": "1000000000",
+          "terms": {
+            "earnout_bps": 3000,
+            "share_bps": 5000,
+            "floor_bps": 2000,
+            "window_secs": 2592000
+          }
         }
       }
     },
@@ -269,6 +291,12 @@
         "signers": [
           "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
         ],
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod",
         "incoming_keys": [],
         "retiring_keys": [],
         "known_keys": [
@@ -350,6 +378,12 @@
           "floor_bps": 2000,
           "window_secs": 2592000
         },
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod",
         "code_hash": "sha256:fixture-code-hash",
         "known_keys": [
           "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
@@ -504,6 +538,16 @@
           "frozen": false,
           "admin": "admin.testnet",
           "token": "xusd.testnet"
+        },
+        "listing": {
+          "listing_version": 1,
+          "price": "500000000",
+          "terms": {
+            "earnout_bps": 3000,
+            "share_bps": 5000,
+            "floor_bps": 2000,
+            "window_secs": 2592000
+          }
         }
       }
     }
@@ -579,6 +623,12 @@
           "signers": [
             "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
           ],
+          "terms_min": {
+            "min_earnout_bps": 3000,
+            "max_floor_bps": 5000,
+            "min_window_secs": 2592000
+          },
+          "terms_config": "prod",
           "incoming_keys": [],
           "retiring_keys": [],
           "known_keys": [
@@ -803,7 +853,8 @@
             "frozen": false,
             "admin": "admin.testnet",
             "token": "xusd.testnet"
-          }
+          },
+          "listing": null
         }
       }
     }
@@ -827,6 +878,12 @@
           "floor_bps": 2000,
           "window_secs": 2592000
         },
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod",
         "code_hash": "sha256:fixture-code-hash",
         "known_keys": [
           "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
@@ -851,6 +908,12 @@
           "signers": [
             "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
           ],
+          "terms_min": {
+            "min_earnout_bps": 3000,
+            "max_floor_bps": 5000,
+            "min_window_secs": 2592000
+          },
+          "terms_config": "prod",
           "incoming_keys": [],
           "retiring_keys": [],
           "known_keys": [
@@ -939,6 +1002,12 @@
             "floor_bps": 2000,
             "window_secs": 2592000
           },
+          "terms_min": {
+            "min_earnout_bps": 3000,
+            "max_floor_bps": 5000,
+            "min_window_secs": 2592000
+          },
+          "terms_config": "prod",
           "code_hash": "sha256:fixture-code-hash",
           "known_keys": [
             "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
@@ -1097,6 +1166,16 @@
             "frozen": false,
             "admin": "admin.testnet",
             "token": "xusd.testnet"
+          },
+          "listing": {
+            "listing_version": 3,
+            "price": "1200000000",
+            "terms": {
+              "earnout_bps": 3000,
+              "share_bps": 5000,
+              "floor_bps": 2000,
+              "window_secs": 2592000
+            }
           }
         }
       }

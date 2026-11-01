@@ -72,6 +72,8 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             listing_version: version,
             admin: None,
             token: None,
+            price: None,
+            min_terms: None,
         },
         chain: Chain {
             code_hash: FIXTURE_CODE_HASH.into(),
@@ -92,6 +94,16 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             admin: Some(PUBLISHED_ADMIN.into()),
             token: Some(PUBLISHED_TOKEN.into()),
         },
+        listing: Some(ListingView {
+            listing_version: version,
+            price: ((100 + rng.below(1_900)) * 1_000_000).to_string(),
+            terms: TermsView {
+                earnout_bps: 3_000 + 500 * rng.below(5) as u16,
+                share_bps: 5_000,
+                floor_bps: 2_000,
+                window_secs: 30 * 86_400 * (1 + rng.below(3)),
+            },
+        }),
     }
 }
 
@@ -118,7 +130,7 @@ const OWNER_LIKE: [&str; 5] = [
     "list_for_sale",
 ];
 
-pub const FAMILIES: [Family; 17] = [
+pub const FAMILIES: [Family; 18] = [
     Family {
         id: "A1",
         name: "extra full-access key",
@@ -336,6 +348,23 @@ pub const FAMILIES: [Family; 17] = [
             0 => i.contract.admin = Some(i.contract.owner.clone()),
             1 => i.contract.token = Some(format!("fake{}.testnet", r.below(100))),
             _ => i.contract.admin = None,
+        },
+    },
+    Family {
+        id: "A32",
+        name: "earn-out terms below the buyer's minimum (no escrow, seller floor, short window)",
+        expect: "terms_below_minimum",
+        mutate: |i, r| {
+            let t = &mut i
+                .listing
+                .as_mut()
+                .expect("clean agents have a listing")
+                .terms;
+            match r.below(3) {
+                0 => t.earnout_bps = r.below(3_000) as u16,
+                1 => t.floor_bps = 5_001 + r.below(5_000) as u16,
+                _ => t.window_secs = 60 + r.below(30 * 86_400 - 60),
+            }
         },
     },
 ];

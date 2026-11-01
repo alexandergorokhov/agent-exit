@@ -67,6 +67,38 @@ pub const PAYMENT_TOKEN: &str = match option_env!("AGENT_EXIT_TOKEN") {
     Some(t) => t,
     None => "xusd.testnet",
 };
+/// Shortest earn-out window a listing may have, in seconds (A32). The
+/// published (prod) build uses 30 days. A demo build may shorten it with
+/// `AGENT_EXIT_MIN_WINDOW_SECS`; `get_status` and every listing then say
+/// `"terms_config": "demo"`.
+pub const MIN_WINDOW_SECS: u64 = match option_env!("AGENT_EXIT_MIN_WINDOW_SECS") {
+    Some(v) => parse_u64(v),
+    None => core::TermsMin::PROD.min_window_secs,
+};
+
+/// The minimum terms this build enforces (A32).
+pub const TERMS_MIN: core::TermsMin = core::TermsMin {
+    min_window_secs: MIN_WINDOW_SECS,
+    ..core::TermsMin::PROD
+};
+
+const fn parse_u64(s: &str) -> u64 {
+    let b = s.as_bytes();
+    assert!(!b.is_empty(), "AGENT_EXIT_MIN_WINDOW_SECS is empty");
+    let mut i = 0;
+    let mut n: u64 = 0;
+    while i < b.len() {
+        assert!(
+            b[i].is_ascii_digit(),
+            "AGENT_EXIT_MIN_WINDOW_SECS is not a number"
+        );
+        n = n * 10 + (b[i] - b'0') as u64;
+        i += 1;
+    }
+    assert!(n >= 60, "AGENT_EXIT_MIN_WINDOW_SECS must be at least 60");
+    n
+}
+
 /// Methods the runner's function-call key may call (receiver = the agent).
 pub const RUNNER_METHODS: &str = "heartbeat,accept_job,pay,pay_base";
 /// Gas budget of the runner's function-call key. The node checks it against
@@ -224,8 +256,10 @@ impl AgentExit {
     #[init]
     #[private]
     pub fn new(owner_id: AccountId) -> Self {
+        let mut m = Machine::new(env::current_account_id().as_str(), owner_id.as_str());
+        m.terms_min = TERMS_MIN;
         Self {
-            m: Machine::new(env::current_account_id().as_str(), owner_id.as_str()),
+            m,
             token: PAYMENT_TOKEN.parse().expect("valid token"),
             admin: REGISTRY_ADMIN.parse().expect("valid admin"),
             signers: BTreeSet::new(),
@@ -763,6 +797,8 @@ impl AgentExit {
             "token": self.token,
             "admin": self.admin,
             "signers": self.signers,
+            "terms_min": self.m.terms_min,
+            "terms_config": self.m.terms_min.config(),
             "incoming_keys": self.m.incoming,
             "retiring_keys": self.m.retiring,
             "known_keys": self.m.known_keys,
@@ -1140,6 +1176,8 @@ impl AgentExit {
             "paid_now": amt(now),
             "escrow": amt(escrow),
             "terms": l.terms,
+            "terms_min": self.m.terms_min,
+            "terms_config": self.m.terms_min.config(),
             "code_hash": l.code_hash,
             "known_keys": self.m.known_keys,
             "known_keys_hash": self.m.known_keys_hash(),

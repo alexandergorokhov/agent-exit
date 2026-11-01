@@ -8,7 +8,6 @@
 use crate::sim::*;
 use crate::*;
 
-#[allow(dead_code)]
 fn panic_text<F: FnOnce()>(f: F) -> String {
     let raw = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
         Ok(()) => return String::new(),
@@ -58,4 +57,47 @@ fn a31_buyer_round_trips_do_not_starve_earnout() {
     let sale = &s.m().sales[0];
     assert_eq!(sale.released, 300 * USD, "the seller got the whole escrow");
     assert_eq!(sale.returned, 0);
+}
+
+/// A32 (review 2 H2): the contract refuses a listing below the published
+/// minimum terms (30% escrow, seller floor at most 50% of it, 30 days), so
+/// the earn-out protection does not depend on the seller. The minimum and
+/// its `prod`/`demo` label are in `get_status` and every listing.
+#[test]
+fn a32_contract_refuses_terms_below_minimum() {
+    let mut s = translator_world();
+    let base = agent_core::Terms::default();
+    for t in [
+        agent_core::Terms {
+            earnout_bps: 0,
+            ..base
+        },
+        agent_core::Terms {
+            earnout_bps: 2_999,
+            ..base
+        },
+        agent_core::Terms {
+            floor_bps: 10_000,
+            ..base
+        },
+        agent_core::Terms {
+            window_secs: 60,
+            ..base
+        },
+    ] {
+        let msg = panic_text(|| {
+            s.by_1y(ALICE)
+                .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), Some(t));
+        });
+        assert_eq!(msg, "BadTerms", "{t:?}");
+    }
+    assert_eq!(s.m().status, agent_core::Status::Active);
+    let st = s.by(MALLORY).get_status();
+    assert_eq!(st["terms_config"], "prod");
+    assert_eq!(st["terms_min"]["min_earnout_bps"], 3_000);
+    assert_eq!(st["terms_min"]["min_window_secs"], 30 * 86_400);
+    let card = s
+        .by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), Some(base));
+    assert_eq!(card["terms_config"], "prod");
 }

@@ -40,11 +40,42 @@ export interface BuyOutcome {
   recorded: boolean;
 }
 
+/** What the buyer was quoted, from one `get_listing` read (A32). */
+export interface ScanExpect {
+  listing_version?: number;
+  price?: string;
+  min_terms?: MinTerms;
+}
+
+export interface MinTerms {
+  min_earnout_bps: number;
+  max_floor_bps: number;
+  min_window_secs: number;
+}
+
+/** get_listing -> scan-input `listing` (version, price and terms of one read). */
+export function listingView(l: Json | null): Json | undefined {
+  if (!l) return undefined;
+  const t = l.terms;
+  return {
+    listing_version: l.listing_version,
+    price: l.price,
+    terms: { earnout_bps: t.earnout_bps, share_bps: t.share_bps, floor_bps: t.floor_bps, window_secs: t.window_secs },
+  };
+}
+
+function applyExpect(input: Json, e: ScanExpect): Json {
+  if (e.listing_version !== undefined) input.expected.listing_version = e.listing_version;
+  if (e.price !== undefined) input.expected.price = e.price;
+  if (e.min_terms !== undefined) input.expected.min_terms = e.min_terms;
+  return input;
+}
+
 export interface Backend {
   network: Network;
   listAgents(): Promise<string[]>;
   agent(id: string): Promise<AgentView>;
-  scanInput(id: string, expectedVersion?: number): Promise<Json>;
+  scanInput(id: string, expect: ScanExpect): Promise<Json>;
   buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome>;
   list(id: string, seller: string, price: string): Promise<{ listing: Json; recorded: boolean }>;
   /** Results of owner-only calls attempted by `account`, when known. */
@@ -84,10 +115,8 @@ export class OfflineBackend implements Backend {
     return structuredClone(this.get(id));
   }
 
-  async scanInput(id: string, expectedVersion?: number): Promise<Json> {
-    const input = structuredClone(this.get(id).scan_input);
-    if (expectedVersion !== undefined) input.expected.listing_version = expectedVersion;
-    return input;
+  async scanInput(id: string, expect: ScanExpect): Promise<Json> {
+    return applyExpect(structuredClone(this.get(id).scan_input), expect);
   }
 
   async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome> {
@@ -241,23 +270,25 @@ export class TestnetBackend implements Backend {
     return { status, earnings, listing, limits, sales, access_keys: keys, key_owners: {} };
   }
 
-  async scanInput(id: string, expectedVersion?: number): Promise<Json> {
+  async scanInput(id: string, expect: ScanExpect): Promise<Json> {
     this.known(id);
-    const [status, keys1, keys2, account, code] = await Promise.all([
+    const [status, listing, keys1, keys2, account, code] = await Promise.all([
       this.view(id, "get_status"),
+      this.view(id, "get_listing"),
       this.keys(this.cfg.rpc[0], id),
       this.keys(this.cfg.rpc[1], id),
       this.rpc(this.cfg.rpc[0], { request_type: "view_account", finality: "final", account_id: id }),
       this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id }),
     ]);
-    return {
+    return applyExpect({
       schema: "scan-input.v1",
       agent: id,
       now_ns: Date.now() * 1_000_000,
       expected: {
         // Unset = the scan reports code_hash_mismatch and the buy is refused.
         code_hash: this.cfg.expectedCodeHash ?? "unset: AGENT_EXIT_CODE_HASH",
-        listing_version: expectedVersion ?? status.listing_version,
+        // Unset (a plain scan_agent call) = the current version.
+        listing_version: status.listing_version,
         // The published release's registry admin and token (A26); unset =
         // the scanner's published constants.
         ...(this.cfg.expectedAdmin ? { admin: this.cfg.expectedAdmin } : {}),
@@ -282,7 +313,8 @@ export class TestnetBackend implements Backend {
         admin: status.admin,
         token: status.token,
       },
-    };
+      ...(listing ? { listing: listingView(listing) } : {}),
+    }, expect);
   }
 
   async buy(): Promise<BuyOutcome> {

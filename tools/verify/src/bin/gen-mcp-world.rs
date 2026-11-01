@@ -57,6 +57,7 @@ fn fc_key(agent: &str, k: &str) -> Value {
 fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
     let agent = s.agent.clone();
     let st = s.by(MALLORY).get_status();
+    let l = s.by(MALLORY).get_listing();
     let mut keys: Vec<Value> = s.c.known_keys().iter().map(|k| fc_key(&agent, k)).collect();
     if let Some(k) = hidden_full {
         keys.push(json!({"public_key": k, "permission": "FullAccess"}));
@@ -81,6 +82,9 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
             "frozen": st["frozen"],
             "admin": st["admin"], "token": st["token"],
         },
+        "listing": l.map(|l| json!({
+            "listing_version": l["listing_version"], "price": l["price"], "terms": l["terms"],
+        })),
     })
 }
 

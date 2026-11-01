@@ -104,6 +104,39 @@
     "recorded": {
       "type": "boolean",
       "description": "true offline: the contract result was recorded from the real contract code, nothing was sent"
+    },
+    "terms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "escrow_pct",
+        "release_share_pct",
+        "seller_floor_pct",
+        "window_days"
+      ],
+      "properties": {
+        "escrow_pct": {
+          "type": "number"
+        },
+        "release_share_pct": {
+          "type": "number"
+        },
+        "seller_floor_pct": {
+          "type": "number"
+        },
+        "window_days": {
+          "type": "number"
+        }
+      },
+      "description": "the earn-out terms bought, from the same listing read as the price"
+    },
+    "terms_config": {
+      "type": "string",
+      "enum": [
+        "prod",
+        "demo"
+      ],
+      "description": "demo = the server accepts an earn-out window shorter than 30 days"
     }
   },
   "required": [
@@ -119,6 +152,8 @@
     "overpay_refund",
     "listing_version",
     "known_keys_hash",
+    "terms",
+    "terms_config",
     "scan_verdict",
     "key_batch",
     "owner_after",

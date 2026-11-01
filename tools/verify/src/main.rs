@@ -801,6 +801,49 @@ fn run() -> Value {
         json!({"flagged_round_trip": usd(flagged), "seller_released": usd(s.m().sales[0].released)}),
     );
 
+    let mut s = translator_world();
+    let base = agent_core::Terms::default();
+    let refused = [
+        agent_core::Terms {
+            earnout_bps: 0,
+            ..base
+        },
+        agent_core::Terms {
+            floor_bps: 10_000,
+            ..base
+        },
+        agent_core::Terms {
+            window_secs: 60,
+            ..base
+        },
+    ]
+    .into_iter()
+    .all(|t| {
+        panics_with("BadTerms", || {
+            s.by_1y(ALICE)
+                .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), Some(t));
+        })
+    });
+    let judge: scan::ScanInput =
+        serde_json::from_str(include_str!("../../../fixtures/judge-attack.json"))
+            .expect("judge fixture");
+    let mut low = judge.clone();
+    low.listing.as_mut().expect("listing").terms.earnout_bps = 0;
+    let mut relisted = judge.clone();
+    relisted.contract.listing_version += 1;
+    let scan_blocks = scan::scan(&low).codes().contains(&"terms_below_minimum")
+        && scan::scan(&relisted)
+            .codes()
+            .contains(&"listing_version_mismatch")
+        && scan::scan(&judge).verdict == "clean";
+    let st = s.by(MALLORY).get_status();
+    r.check(
+        "A32",
+        "earn-out terms below the minimum (escrow < 30%, seller floor > 50% of escrow, window < 30 days) are refused by the contract and blocked by the scan; a relist after the quote blocks the buy",
+        refused && scan_blocks && st["terms_config"] == "prod",
+        json!({"terms_min": st["terms_min"], "terms_config": st["terms_config"]}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({

@@ -78,6 +78,18 @@
             "known_keys_hash": {
               "type": "string",
               "pattern": "^[0-9a-f]{64}$"
+            },
+            "price": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+$"
+                }
+              ],
+              "description": "listing price in base units, from the scanned listing"
             }
           }
         }

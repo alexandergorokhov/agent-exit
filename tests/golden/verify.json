@@ -486,10 +486,23 @@
         "flagged_round_trip": "600.00",
         "seller_released": "300.00"
       }
+    },
+    {
+      "id": "A32",
+      "what": "earn-out terms below the minimum (escrow < 30%, seller floor > 50% of escrow, window < 30 days) are refused by the contract and blocked by the scan; a relist after the quote blocks the buy",
+      "pass": true,
+      "detail": {
+        "terms_min": {
+          "min_earnout_bps": 3000,
+          "max_floor_bps": 5000,
+          "min_window_secs": 2592000
+        },
+        "terms_config": "prod"
+      }
     }
   ],
   "summary": {
-    "passed": 53,
+    "passed": 54,
     "failed": 0
   },
   "not_covered_here": [

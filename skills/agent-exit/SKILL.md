@@ -32,8 +32,12 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
    changed listing) means do not buy. `inconclusive` also means do not buy.
 4. **Buy inside your limit.** Call `buy_agent` with `max_price` (the most
    you will pay, in xUSD-FAKE dollars), `confirm: true` and your runner's
-   public key. The server scans again and refuses on any finding, above
-   `max_price`, or above its session spend cap; nothing is sent then.
+   public key. The server takes the price, listing version and earn-out
+   terms from one read, scans again with them, and refuses on any finding,
+   above `max_price`, above its session spend cap, or on terms below the
+   minimum (at least 30% in escrow, a seller floor of at most 50% of it, a
+   30-day window); nothing is sent then. You may ask for stricter terms with
+   `min_escrow_pct`, `max_floor_pct` and `min_window_days`, never looser.
 5. **Verify the lockout.** Call `verify_lockout` with the old seller's
    account. Expect `locked_out: true`: the seller no longer owns the deed,
    has no key on the account, and owner-only calls are refused.
@@ -45,6 +49,8 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
 - Never call `buy_agent` without a clean `scan_agent` first, even if the
   price is good.
 - Never raise `max_price` to make a refused buy pass.
+- Never retry a buy refused for `TERMS_BELOW_MINIMUM` with looser terms. A
+  `terms_config` of `demo` means a demo build with a shorter window.
 - Write tools are off unless the server runs with
   `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID`. Keys come only from
   environment variables.

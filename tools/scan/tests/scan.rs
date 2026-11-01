@@ -27,6 +27,27 @@ fn s1_clean_agent_scans_clean_with_buy_args() {
     let a = r.buy_args.unwrap();
     assert_eq!(a["listing_version"], 1);
     assert_eq!(a["known_keys_hash"], judge().contract.known_keys_hash);
+    assert_eq!(a["price"], "1000000000");
+}
+
+/// A32: a buyer may ask for more than the published minimum, and a demo may
+/// accept a shorter window only by asking for it explicitly.
+#[test]
+fn a32_buyer_minimum_terms_are_configurable() {
+    let mut i = judge();
+    i.expected.min_terms = Some(MinTerms {
+        min_earnout_bps: 4_000,
+        ..PUBLISHED_MIN_TERMS
+    });
+    assert!(scan(&i).codes().contains(&"terms_below_minimum"));
+    let mut i = judge();
+    i.listing.as_mut().unwrap().terms.window_secs = 600;
+    assert_eq!(scan(&i).verdict, "blocked");
+    i.expected.min_terms = Some(MinTerms {
+        min_window_secs: 600,
+        ..PUBLISHED_MIN_TERMS
+    });
+    assert_eq!(scan(&i).verdict, "clean");
 }
 
 #[test]
@@ -95,6 +116,21 @@ fn each_rule_blocks_alone() {
         ("registry_mismatch", |i| i.contract.token = None),
         ("known_keys_hash_mismatch", |i| {
             i.contract.known_keys_hash = "00".into()
+        }),
+        // A32: terms and the quoted listing.
+        ("listing_missing", |i| i.listing = None),
+        ("terms_below_minimum", |i| {
+            i.listing.as_mut().unwrap().terms.earnout_bps = 0
+        }),
+        ("terms_below_minimum", |i| {
+            i.listing.as_mut().unwrap().terms.floor_bps = 10_000
+        }),
+        ("terms_below_minimum", |i| {
+            i.listing.as_mut().unwrap().terms.window_secs = 60
+        }),
+        ("price_changed", |i| i.expected.price = Some("1".into())),
+        ("listing_version_mismatch", |i| {
+            i.listing.as_mut().unwrap().listing_version = 2
         }),
     ];
     for (code, m) in cases {

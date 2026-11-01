@@ -76,6 +76,40 @@ pub const PUBLISHED_METHODS: [&str; 41] = [
 pub const PUBLISHED_ADMIN: &str = "admin.testnet";
 pub const PUBLISHED_TOKEN: &str = "xusd.testnet";
 
+/// The least earn-out protection a buyer accepts by default (A32): 30% of the
+/// price in escrow, the seller's floor at most 50% of it, a 30-day window.
+/// The same minimum the published contract enforces. A buyer may ask for
+/// more; a demo may shorten the window but must say so.
+pub const PUBLISHED_MIN_TERMS: MinTerms = MinTerms {
+    min_earnout_bps: 3_000,
+    max_floor_bps: 5_000,
+    min_window_secs: 30 * 86_400,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MinTerms {
+    pub min_earnout_bps: u16,
+    pub max_floor_bps: u16,
+    pub min_window_secs: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TermsView {
+    pub earnout_bps: u16,
+    pub share_bps: u16,
+    pub floor_bps: u16,
+    pub window_secs: u64,
+}
+
+/// The listing as read in the same view call as the price (`get_listing`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ListingView {
+    pub listing_version: u64,
+    /// Base units, as a string.
+    pub price: String,
+    pub terms: TermsView,
+}
+
 /// Method names that let someone change the code or the keys: an upgrade
 /// path or a self-deploy. Their presence blocks even if the hash looks right.
 pub const UPGRADE_WORDS: [&str; 9] = [
@@ -140,6 +174,13 @@ pub struct Expected {
     /// Payment token of the release (default `PUBLISHED_TOKEN`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// The price the buyer was quoted (base units), from the same read as
+    /// `listing_version`. Absent = not checked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price: Option<String>,
+    /// Least terms the buyer accepts (default `PUBLISHED_MIN_TERMS`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_terms: Option<MinTerms>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -185,6 +226,9 @@ pub struct ScanInput {
     pub expected: Expected,
     pub chain: Chain,
     pub contract: ContractView,
+    /// `get_listing` at scan time. Missing = cannot check the terms = block.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listing: Option<ListingView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -387,6 +431,66 @@ pub fn scan(i: &ScanInput) -> Report {
             ),
         ));
     }
+    // A32: the terms the buyer will get, from the listing itself.
+    match &i.listing {
+        None => f.push(block(
+            "listing_missing",
+            "no listing (get_listing) to check the price and earn-out terms against".into(),
+        )),
+        Some(l) => {
+            if l.listing_version != i.expected.listing_version
+                && i.contract.listing_version == i.expected.listing_version
+            {
+                f.push(block(
+                    "listing_version_mismatch",
+                    format!(
+                        "listing is at version {}, the buyer was quoted {}",
+                        l.listing_version, i.expected.listing_version
+                    ),
+                ));
+            }
+            if let Some(p) = &i.expected.price {
+                if p != &l.price {
+                    f.push(block(
+                        "price_changed",
+                        format!("listing price is {}, the buyer was quoted {p}", l.price),
+                    ));
+                }
+            }
+            let min = i.expected.min_terms.unwrap_or(PUBLISHED_MIN_TERMS);
+            let t = &l.terms;
+            let mut low = Vec::new();
+            if t.earnout_bps < min.min_earnout_bps {
+                low.push(format!(
+                    "escrow {}% < {}%",
+                    t.earnout_bps / 100,
+                    min.min_earnout_bps / 100
+                ));
+            }
+            if t.floor_bps > min.max_floor_bps {
+                low.push(format!(
+                    "seller floor {}% of escrow > {}%",
+                    t.floor_bps / 100,
+                    min.max_floor_bps / 100
+                ));
+            }
+            if t.window_secs < min.min_window_secs {
+                low.push(format!(
+                    "window {} s < {} s",
+                    t.window_secs, min.min_window_secs
+                ));
+            }
+            if !low.is_empty() {
+                f.push(block(
+                    "terms_below_minimum",
+                    format!(
+                        "earn-out terms below the buyer's minimum: {}",
+                        low.join(", ")
+                    ),
+                ));
+            }
+        }
+    }
     if i.contract.open_approvals > 0 {
         f.push(block(
             "open_approval",
@@ -423,8 +527,9 @@ pub fn scan(i: &ScanInput) -> Report {
         verdict: verdict.into(),
         buy_args: (verdict == "clean").then(|| {
             serde_json::json!({
-                "listing_version": i.contract.listing_version,
+                "listing_version": i.expected.listing_version,
                 "known_keys_hash": i.contract.known_keys_hash,
+                "price": i.listing.as_ref().map(|l| l.price.clone()),
             })
         }),
         findings: f,

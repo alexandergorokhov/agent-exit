@@ -34,6 +34,7 @@
             "OVER_MAX_PRICE",
             "SESSION_CAP",
             "SCAN_BLOCKED",
+            "TERMS_BELOW_MINIMUM",
             "SCAN_UNAVAILABLE",
             "NOT_LISTED",
             "NOT_OWNER",

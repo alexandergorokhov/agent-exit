@@ -10,7 +10,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
-import { type Backend, type Json, ToolError } from "./backend.js";
+import { type Backend, type Json, type MinTerms, type ScanExpect, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
 
 export const TOOL_NAMES = [
@@ -141,9 +141,9 @@ export class Tools {
       case "get_earnings":
         return this.getEarnings(a.agent);
       case "scan_agent":
-        return this.scanAgent(a.agent, a.expected_listing_version);
+        return this.scanAgent(a.agent, a.expected_listing_version === undefined ? {} : { listing_version: a.expected_listing_version });
       case "buy_agent":
-        return this.buyAgent(a.agent, a.max_price, a.confirm, a.buyer_runner_pk);
+        return this.buyAgent(a.agent, a.max_price, a.confirm, a.buyer_runner_pk, a);
       case "verify_lockout":
         return this.verifyLockout(a.agent, a.account, a.account_keys);
       case "list_for_sale":
@@ -202,8 +202,8 @@ export class Tools {
   }
 
   /** Run the Rust scanner (tools/scan, one source of truth for the rules). */
-  private async scan(agent: string, expectedVersion?: number): Promise<Json> {
-    const input = await this.backend.scanInput(agent, expectedVersion);
+  private async scan(agent: string, expect: ScanExpect): Promise<Json> {
+    const input = await this.backend.scanInput(agent, expect);
     if (!this.cfg.scanBin) {
       throw new ToolError("SCAN_UNAVAILABLE", "scan binary not found: run `cargo build -p scan` (or set AGENT_EXIT_SCAN_BIN); buying is refused without a scan");
     }
@@ -214,8 +214,8 @@ export class Tools {
     return JSON.parse(r.stdout);
   }
 
-  private async scanAgent(agent: string, expectedVersion?: number): Promise<Json> {
-    const r = await this.scan(agent, expectedVersion);
+  private async scanAgent(agent: string, expect: ScanExpect): Promise<Json> {
+    const r = await this.scan(agent, { min_terms: this.cfg.minTerms, ...expect });
     return {
       ...this.base("scan_agent"),
       agent,
@@ -240,12 +240,34 @@ export class Tools {
     return this.cfg.accountId;
   }
 
-  private async buyAgent(agent: string, maxPrice: number, confirm: boolean, pk: string): Promise<Json> {
+  /** The server's minimum terms, tightened (never loosened) by the call (A32). */
+  private minTerms(a: Json): MinTerms {
+    const m = this.cfg.minTerms;
+    return {
+      min_earnout_bps: Math.max(m.min_earnout_bps, Math.round((a.min_escrow_pct ?? 0) * 100)),
+      max_floor_bps: Math.min(m.max_floor_bps, Math.round((a.max_floor_pct ?? 100) * 100)),
+      min_window_secs: Math.max(m.min_window_secs, Math.round((a.min_window_days ?? 0) * 86_400)),
+    };
+  }
+
+  private async buyAgent(agent: string, maxPrice: number, confirm: boolean, pk: string, a: Json): Promise<Json> {
     const buyer = this.writeGate();
     if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", "buy_agent needs confirm: true");
+    // Price, listing version and terms all come from this one read (A32);
+    // the scan checks them again and the contract refuses a changed version.
     const v = await this.backend.agent(agent);
     if (v.status.status !== "Listed" || !v.listing) throw new ToolError("NOT_LISTED", `${agent} is ${v.status.status}, not listed`);
-    const price = BigInt(v.listing.price);
+    const quoted = v.listing;
+    const price = BigInt(quoted.price);
+    const min = this.minTerms(a);
+    const t = quoted.terms;
+    const low: string[] = [];
+    if (t.earnout_bps < min.min_earnout_bps) low.push(`escrow ${t.earnout_bps / 100}% < ${min.min_earnout_bps / 100}%`);
+    if (t.floor_bps > min.max_floor_bps) low.push(`seller floor ${t.floor_bps / 100}% > ${min.max_floor_bps / 100}%`);
+    if (t.window_secs < min.min_window_secs) low.push(`window ${t.window_secs / 86_400} days < ${min.min_window_secs / 86_400} days`);
+    if (low.length) {
+      throw new ToolError("TERMS_BELOW_MINIMUM", `earn-out terms below your minimum: ${low.join(", ")}`, { terms: t, minimum: min });
+    }
     if (price > BigInt(units(maxPrice))) {
       throw new ToolError("OVER_MAX_PRICE", `price ${usd(price)} > max_price ${maxPrice.toFixed(2)}`, { price: usd(price) });
     }
@@ -253,13 +275,14 @@ export class Tools {
     if (this.spent + price > cap) {
       throw new ToolError("SESSION_CAP", `session spend would be ${usd(this.spent + price)} > cap ${usd(cap)} (AGENT_EXIT_SESSION_CAP)`);
     }
-    const r = await this.scan(agent);
+    const r = await this.scan(agent, { listing_version: quoted.listing_version, price: quoted.price, min_terms: min });
     if (r.verdict !== "clean") {
       throw new ToolError("SCAN_BLOCKED", `scan verdict ${r.verdict}: not buying`, {
         findings: (r.findings as Json[]).filter((f) => f.severity === "block"),
       });
     }
-    const { listing_version, known_keys_hash } = r.buy_args;
+    const { known_keys_hash } = r.buy_args;
+    const listing_version: number = quoted.listing_version;
     const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash);
     this.spent += price;
     const after = await this.backend.agent(agent);
@@ -276,6 +299,13 @@ export class Tools {
       overpay_refund: usd(out.overpay_refund),
       listing_version,
       known_keys_hash,
+      terms: {
+        escrow_pct: t.earnout_bps / 100,
+        release_share_pct: t.share_bps / 100,
+        seller_floor_pct: t.floor_bps / 100,
+        window_days: t.window_secs / 86_400,
+      },
+      terms_config: this.cfg.termsConfig,
       scan_verdict: "clean",
       key_batch: out.key_batch,
       owner_after: after.status.owner,

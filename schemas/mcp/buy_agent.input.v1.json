@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "agent-exit/mcp/buy_agent.input.v1.json",
   "title": "buy_agent input",
-  "description": "Buy a listed agent. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Scans first and refuses on any finding.",
+  "description": "Buy a listed agent. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Scans first and refuses on any finding. Refuses earn-out terms below the minimum (30% escrow, seller floor at most 50% of it, 30-day window).",
   "type": "object",
   "properties": {
     "agent": {
@@ -26,6 +26,24 @@
       "type": "string",
       "pattern": "^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$",
       "description": "your runner's public key; the contract adds it as the only function-call key"
+    },
+    "min_escrow_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 50,
+      "description": "refuse unless at least this % of the price is held in escrow; can only tighten the server minimum (30%)"
+    },
+    "max_floor_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "refuse if the seller is guaranteed more than this % of the escrow at window end; can only tighten the server maximum (50%)"
+    },
+    "min_window_days": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 365,
+      "description": "refuse unless the earn-out window is at least this many days; can only tighten the server minimum (30 days, shorter only in a demo build)"
     }
   },
   "required": [

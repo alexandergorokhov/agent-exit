@@ -23,7 +23,14 @@ export interface Config {
   expectedAdmin: string | null;
   expectedToken: string | null;
   scanBin: string | null;
+  /** Least earn-out terms buy_agent accepts (A32); a buy_agent call may only tighten them. */
+  minTerms: { min_earnout_bps: number; max_floor_bps: number; min_window_secs: number };
+  /** "prod" (published 30-day window) or "demo" (AGENT_EXIT_MIN_WINDOW_SECS shortened it). */
+  termsConfig: "prod" | "demo";
 }
+
+/** The published minimum (same as tools/scan PUBLISHED_MIN_TERMS and the contract). */
+export const PUBLISHED_MIN_TERMS = { min_earnout_bps: 3000, max_floor_bps: 5000, min_window_secs: 30 * 86_400 };
 
 export class ConfigError extends Error {}
 
@@ -69,6 +76,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   for (const a of agents) {
     if (!a.endsWith(".testnet")) throw new ConfigError(`agent ${a} is not a .testnet account`);
   }
+  const minWindow = Number(env.AGENT_EXIT_MIN_WINDOW_SECS ?? PUBLISHED_MIN_TERMS.min_window_secs);
+  if (!Number.isInteger(minWindow) || minWindow < 60) throw new ConfigError("AGENT_EXIT_MIN_WINDOW_SECS must be a whole number >= 60");
   const cap = Number(env.AGENT_EXIT_SESSION_CAP ?? "1500");
   if (!Number.isFinite(cap) || cap < 0) throw new ConfigError("AGENT_EXIT_SESSION_CAP must be a number >= 0");
   return {
@@ -85,5 +94,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     expectedAdmin: env.AGENT_EXIT_ADMIN ?? null,
     expectedToken: env.AGENT_EXIT_TOKEN ?? null,
     scanBin: findScan(repo),
+    minTerms: { ...PUBLISHED_MIN_TERMS, min_window_secs: minWindow },
+    termsConfig: minWindow >= PUBLISHED_MIN_TERMS.min_window_secs ? "prod" : "demo",
   };
 }
