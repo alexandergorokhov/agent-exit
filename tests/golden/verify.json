@@ -516,10 +516,18 @@
       "detail": {
         "buyer_refund": "1000.00"
       }
+    },
+    {
+      "id": "A35",
+      "what": "nft_resolve_transfer whose return is refused (the receiver started a key rotation in nft_on_transfer) reports true and emits no NEP-171 transfer back; the receiver still owns the deed",
+      "pass": true,
+      "detail": {
+        "owner": "carol.testnet"
+      }
     }
   ],
   "summary": {
-    "passed": 56,
+    "passed": 57,
     "failed": 0
   },
   "not_covered_here": [

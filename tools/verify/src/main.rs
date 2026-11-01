@@ -894,6 +894,25 @@ fn run() -> Value {
         json!({"buyer_refund": usd(refund)}),
     );
 
+    let mut s = sold_translator();
+    s.by_1y(BOB)
+        .nft_transfer_call(acc(CAROL), DEED_ID.into(), None, None, String::new());
+    s.callback(true).on_keys_deleted(vec![key_str(BOB_RUNNER)]);
+    s.by_1y(CAROL).set_runner_key(key(CAROL_RUNNER));
+    let mut cb = s.call(&s.agent.clone());
+    cb.result = Some(true);
+    s.env(&cb);
+    // The callback result body is empty here; an unreadable answer counts
+    // as "give it back" (NEP-171).
+    let kept =
+        s.c.nft_resolve_transfer(acc(BOB), acc(CAROL), DEED_ID.into(), None);
+    r.check(
+        "A35",
+        "nft_resolve_transfer whose return is refused (the receiver started a key rotation in nft_on_transfer) reports true and emits no NEP-171 transfer back; the receiver still owns the deed",
+        kept && s.m().owner == CAROL && !logs().iter().any(|l| l.contains("agent_exit:returned")),
+        json!({"owner": s.m().owner}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({

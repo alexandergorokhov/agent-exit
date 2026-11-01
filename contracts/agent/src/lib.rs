@@ -1009,15 +1009,25 @@ impl AgentExit {
         if !give_back || self.m.owner != receiver_id.as_str() {
             return true;
         }
-        let keys = self
-            .m
-            .transfer_deed(
-                receiver_id.as_str(),
-                previous_owner_id.as_str(),
-                None,
-                env::block_timestamp(),
-            )
-            .unwrap_or_default();
+        // A35: if the return is refused (the receiver started a key batch or
+        // a sale inside nft_on_transfer), the receiver keeps the deed and the
+        // method says so; no NEP-171 event claims a move that did not happen.
+        let keys = match self.m.transfer_deed(
+            receiver_id.as_str(),
+            previous_owner_id.as_str(),
+            None,
+            env::block_timestamp(),
+        ) {
+            Ok(keys) => keys,
+            Err(e) => {
+                emit(
+                    "deed_return_refused",
+                    json!({"owner": receiver_id, "previous_owner": previous_owner_id,
+                           "reason": e.to_string()}),
+                );
+                return true;
+            }
+        };
         self.delete_keys(&keys);
         NftTransfer {
             old_owner_id: &receiver_id,

@@ -322,3 +322,35 @@ fn a34_owner_withdraws_treasury_of_frozen_agent() {
     assert_eq!(s.m().owner_free, 0);
     assert!(s.m().solvent());
 }
+
+/// A35 (review 2 M3, R3 inverted): the receiver of `nft_transfer_call`
+/// rotates the runner key inside `nft_on_transfer` and then asks for the
+/// deed back. The return is refused (`KeysPending`), so resolve reports that
+/// the receiver kept the deed (`true`) and emits no NEP-171 transfer back.
+#[test]
+fn a35_resolve_reports_a_refused_return_truthfully() {
+    let mut s = sold_translator();
+    s.by_1y(BOB)
+        .nft_transfer_call(acc(CAROL), DEED_ID.into(), None, None, String::new());
+    s.callback(true).on_keys_deleted(vec![key_str(BOB_RUNNER)]);
+    // The receiver (carol) acts as owner inside nft_on_transfer.
+    s.by_1y(CAROL).set_runner_key(key(CAROL_RUNNER));
+    // nft_on_transfer returned true: "give it back".
+    near_sdk::testing_env!(
+        near_sdk::test_utils::VMContextBuilder::new()
+            .current_account_id(acc(AGENT))
+            .predecessor_account_id(acc(AGENT))
+            .block_timestamp(s.now)
+            .build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![near_sdk::PromiseResult::Successful(b"true".to_vec())]
+    );
+    let kept =
+        s.c.nft_resolve_transfer(acc(BOB), acc(CAROL), DEED_ID.into(), None);
+    assert!(kept, "resolve says the receiver kept the deed");
+    assert_eq!(s.m().owner, CAROL);
+    assert!(!logs().iter().any(|l| l.contains("agent_exit:returned")));
+    assert_eq!(events("deed_return_refused")[0]["reason"], "KeysPending");
+}
