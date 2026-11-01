@@ -979,3 +979,58 @@ fn hidden_key_cannot_spend_the_treasury() {
     assert_eq!(s.m().treasury, 10 * USD);
     assert!(ft_transfers().iter().all(|(to, _)| to != SUMMARIZER));
 }
+
+// A24: the seller drains the treasury while listed.
+fn listed_with_treasury() -> Sim {
+    let mut s = translator_world();
+    s.by_1y(ALICE).set_limits(demo_limits());
+    for p in PAYERS.iter().take(5) {
+        assert_eq!(s.pay(p, 60 * USD), Some(0));
+    }
+    let card = s
+        .by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(card["treasury_snapshot"], "60000000");
+    s
+}
+
+#[test]
+fn a24_no_spending_while_listed() {
+    let mut s = listed_with_treasury();
+    let before = s.m().clone();
+    let msg = panic_msg(|| {
+        s.runner(key(ALICE_RUNNER))
+            .pay(acc(SUMMARIZER), U128(10 * USD));
+    });
+    assert_eq!(msg, "Listed: spending paused");
+    assert_eq!(s.m(), &before);
+    // Cancelling the listing resumes spending.
+    s.by(ALICE).cancel_listing();
+    let r = s
+        .runner(key(ALICE_RUNNER))
+        .pay(acc(SUMMARIZER), U128(10 * USD));
+    assert_eq!(r["ok"], true);
+}
+
+#[test]
+fn a24_buy_refused_if_treasury_below_listing_snapshot() {
+    let mut s = listed_with_treasury();
+    // Defense in depth: no method lowers the treasury while listed, but if any
+    // path ever did, the buy is refused like a stale listing, full refund.
+    s.inject_treasury_drain(10 * USD);
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), Some(1_000 * USD));
+    assert!(refused("TreasuryChanged"));
+    assert_eq!(s.m().owner, ALICE);
+    // More money in the treasury than the snapshot is fine.
+    s.c.m.treasury += 20 * USD;
+    s.c.m.held += 20 * USD; // back above the snapshot
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+}
+
+#[test]
+fn a24_payments_while_listed_still_fill_the_treasury() {
+    let mut s = listed_with_treasury();
+    assert_eq!(s.pay(PAYERS[5], 25 * USD), Some(0));
+    assert_eq!(s.m().treasury, 65 * USD);
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+}

@@ -18,6 +18,7 @@ static RELEASES: AtomicUsize = AtomicUsize::new(0);
 static FINALIZED: AtomicUsize = AtomicUsize::new(0);
 static SPENDS: AtomicUsize = AtomicUsize::new(0);
 static CAP_HITS: AtomicUsize = AtomicUsize::new(0);
+static LISTED_REFUSALS: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -74,7 +75,7 @@ fn act() -> impl Strategy<Value = Act> {
         2 => (0usize..8, prop::bool::weighted(0.7)).prop_map(|(i, ok)| Act::Resolve(i, ok)),
         1 => a.clone().prop_map(Act::Claim),
         1 => (a.clone(), any::<u8>()).prop_map(|(c, f)| Act::Withdraw(c, f)),
-        2 => (0u64..20 * 86_400).prop_map(Act::Time),
+        2 => (0u64..30 * 86_400).prop_map(Act::Time),
         1 => (0usize..4).prop_map(Act::Finalize),
         1 => (a.clone(), a.clone()).prop_map(|(c, r)| Act::TransferDeed(c, r)),
         1 => (a.clone(), any::<u8>()).prop_map(|(c, k)| Act::SetKey(c, k)),
@@ -83,7 +84,7 @@ fn act() -> impl Strategy<Value = Act> {
         1 => prop::bool::weighted(0.95).prop_map(Act::Runner),
         2 => (a.clone(), 0u64..5_000_000, 0u64..80_000_000, any::<u8>(), 0u16..=10_000)
             .prop_map(|(c, f, cap, mask, t)| Act::SetLimits(c, f, cap, mask, t)),
-        4 => (a.clone(), 1u64..30_000_000, prop::bool::weighted(0.97)).prop_map(|(p, x, k)| Act::Spend(p, x, k)),
+        4 => (a.clone(), 1u64..30_000_000, prop::bool::weighted(0.995)).prop_map(|(p, x, k)| Act::Spend(p, x, k)),
     ]
 }
 
@@ -114,6 +115,10 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     // unless the owner lowered the cap after the spending.
     let today = m.spent_today(w.now);
     prop_assert!(today <= w.max_cap_today.max(m.limits.daily_cap));
+    // A24: while listed, the treasury never drops below the listing's snapshot.
+    if let (Status::Listed, Some(l)) = (&m.status, &m.listing) {
+        prop_assert!(m.treasury >= l.treasury_snapshot);
+    }
     // I2: per sale, paid now + escrow = price; released + returned <= escrow.
     for s in &m.sales {
         prop_assert_eq!(s.paid_now + s.escrow, s.price);
@@ -383,6 +388,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             }
         }
         Act::Spend(p, x, known) => {
+            if known && w.m.known_keys.is_empty() {
+                // No runner key exists (deed just moved): nobody to spend.
+                return check_invariants(w);
+            }
             let pk = if known {
                 w.m.known_keys.iter().next().cloned().unwrap_or_default()
             } else {
@@ -392,7 +401,13 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 let payee = ACTORS[p];
                 let amount = x as Amount;
                 let spent_before = w.m.spent_today(w.now);
-                match w.m.spend(payee, amount, w.now) {
+                let r = w.m.spend(payee, amount, w.now);
+                if before.status == Status::Listed {
+                    // A24: spending is paused while listed.
+                    prop_assert_eq!(r.clone().unwrap_err(), Error::SpendingPaused);
+                    LISTED_REFUSALS.fetch_add(1, Relaxed);
+                }
+                match r {
                     Ok(total) => {
                         SPENDS.fetch_add(1, Relaxed);
                         // I7: inside the payees, the cap and the treasury.
@@ -458,7 +473,7 @@ fn runner() -> TestRunner {
 #[test]
 fn prop_invariants_random_sequences() {
     let mut r = runner();
-    r.run(&prop::collection::vec(act(), 1..80), |acts| {
+    r.run(&prop::collection::vec(act(), 1..120), |acts| {
         let mut m = Machine::new("translator", "alice");
         m.set_runner_key("alice", "ed25519:alice-runner").unwrap();
         let mut w = World {
@@ -484,6 +499,7 @@ fn prop_invariants_random_sequences() {
         ("finalized", &FINALIZED),
         ("treasury spends", &SPENDS),
         ("cap refusals", &CAP_HITS),
+        ("spends refused while listed", &LISTED_REFUSALS),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");

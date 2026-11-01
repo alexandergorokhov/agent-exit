@@ -419,10 +419,20 @@
       "what": "set_limits with split != 100%, an absurd cap, the agent as payee or a negative amount: refused",
       "pass": true,
       "detail": {}
+    },
+    {
+      "id": "A24",
+      "what": "seller drains the treasury while listed: pay fails 'Listed: spending paused'; buy refuses (full refund) if the treasury is below the listing's snapshot",
+      "pass": true,
+      "detail": {
+        "treasury_snapshot": "60000000",
+        "error": "Listed: spending paused",
+        "stale_buy": "TreasuryChanged"
+      }
     }
   ],
   "summary": {
-    "passed": 45,
+    "passed": 46,
     "failed": 0
   },
   "not_covered_here": [

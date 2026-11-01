@@ -58,6 +58,10 @@ pub enum Error {
     KeyAlreadyKnown,
     SameOwner,
     BadLimits,
+    /// The runner tried to pay while the agent is listed (A24).
+    SpendingPaused,
+    /// The treasury is below what the listing showed (A24, stale listing).
+    TreasuryChanged,
     /// A runner payment or incoming payment outside the owner's limits.
     PolicyViolation(Policy),
 }
@@ -66,6 +70,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::PolicyViolation(p) => write!(f, "PolicyViolation:{p:?}"),
+            Error::SpendingPaused => write!(f, "Listed: spending paused"),
             e => write!(f, "{e:?}"),
         }
     }
@@ -124,6 +129,9 @@ pub struct Listing {
     /// with `view_account.code_hash` and the reproducible build hash.
     pub code_hash: String,
     pub listed_at: Ts,
+    /// Treasury balance when listed. Spending is paused while listed, and
+    /// `buy` refuses if the treasury is ever below this (A24).
+    pub treasury_snapshot: Amount,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -442,6 +450,7 @@ impl Machine {
             terms,
             code_hash: code_hash.to_string(),
             listed_at: now,
+            treasury_snapshot: self.treasury,
         };
         self.listing = Some(l.clone());
         Ok(l)
@@ -496,6 +505,9 @@ impl Machine {
         }
         if amount < listing.price {
             return Err(Error::Underpaid);
+        }
+        if self.treasury < listing.treasury_snapshot {
+            return Err(Error::TreasuryChanged);
         }
         if self.open_auth_until > now || !self.approvals.is_empty() {
             return Err(Error::OpenApproval);
@@ -720,8 +732,13 @@ impl Machine {
 
     /// The runner pays `payee` out of the treasury. Call only after
     /// `runner_guard` returned `Ok`. Checks, in order: payee allowed, daily
-    /// cap, treasury balance. Nothing changes on error.
+    /// cap, treasury balance (and never while listed). Nothing changes on error.
     pub fn spend(&mut self, payee: &str, amount: Amount, now: Ts) -> Res<Amount> {
+        // A24: no spending while listed, so the seller cannot drain the
+        // treasury the buyer is paying for.
+        if self.status == Status::Listed {
+            return Err(Error::SpendingPaused);
+        }
         if amount == 0 {
             return Err(Error::InsufficientFunds);
         }

@@ -591,7 +591,8 @@ impl AgentExit {
     // --------------------------------------------------------- runner
 
     /// The runner pays `payee` out of the agent's treasury (procurement), only
-    /// to an allowed payee and only up to the daily cap. Refusals panic with
+    /// to an allowed payee and only up to the daily cap, and never while the
+    /// agent is listed (A24). Refusals panic with `Listed: spending paused`,
     /// `PolicyViolation:Payee`, `PolicyViolation:DailyCap` or
     /// `InsufficientFunds`, plus the numbers; nothing changes.
     pub fn pay(&mut self, payee: AccountId, amount: U128) -> Value {
@@ -619,6 +620,9 @@ impl AgentExit {
                     }
                     _ => String::new(),
                 };
+                if detail.is_empty() {
+                    env::panic_str(&e.to_string())
+                }
                 env::panic_str(&format!("{e}: {detail}"))
             }
         };
@@ -1074,6 +1078,7 @@ impl AgentExit {
             "known_keys_hash": self.m.known_keys_hash(),
             "token": self.token,
             "listed_at": U64(l.listed_at),
+            "treasury_snapshot": amt(l.treasury_snapshot),
         })
     }
 

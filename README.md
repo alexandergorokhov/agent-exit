@@ -74,8 +74,9 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
 | The cap counts per owner and UTC day: a seller burning the cap before the sale does not reduce the buyer's cap | offline | E18, E19, A15 |
+| While listed, the limits are frozen and the runner cannot spend (`Listed: spending paused`); the listing snapshots the treasury and `buy()` refuses with a full refund (`TreasuryChanged`) if the treasury is below it, the same way as a changed listing version | offline + property test (treasury never below the snapshot while listed) | A24 |
 | Agent buys agent through MCP: six tools, JSON schemas `schemas/mcp/*.v1.json`, read-only by default, `buy_agent` needs `confirm`, `max_price`, a session spend cap and a clean scan | offline: the server replays results **recorded from the real contract code** (`fixtures/mcp/world.json`, reproducible); nothing is sent. Testnet mode (`AGENT_EXIT_NETWORK=testnet`) is read-only, written but not run here | S14, S15 (MCP part), E29, E30, S17 |
-| Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
+| Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 
 Not built yet (later batches): the testnet deploy and live runs (B3),
 testnet writes through MCP (they return `NOT_BUILT`), fuzz targets, Chain
@@ -122,9 +123,6 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
   NEAR AI Cloud signer address is set by the registry admin (not by the
   seller, who could otherwise allowlist their own key) and is checked
   against the real service on the owner's machine.
-- While listed, the limits cannot change, but the runner can still pay
-  allowed payees up to the daily cap, so a seller can drain at most one
-  day's cap from the treasury before a sale; the treasury balance is public.
 - A failed supplier payment returns to the treasury but still counts toward
   that day's cap (conservative).
 - The MCP server's offline mode replays recorded contract results; a buy or

@@ -109,7 +109,8 @@
         ],
         "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
         "token": "xusd.testnet",
-        "listed_at": "1768089600000000000"
+        "listed_at": "1768089600000000000",
+        "treasury_snapshot": "0"
       },
       "limits": {
         "schema": "limits.v1",
@@ -340,7 +341,8 @@
         ],
         "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
         "token": "xusd.testnet",
-        "listed_at": "1768089600000000000"
+        "listed_at": "1768089600000000000",
+        "treasury_snapshot": "0"
       },
       "limits": {
         "schema": "limits.v1",
@@ -803,7 +805,8 @@
         ],
         "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
         "token": "xusd.testnet",
-        "listed_at": "1768089600000000000"
+        "listed_at": "1768089600000000000",
+        "treasury_snapshot": "0"
       },
       "after": {
         "status": {
@@ -908,7 +911,8 @@
           ],
           "known_keys_hash": "1b4ec233da4e5884016148ff416527e69c09c841a547d3a61f8c949bf28fc37d",
           "token": "xusd.testnet",
-          "listed_at": "1768089600000000000"
+          "listed_at": "1768089600000000000",
+          "treasury_snapshot": "0"
         },
         "limits": {
           "schema": "limits.v1",

@@ -200,6 +200,13 @@ impl Sim {
     pub fn m(&self) -> &Machine {
         &self.c.m
     }
+
+    /// FAULT INJECTION for A24 (simulator only, not in the wasm): lower the
+    /// treasury as if some path had drained it, to prove `buy` refuses.
+    pub fn inject_treasury_drain(&mut self, amount: u128) {
+        self.c.m.treasury -= amount;
+        self.c.m.held -= amount;
+    }
 }
 
 /// `AgentExit` has no `Default`; build a throwaway value without touching the

@@ -651,6 +651,32 @@ fn run() -> Value {
         json!({}),
     );
 
+    // A24: the seller drains the treasury while listed.
+    let mut s = translator_world();
+    s.by_1y(ALICE).set_limits(demo_limits());
+    for p in PAYERS.iter().take(5) {
+        s.pay(p, 60 * USD);
+    }
+    let card = s
+        .by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    let paused = panics_with("Listed: spending paused", || {
+        s.runner(key(ALICE_RUNNER))
+            .pay(acc(SUMMARIZER), U128(10 * USD));
+    });
+    let kept = s.m().treasury;
+    s.inject_treasury_drain(10 * USD);
+    let stale = s.buy(BOB, 1_000 * USD, BOB_RUNNER) == Some(1_000 * USD)
+        && events("refused")
+            .iter()
+            .any(|e| e["reason"] == "TreasuryChanged");
+    r.check(
+        "A24",
+        "seller drains the treasury while listed: pay fails 'Listed: spending paused'; buy refuses (full refund) if the treasury is below the listing's snapshot",
+        paused && kept == 60 * USD && card["treasury_snapshot"] == "60000000" && stale,
+        json!({"treasury_snapshot": card["treasury_snapshot"], "error": "Listed: spending paused", "stale_buy": "TreasuryChanged"}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({
