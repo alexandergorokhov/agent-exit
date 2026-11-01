@@ -1,0 +1,22 @@
+[package]
+name = "agent-exit"
+description = "Agent Exit contract: deed (NEP-171, one token), earnings meter, listing, one-step buy() handover, earn-out escrow."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# In-process simulator (mocked NEAR runtime) used by unit tests and tools/verify.
+sim = ["near-sdk/unit-testing"]
+
+[dependencies]
+near-sdk.workspace = true
+agent-core = { path = "../agent-core" }
+near-contract-standards.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

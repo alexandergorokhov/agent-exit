@@ -1,0 +1,16 @@
+[package]
+name = "agent-core"
+description = "Pure state machine for Agent Exit: meter, listing, buy/handover, earn-out escrow. No near-sdk env."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+borsh.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+
+[dev-dependencies]
+proptest = "1"

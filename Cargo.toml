@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = ["contracts/agent-core", "contracts/agent", "contracts/xusd", "tools/verify"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/alexandergorokhov/near-transparent-agent-market"
+
+[workspace.dependencies]
+near-sdk = "5.30"
+near-contract-standards = "5.30"
+borsh = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+hex = "0.4"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true
+
+# Dependencies (near-sdk's mocked runtime) run optimised in tests: the
+# simulator sets up a mocked blockchain per call.
+[profile.dev.package."*"]
+opt-level = 2

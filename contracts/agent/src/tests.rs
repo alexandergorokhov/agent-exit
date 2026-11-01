@@ -1,0 +1,580 @@
+// Promises returned by contract methods are dropped on purpose: in the mocked
+// runtime dropping schedules them, and the tests inspect the created receipts.
+#![allow(unused_must_use)]
+
+//! Contract unit tests in the mocked runtime, named after SCENARIOS.md ids.
+//! The `sbx` / `net` parts of a scenario (real key errors, real token
+//! refunds) run in near-sandbox or on testnet; see README "What runs where".
+
+use crate::sim::*;
+use crate::*;
+use agent_core::Status;
+
+fn refused(reason: &str) -> bool {
+    events("refused").iter().any(|e| e["reason"] == reason)
+}
+
+fn panics<F: FnOnce()>(f: F) -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err()
+}
+
+#[test]
+fn s1_list_clean() {
+    let mut s = translator_world();
+    assert_eq!(s.c.known_keys(), vec![key_str(ALICE_RUNNER)]);
+    let card = s
+        .by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(card["schema"], "listing.v1");
+    assert_eq!(card["listing_version"], 1);
+    assert_eq!(card["price"], "1000000000");
+    assert_eq!(card["paid_now"], "700000000");
+    assert_eq!(card["escrow"], "300000000");
+    assert_eq!(card["code_hash"], CODE_HASH);
+    assert_eq!(card["known_keys_hash"], s.c.known_keys_hash());
+    assert_eq!(s.m().status, Status::Listed);
+    assert_eq!(events("listed").len(), 1);
+}
+
+#[test]
+fn s1_runner_key_is_function_call_only() {
+    let mut s = Sim::new(AGENT, ALICE);
+    s.by(ALICE).set_runner_key(key(ALICE_RUNNER));
+    assert_eq!(
+        key_actions(AGENT),
+        vec![("add_fc".to_string(), key_str(ALICE_RUNNER))]
+    );
+}
+
+#[test]
+fn s2_meter_fixed_history() {
+    let s = translator_world();
+    let e = s.c.get_earnings();
+    assert_eq!(e.gross, 500 * USD);
+    assert_eq!(e.counted, 360 * USD);
+    assert_eq!(e.flagged, 140 * USD);
+    assert_eq!(e.flagged_self, 100 * USD);
+    assert_eq!(e.flagged_seller_subaccount, 40 * USD);
+    assert_eq!(e.counted_payers, 6);
+    assert_eq!(e.payments, 33);
+    // Per-day buckets: days 0-4 each 72.00 counted; day 5 140.00 flagged.
+    assert_eq!(e.days.len(), 6);
+    for d in &e.days[..5] {
+        assert_eq!((d.gross, d.counted, d.payments), (72 * USD, 72 * USD, 6));
+    }
+    assert_eq!((e.days[5].gross, e.days[5].counted), (140 * USD, 0));
+    // NEAR Verified (feature 2) arrives in batch B2; until then nothing is
+    // verified, and the fixed world's 120.00 verified figure is not claimed.
+    assert_eq!(e.verified, 0);
+}
+
+#[test]
+fn s4_side_by_side() {
+    let t = translator_world().c.get_earnings();
+    let c = cheat_world().c.get_earnings();
+    assert_eq!((t.gross, t.counted), (500 * USD, 360 * USD));
+    assert_eq!((c.gross, c.counted, c.verified), (500 * USD, 0, 0));
+    assert_eq!(c.flagged_self, 300 * USD);
+    assert_eq!(c.flagged_seller_subaccount, 200 * USD);
+}
+
+#[test]
+fn s5_buy_one_step() {
+    let mut s = listed_translator();
+    assert_eq!(s.c.known_keys(), vec![key_str(ALICE_RUNNER)]);
+    // bob's ft_transfer_call(1000, buy msg) -> a promise (the key batch).
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    assert_eq!(s.m().status, Status::Settling);
+    // One batch on the agent: delete alice's runner key, add bob's (FC only).
+    assert_eq!(
+        key_actions(AGENT),
+        vec![
+            ("delete".to_string(), key_str(ALICE_RUNNER)),
+            ("add_fc".to_string(), key_str(BOB_RUNNER)),
+        ]
+    );
+    // Callback after the batch succeeded.
+    assert_eq!(s.callback(true).on_handover(1).0, 0);
+    assert_eq!(ft_transfers(), vec![(ALICE.to_string(), 700 * USD)]);
+    let sale = &events("sale")[0];
+    for f in [
+        "sale_id",
+        "seller",
+        "buyer",
+        "price",
+        "paid_now",
+        "escrow",
+        "owner_epoch",
+        "window_end",
+        "known_keys",
+    ] {
+        assert!(!sale[f].is_null(), "sale event lacks {f}");
+    }
+    assert_eq!(sale["escrow"], "300000000");
+    assert_eq!(
+        s.c.nft_token(DEED_ID.into()).unwrap().owner_id.as_str(),
+        BOB
+    );
+    assert_eq!(s.c.known_keys(), vec![key_str(BOB_RUNNER)]);
+    assert_eq!(s.m().status, Status::Sold);
+    assert_eq!(s.m().owner_epoch, 2);
+    assert_eq!(s.m().escrow_left(), 300 * USD);
+    assert!(s.m().solvent());
+}
+
+#[test]
+fn e1_stale_listing_version() {
+    let mut s = listed_translator();
+    let h = s.c.known_keys_hash();
+    let r = s.ft(BOB, 1_000 * USD, &Sim::buy_msg(0, &h, BOB_RUNNER), 300);
+    assert_eq!(r, Some(1_000 * USD));
+    assert!(refused("ListingChanged"));
+    assert_eq!(s.m().status, Status::Listed);
+    assert!(key_actions(AGENT).is_empty());
+}
+
+#[test]
+fn a7_terms_changed_after_scan() {
+    let mut s = listed_translator();
+    let seen_version = s.m().listing_version;
+    let h = s.c.known_keys_hash();
+    // The seller re-lists at another price after bob scanned.
+    s.by(ALICE).cancel_listing();
+    s.by(ALICE)
+        .list_for_sale(U128(1_500 * USD), CODE_HASH.into(), None);
+    let r = s.ft(
+        BOB,
+        1_500 * USD,
+        &Sim::buy_msg(seen_version, &h, BOB_RUNNER),
+        300,
+    );
+    assert_eq!(r, Some(1_500 * USD));
+    assert!(refused("ListingChanged"));
+}
+
+#[test]
+fn e2_wrong_known_keys_hash() {
+    let mut s = listed_translator();
+    let v = s.m().listing_version;
+    let r = s.ft(BOB, 1_000 * USD, &Sim::buy_msg(v, "00ff", BOB_RUNNER), 300);
+    assert_eq!(r, Some(1_000 * USD));
+    assert!(refused("KeysChanged"));
+}
+
+#[test]
+fn e3_underpay_refused() {
+    let mut s = listed_translator();
+    assert_eq!(s.buy(BOB, 999_990_000, BOB_RUNNER), Some(999_990_000));
+    assert!(refused("Underpaid"));
+    assert_eq!(s.m().status, Status::Listed);
+}
+
+#[test]
+fn e3_overpay_returns_change() {
+    let mut s = listed_translator();
+    assert_eq!(s.buy(BOB, 1_000_500_000, BOB_RUNNER), None);
+    assert_eq!(s.callback(true).on_handover(1).0, 500_000);
+    // Held: 300 escrow + 500 pre-sale revenue; the 700 payout is in flight.
+    assert_eq!(s.m().held, 800 * USD);
+}
+
+#[test]
+fn e4_second_buy_while_settling() {
+    let mut s = listed_translator();
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    assert_eq!(s.buy(CAROL, 1_000 * USD, CAROL_RUNNER), Some(1_000 * USD));
+    assert!(refused("SaleInProgress"));
+}
+
+#[test]
+fn e5_rollback() {
+    let mut s = listed_translator();
+    let before = s.m().clone();
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    // The key batch failed (e.g. bob's key was already on the account).
+    let unused = s.callback(false).on_handover(1);
+    assert_eq!(unused.0, 1_000 * USD, "bob refunded in full");
+    assert!(ft_transfers().is_empty(), "no seller payout");
+    assert_eq!(events("sale_rolled_back").len(), 1);
+    let mut expect = before;
+    expect.next_sale_id = 2;
+    assert_eq!(s.m(), &expect, "state exactly as before the buy");
+    assert_eq!(s.c.known_keys(), vec![key_str(ALICE_RUNNER)]);
+}
+
+#[test]
+fn e6_payout_fallback() {
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.callback(true).on_handover(1);
+    // alice is not registered on the token: the push fails.
+    s.callback(false)
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 700 * USD);
+    assert!(s.m().solvent());
+    s.by(ALICE).claim();
+    assert_eq!(ft_transfers(), vec![(ALICE.to_string(), 700 * USD)]);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 0);
+}
+
+#[test]
+fn e7_not_enough_gas() {
+    let mut s = listed_translator();
+    let v = s.m().listing_version;
+    let h = s.c.known_keys_hash();
+    let r = s.ft(BOB, 1_000 * USD, &Sim::buy_msg(v, &h, BOB_RUNNER), 50);
+    assert_eq!(r, Some(1_000 * USD));
+    assert!(refused("NotEnoughGas"));
+    assert_eq!(s.m().status, Status::Listed);
+    assert!(key_actions(AGENT).is_empty());
+}
+
+#[test]
+#[should_panic(expected = "UnknownToken")]
+fn e8_a14_direct_call_by_non_token() {
+    let mut s = translator_world();
+    s.by(MALLORY)
+        .ft_on_transfer(acc(MALLORY), U128(1_000 * USD), "".into());
+}
+
+#[test]
+#[should_panic(expected = "UnknownToken")]
+fn e9_token_not_on_list() {
+    // A real but unlisted token gets a panic; its ft_resolve_transfer then
+    // refunds the sender in full (NEP-141).
+    let mut s = translator_world();
+    s.by("othertoken.testnet")
+        .ft_on_transfer(acc(BOB), U128(5 * USD), "".into());
+}
+
+#[test]
+fn e10_malformed_or_huge_msg() {
+    let mut s = listed_translator();
+    let before = s.m().clone();
+    for msg in [
+        "{",
+        "{\"kind\":\"steal\"}",
+        "{\"kind\":\"buy\",\"listing_version\":\"x\"}",
+        "{\"kind\":\"buy\",\"listing_version\":1,\"known_keys_hash\":\"\",\"buyer_runner_pk\":\"ed25519:nope\"}",
+        "null",
+    ] {
+        assert_eq!(s.ft(BOB, 7 * USD, msg, 300), Some(7 * USD), "msg {msg}");
+    }
+    let huge = format!(
+        "{{\"kind\":\"pay\",\"job_id\":\"{}\"}}",
+        "a".repeat(MAX_MSG_LEN)
+    );
+    assert_eq!(s.ft(BOB, 7 * USD, &huge, 300), Some(7 * USD));
+    assert_eq!(s.m(), &before);
+}
+
+#[test]
+fn e15_dust_refunded() {
+    let mut s = translator_world();
+    let payers = s.m().meter.payers.len();
+    assert_eq!(s.pay("dust.testnet", 50_000), Some(50_000));
+    assert!(refused("Dust"));
+    assert_eq!(s.m().meter.payers.len(), payers);
+}
+
+#[test]
+fn e17_withdraw_near_everything_above_reserve() {
+    let mut s = translator_world();
+    // Measured in the same context as the call (the 1 yocto deposit counts
+    // toward the account balance on NEAR).
+    let max = s.by_1y(ALICE).near_withdrawable();
+    assert!(max.as_yoctonear() > 0);
+    s.by_1y(ALICE).withdraw_near(max);
+}
+
+#[test]
+#[should_panic(expected = "StorageReserve")]
+fn e17_withdraw_near_over_reserve_refused() {
+    let mut s = translator_world();
+    // Measured in the same context as the call (the 1 yocto deposit counts
+    // toward the account balance on NEAR).
+    let max = s.by_1y(ALICE).near_withdrawable();
+    s.by_1y(ALICE)
+        .withdraw_near(max.saturating_add(NearToken::from_yoctonear(1)));
+}
+
+#[test]
+fn e21_finalize_twice_or_by_anyone() {
+    let mut s = sold_translator();
+    s.advance(30 * DAY);
+    let a = s.by(MALLORY).finalize_earnout(1);
+    let b = s.by(CAROL).finalize_earnout(1);
+    assert_eq!(a, b);
+    assert_eq!(a["released"], "60000000");
+    assert_eq!(a["returned"], "240000000");
+    assert_eq!(s.c.get_claimable(acc(BOB)).0, 240 * USD);
+}
+
+#[test]
+fn e25_approval_blocks_listing_and_is_cleared_on_transfer() {
+    let mut s = translator_world();
+    s.by_1y(ALICE)
+        .nft_approve(DEED_ID.into(), acc(MALLORY), None);
+    assert!(panics(|| {
+        s.by(ALICE)
+            .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    }));
+    assert!(s.c.nft_is_approved(DEED_ID.into(), acc(MALLORY), None));
+    s.by_1y(ALICE)
+        .nft_transfer(acc(CAROL), DEED_ID.into(), None, None);
+    assert!(!s.c.nft_is_approved(DEED_ID.into(), acc(MALLORY), None));
+    assert!(s.m().approvals.is_empty());
+}
+
+#[test]
+#[should_panic(expected = "OpenApproval")]
+fn a8_open_approval_list_refused() {
+    let mut s = translator_world();
+    s.by_1y(ALICE)
+        .nft_approve(DEED_ID.into(), acc(MALLORY), None);
+    s.by(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+}
+
+#[test]
+#[should_panic(expected = "SaleInProgress")]
+fn e26_cancel_during_settling() {
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.by(ALICE).cancel_listing();
+}
+
+#[test]
+#[should_panic(expected = "SaleInProgress")]
+fn e27_runner_during_settling() {
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.runner(key(ALICE_RUNNER)).heartbeat();
+}
+
+#[test]
+fn a10_a11_a12_wash_flags() {
+    let mut s = translator_world();
+    // A12: the agent pays p7 (owner withdraws revenue to p7), p7 pays back.
+    s.by_1y(ALICE)
+        .withdraw(U128(10 * USD), Some(acc("p7.testnet")));
+    s.callback(true)
+        .on_transfer_out(OutKind::OwnerWithdraw, acc("p7.testnet"), U128(10 * USD));
+    s.pay("p7.testnet", 10 * USD);
+    let p = &events("payment")[0];
+    assert_eq!(p["flags"]["round_trip"], true);
+    assert_eq!(p["counted"], false);
+    // A10: self-payment.
+    s.pay(ALICE, 5 * USD);
+    assert_eq!(events("payment")[0]["flags"]["self"], true);
+    // A11: seller sub-account.
+    s.pay(X_ALICE, 5 * USD);
+    assert_eq!(events("payment")[0]["flags"]["seller_subaccount"], true);
+    // A sub-account of the agent itself is flagged too.
+    s.pay("x.translator.testnet", 5 * USD);
+    assert_eq!(events("payment")[0]["counted"], false);
+    let e = s.c.get_earnings();
+    assert_eq!(e.counted, 360 * USD);
+    assert_eq!(e.flagged_round_trip, 10 * USD);
+}
+
+#[test]
+fn s7_earnout_partial_via_contract() {
+    let mut s = sold_translator();
+    for i in 1..=4u64 {
+        s.now = T0 + (10 + i) * DAY;
+        s.pay(PAYERS[0], 25 * USD);
+        assert_eq!(events("earnout_release")[0]["amount"], "12500000");
+    }
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 50 * USD);
+    s.now = T0 + 41 * DAY;
+    s.by(MALLORY).finalize_earnout(1);
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 60 * USD);
+    assert_eq!(s.c.get_claimable(acc(BOB)).0, 240 * USD);
+}
+
+#[test]
+fn s10_wash_after_sale_via_contract() {
+    let mut s = sold_translator();
+    s.pay(ALICE, 100 * USD);
+    assert_eq!(events("payment")[0]["flags"]["self"], true);
+    assert!(events("earnout_release").is_empty());
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, 0);
+}
+
+#[test]
+fn a16_e24_deed_moved_outside_buy_deletes_runner_keys() {
+    let mut s = translator_world();
+    s.by_1y(ALICE)
+        .nft_transfer(acc(MALLORY), DEED_ID.into(), None, None);
+    assert_eq!(
+        key_actions(AGENT),
+        vec![("delete".to_string(), key_str(ALICE_RUNNER))]
+    );
+    assert!(s.c.known_keys().is_empty());
+    assert!(s.m().paused);
+    assert_eq!(
+        s.c.nft_token(DEED_ID.into()).unwrap().owner_id.as_str(),
+        MALLORY
+    );
+    // The new owner sets a runner key; the agent runs again.
+    s.by(MALLORY).set_runner_key(key(CAROL_RUNNER));
+    s.callback(true)
+        .on_runner_key(vec![], key_str(CAROL_RUNNER));
+    assert_eq!(s.runner(key(CAROL_RUNNER)).heartbeat()["ok"], true);
+}
+
+#[test]
+fn a16_old_runner_key_after_transfer_proves_backdoor() {
+    // The deleted key cannot sign on chain; if a self-call still arrives with
+    // it, the key was never really gone: freeze (A23 path).
+    let mut s = translator_world();
+    s.by_1y(ALICE)
+        .nft_transfer(acc(MALLORY), DEED_ID.into(), None, None);
+    assert_eq!(s.runner(key(ALICE_RUNNER)).heartbeat()["frozen"], true);
+}
+
+#[test]
+fn a17_old_runner_key_removed_by_sale() {
+    // Unit part: the sale's batch deletes alice's runner key and the contract
+    // no longer lists it. The live `AccessKeyNotFound` is sbx/net.
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    assert!(key_actions(AGENT).contains(&("delete".to_string(), key_str(ALICE_RUNNER))));
+    s.callback(true).on_handover(1);
+    assert!(!s.c.known_keys().contains(&key_str(ALICE_RUNNER)));
+}
+
+#[test]
+#[should_panic(expected = "NotOwner")]
+fn a19_old_seller_withdraw_refused() {
+    let mut s = sold_translator();
+    s.by_1y(ALICE).withdraw(U128(USD), None);
+}
+
+#[test]
+#[should_panic(expected = "NotOwner")]
+fn a22_old_seller_moves_deed_back_refused() {
+    let mut s = sold_translator();
+    s.by_1y(ALICE)
+        .nft_transfer(acc(ALICE), DEED_ID.into(), None, None);
+}
+
+#[test]
+fn a23_hidden_key_freezes_and_returns_escrow() {
+    let mut s = sold_translator();
+    s.now = T0 + 11 * DAY;
+    s.pay(PAYERS[0], 20 * USD); // releases 10.00 to alice
+    let r = s.runner(key(HIDDEN_KEY)).heartbeat();
+    assert_eq!(r["frozen"], true);
+    let ev = &events("backdoor_proven")[0];
+    assert_eq!(ev["returned"][0]["buyer"], BOB);
+    assert_eq!(ev["returned"][0]["amount"], "290000000");
+    assert!(s.m().frozen);
+    assert_eq!(s.c.get_claimable(acc(BOB)).0, 290 * USD);
+    // bob can still take his revenue out (I10).
+    s.by_1y(BOB).withdraw(U128(20 * USD), None);
+}
+
+#[test]
+fn a23_known_runner_key_is_not_frozen() {
+    let mut s = sold_translator();
+    assert_eq!(s.runner(key(BOB_RUNNER)).heartbeat()["ok"], true);
+    assert!(!s.m().frozen);
+}
+
+#[test]
+fn s19_dynamic_metadata() {
+    let mut s = translator_world();
+    let extra = |s: &Sim| -> Value {
+        let t = s.c.nft_token(DEED_ID.into()).unwrap();
+        serde_json::from_str(&t.metadata.unwrap().extra.unwrap()).unwrap()
+    };
+    let x = extra(&s);
+    assert_eq!(x["schema"], "deed-extra.v1");
+    assert_eq!(x["earnings"]["counted"], "360000000");
+    s.pay(PAYERS[1], 10 * USD);
+    assert_eq!(extra(&s)["earnings"]["counted"], "370000000");
+    assert_eq!(s.c.nft_metadata().spec, "nft-1.0.0");
+    assert_eq!(s.c.nft_total_supply().0, 1);
+    assert_eq!(s.c.nft_supply_for_owner(acc(ALICE)).0, 1);
+    assert_eq!(s.c.nft_supply_for_owner(acc(BOB)).0, 0);
+}
+
+#[test]
+fn s15_resale_via_contract() {
+    let mut s = sold_translator();
+    s.by(BOB)
+        .list_for_sale(U128(2_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(s.buy(CAROL, 2_000 * USD, CAROL_RUNNER), None);
+    assert_eq!(
+        key_actions(AGENT),
+        vec![
+            ("delete".to_string(), key_str(BOB_RUNNER)),
+            ("add_fc".to_string(), key_str(CAROL_RUNNER)),
+        ]
+    );
+    s.callback(true).on_handover(2);
+    assert_eq!(s.m().owner, CAROL);
+    assert_eq!(s.m().owner_epoch, 3);
+    // History travels: the meter still shows the pre-sale numbers.
+    assert_eq!(s.c.get_earnings().counted, 360 * USD);
+    // alice's earn-out keeps releasing first.
+    s.now = T0 + 12 * DAY;
+    s.pay(PAYERS[2], 10 * USD);
+    assert_eq!(events("earnout_release")[0]["seller"], ALICE);
+    // Both old owners are locked out of owner methods.
+    for old in [ALICE, BOB] {
+        assert!(panics(|| {
+            s.by_1y(old).withdraw(U128(USD), None);
+        }));
+    }
+}
+
+/// I4 (unit form): every owner method refuses every non-owner, and a refused
+/// call changes nothing.
+#[test]
+fn i4_access_matrix_owner_methods() {
+    type Call = fn(&mut Sim, &str);
+    let calls: Vec<(&str, Call)> = vec![
+        ("set_runner_key", |s, w| {
+            s.by(w).set_runner_key(key(77));
+        }),
+        ("list_for_sale", |s, w| {
+            s.by(w).list_for_sale(U128(USD), CODE_HASH.into(), None);
+        }),
+        ("cancel_listing", |s, w| s.by(w).cancel_listing()),
+        ("withdraw", |s, w| {
+            s.by_1y(w).withdraw(U128(USD), None);
+        }),
+        ("withdraw_near", |s, w| {
+            s.by_1y(w).withdraw_near(NearToken::from_yoctonear(1));
+        }),
+        ("nft_transfer", |s, w| {
+            s.by_1y(w)
+                .nft_transfer(acc(MALLORY), DEED_ID.into(), None, None)
+        }),
+        ("nft_approve", |s, w| {
+            s.by_1y(w).nft_approve(DEED_ID.into(), acc(MALLORY), None);
+        }),
+        ("nft_revoke_all", |s, w| {
+            s.by_1y(w).nft_revoke_all(DEED_ID.into())
+        }),
+        ("heartbeat", |s, w| {
+            s.by(w).heartbeat();
+        }),
+    ];
+    // After the sale bob owns the agent; everyone else must be refused.
+    for who in [ALICE, CAROL, MALLORY, "admin.testnet", TOKEN] {
+        for (name, f) in &calls {
+            let mut s = sold_translator();
+            if *name == "cancel_listing" {
+                s.by(BOB)
+                    .list_for_sale(U128(2_000 * USD), CODE_HASH.into(), None);
+            }
+            let before = s.m().clone();
+            assert!(panics(|| f(&mut s, who)), "{who} could call {name}");
+            assert_eq!(s.m(), &before, "{who}/{name} changed state");
+        }
+    }
+}

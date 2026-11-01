@@ -1,0 +1,13 @@
+[package]
+name = "verify"
+description = "Offline rerun kit: plays the fixed world through the agent contract (mocked NEAR env) and prints JSON."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+agent-exit = { path = "../../contracts/agent", features = ["sim"] }
+agent-core = { path = "../../contracts/agent-core" }
+near-sdk = { workspace = true, features = ["unit-testing"] }
+serde_json.workspace = true

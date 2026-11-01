@@ -1,0 +1,12 @@
+/target
+**/target
+node_modules/
+out/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+media/
+.DS_Store
+proptest-regressions/

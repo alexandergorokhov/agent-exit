@@ -1,0 +1,16 @@
+[package]
+name = "xusd"
+description = "FAKE test USD (NEP-141) for the Agent Exit demo. Has no value. Capped faucet."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+near-contract-standards.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }
