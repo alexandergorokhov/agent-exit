@@ -1,6 +1,6 @@
 # Agent Exit
 
-> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). Rerun offline with `make verify`.
+> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`), and payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified). Rerun offline with `make verify`.
 
 ## Start here
 
@@ -14,7 +14,11 @@
 - [contracts/agent-core/src/meter.rs](contracts/agent-core/src/meter.rs): earnings meter
 - [contracts/agent-core/src/money.rs](contracts/agent-core/src/money.rs): 70/30 split and earn-out math
 - [contracts/agent/src/lib.rs](contracts/agent/src/lib.rs): NEAR contract (NEP-141 receiver, NEP-171 deed, callbacks)
+- [contracts/agent/src/verified.rs](contracts/agent/src/verified.rs): NEAR Verified signature check (EIP-191, ecrecover)
 - [contracts/xusd/src/lib.rs](contracts/xusd/src/lib.rs): FAKE test dollar (NEP-141)
+- [tools/scan/src/lib.rs](tools/scan/src/lib.rs): client backdoor scan (scan-input.v1 -> scan-report.v1)
+- [tools/scan/src/corpus.rs](tools/scan/src/corpus.rs): seeded attack corpus and clean controls
+- [tools/attack/src/main.rs](tools/attack/src/main.rs): `make attack` (corpus + contract refusals + judge fixture)
 
 ## Tests and outputs
 
@@ -24,3 +28,7 @@
 - [tools/verify/src/main.rs](tools/verify/src/main.rs): offline rerun kit
 - [tests/golden/verify.json](tests/golden/verify.json): expected `make verify` output
 - [fixtures/world.json](fixtures/world.json): fixed world numbers
+- [tests/golden/attack.json](tests/golden/attack.json): expected `make attack` output
+- [fixtures/judge-attack.json](fixtures/judge-attack.json): edit to plant your own backdoor, then `make attack FIXTURE=fixtures/judge-attack.json`
+- [fixtures/test-signatures/translator.json](fixtures/test-signatures/translator.json): TEST signatures (local key, not NEAR AI Cloud)
+- [docs/NOT-CAUGHT.md](docs/NOT-CAUGHT.md): not caught by design
