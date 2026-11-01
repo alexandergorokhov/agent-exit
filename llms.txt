@@ -1,24 +1,31 @@
 # Agent Exit
 
-> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`), and payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified). Rerun offline with `make verify`.
+> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`), payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified), the agent runs inside owner-set spending limits enforced by the contract, and other agents can buy agents through an MCP server (`make agent-buys-agent`). Rerun offline with `make verify`.
 
 ## Start here
 
 - [README.md](README.md): what it is, what is proven and where, honest limits
 - [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
 - [Makefile](Makefile): every target; unbuilt ones print "not built yet" and exit 1
+- [skills/agent-exit/SKILL.md](skills/agent-exit/SKILL.md): Agent Skill: read earnings, scan, buy, verify lockout
 
 ## Code
 
 - [contracts/agent-core/src/lib.rs](contracts/agent-core/src/lib.rs): state machine (listing, buy, handover, earn-out, runner guard)
 - [contracts/agent-core/src/meter.rs](contracts/agent-core/src/meter.rs): earnings meter
-- [contracts/agent-core/src/money.rs](contracts/agent-core/src/money.rs): 70/30 split and earn-out math
+- [contracts/agent-core/src/money.rs](contracts/agent-core/src/money.rs): 70/30 split, revenue split and earn-out math
+- [contracts/agent-core/src/policy.rs](contracts/agent-core/src/policy.rs): spending limits (price floor, daily cap, payees, split)
 - [contracts/agent/src/lib.rs](contracts/agent/src/lib.rs): NEAR contract (NEP-141 receiver, NEP-171 deed, callbacks)
 - [contracts/agent/src/verified.rs](contracts/agent/src/verified.rs): NEAR Verified signature check (EIP-191, ecrecover)
 - [contracts/xusd/src/lib.rs](contracts/xusd/src/lib.rs): FAKE test dollar (NEP-141)
 - [tools/scan/src/lib.rs](tools/scan/src/lib.rs): client backdoor scan (scan-input.v1 -> scan-report.v1)
 - [tools/scan/src/corpus.rs](tools/scan/src/corpus.rs): seeded attack corpus and clean controls
 - [tools/attack/src/main.rs](tools/attack/src/main.rs): `make attack` (corpus + contract refusals + judge fixture)
+- [mcp/src/tools.ts](mcp/src/tools.ts): MCP tools list_agents, get_earnings, scan_agent, buy_agent, verify_lockout, list_for_sale
+- [mcp/src/backend.ts](mcp/src/backend.ts): offline (recorded) and testnet (read-only) data for the MCP server
+- [mcp/src/server.ts](mcp/src/server.ts): MCP stdio server
+- [mcp/scripts/agent-buys-agent.ts](mcp/scripts/agent-buys-agent.ts): scripted agent-buys-agent run
+- [mcp/mcp-config.example.json](mcp/mcp-config.example.json): MCP client config
 
 ## Tests and outputs
 
@@ -32,3 +39,7 @@
 - [fixtures/judge-attack.json](fixtures/judge-attack.json): edit to plant your own backdoor, then `make attack FIXTURE=fixtures/judge-attack.json`
 - [fixtures/test-signatures/translator.json](fixtures/test-signatures/translator.json): TEST signatures (local key, not NEAR AI Cloud)
 - [docs/NOT-CAUGHT.md](docs/NOT-CAUGHT.md): not caught by design
+- [schemas/mcp/buy_agent.input.v1.json](schemas/mcp/buy_agent.input.v1.json): MCP schemas (one input and one output file per tool, plus error.v1.json)
+- [fixtures/mcp/world.json](fixtures/mcp/world.json): contract results recorded for the MCP offline mode
+- [tests/golden/agent-buys-agent.json](tests/golden/agent-buys-agent.json): expected `make agent-buys-agent` output
+- [mcp/test/s14_agent_buys_agent.test.ts](mcp/test/s14_agent_buys_agent.test.ts): S14 agent buys agent via MCP

@@ -5,6 +5,7 @@
     "seller": "alice.testnet",
     "seller_subaccount": "x.alice.testnet",
     "buyer": "bob.testnet",
+    "agent_buyer": "summarizer.testnet",
     "second_buyer": "carol.testnet",
     "honest_agent": "translator.testnet",
     "backdoored_agent": "cheat.testnet",
@@ -30,7 +31,14 @@
     "escrow": "300.00",
     "floor": "60.00"
   },
+  "business_after_sale": {
+    "limits_set_by": "bob.testnet (owner after the sale), set_limits",
+    "limits": {"price_floor": "5.00", "daily_cap": "50.00", "allowed_payees": ["summarizer.testnet"], "split": "80% owner / 20% treasury"},
+    "jobs": "p1 and p2 pay 25.00 each: 20.00 to the owner, 5.00 to the treasury, 12.50 earn-out release to alice from escrow, per job",
+    "procurement": "runner pays summarizer.testnet 8.00: allowed (spent today 8.00, treasury 2.00)",
+    "over_limit": "runner pays summarizer 45.00: PolicyViolation:DailyCap (8.00 + 45.00 > 50.00)"
+  },
   "storage_guards": {"min_payment": "0.10", "max_tracked_payers": 1000},
   "clock": {"t0": "2026-01-01T00:00:00Z", "listing_day": 10},
-  "source": "contracts/agent/src/sim.rs (translator_world, cheat_world, listed_translator, sold_translator)"
+  "source": "contracts/agent/src/sim.rs (translator_world, cheat_world, listed_translator, sold_translator, business_world)"
 }
