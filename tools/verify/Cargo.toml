@@ -5,9 +5,14 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
+default-run = "verify"
 
 [dependencies]
 agent-exit = { path = "../../contracts/agent", features = ["sim"] }
 agent-core = { path = "../../contracts/agent-core" }
 near-sdk = { workspace = true, features = ["unit-testing"] }
 serde_json.workspace = true
+k256 = { version = "0.13", features = ["ecdsa"] }
+sha3 = "0.10"
+sha2.workspace = true
+hex.workspace = true

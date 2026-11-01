@@ -84,3 +84,19 @@ fn golden_is_valid_verify_output() {
     assert_eq!(v["schema"], "verify-output.v1");
     assert_eq!(v["summary"]["failed"], 0);
 }
+
+#[test]
+fn signature_fixtures_are_reproducible_and_labelled() {
+    let out = Command::new(env!("CARGO_BIN_EXE_gen-test-signatures"))
+        .arg("--check")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text =
+        std::fs::read_to_string(root().join("fixtures/test-signatures/translator.json")).unwrap();
+    assert!(text.contains("TEST FIXTURE") && text.contains("NOT a NEAR AI Cloud signature"));
+}

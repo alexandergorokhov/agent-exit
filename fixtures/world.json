@@ -17,7 +17,7 @@
     "flagged_self": "2 x 50.00 by alice on day 5 = 100.00",
     "flagged_seller_subaccount": "1 x 40.00 by x.alice on day 5 = 40.00",
     "gross": "500.00",
-    "verified": "120.00 once NEAR Verified lands (batch B2); 0.00 today"
+    "verified": "10 of the 30 payer payments (day 0 all six, day 1 p1-p4) carry a TEST-FIXTURE signature from the allowlisted test signer = 120.00"
   },
   "cheat_history": {"gross": "500.00", "from": "alice 5 x 60.00, x.alice 5 x 40.00", "counted": "0.00"},
   "listing": {

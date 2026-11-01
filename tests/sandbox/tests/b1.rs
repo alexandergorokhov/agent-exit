@@ -167,7 +167,10 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
 
     Contract::deploy(agent.id.clone())
         .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
-        .with_init_call("new", json!({"owner_id": alice.id, "token_id": xusd.id}))
+        .with_init_call(
+            "new",
+            json!({"owner_id": alice.id, "token_id": xusd.id, "admin_id": xusd.id}),
+        )
         .unwrap()
         .with_signer(agent.signer.clone())
         .send_to(&w.net)

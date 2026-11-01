@@ -35,12 +35,13 @@ use near_sdk::{
     env, near, require, AccountId, Allowance, Gas, NearToken, PanicOnDefault, Promise,
     PromiseError, PromiseOrValue, PublicKey,
 };
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;
 #[cfg(test)]
 mod tests;
+pub mod verified;
 
 pub const DEED_ID: &str = "deed";
 /// Methods the runner's function-call key may call (receiver = the agent).
@@ -69,6 +70,9 @@ pub enum Msg {
     Pay {
         #[serde(default)]
         job_id: Option<String>,
+        /// NEAR AI Cloud signature of the answer this payment is for.
+        #[serde(default)]
+        nearai: Option<verified::NearAiProof>,
     },
     Buy {
         listing_version: u64,
@@ -101,6 +105,13 @@ pub struct AgentExit {
     m: Machine,
     /// The one accepted NEP-141 token (the FAKE test dollar in the demo).
     token: AccountId,
+    /// Registry admin: may only edit the NEAR AI signer list (threat model
+    /// AC10); no power over funds, keys or the deed.
+    admin: AccountId,
+    /// Allowed NEAR AI Cloud signing addresses (`0x` + 40 lowercase hex).
+    signers: BTreeSet<String>,
+    /// sha256(r || s) of every signature that already verified a payment.
+    used_sigs: BTreeSet<[u8; 32]>,
 }
 
 fn emit(event: &str, data: Value) {
@@ -135,11 +146,46 @@ impl AgentExit {
     /// Called once by the agent account itself at deploy (same tx as deploy).
     #[init]
     #[private]
-    pub fn new(owner_id: AccountId, token_id: AccountId) -> Self {
+    pub fn new(
+        owner_id: AccountId,
+        token_id: AccountId,
+        admin_id: AccountId,
+        signers: Option<Vec<String>>,
+    ) -> Self {
+        let signers = signers
+            .unwrap_or_default()
+            .iter()
+            .map(|a| norm_address(a))
+            .collect();
         Self {
             m: Machine::new(env::current_account_id().as_str(), owner_id.as_str()),
             token: token_id,
+            admin: admin_id,
+            signers,
+            used_sigs: BTreeSet::new(),
         }
+    }
+
+    // ------------------------------------------------------- admin: signers
+
+    /// Admin adds a NEAR AI Cloud signing address. Payments verified before
+    /// keep their badge whatever happens to the list later (E14).
+    pub fn add_signer(&mut self, address: String) {
+        self.only_admin();
+        let a = norm_address(&address);
+        self.signers.insert(a.clone());
+        emit("signer_added", json!({"address": a}));
+    }
+
+    pub fn remove_signer(&mut self, address: String) {
+        self.only_admin();
+        let a = norm_address(&address);
+        self.signers.remove(&a);
+        emit("signer_removed", json!({"address": a}));
+    }
+
+    pub fn get_signers(&self) -> Vec<String> {
+        self.signers.iter().cloned().collect()
     }
 
     // ------------------------------------------------------------ owner: keys
@@ -241,7 +287,10 @@ impl AgentExit {
             return refuse("BadMsg");
         }
         let parsed = if msg.trim().is_empty() {
-            Msg::Pay { job_id: None }
+            Msg::Pay {
+                job_id: None,
+                nearai: None,
+            }
         } else {
             match serde_json::from_str::<Msg>(&msg) {
                 Ok(m) => m,
@@ -250,9 +299,23 @@ impl AgentExit {
         };
         let now = env::block_timestamp();
         match parsed {
-            Msg::Pay { job_id } => {
-                // NEAR Verified (signature check) lands in batch B2.
-                match self.m.pay(sender_id.as_str(), amount.0, false, now) {
+            Msg::Pay { job_id, nearai } => {
+                let check = nearai.as_ref().map(|p| {
+                    verified::check(
+                        p,
+                        self.m.agent.as_str(),
+                        job_id.as_deref(),
+                        &self.signers,
+                        &self.used_sigs,
+                    )
+                });
+                let proof_ok = matches!(check, Some(verified::Outcome::Verified { .. }));
+                let verify_note = match &check {
+                    None => "NoProof".to_string(),
+                    Some(verified::Outcome::Verified { signer, .. }) => format!("ok:{signer}"),
+                    Some(verified::Outcome::NotVerified(r)) => r.to_string(),
+                };
+                match self.m.pay(sender_id.as_str(), amount.0, proof_ok, now) {
                     PayResult::Refund(r) => refuse(r),
                     PayResult::Recorded {
                         flags,
@@ -260,11 +323,17 @@ impl AgentExit {
                         verified,
                         released,
                     } => {
+                        if let (true, Some(verified::Outcome::Verified { sig_id, .. })) =
+                            (verified, &check)
+                        {
+                            self.used_sigs.insert(*sig_id);
+                        }
                         emit(
                             "payment",
                             json!({
                                 "payer": sender_id, "amount": amt(amount.0), "job_id": job_id,
-                                "counted": counted, "verified": verified, "flags": flags,
+                                "counted": counted, "verified": verified, "verify": verify_note,
+                                "flags": flags,
                                 "day": now / core::DAY_NS,
                             }),
                         );
@@ -696,7 +765,22 @@ impl AgentExit {
     }
 }
 
+fn norm_address(a: &str) -> String {
+    let a = a.trim().to_ascii_lowercase();
+    let a = a.strip_prefix("0x").unwrap_or(&a).to_string();
+    if a.len() != 40 || !a.bytes().all(|c| c.is_ascii_hexdigit()) {
+        env::panic_str("BadAddress");
+    }
+    format!("0x{a}")
+}
+
 impl AgentExit {
+    fn only_admin(&self) {
+        if env::predecessor_account_id() != self.admin {
+            env::panic_str("NotAdmin");
+        }
+    }
+
     fn owner_id(&self) -> AccountId {
         self.m.owner.parse().expect("valid owner")
     }

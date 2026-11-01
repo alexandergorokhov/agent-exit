@@ -1,0 +1,139 @@
+{
+  "schema": "nearai-sig-fixture.v1",
+  "label": "TEST FIXTURE: signed with local test keys (secp256k1 0x11..11 and 0x22..22). NOT a NEAR AI Cloud signature.",
+  "test_signer": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
+  "rogue_signer": "0x1563915e194d8cfba1943570603f7606a3115508",
+  "agent": "translator.testnet",
+  "entries": [
+    {
+      "job_id": "job-1",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 1\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-1\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-1\"}}]}",
+      "response_sha256": "3551cee58aca496fb70a166dd2fc49a13d83e4c57afc012d588f318d2a4ec9e6",
+      "text": "test-model/fixture-v1:6b5fc8e37574893696b8952aabb8ff98fd0f18ce693b065a7a9cf78da3cf68cc:3551cee58aca496fb70a166dd2fc49a13d83e4c57afc012d588f318d2a4ec9e6",
+      "signature": "ff6414390b46facf5414b977d8ce064d977608276fc0ae0f79703681127965605aea25af7f2811aafdccc8b73f016ae6edac7f200482299c97a62206c90e82b41c",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-2",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 2\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-2\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-2\"}}]}",
+      "response_sha256": "63c0e86bdd165fe332681aa7bf0f4977b1e495fbdc587ab8d7954b7654ae8725",
+      "text": "test-model/fixture-v1:7e783be0c545dc342d8afcb381050a13225c0083e6926fd4ecadd948cc688dba:63c0e86bdd165fe332681aa7bf0f4977b1e495fbdc587ab8d7954b7654ae8725",
+      "signature": "61559da1951f897583dc0254d2a6ebe89c3758323abe90dcaa326653ea0f2822557cfb77417bc81da5b4cb3930b541741e7af1979fd2a6de1a139df3fbef69a51c",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-3",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 3\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-3\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-3\"}}]}",
+      "response_sha256": "84133cc096ae4a3b04945cd18b216294e05e571d5d5aea3acde4dfa9ba18b08c",
+      "text": "test-model/fixture-v1:4fd77e2999f6ed1be3d75749ef7d0211c9c4a16657d10b6a5209f33354b4aa7e:84133cc096ae4a3b04945cd18b216294e05e571d5d5aea3acde4dfa9ba18b08c",
+      "signature": "fdd521e862c0efe876887bf0fd828ff23bcd9bf06ae09a64bebb9c7e8f382d6f4527ad67356dbc735cb46dbb0100da9959e30932e19e646906454bdf998e35181b",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-4",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 4\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-4\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-4\"}}]}",
+      "response_sha256": "45b738182f33bf44331cc8f3c4edcf696130fe2b4108dce6b85f29bfe034f1cf",
+      "text": "test-model/fixture-v1:91e32b3212264b1224a971f3f2e8e802652b6fb1a6c2b202b3a0f94a1389fb19:45b738182f33bf44331cc8f3c4edcf696130fe2b4108dce6b85f29bfe034f1cf",
+      "signature": "253fcee10d0e53d37e52102ffec9e12cfc71df1f4e684982afd8854190dd23150f0fd0357f2a94a3dd5587a0ee66fa10b6d761c62a2bd2276033ac5201cb41441b",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-5",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 5\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-5\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-5\"}}]}",
+      "response_sha256": "4faad8c714688f624d80c9bbbc913efeed7442034faab385802d8b0048971d51",
+      "text": "test-model/fixture-v1:ca26647f4076fdcbbc90eed7723f94aaeaeb8cfc25799b17c5689828db07ba6c:4faad8c714688f624d80c9bbbc913efeed7442034faab385802d8b0048971d51",
+      "signature": "f42562010b7e981d4cf8eac9005ae45801062f5360f4d28a91db8693e3d4ebf369cbf54edc46df12d76b46d10e1302aae92aa570e1d589ceb0bb1029f8ff1cd71c",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-6",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 6\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-6\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-6\"}}]}",
+      "response_sha256": "25f4057844c41a1b8d009b4fd9d1274a3e4f2bc3bdbcdd907e697137694d8b1d",
+      "text": "test-model/fixture-v1:cacf65e25c55d91eae4bb22d094dd3ce6bdd9dd44f2f49bb505f9a072e612b2f:25f4057844c41a1b8d009b4fd9d1274a3e4f2bc3bdbcdd907e697137694d8b1d",
+      "signature": "1c55dba0c16ba2b8f4dafcc366ec498d261a07b8d63b5b3192290d5716495d8e71f42769f08376ff59d4f0bac30716e50fdb63dbd257577468e16df32e6cbd1e1b",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-7",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 7\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-7\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-7\"}}]}",
+      "response_sha256": "68e819ac0b95e4404a5a60e2b7a518b5cb4a33a47a4063b422cf2bbe5e612759",
+      "text": "test-model/fixture-v1:6a69aa916328a5658844537d369f50ac40921b290348cf0c7462cbec0fe235dc:68e819ac0b95e4404a5a60e2b7a518b5cb4a33a47a4063b422cf2bbe5e612759",
+      "signature": "13750497da276afe3554bfb85dc5ebf89d73b4c01eeeb47a1eda409fc6c151300c118a15a9ad6fa2dc221811fdbbf5af6c3042f967ca64fe6a855d34173fdd9b1b",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-8",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 8\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-8\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-8\"}}]}",
+      "response_sha256": "8cb2ad911c05ffcf3ee9e3a2ca9b630e6b5f2be2c279dbbaaef04deffda52d2e",
+      "text": "test-model/fixture-v1:394c7370b867c41b9c05c619ffb6aa34ffea9a38d6f2280c1ca5c61e629992a7:8cb2ad911c05ffcf3ee9e3a2ca9b630e6b5f2be2c279dbbaaef04deffda52d2e",
+      "signature": "5e9818b36ee0b9276e8ae7e9671d349f43096f71470d371cb13d1636ecfb597d6c14e5d5610dc7be51ecd35af1d9d2399b0eaf54b4bbe9cc460add699e5731211c",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-9",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 9\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-9\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-9\"}}]}",
+      "response_sha256": "456791eefd99dffab5f1076dae8ee849bfd89a4d5db2d46d7e4763a5afc87153",
+      "text": "test-model/fixture-v1:ca9dbcfc34a5f8ddaf431a4703def5ed367e2b4cfc9e9c0e095dd7373d4f1857:456791eefd99dffab5f1076dae8ee849bfd89a4d5db2d46d7e4763a5afc87153",
+      "signature": "6eccf1c2c8a42f3b34a871041dfd9789f64c392c494626f2d5e05d9bd97bc1ad6f41d788c9dc054e6eb16e51b4fd2147f0476a98507ac91d80f850352849c3e61c",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    },
+    {
+      "job_id": "job-10",
+      "model": "test-model/fixture-v1",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 10\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-10\"}}",
+      "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-10\"}}]}",
+      "response_sha256": "58671b25e83d527990c1a719c7926bb8f00e5fbc29ee23754736d50f5b2416be",
+      "text": "test-model/fixture-v1:57e2148bff6e9f83b613ff2ec8195a2e6b98106f04fb40babf218ebc0aa00e29:58671b25e83d527990c1a719c7926bb8f00e5fbc29ee23754736d50f5b2416be",
+      "signature": "2f96d3fd136cb0d749a590a81d638ccaf1f6541c5e14e6da612a26f8250bc375296742f8742734d28f22bcd2ac40d184f307f7bc15c884ced2e77f1bfcdd12511b",
+      "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+    }
+  ],
+  "wrong_agent": {
+    "job_id": "job-x",
+    "model": "test-model/fixture-v1",
+    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"for another agent\"}],\"metadata\":{\"agent\":\"cheat.testnet\",\"job_id\":\"job-x\"}}",
+    "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-x\"}}]}",
+    "response_sha256": "d183eaf9239e1a9c40ea88d00b5e479f868902f9471dd42a7b64c308046ca352",
+    "text": "test-model/fixture-v1:15e9fe28ee9c4a96cb33c9e5eea10f1b59dc8201197226b7c02bc5d6234bc978:d183eaf9239e1a9c40ea88d00b5e479f868902f9471dd42a7b64c308046ca352",
+    "signature": "d9818424f8f5281c82378feb6961f729991af130d8608507fe5f6ef709c49eee55d2106822ab0f81f8509691bb575c149080cd28a8a0edb734e3b9100596baa21c",
+    "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+  },
+  "rogue": {
+    "job_id": "job-r",
+    "model": "test-model/fixture-v1",
+    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"signed by a key nobody allowlisted\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-r\"}}",
+    "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-r\"}}]}",
+    "response_sha256": "bb3743f1cb607fccbef9142c5ba38396d5324cec805133487d4c0808821f5d9e",
+    "text": "test-model/fixture-v1:5d5eacb24c64a872ac67c13d24b0d5eb1da2e74b97f5f7ab21c5513d03c98cac:bb3743f1cb607fccbef9142c5ba38396d5324cec805133487d4c0808821f5d9e",
+    "signature": "5a839b65ae83b387ce671611881a3b9f442858eccbeb9b6a5f7c4244337d810275f35af29fe4e402a54bac9978a22967135350d5890798e0d531c3814f5956181c",
+    "signing_address": "0x1563915e194d8cfba1943570603f7606a3115508"
+  },
+  "extra": {
+    "job_id": "job-11",
+    "model": "test-model/fixture-v1",
+    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"post-sale job\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-11\"}}",
+    "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-11\"}}]}",
+    "response_sha256": "979e1d6192328b34e0714a10fcfe7eaf2de11d6168075c29ade430beb9e12f9f",
+    "text": "test-model/fixture-v1:f1b26f75ccea706b9e78d7fc42c29c548ba240b4bac3950fb6b0556d22d5cfea:979e1d6192328b34e0714a10fcfe7eaf2de11d6168075c29ade430beb9e12f9f",
+    "signature": "ca9cd1b2b3527786b66208a148c3f2af82a7d2964126a6802938449055412afd72f52f09b5a9d827ebeef558b80b2a001b9980f37cde065cf46ea30390d222a91b",
+    "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+  }
+}

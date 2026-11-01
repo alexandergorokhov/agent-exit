@@ -9,8 +9,8 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 |---|---|---|
 | 1. Fetch crates (only networked step) | `cargo fetch --locked` | exits 0 |
 | 2. Rerun everything | `make verify` | last stderr line `verify: output equals tests/golden/verify.json`; exit 0 |
-| 3. Read the result | `cat out/verify.json` | JSON, `"schema": "verify-output.v1"`, `"summary": {"passed": 32, "failed": 0}` |
-| 4. One table per scenario id | `cargo run -q -p verify` | 32 `PASS` rows, ids from SCENARIOS (S*, E*, A*) |
+| 3. Read the result | `cat out/verify.json` | JSON, `"schema": "verify-output.v1"`, `"summary": {"passed": 38, "failed": 0}` |
+| 4. One table per scenario id | `cargo run -q -p verify` | 38 `PASS` rows, ids from SCENARIOS (S*, E*, A*) |
 | 5. Lint | `make lint` | exit 0 |
 | 6. Targets not built yet | `make attack` | prints `not built yet: attack (...)`, exit 1 (never fake success) |
 

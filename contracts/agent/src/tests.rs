@@ -63,9 +63,10 @@ fn s2_meter_fixed_history() {
         assert_eq!((d.gross, d.counted, d.payments), (72 * USD, 72 * USD, 6));
     }
     assert_eq!((e.days[5].gross, e.days[5].counted), (140 * USD, 0));
-    // NEAR Verified (feature 2) arrives in batch B2; until then nothing is
-    // verified, and the fixed world's 120.00 verified figure is not claimed.
-    assert_eq!(e.verified, 0);
+    // 10 payments carry a signature from the allowlisted (test) signer.
+    assert_eq!(e.verified, 120 * USD);
+    assert_eq!(e.days[0].verified, 72 * USD);
+    assert_eq!(e.days[1].verified, 48 * USD);
 }
 
 #[test]
@@ -565,7 +566,7 @@ fn i4_access_matrix_owner_methods() {
         }),
     ];
     // After the sale bob owns the agent; everyone else must be refused.
-    for who in [ALICE, CAROL, MALLORY, "admin.testnet", TOKEN] {
+    for who in [ALICE, CAROL, MALLORY, ADMIN, TOKEN] {
         for (name, f) in &calls {
             let mut s = sold_translator();
             if *name == "cancel_listing" {
@@ -577,4 +578,147 @@ fn i4_access_matrix_owner_methods() {
             assert_eq!(s.m(), &before, "{who}/{name} changed state");
         }
     }
+}
+
+// ------------------------------------------------------------ NEAR Verified
+
+fn verify_note() -> String {
+    events("payment")[0]["verify"].as_str().unwrap().to_string()
+}
+
+#[test]
+fn s3_verified_badge() {
+    let mut s = Sim::new(AGENT, ALICE);
+    let e = job(0);
+    assert_eq!(s.ft(PAYERS[0], 12 * USD, &job_msg(&e), 100), Some(0));
+    assert_eq!(events("payment")[0]["verified"], true);
+    assert_eq!(verify_note(), format!("ok:{}", test_signer()));
+    // Same amount without a signature: counts, not verified.
+    s.ft(
+        PAYERS[1],
+        12 * USD,
+        "{\"kind\":\"pay\",\"job_id\":\"job-2\"}",
+        100,
+    );
+    assert_eq!(events("payment")[0]["verified"], false);
+    assert_eq!(verify_note(), "NoProof");
+    let x = s.c.get_earnings();
+    assert_eq!(
+        (x.gross, x.counted, x.verified),
+        (24 * USD, 24 * USD, 12 * USD)
+    );
+}
+
+#[test]
+fn e11_same_signature_twice() {
+    let mut s = Sim::new(AGENT, ALICE);
+    let msg = job_msg(&job(0));
+    s.ft(PAYERS[0], 12 * USD, &msg, 100);
+    s.ft(PAYERS[1], 12 * USD, &msg, 100);
+    assert_eq!(verify_note(), "SignatureUsed");
+    let x = s.c.get_earnings();
+    assert_eq!((x.counted, x.verified), (24 * USD, 12 * USD));
+}
+
+#[test]
+fn e11_flipped_v_is_the_same_signature() {
+    let mut s = Sim::new(AGENT, ALICE);
+    let e = job(0);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&e), 100);
+    // Same r||s with v written as 0/1 instead of 27/28.
+    let mut e2 = e.clone();
+    let sig = e["signature"].as_str().unwrap();
+    let v = u8::from_str_radix(&sig[128..], 16).unwrap() - 27;
+    e2["signature"] = json!(format!("{}{:02x}", &sig[..128], v));
+    s.ft(PAYERS[1], 12 * USD, &job_msg(&e2), 100);
+    assert_eq!(verify_note(), "SignatureUsed");
+}
+
+#[test]
+fn e12_signature_for_another_agent() {
+    let mut s = Sim::new(AGENT, ALICE);
+    s.ft(
+        PAYERS[0],
+        12 * USD,
+        &job_msg(&fixtures()["wrong_agent"]),
+        100,
+    );
+    assert_eq!(verify_note(), "WrongAgent");
+    assert_eq!(events("payment")[0]["counted"], true);
+    // Right agent, but the payment names another job.
+    let msg = json!({"kind": "pay", "job_id": "job-99", "nearai": proof(&job(0))}).to_string();
+    s.ft(PAYERS[1], 12 * USD, &msg, 100);
+    assert_eq!(verify_note(), "WrongJob");
+    assert_eq!(s.c.get_earnings().verified, 0);
+}
+
+#[test]
+fn e13_forged_wrong_signer_bad_v_bad_length() {
+    let mut s = Sim::new(AGENT, ALICE);
+    // Signed by a key nobody allowlisted.
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&fixtures()["rogue"]), 100);
+    assert_eq!(verify_note(), "UnknownSigner");
+    let e = job(0);
+    let sig = e["signature"].as_str().unwrap().to_string();
+    let cases = [
+        (format!("{}05", &sig[..128]), "BadSignature"), // v not in {0,1,27,28}
+        (sig[..128].to_string(), "BadSignature"),       // 64 bytes
+        ("zz".repeat(65), "BadSignature"),              // not hex
+    ];
+    for (bad, want) in cases {
+        let mut x = e.clone();
+        x["signature"] = json!(bad);
+        s.ft(PAYERS[1], 12 * USD, &job_msg(&x), 100);
+        assert_eq!(verify_note(), want);
+    }
+    // Tampered response hash: recovers some other address.
+    let mut x = e.clone();
+    x["response_sha256"] = json!("0".repeat(64));
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&x), 100);
+    assert_eq!(verify_note(), "UnknownSigner");
+    let earn = s.c.get_earnings();
+    assert_eq!(earn.verified, 0);
+    // 5 payments, all counted, none verified.
+    assert_eq!(earn.counted, 5 * 12 * USD);
+}
+
+#[test]
+fn e14_signer_rotation() {
+    let mut s = Sim::new(AGENT, ALICE);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+    let rogue = fixtures()["rogue_signer"].as_str().unwrap().to_string();
+    s.by(ADMIN).add_signer(rogue.clone());
+    s.by(ADMIN).remove_signer(test_signer());
+    assert_eq!(s.c.get_signers(), vec![rogue]);
+    // Already-verified payment stays verified.
+    assert_eq!(s.c.get_earnings().verified, 12 * USD);
+    // A new payment signed by the removed signer is not verified.
+    s.ft(PAYERS[1], 12 * USD, &job_msg(&job(1)), 100);
+    assert_eq!(verify_note(), "UnknownSigner");
+    // The newly added signer verifies.
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&fixtures()["rogue"]), 100);
+    assert_eq!(events("payment")[0]["verified"], true);
+    assert_eq!(s.c.get_earnings().verified, 24 * USD);
+}
+
+#[test]
+fn a13_replayed_or_forged_not_verified_flagged_not_verified() {
+    // A self-payment with a valid signature is neither counted nor verified (I9).
+    let mut s = Sim::new(AGENT, ALICE);
+    s.ft(ALICE, 12 * USD, &job_msg(&job(0)), 100);
+    assert_eq!(events("payment")[0]["verified"], false);
+    // ...and does not burn the signature.
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+    assert_eq!(events("payment")[0]["verified"], true);
+}
+
+#[test]
+fn signer_list_is_admin_only() {
+    let mut s = translator_world();
+    for who in [ALICE, BOB, MALLORY] {
+        assert!(panics(|| s.by(who).add_signer(test_signer())));
+        assert!(panics(|| s.by(who).remove_signer(test_signer())));
+    }
+    assert!(panics(|| s.by(ADMIN).add_signer("0x1234".into())));
+    assert_eq!(s.c.get_signers(), vec![test_signer()]);
 }

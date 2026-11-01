@@ -7,7 +7,7 @@
     "translator": {
       "gross": "500.00",
       "counted": "360.00",
-      "verified": "0.00",
+      "verified": "120.00",
       "flagged": "140.00",
       "flagged_self": "100.00",
       "flagged_seller_subaccount": "40.00",
@@ -39,12 +39,12 @@
   "checks": [
     {
       "id": "S2",
-      "what": "meter counts by payer and day: gross 500.00, counted 360.00, flagged 140.00",
+      "what": "meter counts by payer and day: gross 500.00, counted 360.00, verified 120.00, flagged 140.00",
       "pass": true,
       "detail": {
         "gross": "500.00",
         "counted": "360.00",
-        "verified": "0.00",
+        "verified": "120.00",
         "flagged": "140.00",
         "flagged_self": "100.00",
         "flagged_seller_subaccount": "40.00",
@@ -310,6 +310,57 @@
       }
     },
     {
+      "id": "S3",
+      "what": "payment with an allowlisted signature over model:sha256(request):sha256(response) is verified; without one it counts, not verified",
+      "pass": true,
+      "detail": {
+        "signer": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
+        "fixture": "fixtures/test-signatures/translator.json (TEST keys)"
+      }
+    },
+    {
+      "id": "E11",
+      "what": "same signature twice: second counted, not verified (SignatureUsed)",
+      "pass": true,
+      "detail": {
+        "reason": "SignatureUsed"
+      }
+    },
+    {
+      "id": "E12",
+      "what": "signature for a request naming another agent: not verified (WrongAgent)",
+      "pass": true,
+      "detail": {
+        "reason": "WrongAgent"
+      }
+    },
+    {
+      "id": "E13",
+      "what": "unknown signer and tampered response: not verified, no panic",
+      "pass": true,
+      "detail": {
+        "reasons": [
+          "UnknownSigner",
+          "UnknownSigner"
+        ]
+      }
+    },
+    {
+      "id": "A13",
+      "what": "replayed or forged NEAR AI signature never verifies",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E14",
+      "what": "signer rotated: old badges stay, removed signer no longer verifies",
+      "pass": true,
+      "detail": {
+        "verified_kept": "12.00",
+        "reason": "UnknownSigner"
+      }
+    },
+    {
       "id": "S19",
       "what": "deed metadata extra carries meter totals (static part)",
       "pass": true,
@@ -319,14 +370,14 @@
     }
   ],
   "summary": {
-    "passed": 32,
+    "passed": 38,
     "failed": 0
   },
   "not_covered_here": [
     {
-      "id": "S2",
-      "part": "verified 120.00 (NEAR Verified badge)",
-      "where": "batch B2"
+      "id": "S3,G6",
+      "part": "the real NEAR AI Cloud signer (fixtures here are signed with local test keys)",
+      "where": "owner's machine, day-1 gate G6"
     },
     {
       "id": "S5,E5,E6,A17,A21",

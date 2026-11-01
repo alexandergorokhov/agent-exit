@@ -13,10 +13,11 @@ crate-type = ["cdylib", "rlib"]
 sim = ["near-sdk/unit-testing"]
 
 [dependencies]
-near-sdk.workspace = true
+# `unstable` exposes env::ecrecover (NEAR Verified badge).
+near-sdk = { workspace = true, features = ["unstable"] }
 agent-core = { path = "../agent-core" }
 near-contract-standards.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-near-sdk = { workspace = true, features = ["unit-testing"] }
+near-sdk = { workspace = true, features = ["unit-testing", "unstable"] }

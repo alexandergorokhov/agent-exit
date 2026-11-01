@@ -73,9 +73,10 @@ fn run() -> Value {
     let c = cheat_world().c.get_earnings();
     r.check(
         "S2",
-        "meter counts by payer and day: gross 500.00, counted 360.00, flagged 140.00",
+        "meter counts by payer and day: gross 500.00, counted 360.00, verified 120.00, flagged 140.00",
         t.gross == 500 * USD
             && t.counted == 360 * USD
+            && t.verified == 120 * USD
             && t.flagged_self == 100 * USD
             && t.flagged_seller_subaccount == 40 * USD
             && t.counted_payers == 6
@@ -419,6 +420,86 @@ fn run() -> Value {
         json!({"owner": s.m().owner, "owner_epoch": s.m().owner_epoch}),
     );
 
+    // NEAR Verified: S3, E11-E14, A13 (signatures are TEST FIXTURES made
+    // with local keys; the real NEAR AI signer is gate G6).
+    let note = || {
+        events("payment")[0]["verify"]
+            .as_str()
+            .unwrap_or("")
+            .to_string()
+    };
+    let mut s = Sim::new(AGENT, ALICE);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+    let ok = events("payment")[0]["verified"] == true;
+    s.ft(
+        PAYERS[1],
+        12 * USD,
+        r#"{"kind":"pay","job_id":"job-2"}"#,
+        100,
+    );
+    let plain =
+        events("payment")[0]["verified"] == false && events("payment")[0]["counted"] == true;
+    r.check(
+        "S3",
+        "payment with an allowlisted signature over model:sha256(request):sha256(response) is verified; without one it counts, not verified",
+        ok && plain,
+        json!({"signer": test_signer(), "fixture": "fixtures/test-signatures/translator.json (TEST keys)"}),
+    );
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&job(0)), 100);
+    let e11 = note();
+    r.check(
+        "E11",
+        "same signature twice: second counted, not verified (SignatureUsed)",
+        e11 == "SignatureUsed",
+        json!({"reason": e11}),
+    );
+    s.ft(
+        PAYERS[2],
+        12 * USD,
+        &job_msg(&fixtures()["wrong_agent"]),
+        100,
+    );
+    let e12 = note();
+    r.check(
+        "E12",
+        "signature for a request naming another agent: not verified (WrongAgent)",
+        e12 == "WrongAgent",
+        json!({"reason": e12}),
+    );
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&fixtures()["rogue"]), 100);
+    let e13 = note();
+    let mut forged = job(1);
+    forged["response_sha256"] = json!("0".repeat(64));
+    s.ft(PAYERS[2], 12 * USD, &job_msg(&forged), 100);
+    let e13b = note();
+    r.check(
+        "E13",
+        "unknown signer and tampered response: not verified, no panic",
+        e13 == "UnknownSigner" && e13b == "UnknownSigner",
+        json!({"reasons": [e13, e13b]}),
+    );
+    r.check(
+        "A13",
+        "replayed or forged NEAR AI signature never verifies",
+        e11 == "SignatureUsed" && e13b == "UnknownSigner",
+        json!({}),
+    );
+    let rogue = fixtures()["rogue_signer"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+    s.by(ADMIN).add_signer(rogue);
+    s.by(ADMIN).remove_signer(test_signer());
+    let kept = s.c.get_earnings().verified;
+    s.ft(PAYERS[3], 12 * USD, &job_msg(&job(2)), 100);
+    let e14 = note();
+    r.check(
+        "E14",
+        "signer rotated: old badges stay, removed signer no longer verifies",
+        kept == 12 * USD && e14 == "UnknownSigner",
+        json!({"verified_kept": usd(kept), "reason": e14}),
+    );
+
     // S19: dynamic deed metadata.
     let s = translator_world();
     let tok = s.c.nft_token(DEED_ID.into()).unwrap();
@@ -446,7 +527,8 @@ fn run() -> Value {
         "checks": r.checks,
         "summary": {"passed": passed, "failed": failed},
         "not_covered_here": [
-            {"id": "S2", "part": "verified 120.00 (NEAR Verified badge)", "where": "batch B2"},
+            {"id": "S3,G6", "part": "the real NEAR AI Cloud signer (fixtures here are signed with local test keys)",
+             "where": "owner's machine, day-1 gate G6"},
             {"id": "S5,E5,E6,A17,A21", "part": "real key errors, real token refunds, gas",
              "where": "near-sandbox (make test-sandbox) or testnet"},
             {"id": "A1-A6,A9,A18,A20", "part": "client scan, set_constraints, Base wallet",

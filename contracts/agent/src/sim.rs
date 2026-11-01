@@ -24,6 +24,8 @@ pub const X_ALICE: &str = "x.alice.testnet";
 pub const BOB: &str = "bob.testnet";
 pub const CAROL: &str = "carol.testnet";
 pub const MALLORY: &str = "mallory.testnet";
+/// Registry admin: edits the NEAR AI signer list only.
+pub const ADMIN: &str = "admin.testnet";
 pub const PAYERS: [&str; 6] = [
     "p1.testnet",
     "p2.testnet",
@@ -80,7 +82,12 @@ impl Sim {
             balance: NearToken::from_near(10),
         };
         s.env(&s.call(agent));
-        s.c = AgentExit::new(acc(owner), acc(TOKEN));
+        s.c = AgentExit::new(
+            acc(owner),
+            acc(TOKEN),
+            acc(ADMIN),
+            Some(vec![test_signer()]),
+        );
         s
     }
 
@@ -198,6 +205,9 @@ fn unsafe_placeholder() -> AgentExit {
     AgentExit {
         m: Machine::new("placeholder", "placeholder"),
         token: acc(TOKEN),
+        admin: acc(TOKEN),
+        signers: Default::default(),
+        used_sigs: Default::default(),
     }
 }
 
@@ -295,10 +305,19 @@ pub fn translator_world() -> Sim {
     s.by(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
     s.callback(true)
         .on_runner_key(vec![], key_str(ALICE_RUNNER));
+    // 10 of the 30 payer payments carry a NEAR AI-shaped signature (TEST
+    // FIXTURES): all 6 payers on day 0, p1-p4 on day 1. 10 x 12.00 = 120.00.
+    let mut signed = 0;
     for day in 0..5u64 {
         s.now = T0 + day * DAY + 3_600 * agent_core::NANOS_PER_SEC;
         for p in PAYERS {
-            assert_eq!(s.pay(p, 12 * USD), Some(0));
+            let r = if signed < 10 {
+                signed += 1;
+                s.ft(p, 12 * USD, &job_msg(&job(signed - 1)), 100)
+            } else {
+                s.pay(p, 12 * USD)
+            };
+            assert_eq!(r, Some(0));
         }
     }
     s.now = T0 + 5 * DAY;
@@ -341,4 +360,41 @@ pub fn sold_translator() -> Sim {
     s.callback(true)
         .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
     s
+}
+
+// ------------------------------------------------------- signature fixtures
+
+/// Address of the LOCAL TEST signer (secp256k1 key 0x11..11) used by the
+/// fixtures in `fixtures/test-signatures/`. Not a NEAR AI Cloud key.
+pub fn test_signer() -> String {
+    fixtures()["test_signer"]
+        .as_str()
+        .expect("test_signer")
+        .to_string()
+}
+
+/// `fixtures/test-signatures/translator.json` (TEST FIXTURES, local keys).
+pub fn fixtures() -> Value {
+    serde_json::from_str(include_str!(
+        "../../../fixtures/test-signatures/translator.json"
+    ))
+    .expect("fixture json")
+}
+
+/// The `nearai` proof object of a fixture entry.
+pub fn proof(entry: &Value) -> Value {
+    json!({
+        "model": entry["model"], "request": entry["request"],
+        "response_sha256": entry["response_sha256"], "signature": entry["signature"],
+    })
+}
+
+/// `pay` msg for a job, with the fixture entry's signature attached.
+pub fn job_msg(entry: &Value) -> String {
+    json!({"kind": "pay", "job_id": entry["job_id"], "nearai": proof(entry)}).to_string()
+}
+
+/// Fixture entry `i` (0-based) of the 10 translator jobs.
+pub fn job(i: usize) -> Value {
+    fixtures()["entries"][i].clone()
 }
