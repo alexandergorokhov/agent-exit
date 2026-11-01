@@ -1,0 +1,342 @@
+{
+  "schema": "verify-output.v1",
+  "project": "agent-exit",
+  "money": "xUSD-FAKE, a fake test dollar with no value (6 decimals)",
+  "runtime": "near-sdk 5.30 mocked runtime, offline",
+  "world": {
+    "translator": {
+      "gross": "500.00",
+      "counted": "360.00",
+      "verified": "0.00",
+      "flagged": "140.00",
+      "flagged_self": "100.00",
+      "flagged_seller_subaccount": "40.00",
+      "flagged_round_trip": "0.00",
+      "payments": 33,
+      "counted_payers": 6,
+      "days": 6
+    },
+    "cheat": {
+      "gross": "500.00",
+      "counted": "0.00",
+      "verified": "0.00",
+      "flagged": "500.00",
+      "flagged_self": "300.00",
+      "flagged_seller_subaccount": "200.00",
+      "flagged_round_trip": "0.00",
+      "payments": 10,
+      "counted_payers": 0,
+      "days": 5
+    },
+    "listing": {
+      "price": "1000.00",
+      "earnout": "30%",
+      "release_share": "50%",
+      "floor": "20% of escrow",
+      "window_days": 30
+    }
+  },
+  "checks": [
+    {
+      "id": "S2",
+      "what": "meter counts by payer and day: gross 500.00, counted 360.00, flagged 140.00",
+      "pass": true,
+      "detail": {
+        "gross": "500.00",
+        "counted": "360.00",
+        "verified": "0.00",
+        "flagged": "140.00",
+        "flagged_self": "100.00",
+        "flagged_seller_subaccount": "40.00",
+        "flagged_round_trip": "0.00",
+        "payments": 33,
+        "counted_payers": 6,
+        "days": 6
+      }
+    },
+    {
+      "id": "S4",
+      "what": "both earn 500.00: translator counted 360.00 vs cheat counted 0.00",
+      "pass": true,
+      "detail": {
+        "translator": "360.00",
+        "cheat": "0.00"
+      }
+    },
+    {
+      "id": "S1",
+      "what": "list: listing_version 1, price 1000.00 = 700.00 now + 300.00 escrow",
+      "pass": true,
+      "detail": {
+        "listing_version": 1,
+        "known_keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "what": "one buy: deed to bob, alice's runner key deleted, bob's added, alice 700.00, escrow 300.00, epoch 2",
+      "pass": true,
+      "detail": {
+        "deed_owner": "bob.testnet",
+        "keys_before": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ],
+        "keys_after": [
+          "ed25519:8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"
+        ],
+        "key_batch": [
+          [
+            "delete",
+            "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          ],
+          [
+            "add_fc",
+            "ed25519:8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"
+          ]
+        ],
+        "seller_paid": "700.00",
+        "escrow": "300.00",
+        "owner_epoch": 2
+      }
+    },
+    {
+      "id": "E1",
+      "what": "stale listing_version refused, full refund",
+      "pass": true,
+      "detail": {
+        "refunded": true
+      }
+    },
+    {
+      "id": "E2",
+      "what": "wrong known_keys_hash refused, full refund",
+      "pass": true,
+      "detail": {
+        "refunded": true
+      }
+    },
+    {
+      "id": "E3",
+      "what": "underpay 999.99 refused, full refund",
+      "pass": true,
+      "detail": {
+        "refunded": true
+      }
+    },
+    {
+      "id": "E7",
+      "what": "too little gas refused before any state change",
+      "pass": true,
+      "detail": {
+        "refunded": true
+      }
+    },
+    {
+      "id": "E10",
+      "what": "malformed msg refused, full refund",
+      "pass": true,
+      "detail": {
+        "refunded": true
+      }
+    },
+    {
+      "id": "E4",
+      "what": "second buy while settling refused, full refund",
+      "pass": true,
+      "detail": {
+        "refunded": "1000.00"
+      }
+    },
+    {
+      "id": "E3",
+      "what": "overpay 1000.50: 0.50 returned",
+      "pass": true,
+      "detail": {
+        "returned": "0.50"
+      }
+    },
+    {
+      "id": "E5",
+      "what": "key batch fails: state restored, bob refunded 1000.00, no payout",
+      "pass": true,
+      "detail": {
+        "refunded": "1000.00",
+        "status": "Listed",
+        "keys": [
+          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+        ]
+      }
+    },
+    {
+      "id": "E6",
+      "what": "seller payout fails: 700.00 claimable, solvency holds",
+      "pass": true,
+      "detail": {
+        "claimable": "700.00"
+      }
+    },
+    {
+      "id": "E8",
+      "what": "ft_on_transfer from a non-token panics UnknownToken",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A14",
+      "what": "fake token cannot record a payment",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E15",
+      "what": "0.05 payment refunded, no payer entry",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "E17",
+      "what": "owner withdraws everything above the reserve; one yocto more is refused",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "S7",
+      "what": "4 x 25.00 after sale release 50.00; floor tops up 10.00; alice 60.00, bob 240.00",
+      "pass": true,
+      "detail": {
+        "released_before_end": "50.00",
+        "alice": "60.00",
+        "bob": "240.00"
+      }
+    },
+    {
+      "id": "S8",
+      "what": "silence pays the floor: alice 60.00, bob 240.00",
+      "pass": true,
+      "detail": {
+        "alice": "60.00",
+        "bob": "240.00"
+      }
+    },
+    {
+      "id": "E21",
+      "what": "finalize twice, by anyone: identical result",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "S9",
+      "what": "600.00 counted after sale: release caps at 300.00, nothing back to bob",
+      "pass": true,
+      "detail": {
+        "alice": "300.00",
+        "bob": "0.00"
+      }
+    },
+    {
+      "id": "S10",
+      "what": "alice pays 100.00 after the sale: flagged self, releases 0.00",
+      "pass": true,
+      "detail": {
+        "released": "0.00"
+      }
+    },
+    {
+      "id": "A10",
+      "what": "self-payment flagged, not counted",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A11",
+      "what": "seller sub-account payment flagged",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A12",
+      "what": "round trip (agent paid P, P pays back) flagged",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A16",
+      "what": "deed moved outside buy(): runner keys deleted, agent paused",
+      "pass": true,
+      "detail": {
+        "deleted": [
+          [
+            "delete",
+            "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "A17",
+      "what": "old runner key no longer known to the contract (live AccessKeyNotFound: sandbox/testnet)",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A19",
+      "what": "old seller withdraw refused NotOwner",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A22",
+      "what": "old seller moves the deed back: NotOwner",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "A23",
+      "what": "self-call signed by a key the contract never added: frozen, 290.00 escrow back to bob",
+      "pass": true,
+      "detail": {
+        "returned_to_buyer": "290.00"
+      }
+    },
+    {
+      "id": "S15",
+      "what": "resale to carol: history travels, alice's earn-out keeps releasing",
+      "pass": true,
+      "detail": {
+        "owner": "carol.testnet",
+        "owner_epoch": 3
+      }
+    },
+    {
+      "id": "S19",
+      "what": "deed metadata extra carries meter totals (static part)",
+      "pass": true,
+      "detail": {
+        "extra_schema": "deed-extra.v1"
+      }
+    }
+  ],
+  "summary": {
+    "passed": 32,
+    "failed": 0
+  },
+  "not_covered_here": [
+    {
+      "id": "S2",
+      "part": "verified 120.00 (NEAR Verified badge)",
+      "where": "batch B2"
+    },
+    {
+      "id": "S5,E5,E6,A17,A21",
+      "part": "real key errors, real token refunds, gas",
+      "where": "near-sandbox (make test-sandbox) or testnet"
+    },
+    {
+      "id": "A1-A6,A9,A18,A20",
+      "part": "client scan, set_constraints, Base wallet",
+      "where": "batches B2-B4"
+    }
+  ]
+}

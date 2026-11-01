@@ -47,9 +47,10 @@ lint: ## rustfmt check + clippy -D warnings
 	cargo clippy --workspace --all-targets --locked -- -D warnings
 
 .PHONY: audit
-audit: ## cargo audit (needs cargo-audit and the advisory DB)
+audit: ## cargo audit (needs cargo-audit + advisory DB) and check ignored advisories stay out of the wasm
 	@command -v cargo-audit >/dev/null || { echo "cargo-audit not installed: cargo install cargo-audit --locked" >&2; exit 1; }
 	cargo audit
+	./scripts/ci/wasm-deps-clean.sh
 
 .PHONY: ci
 ci: lint verify ## What CI runs offline (audit runs as its own CI job)
@@ -64,8 +65,8 @@ build: ## Reproducible wasm build with cargo-near (Docker) -> contracts/res
 .PHONY: build-dev
 build-dev: ## Non-reproducible wasm build with cargo-near (no Docker)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/agent && cargo near build non-reproducible-wasm --out-dir ../../target/near
-	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near
+	cd contracts/agent && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near
+	cd contracts/xusd && cargo near build non-reproducible-wasm --no-abi --out-dir ../../target/near
 
 .PHONY: hash
 hash: ## Compare committed wasm with contracts/res/SHA256SUMS

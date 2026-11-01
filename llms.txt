@@ -1,0 +1,26 @@
+# Agent Exit
+
+> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). Rerun offline with `make verify`.
+
+## Start here
+
+- [README.md](README.md): what it is, what is proven and where, honest limits
+- [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
+- [Makefile](Makefile): every target; unbuilt ones print "not built yet" and exit 1
+
+## Code
+
+- [contracts/agent-core/src/lib.rs](contracts/agent-core/src/lib.rs): state machine (listing, buy, handover, earn-out, runner guard)
+- [contracts/agent-core/src/meter.rs](contracts/agent-core/src/meter.rs): earnings meter
+- [contracts/agent-core/src/money.rs](contracts/agent-core/src/money.rs): 70/30 split and earn-out math
+- [contracts/agent/src/lib.rs](contracts/agent/src/lib.rs): NEAR contract (NEP-141 receiver, NEP-171 deed, callbacks)
+- [contracts/xusd/src/lib.rs](contracts/xusd/src/lib.rs): FAKE test dollar (NEP-141)
+
+## Tests and outputs
+
+- [contracts/agent/src/tests.rs](contracts/agent/src/tests.rs): unit tests named by scenario id
+- [contracts/agent-core/tests/prop.rs](contracts/agent-core/tests/prop.rs): property tests (invariants)
+- [contracts/agent-core/tests/earnout.rs](contracts/agent-core/tests/earnout.rs): earn-out scenarios
+- [tools/verify/src/main.rs](tools/verify/src/main.rs): offline rerun kit
+- [tests/golden/verify.json](tests/golden/verify.json): expected `make verify` output
+- [fixtures/world.json](fixtures/world.json): fixed world numbers

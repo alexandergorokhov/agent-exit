@@ -1,0 +1,12 @@
+# Advisories ignored here affect only near-sdk's *native* unit-testing runtime
+# (near-vm-runner / near-primitives), which runs the mocked chain in tests.
+# None of these crates is in the contract wasm: `make audit` re-checks that
+# with scripts/ci/wasm-deps-clean.sh, which fails if any of them appears in
+# the wasm32 dependency tree of the contracts.
+[advisories]
+ignore = [
+  "RUSTSEC-2026-0387", # crypto-bigint 0.5.5 (p256 in near-vm-runner)
+  "RUSTSEC-2026-0391", # zstd 0.13.4 (near-primitives)
+  "RUSTSEC-2026-0398", # zstd-safe 7.4.0
+  "RUSTSEC-2026-0403", # zstd-safe 7.4.0
+]

@@ -1,0 +1,36 @@
+{
+  "schema": "world.v1",
+  "money": "xUSD-FAKE: fake test dollar, no value, 6 decimals; amounts below in dollars",
+  "accounts": {
+    "seller": "alice.testnet",
+    "seller_subaccount": "x.alice.testnet",
+    "buyer": "bob.testnet",
+    "second_buyer": "carol.testnet",
+    "honest_agent": "translator.testnet",
+    "backdoored_agent": "cheat.testnet",
+    "token": "xusd.testnet",
+    "payers": ["p1.testnet", "p2.testnet", "p3.testnet", "p4.testnet", "p5.testnet", "p6.testnet"],
+    "outsider": "mallory.testnet"
+  },
+  "translator_history": {
+    "counted": "6 payers x 5 payments x 12.00 on days 0-4 = 360.00",
+    "flagged_self": "2 x 50.00 by alice on day 5 = 100.00",
+    "flagged_seller_subaccount": "1 x 40.00 by x.alice on day 5 = 40.00",
+    "gross": "500.00",
+    "verified": "120.00 once NEAR Verified lands (batch B2); 0.00 today"
+  },
+  "cheat_history": {"gross": "500.00", "from": "alice 5 x 60.00, x.alice 5 x 40.00", "counted": "0.00"},
+  "listing": {
+    "price": "1000.00",
+    "earnout_bps": 3000,
+    "share_bps": 5000,
+    "floor_bps": 2000,
+    "window_secs": 2592000,
+    "paid_now": "700.00",
+    "escrow": "300.00",
+    "floor": "60.00"
+  },
+  "storage_guards": {"min_payment": "0.10", "max_tracked_payers": 1000},
+  "clock": {"t0": "2026-01-01T00:00:00Z", "listing_day": 10},
+  "source": "contracts/agent/src/sim.rs (translator_world, cheat_world, listed_translator, sold_translator)"
+}

@@ -29,6 +29,9 @@ overflow-checks = true
 overflow-checks = true
 
 # Dependencies (near-sdk's mocked runtime) run optimised in tests: the
-# simulator sets up a mocked blockchain per call.
+# simulator sets up a mocked blockchain per call. Without debug assertions
+# near-sdk does not echo every contract log to stderr (logs are still
+# recorded and checked through test_utils::get_logs).
 [profile.dev.package."*"]
 opt-level = 2
+debug-assertions = false
