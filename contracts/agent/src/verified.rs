@@ -100,7 +100,7 @@ pub fn check(
     amount: u128,
     job_id: Option<&str>,
     signers: &BTreeSet<String>,
-    used: &BTreeSet<[u8; 32]>,
+    used: &near_sdk::store::LookupSet<[u8; 32]>,
 ) -> Outcome {
     use Outcome::NotVerified as No;
     let Some(job_id) = job_id else {

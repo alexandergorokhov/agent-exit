@@ -9,7 +9,7 @@
 
 use crate::*;
 use near_sdk::test_utils::{get_created_receipts, get_logs, VMContextBuilder};
-use near_sdk::{testing_env, CurveType, PromiseResult, RuntimeFeesConfig};
+use near_sdk::{CurveType, PromiseResult, RuntimeFeesConfig};
 
 pub const USD: u128 = agent_core::USD;
 /// 2026-01-01T00:00:00Z.
@@ -67,9 +67,14 @@ pub struct Call {
     pub gas: Gas,
     /// One promise result for a callback: `Some(true)` success, `Some(false)` failure.
     pub result: Option<bool>,
+    /// Account storage in bytes (`env::storage_usage`); the mocked runtime
+    /// never writes the contract state, so tests set it.
+    pub storage: u64,
 }
 
 pub struct Sim {
+    /// Which storage map is this simulator's (see `STORES`).
+    id: u64,
     pub c: AgentExit,
     pub agent: String,
     pub now: u64,
@@ -80,6 +85,11 @@ impl Sim {
     /// Deploy + init on `agent` with `owner` as the first deed holder.
     pub fn new(agent: &str, owner: &str) -> Self {
         let mut s = Sim {
+            id: NEXT_ID.with(|n| {
+                let id = n.get();
+                n.set(id + 1);
+                id
+            }),
             c: unsafe_placeholder(),
             agent: agent.into(),
             now: T0,
@@ -100,6 +110,7 @@ impl Sim {
             deposit: NearToken::from_yoctonear(0),
             gas: Gas::from_tgas(300),
             result: None,
+            storage: 0,
         }
     }
 
@@ -113,20 +124,32 @@ impl Sim {
             .prepaid_gas(c.gas)
             .block_timestamp(self.now)
             .account_balance(self.balance)
+            .storage_usage(c.storage)
             .build();
-        testing_env!(
+        let current = near_sdk::mock::with_mocked_blockchain(|b| b.take_storage());
+        let mine = STORES.with(|st| {
+            let mut st = st.borrow_mut();
+            st.insert(CURRENT.get(), current);
+            CURRENT.set(self.id);
+            st.remove(&self.id).unwrap_or_default()
+        });
+        near_sdk::env::set_blockchain_interface(near_sdk::MockedBlockchain::new(
             ctx,
             near_sdk::test_vm_config(),
             RuntimeFeesConfig::test(),
-            Default::default(),
             c.result
-                .map(|ok| vec![if ok {
-                    PromiseResult::Successful(vec![])
-                } else {
-                    PromiseResult::Failed
-                }])
-                .unwrap_or_default()
-        );
+                .map(|ok| {
+                    vec![if ok {
+                        PromiseResult::Successful(vec![])
+                    } else {
+                        PromiseResult::Failed
+                    }]
+                })
+                .unwrap_or_default(),
+            mine,
+            Default::default(),
+            None,
+        ));
     }
 
     /// Set up the environment for a plain call by `who`.
@@ -207,6 +230,25 @@ impl Sim {
     }
 }
 
+/// A real contract has its own storage; the mocked runtime has one per
+/// thread. Each simulator keeps its own storage map and swaps it in when it
+/// sets up a call, so simulators alive at once in one thread (the verify
+/// tool) never see each other's storage collections (`used_sigs`).
+type Storage = std::collections::HashMap<Vec<u8>, Vec<u8>>;
+
+thread_local! {
+    static STORES: std::cell::RefCell<std::collections::HashMap<u64, Storage>> =
+        Default::default();
+    static CURRENT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    static NEXT_ID: std::cell::Cell<u64> = const { std::cell::Cell::new(1) };
+}
+
+impl Drop for Sim {
+    fn drop(&mut self) {
+        STORES.with(|st| st.borrow_mut().remove(&self.id));
+    }
+}
+
 /// `AgentExit` has no `Default`; build a throwaway value without touching the
 /// mocked runtime (overwritten right after in `Sim::new`).
 fn unsafe_placeholder() -> AgentExit {
@@ -215,7 +257,7 @@ fn unsafe_placeholder() -> AgentExit {
         token: acc(TOKEN),
         admin: acc(TOKEN),
         signers: Default::default(),
-        used_sigs: Default::default(),
+        used_sigs: near_sdk::store::LookupSet::new(b"p"),
     }
 }
 
@@ -270,6 +312,47 @@ pub fn key_actions(agent: &str) -> Vec<(String, String)> {
         }
     }
     out
+}
+
+/// Function calls the contract scheduled on itself: (method, prepaid gas).
+pub fn self_calls(agent: &str) -> Vec<(String, Gas)> {
+    use near_sdk::mock::MockAction;
+    let mut out = vec![];
+    for r in get_created_receipts() {
+        if r.receiver_id.as_str() != agent {
+            continue;
+        }
+        for a in r.actions {
+            if let MockAction::FunctionCallWeight {
+                method_name,
+                prepaid_gas,
+                ..
+            } = a
+            {
+                out.push((String::from_utf8_lossy(&method_name).into(), prepaid_gas));
+            }
+        }
+    }
+    out
+}
+
+/// Receipts the contract scheduled on itself that carry a key action.
+pub fn key_receipts(agent: &str) -> usize {
+    use near_sdk::mock::MockAction;
+    get_created_receipts()
+        .iter()
+        .filter(|r| r.receiver_id.as_str() == agent)
+        .filter(|r| {
+            r.actions.iter().any(|a| {
+                matches!(
+                    a,
+                    MockAction::DeleteKey { .. }
+                        | MockAction::AddKeyWithFunctionCall { .. }
+                        | MockAction::AddKeyWithFullAccess { .. }
+                )
+            })
+        })
+        .count()
 }
 
 /// `ft_transfer` calls the contract scheduled on the token: (receiver, amount).

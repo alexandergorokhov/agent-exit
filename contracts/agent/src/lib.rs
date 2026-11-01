@@ -116,9 +116,13 @@ pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 pub const MAX_MSG_LEN: usize = 4_096;
 
 pub const GAS_FT_TRANSFER: Gas = Gas::from_tgas(10);
-pub const GAS_ON_TRANSFER_OUT: Gas = Gas::from_tgas(10);
+/// Callback gas before the state term (`cb_gas`).
+pub const GAS_ON_TRANSFER_OUT: Gas = Gas::from_tgas(15);
 pub const GAS_ON_HANDOVER: Gas = Gas::from_tgas(40);
-pub const GAS_ON_KEYS: Gas = Gas::from_tgas(10);
+pub const GAS_ON_KEYS: Gas = Gas::from_tgas(15);
+/// Gas per byte of contract storage a callback may read and write: storage
+/// read (~5.6 Mgas/byte) plus write (~63 Mgas/byte), rounded up (A33).
+pub const GAS_PER_STATE_BYTE: u64 = 70_000_000;
 pub const GAS_NFT_ON_TRANSFER: Gas = Gas::from_tgas(30);
 pub const GAS_NFT_RESOLVE: Gas = Gas::from_tgas(20);
 pub const GAS_NFT_ON_APPROVE: Gas = Gas::from_tgas(20);
@@ -212,7 +216,9 @@ pub struct AgentExit {
     /// Allowed NEAR AI Cloud signing addresses (`0x` + 40 lowercase hex).
     signers: BTreeSet<String>,
     /// sha256(r || s) of every signature that already verified a payment.
-    used_sigs: BTreeSet<[u8; 32]>,
+    /// One storage entry per signature, outside the state blob that every
+    /// call reads and writes (A33).
+    used_sigs: near_sdk::store::LookupSet<[u8; 32]>,
 }
 
 fn emit(event: &str, data: Value) {
@@ -232,6 +238,17 @@ fn promise_ok() -> bool {
         env::promise_result_checked(0, 1_024),
         Err(PromiseError::Failed)
     )
+}
+
+/// Gas to read and write the whole state once (A33).
+fn state_gas() -> Gas {
+    Gas::from_gas(env::storage_usage().saturating_mul(GAS_PER_STATE_BYTE))
+}
+
+/// A callback's gas: its own work plus the state term, so a callback does
+/// not run out of gas as outsiders' payments grow the state (A33).
+pub fn cb_gas(base: Gas) -> Gas {
+    base.saturating_add(state_gas())
 }
 
 fn pk(s: &str) -> PublicKey {
@@ -263,7 +280,7 @@ impl AgentExit {
             token: PAYMENT_TOKEN.parse().expect("valid token"),
             admin: REGISTRY_ADMIN.parse().expect("valid admin"),
             signers: BTreeSet::new(),
-            used_sigs: BTreeSet::new(),
+            used_sigs: near_sdk::store::LookupSet::new(b"u"),
         }
     }
 
@@ -302,7 +319,7 @@ impl AgentExit {
         let old: Vec<String> = self.m.known_keys.iter().cloned().collect();
         let deleted = self
             .m
-            .set_runner_key(caller.as_str(), &new_key)
+            .set_runner_key(caller.as_str(), &new_key, env::block_timestamp())
             .unwrap_or_else(|e| fail(e));
         let mut p = Promise::new(env::current_account_id());
         for k in &deleted {
@@ -320,7 +337,7 @@ impl AgentExit {
         );
         p.then(
             Self::ext(env::current_account_id())
-                .with_static_gas(GAS_ON_KEYS)
+                .with_static_gas(cb_gas(GAS_ON_KEYS))
                 .on_runner_key(old, deleted, new_key),
         )
     }
@@ -347,14 +364,67 @@ impl AgentExit {
         ok
     }
 
-    /// Callback after a deed transfer's `delete_key` batch: the keys stop
-    /// being `retiring` once their deletion is confirmed (A25).
+    /// Callback after `delete_key`s, one receipt per key (deed transfer,
+    /// recovery). Each has run, so none of the keys is on the account any
+    /// more: a failed `delete_key` means the key was already gone (A25, A33).
     #[private]
     pub fn on_keys_deleted(&mut self, keys: Vec<String>) -> bool {
-        let ok = promise_ok();
-        self.m.keys_deleted(&keys, ok);
-        emit("keys_deleted", json!({"keys": keys, "ok": ok}));
-        ok
+        let n = env::promise_results_count();
+        let already_gone = (0..n)
+            .filter(|i| {
+                matches!(
+                    env::promise_result_checked(*i, 1_024),
+                    Err(PromiseError::Failed)
+                )
+            })
+            .count();
+        self.m.keys_deleted(&keys);
+        emit(
+            "keys_deleted",
+            json!({"keys": keys, "already_gone": already_gone}),
+        );
+        true
+    }
+
+    // ------------------------------------------------- recovery (A33)
+
+    /// The owner clears keys whose key-batch callback failed (they stay
+    /// `incoming`/`retiring` and block listing and rotation). Allowed an hour
+    /// after the batch started. Deletes each pending key in its own receipt;
+    /// runner keys the contract confirmed stay. Needs 1 yoctoNEAR.
+    #[payable]
+    pub fn recover_keys(&mut self) -> Value {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        let r = self
+            .m
+            .recover_keys(caller.as_str(), env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        self.delete_keys(&r.delete_keys);
+        let data = json!({"by": caller, "delete_keys": r.delete_keys, "paused": self.m.paused});
+        emit("keys_recovered", data.clone());
+        data
+    }
+
+    /// Anyone undoes a buy whose `on_handover` callback failed (the agent
+    /// would stay `Settling` for good). Allowed an hour after the buy. The
+    /// failed callback already made the token refund the buyer in full; the
+    /// seller keeps the deed, the listing is withdrawn and every key the buy
+    /// touched is deleted. The seller sets a new runner key to resume.
+    pub fn recover_sale(&mut self) -> Value {
+        let r = self
+            .m
+            .recover_sale(env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        self.delete_keys(&r.delete_keys);
+        let p = r.sale.expect("recover_sale returns the sale");
+        let data = json!({
+            "sale_id": p.sale_id, "buyer": p.buyer, "amount": amt(p.amount),
+            "buyer_refunded_by_token": true, "owner": self.m.owner,
+            "delete_keys": r.delete_keys, "listing_version": self.m.listing_version,
+        });
+        emit("sale_recovered", data.clone());
+        data
     }
 
     // --------------------------------------------------------- owner: listing
@@ -500,7 +570,12 @@ impl AgentExit {
                 buyer_runner_pk,
             } => {
                 let left = env::prepaid_gas().saturating_sub(env::used_gas());
-                let gas_ok = left >= MIN_BUY_GAS;
+                // The callback and the payout callback each read and write
+                // the state, so the bar grows with it (A33).
+                let gas_ok = left
+                    >= MIN_BUY_GAS
+                        .saturating_add(state_gas())
+                        .saturating_add(state_gas());
                 let buyer_key = String::from(&buyer_runner_pk);
                 let plan = match self.m.begin_buy(
                     sender_id.as_str(),
@@ -533,7 +608,7 @@ impl AgentExit {
                 batch
                     .then(
                         Self::ext(env::current_account_id())
-                            .with_static_gas(GAS_ON_HANDOVER)
+                            .with_static_gas(cb_gas(GAS_ON_HANDOVER))
                             .on_handover(plan.sale_id),
                     )
                     .into()
@@ -929,7 +1004,12 @@ impl AgentExit {
         }
         let keys = self
             .m
-            .transfer_deed(receiver_id.as_str(), previous_owner_id.as_str(), None)
+            .transfer_deed(
+                receiver_id.as_str(),
+                previous_owner_id.as_str(),
+                None,
+                env::block_timestamp(),
+            )
             .unwrap_or_default();
         self.delete_keys(&keys);
         NftTransfer {
@@ -1039,7 +1119,7 @@ impl AgentExit {
             )
             .then(
                 Self::ext(env::current_account_id())
-                    .with_static_gas(GAS_ON_TRANSFER_OUT)
+                    .with_static_gas(cb_gas(GAS_ON_TRANSFER_OUT))
                     .on_transfer_out(kind, to, U128(amount)),
             )
     }
@@ -1079,7 +1159,12 @@ impl AgentExit {
         let old_owner = self.owner_id();
         let keys = self
             .m
-            .transfer_deed(caller.as_str(), receiver_id.as_str(), approval_id)
+            .transfer_deed(
+                caller.as_str(),
+                receiver_id.as_str(),
+                approval_id,
+                env::block_timestamp(),
+            )
             .unwrap_or_else(|e| fail(e));
         self.delete_keys(&keys);
         NftTransfer {
@@ -1097,19 +1182,22 @@ impl AgentExit {
         );
     }
 
-    /// Delete `keys` and confirm in `on_keys_deleted`; until then they are
-    /// `retiring` and a signature by them is `NotRunner`, not a backdoor.
+    /// Delete `keys`, each in its own receipt (a key that is already gone
+    /// fails only its own receipt, never the others), and confirm in
+    /// `on_keys_deleted`; until then they are `retiring` and a signature by
+    /// them is `NotRunner`, not a backdoor (A25, A33).
     fn delete_keys(&self, keys: &[String]) {
-        if keys.is_empty() {
+        let Some(first) = keys.first() else {
             return;
+        };
+        let me = env::current_account_id();
+        let mut all = Promise::new(me.clone()).delete_key(pk(first));
+        for k in &keys[1..] {
+            all = all.and(Promise::new(me.clone()).delete_key(pk(k)));
         }
-        let mut p = Promise::new(env::current_account_id());
-        for k in keys {
-            p = p.delete_key(pk(k));
-        }
-        p.then(
-            Self::ext(env::current_account_id())
-                .with_static_gas(GAS_ON_KEYS)
+        all.then(
+            Self::ext(me)
+                .with_static_gas(cb_gas(GAS_ON_KEYS))
                 .on_keys_deleted(keys.to_vec()),
         )
         .detach();

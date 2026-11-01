@@ -447,6 +447,14 @@ fn a16_e24_deed_moved_outside_buy_deletes_runner_keys() {
         s.c.nft_token(DEED_ID.into()).unwrap().owner_id.as_str(),
         MALLORY
     );
+    // Until the deletion is confirmed (next block) a rotation would put a
+    // maybe-gone key into its all-or-nothing batch: KeysPending (A33).
+    let msg = panic_msg(|| {
+        s.by_1y(MALLORY).set_runner_key(key(CAROL_RUNNER));
+    });
+    assert_eq!(msg, "KeysPending");
+    s.callback(true)
+        .on_keys_deleted(vec![key_str(ALICE_RUNNER)]);
     // The new owner sets a runner key; the agent runs again.
     s.by_1y(MALLORY).set_runner_key(key(CAROL_RUNNER));
     s.callback(true)

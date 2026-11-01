@@ -73,6 +73,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Security review 1 fixes: no key-batch gap lets the buyer or owner fake a backdoor (keys being added or deleted are `incoming`/`retiring` until a callback confirms; a call signed by one is `NotRunner`, never a freeze); admin, token and signer list are compiled in, shown in `get_status`, and the scan blocks a mismatch (`registry_mismatch`); a NEAR Verified signature binds payer, amount and job; selling, cancelling, key rotation and limits need 1 yoctoNEAR; the seller's unwithdrawn revenue is settled to the seller at the sale; round-trip tracking refuses new destinations instead of silently saturating | offline (regression tests are the reviewer's attacks with inverted asserts, `contracts/agent/src/review_regressions.rs`) + property tests | A25-A30 |
 | Security review 2 fixes: a round trip the buyer creates after the sale does not stop the seller's earn-out (only pre-sale round trips count against it; property: the seller's release equals what the honest customer payments alone release) | offline (`contracts/agent/src/review2_regressions.rs`) + property tests | A31 |
 | Buyer-side earn-out terms: the contract refuses a listing below the published minimum (30% escrow, seller floor at most 50% of it, 30-day window; a demo build may shorten the window and is labelled `demo`), the scan blocks such terms (`terms_below_minimum`), and MCP `buy_agent` takes price, version and terms from one read and pins that version through the scan to the contract (a relist in between blocks) | offline + `make attack` family A32 + MCP tests | A32 |
+| Recovery when a callback fails after its key batch ran: `recover_sale` (anyone, an hour after the buy) undoes a stuck buy whose `on_handover` never ran (the token already refunded the buyer; the seller keeps the deed); `recover_keys` (owner, an hour after the batch) clears keys stuck `incoming`/`retiring`; every key deletion is its own receipt, so one key that is already gone cannot fail the rest; callback gas grows with the state size; used NEAR AI signatures live in per-entry storage, not the state blob | offline (fault injection: the callback never runs) + property tests (dropped callbacks, then recovery) | A33 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
@@ -132,6 +133,15 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
   NEAR AI Cloud signer address is set by the registry admin (not by the
   seller, who could otherwise allowlist their own key) and is checked
   against the real service on the owner's machine.
+- If a payout's own callback (`on_transfer_out`) fails after the token
+  refused the transfer, the credit-back is lost from the books: the contract
+  then holds more tokens than it accounts for (never fewer). Callbacks get
+  gas for their own work plus the whole state, which makes this unlikely.
+- The payer table (at most 1,000 payers, then pooled) and the day table
+  (one row per day) stay inside the state blob that every call reads and
+  writes; callback gas scales with it. The agent pays its own storage from
+  its NEAR balance (no NEP-145 deposits); each verified payment adds one
+  32-byte entry.
 - A failed supplier payment returns to the treasury but still counts toward
   that day's cap (conservative).
 - The MCP server's offline mode replays recorded contract results; a buy or

@@ -66,6 +66,11 @@ pub enum Error {
     KeysPending,
     /// `paid_to` is full: send only to accounts already paid or to the owner (A30).
     PaidToFull,
+    /// Recovery asked for, but nothing is stuck (A33).
+    NothingToRecover,
+    /// Recovery asked for before `RECOVER_AFTER_NS` passed: the callback may
+    /// still run (A33).
+    RecoverTooEarly,
     /// A runner payment or incoming payment outside the owner's limits.
     PolicyViolation(Policy),
 }
@@ -209,6 +214,8 @@ pub struct Pending {
     pub buyer_pk: Key,
     pub listing: Listing,
     pub prev_keys: Vec<Key>,
+    /// When the buy started; `recover_sale` is allowed `RECOVER_AFTER_NS` later.
+    pub started_at: Ts,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -352,6 +359,21 @@ pub struct Machine {
     pub spent: Spent,
     /// Least terms a listing must give the buyer (A32), fixed at init.
     pub terms_min: TermsMin,
+    /// When the last key batch started (rotation, deed transfer, recovery);
+    /// `recover_keys` is allowed `RECOVER_AFTER_NS` later (A33).
+    pub keys_since: Ts,
+}
+
+/// How long a callback gets before recovery is allowed (A33). A callback
+/// runs within a few blocks or has failed; an hour is far past both.
+pub const RECOVER_AFTER_NS: u64 = 3_600 * NANOS_PER_SEC;
+
+/// Keys to delete after a recovery, each in its own receipt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Recovery {
+    pub delete_keys: Vec<Key>,
+    /// The buy that was rolled back (`recover_sale` only).
+    pub sale: Option<Pending>,
 }
 
 pub const MAX_PAID_TO: usize = 1_000;
@@ -396,6 +418,7 @@ impl Machine {
             treasury: 0,
             spent: Spent::default(),
             terms_min: TermsMin::PROD,
+            keys_since: 0,
         }
     }
 
@@ -449,7 +472,7 @@ impl Machine {
     /// batches the `delete_key`s and `add_key(new)` on itself, then calls
     /// `runner_key_done` with the batch outcome. Until then the old keys are
     /// `retiring`, the new one `incoming`, and the runner cannot act (A25).
-    pub fn set_runner_key(&mut self, caller: &str, new_key: &str) -> Res<Vec<Key>> {
+    pub fn set_runner_key(&mut self, caller: &str, new_key: &str, now: Ts) -> Res<Vec<Key>> {
         self.only_owner(caller)?;
         self.not_settling()?;
         if self.frozen {
@@ -459,18 +482,19 @@ impl Machine {
             // Changing keys while listed would invalidate what buyers scanned.
             return Err(Error::AlreadyListed);
         }
-        if !self.incoming.is_empty() {
-            return Err(Error::KeysPending);
-        }
-        if self.known_keys.contains(new_key) || self.retiring.contains(new_key) {
+        // A key whose deletion is not confirmed may already be gone; putting
+        // it in this all-or-nothing batch could fail every later rotation.
+        // Wait for its callback, or `recover_keys` (A33).
+        self.keys_settled()?;
+        if self.known_keys.contains(new_key) {
             return Err(Error::KeyAlreadyKnown);
         }
-        // Old runner keys and any key whose deletion was never confirmed are
-        // deleted in the same batch.
+        let old: Vec<Key> = self.known_keys.iter().cloned().collect();
         self.retiring.append(&mut self.known_keys);
         self.incoming.insert(new_key.to_string());
         self.paused = true;
-        Ok(self.retiring.iter().cloned().collect())
+        self.keys_since = now;
+        Ok(old)
     }
 
     /// Callback of `set_runner_key`. `old` = the runner keys before,
@@ -494,15 +518,69 @@ impl Machine {
         self.paused = self.known_keys.is_empty();
     }
 
-    /// Callback after the `delete_key` batch of a deed transfer. Keys whose
-    /// deletion failed stay `retiring` (still on the account: the scan blocks
-    /// a sale until a rotation deletes them).
-    pub fn keys_deleted(&mut self, keys: &[Key], ok: bool) {
-        if ok {
-            for k in keys {
-                self.retiring.remove(k);
-            }
+    /// Callback after a deletion of `keys`, each in its own receipt (deed
+    /// transfer, recovery). Every receipt has run by then, and a `delete_key`
+    /// fails only when the key is already gone, so none of them is on the
+    /// account any more, whatever the results (A33).
+    pub fn keys_deleted(&mut self, keys: &[Key]) {
+        for k in keys {
+            self.retiring.remove(k);
+            self.incoming.remove(k);
         }
+    }
+
+    /// The owner clears key sets whose callback never ran (it failed after
+    /// its key batch, A33). Allowed `RECOVER_AFTER_NS` after the batch
+    /// started. Every `incoming` and `retiring` key is deleted, each in its
+    /// own receipt; until `keys_deleted` they stay pending (`NotRunner`).
+    /// The runner keys in `known_keys` stay; with none the agent is paused
+    /// until the owner sets a key.
+    pub fn recover_keys(&mut self, caller: &str, now: Ts) -> Res<Recovery> {
+        self.only_owner(caller)?;
+        self.not_settling()?;
+        if self.incoming.is_empty() && self.retiring.is_empty() {
+            return Err(Error::NothingToRecover);
+        }
+        if now < self.keys_since.saturating_add(RECOVER_AFTER_NS) {
+            return Err(Error::RecoverTooEarly);
+        }
+        self.retiring.append(&mut self.incoming);
+        self.keys_since = now;
+        self.paused = self.known_keys.is_empty();
+        Ok(Recovery {
+            delete_keys: self.retiring.iter().cloned().collect(),
+            sale: None,
+        })
+    }
+
+    /// Anyone undoes a buy whose `on_handover` never ran (it failed after the
+    /// key batch, A33), `RECOVER_AFTER_NS` after the buy started. A failed
+    /// callback makes the token refund the buyer in full, so the sale did not
+    /// happen: the seller keeps the deed, the listing is withdrawn, and every
+    /// key the buy touched (the seller's runner keys and the buyer's key) is
+    /// deleted. The seller sets a new runner key and lists again.
+    pub fn recover_sale(&mut self, now: Ts) -> Res<Recovery> {
+        let p = match (&self.status, &self.pending) {
+            (Status::Settling, Some(p)) => p.clone(),
+            _ => return Err(Error::NothingToRecover),
+        };
+        if now < p.started_at.saturating_add(RECOVER_AFTER_NS) {
+            return Err(Error::RecoverTooEarly);
+        }
+        self.pending = None;
+        self.held -= p.amount;
+        self.incoming.remove(&p.buyer_pk);
+        self.retiring.append(&mut self.known_keys);
+        self.retiring.insert(p.buyer_pk.clone());
+        self.listing = None;
+        self.listing_version += 1;
+        self.status = self.status_before_listing.clone();
+        self.paused = true;
+        self.keys_since = now;
+        Ok(Recovery {
+            delete_keys: self.retiring.iter().cloned().collect(),
+            sale: Some(p),
+        })
     }
 
     // ----- deed approvals (NEP-178) -----------------------------------------
@@ -650,6 +728,7 @@ impl Machine {
             buyer_pk: buyer_pk.to_string(),
             listing,
             prev_keys: prev_keys.clone(),
+            started_at: now,
         });
         Ok(BuyPlan {
             sale_id,
@@ -952,6 +1031,7 @@ impl Machine {
         caller: &str,
         receiver: &str,
         approval_id: Option<u64>,
+        now: Ts,
     ) -> Res<Vec<Key>> {
         self.not_settling()?;
         if !self.incoming.is_empty() {
@@ -980,6 +1060,7 @@ impl Machine {
         let keys: Vec<Key> = self.known_keys.iter().cloned().collect();
         self.retiring.append(&mut self.known_keys);
         self.paused = true;
+        self.keys_since = now;
         Ok(keys)
     }
 

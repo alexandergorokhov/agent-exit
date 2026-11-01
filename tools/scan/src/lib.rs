@@ -26,7 +26,7 @@ pub const RUNNER_METHODS: [&str; 4] = ["heartbeat", "accept_job", "pay", "pay_ba
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
-pub const PUBLISHED_METHODS: [&str; 41] = [
+pub const PUBLISHED_METHODS: [&str; 43] = [
     "new",
     "add_signer",
     "remove_signer",
@@ -34,6 +34,8 @@ pub const PUBLISHED_METHODS: [&str; 41] = [
     "set_runner_key",
     "on_runner_key",
     "on_keys_deleted",
+    "recover_keys",
+    "recover_sale",
     "list_for_sale",
     "cancel_listing",
     "ft_on_transfer",

@@ -499,10 +499,19 @@
         },
         "terms_config": "prod"
       }
+    },
+    {
+      "id": "A33",
+      "what": "a callback that fails after its key batch ran is recoverable an hour later: recover_sale undoes a stuck buy (token refunded the buyer; seller keeps the deed), recover_keys clears stuck incoming/retiring keys; each key is deleted in its own receipt; callback gas grows with the state",
+      "pass": true,
+      "detail": {
+        "recover_after_secs": 3600,
+        "gas_per_state_byte": 70000000
+      }
     }
   ],
   "summary": {
-    "passed": 54,
+    "passed": 55,
     "failed": 0
   },
   "not_covered_here": [

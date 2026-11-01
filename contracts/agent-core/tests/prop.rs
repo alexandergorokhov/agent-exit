@@ -21,6 +21,7 @@ static SPENDS: AtomicUsize = AtomicUsize::new(0);
 static CAP_HITS: AtomicUsize = AtomicUsize::new(0);
 static LISTED_REFUSALS: AtomicUsize = AtomicUsize::new(0);
 static PENDING_CALLS: AtomicUsize = AtomicUsize::new(0);
+static RECOVERIES: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -67,6 +68,12 @@ enum Act {
     KeysDone(usize, bool),
     /// A self-call signed by a key in `incoming` or `retiring` (A25).
     PendingKeyCall(bool),
+    /// A key-batch callback fails after its batch ran: it never arrives (A33).
+    DropKeys(usize),
+    /// The buy callback fails after the key batch ran (A33).
+    DropHandover,
+    /// `recover_keys` by ACTORS[caller], or `recover_sale` (A33).
+    Recover(usize, bool),
 }
 
 /// A key batch waiting for its callback.
@@ -104,6 +111,9 @@ fn act() -> impl Strategy<Value = Act> {
         4 => (a.clone(), 1u64..30_000_000, prop::bool::weighted(0.995)).prop_map(|(p, x, k)| Act::Spend(p, x, k)),
         3 => (0usize..4, prop::bool::weighted(0.9)).prop_map(|(i, ok)| Act::KeysDone(i, ok)),
         1 => any::<bool>().prop_map(Act::PendingKeyCall),
+        1 => (0usize..4).prop_map(Act::DropKeys),
+        1 => Just(Act::DropHandover),
+        2 => (a.clone(), any::<bool>()).prop_map(|(c, sale)| Act::Recover(c, sale)),
     ]
 }
 
@@ -117,6 +127,8 @@ struct World {
     max_cap_today: Amount,
     cap_day: (u64, u64),
     key_batches: Vec<KeyBatch>,
+    /// The pending buy's callback failed and will never run.
+    handover_dropped: bool,
 }
 
 fn pending_amount(m: &Machine) -> Amount {
@@ -269,6 +281,9 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             let Some(p) = w.m.pending.clone() else {
                 return Ok(());
             };
+            if w.handover_dropped {
+                return check_invariants(w);
+            }
             let seller = w.m.owner.clone();
             let r = w.m.finish_buy(p.sale_id, ok, w.now).unwrap();
             match r {
@@ -345,7 +360,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             }
         }
         Act::TransferDeed(c, r) => {
-            let res = w.m.transfer_deed(ACTORS[c], ACTORS[r], None);
+            let res = w.m.transfer_deed(ACTORS[c], ACTORS[r], None, w.now);
             if settling {
                 prop_assert!(res.is_err());
             }
@@ -365,7 +380,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
         Act::SetKey(c, k) => {
             let new_key = format!("ed25519:k{k}");
             let old: Vec<Key> = w.m.known_keys.iter().cloned().collect();
-            let r = w.m.set_runner_key(ACTORS[c], &new_key);
+            let r = w.m.set_runner_key(ACTORS[c], &new_key, w.now);
             if ACTORS[c] != owner || settling {
                 prop_assert!(r.is_err());
             }
@@ -405,13 +420,14 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                             && w.m.status != Status::Settling
                             && w.m.status != Status::Listed
                             && w.m.incoming.is_empty()
+                            && w.m.retiring.is_empty()
                         {
                             let mut c = w.m.clone();
                             let owner = c.owner.clone();
-                            prop_assert!(c.set_runner_key(&owner, "ed25519:retry").is_ok());
+                            prop_assert!(c.set_runner_key(&owner, "ed25519:retry", w.now).is_ok());
                         }
                     }
-                    KeyBatch::Deletion(keys) => w.m.keys_deleted(&keys, ok),
+                    KeyBatch::Deletion(keys) => w.m.keys_deleted(&keys),
                 }
             }
         }
@@ -429,6 +445,71 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     prop_assert_eq!(r, Err(Error::NotRunner));
                 }
                 prop_assert_eq!(&w.m, &before);
+            }
+        }
+        Act::DropKeys(i) => {
+            if !w.key_batches.is_empty() {
+                w.key_batches.remove(i % w.key_batches.len());
+            }
+        }
+        Act::DropHandover => {
+            if settling {
+                w.handover_dropped = true;
+            }
+        }
+        Act::Recover(c, sale) => {
+            // Recovery is only reachable once no callback can still arrive
+            // (an hour later in reality): skip it while one is in flight.
+            if sale {
+                if !(settling && w.handover_dropped) {
+                    return check_invariants(w);
+                }
+                let p = w.m.pending.clone().unwrap();
+                if w.now < p.started_at + RECOVER_AFTER_NS {
+                    prop_assert_eq!(w.m.clone().recover_sale(w.now), Err(Error::RecoverTooEarly));
+                }
+                w.now += RECOVER_AFTER_NS;
+                let r = w.m.recover_sale(w.now).unwrap();
+                RECOVERIES.fetch_add(1, Relaxed);
+                w.handover_dropped = false;
+                w.before_buy = None;
+                // The sale did not happen: the seller keeps the deed, no
+                // sale record, every key the buy touched is being deleted.
+                prop_assert_eq!(&w.m.owner, &before.owner);
+                prop_assert!(w.m.pending.is_none() && w.m.listing.is_none());
+                prop_assert!(w.m.status != Status::Listed && w.m.status != Status::Settling);
+                prop_assert_eq!(w.m.sales.len(), before.sales.len());
+                prop_assert!(w.m.known_keys.is_empty() && w.m.paused);
+                prop_assert!(r.delete_keys.contains(&p.buyer_pk));
+                for k in &p.prev_keys {
+                    prop_assert!(r.delete_keys.contains(k));
+                }
+                w.key_batches.push(KeyBatch::Deletion(r.delete_keys));
+            } else {
+                if !w.key_batches.is_empty() || settling {
+                    return check_invariants(w);
+                }
+                let stuck = !w.m.incoming.is_empty() || !w.m.retiring.is_empty();
+                let caller = ACTORS[c];
+                w.now += RECOVER_AFTER_NS;
+                let r = w.m.recover_keys(caller, w.now);
+                if caller != owner || !stuck {
+                    prop_assert!(r.is_err());
+                    prop_assert_eq!(&w.m.known_keys, &before.known_keys);
+                    return check_invariants(w);
+                }
+                let r = r.unwrap();
+                RECOVERIES.fetch_add(1, Relaxed);
+                prop_assert!(w.m.incoming.is_empty());
+                prop_assert_eq!(&w.m.known_keys, &before.known_keys);
+                w.m.keys_deleted(&r.delete_keys);
+                // Recovered: nothing pending, and the owner can rotate again
+                // (unless frozen or listed).
+                prop_assert!(w.m.retiring.is_empty());
+                if !w.m.frozen && w.m.status != Status::Listed {
+                    let mut c = w.m.clone();
+                    prop_assert!(c.set_runner_key(&owner, "ed25519:retry", w.now).is_ok());
+                }
             }
         }
         Act::Approve(c, r) => {
@@ -577,7 +658,9 @@ fn prop_invariants_random_sequences() {
     let mut r = runner();
     r.run(&prop::collection::vec(act(), 1..120), |acts| {
         let mut m = Machine::new("translator", "alice");
-        let deleted = m.set_runner_key("alice", "ed25519:alice-runner").unwrap();
+        let deleted = m
+            .set_runner_key("alice", "ed25519:alice-runner", T0)
+            .unwrap();
         m.runner_key_done(&[], &deleted, "ed25519:alice-runner", true);
         let mut w = World {
             m,
@@ -588,6 +671,7 @@ fn prop_invariants_random_sequences() {
             max_cap_today: 0,
             cap_day: (0, 0),
             key_batches: vec![],
+            handover_dropped: false,
         };
         for a in &acts {
             step(&mut w, a)?;
@@ -613,6 +697,7 @@ fn prop_invariants_random_sequences() {
         ("cap refusals", &CAP_HITS),
         ("spends refused while listed", &LISTED_REFUSALS),
         ("pending-key calls", &PENDING_CALLS),
+        ("recoveries", &RECOVERIES),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");
@@ -711,7 +796,7 @@ fn prop_buyer_cannot_shrink_earnout() {
     ];
     r.run(&prop::collection::vec(post, 1..60), |acts| {
         let mut m = Machine::new("translator", "alice");
-        let d = m.set_runner_key("alice", "ed25519:a").unwrap();
+        let d = m.set_runner_key("alice", "ed25519:a", T0).unwrap();
         m.runner_key_done(&[], &d, "ed25519:a", true);
         // Pre-sale history so the seller has round trips of their own.
         m.pay("c1.near", 5 * USD, false, T0);

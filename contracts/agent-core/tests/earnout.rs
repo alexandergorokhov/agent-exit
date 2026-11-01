@@ -8,7 +8,7 @@ const BOB_PK: &str = "ed25519:bob-runner";
 
 fn sold_agent() -> Machine {
     let mut m = Machine::new("translator", "alice");
-    let deleted = m.set_runner_key("alice", ALICE_PK).unwrap();
+    let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(&[], &deleted, ALICE_PK, true);
     m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
         .unwrap();

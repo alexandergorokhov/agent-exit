@@ -844,6 +844,37 @@ fn run() -> Value {
         json!({"terms_min": st["terms_min"], "terms_config": st["terms_config"]}),
     );
 
+    // A33: callbacks that fail after their key batch ran are recoverable.
+    let mut s = listed_translator();
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.advance(agent_core::RECOVER_AFTER_NS);
+    s.by(MALLORY).recover_sale();
+    s.callback(false)
+        .on_keys_deleted(vec![key_str(ALICE_RUNNER), key_str(BOB_RUNNER)]);
+    let sale_back = s.m().owner == ALICE
+        && s.m().status == Status::Active
+        && s.m().pending.is_none()
+        && s.m().solvent();
+    s.by_1y(ALICE).set_runner_key(key(9));
+    s.callback(true).on_runner_key(vec![], vec![], key_str(9));
+    let resumed = s.runner(key(9)).heartbeat()["ok"] == true;
+    let mut s2 = sold_translator();
+    s2.by_1y(BOB).set_runner_key(key(CAROL_RUNNER));
+    let early = panics_with("RecoverTooEarly", || {
+        s2.by_1y(BOB).recover_keys();
+    });
+    s2.advance(agent_core::RECOVER_AFTER_NS);
+    let rk = s2.by_1y(BOB).recover_keys();
+    let keys: Vec<String> = serde_json::from_value(rk["delete_keys"].clone()).unwrap_or_default();
+    s2.callback(true).on_keys_deleted(keys);
+    let keys_back = s2.m().incoming.is_empty() && s2.m().retiring.is_empty() && !s2.m().frozen;
+    r.check(
+        "A33",
+        "a callback that fails after its key batch ran is recoverable an hour later: recover_sale undoes a stuck buy (token refunded the buyer; seller keeps the deed), recover_keys clears stuck incoming/retiring keys; each key is deleted in its own receipt; callback gas grows with the state",
+        sale_back && resumed && early && keys_back,
+        json!({"recover_after_secs": agent_core::RECOVER_AFTER_NS / agent_core::NANOS_PER_SEC, "gas_per_state_byte": agent_exit::GAS_PER_STATE_BYTE}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({
