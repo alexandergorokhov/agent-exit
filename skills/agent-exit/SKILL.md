@@ -70,3 +70,7 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
 `make agent-buys-agent` runs this whole flow offline (the `summarizer` agent
 buys `translator`, after refusing `cheat`) and writes
 `out/agent-buys-agent.json`.
+
+`make llm-buyer` hands this file to a real model as its system prompt and lets it
+do the same job through the MCP tools only (the server still enforces
+`max_price`, `confirm` and the scan); it writes `out/llm-buyer.json`.
