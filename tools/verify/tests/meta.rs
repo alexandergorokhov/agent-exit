@@ -197,7 +197,10 @@ fn web_demo_data_is_recorded_from_the_contract() {
     }
     let mut n = 0;
     for part in data.split("testnet.nearblocks.io/txns/").skip(1) {
-        let h: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        let h: String = part
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric())
+            .collect();
         assert!(recorded.contains(&h), "page links {h}, not in out/scenes");
         n += 1;
     }
@@ -546,16 +549,27 @@ fn readme_testnet_links_are_recorded_runs() {
     let r = read("README.md");
     let mut recorded = String::new();
     for dir in ["out/testnet", "out/gates", "out/scenes"] {
-        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join(dir);
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(dir);
         for e in std::fs::read_dir(&p).unwrap_or_else(|_| panic!("{dir} missing")) {
             recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
         }
     }
     let mut n = 0;
     for part in r.split("testnet.nearblocks.io/txns/").skip(1) {
-        let hash: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
-        assert!(recorded.contains(&hash), "README links tx {hash}, not in out/");
+        let hash: String = part
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric())
+            .collect();
+        assert!(
+            recorded.contains(&hash),
+            "README links tx {hash}, not in out/"
+        );
         n += 1;
     }
-    assert!(n >= 5, "README should link the live testnet runs ({n} links)");
+    assert!(
+        n >= 5,
+        "README should link the live testnet runs ({n} links)"
+    );
 }
