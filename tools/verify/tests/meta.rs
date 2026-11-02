@@ -189,3 +189,187 @@ fn golden_agent_buys_agent_passes() {
     assert_eq!(v["summary"]["cheat_buy_refused"], true);
     assert_eq!(v["summary"]["seller_locked_out_after"], true);
 }
+
+// ---- docs and page honesty (docs/SCENARIOS.md S21-S24, E35) ----
+
+fn read(file: &str) -> String {
+    std::fs::read_to_string(root().join(file)).unwrap_or_else(|e| panic!("{file}: {e}"))
+}
+
+fn make_out(args: &[&str]) -> (bool, String) {
+    let out = Command::new("make")
+        .args(args)
+        .current_dir(root())
+        .output()
+        .unwrap();
+    (
+        out.status.success(),
+        format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        ),
+    )
+}
+
+#[test]
+fn e35_help_marks_unbuilt_targets() {
+    let (ok, help) = make_out(&["-s", "help"]);
+    assert!(ok);
+    for t in [
+        "attack-sandbox",
+        "attack-testnet",
+        "demo-setup",
+        "record",
+        "web-deploy",
+        "e2e",
+    ] {
+        let line = help
+            .lines()
+            .find(|l| l.starts_with(&format!("{t}\t")))
+            .unwrap_or_else(|| panic!("help lacks {t}"));
+        assert!(
+            line.contains("(not built yet)"),
+            "help line for {t}: {line}"
+        );
+    }
+    for t in ["demo", "verify", "attack", "web-test", "mcp-test"] {
+        let line = help
+            .lines()
+            .find(|l| l.starts_with(&format!("{t}\t")))
+            .unwrap();
+        assert!(!line.contains("not built yet"), "{t} is built: {line}");
+    }
+}
+
+#[test]
+fn s21_demo_target_runs_the_offline_story() {
+    let (ok, plan) = make_out(&["-n", "demo"]);
+    assert!(
+        ok,
+        "make demo must exist and not be a not_built stub: {plan}"
+    );
+    assert!(!plan.contains("not built yet"), "{plan}");
+    let verify = plan.find("verify").expect("demo runs verify");
+    let replay = plan
+        .find("agent-buys-agent")
+        .expect("demo replays agent-buys-agent");
+    assert!(verify < replay, "verify subset first, then the replay");
+    assert!(
+        plan.contains("make web"),
+        "demo prints how to open the page"
+    );
+}
+
+#[test]
+fn s22_docs_do_not_overclaim() {
+    for f in [
+        "README.md",
+        "AGENTS.md",
+        "llms.txt",
+        "web/data/demo.json",
+        "web/app.js",
+        "web/index.html",
+    ] {
+        let t = read(f);
+        assert!(!t.contains("200/200 caught"), "{f} says 200/200 caught");
+        assert!(
+            !t.to_lowercase().contains("16 families"),
+            "{f}: stale family count"
+        );
+        assert!(!t.contains("# pass 18"), "{f}: stale MCP test count");
+        assert!(!t.contains("18 tests"), "{f}: stale MCP test count");
+    }
+    for f in ["README.md", "AGENTS.md", "llms.txt"] {
+        let t = read(f);
+        assert!(
+            t.contains("19 attack families"),
+            "{f}: missing the reworded claim"
+        );
+        assert!(
+            t.contains("regression suite, not independent evidence"),
+            "{f}"
+        );
+    }
+    let r = read("README.md");
+    assert!(
+        r.contains("A9") && r.contains("placeholder hash"),
+        "README: A9 excluded, A5 placeholder"
+    );
+}
+
+#[test]
+fn s22_readme_hero_comes_first() {
+    let r = read("README.md");
+    let at = |s: &str| r.find(s).unwrap_or_else(|| panic!("README lacks {s}"));
+    let fold = at("## What is proven, and where");
+    assert!(at("## Try it") < fold);
+    assert!(at("```mermaid") < fold);
+    assert!(at("609b135") < fold && at("63d597c") < fold);
+    assert!(at("Testnet: coming") < fold);
+    assert!(
+        !r[..fold].contains("| Claim |"),
+        "claims table must be below the fold"
+    );
+    let hero = &r[..at("## The problem, and what the contract does")];
+    assert!(
+        hero.lines().count() < 60,
+        "hero too long: {}",
+        hero.lines().count()
+    );
+}
+
+#[test]
+fn s23_page_copy_is_honest() {
+    let d = read("web/data/demo.json");
+    assert!(
+        !d.contains("two RPC providers"),
+        "offline copy claims two RPC providers"
+    );
+    assert!(
+        d.contains("FROZEN"),
+        "planted key heartbeat must read FROZEN"
+    );
+    assert!(
+        d.contains("counted, not verified"),
+        "reused signature label"
+    );
+    assert!(d.contains("scripted replay"));
+    assert!(
+        d.contains("real AI buyer transcript"),
+        "slot for the AI buyer transcript"
+    );
+    assert!(
+        !d.contains("An agent buys an agent"),
+        "offline mode is a scripted replay"
+    );
+}
+
+#[test]
+fn s24_page_has_csp_and_vendored_connector() {
+    let h = read("web/index.html");
+    let csp = h
+        .split("http-equiv=\"Content-Security-Policy\"")
+        .nth(1)
+        .expect("CSP meta tag")
+        .split('>')
+        .next()
+        .unwrap()
+        .to_string();
+    assert!(csp.contains("default-src 'none'"), "{csp}");
+    assert!(csp.contains("script-src 'self'"), "{csp}");
+    for bad in ["unsafe-inline", "unsafe-eval", "cdn.", "*", "data:"] {
+        assert!(!csp.contains(bad), "CSP must not contain {bad}: {csp}");
+    }
+    assert!(!h.contains("<script>"), "no inline scripts");
+    let a = read("web/app.js");
+    assert!(
+        !a.contains("cdn.jsdelivr"),
+        "connector must not load from a CDN"
+    );
+    assert!(a.contains("vendor/"), "connector is vendored");
+    assert!(
+        root().join("web/vendor/SHA256SUMS").exists(),
+        "vendored hash list"
+    );
+}

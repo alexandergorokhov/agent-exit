@@ -3,6 +3,8 @@
 // External requests are blocked: the offline page must work with none.
 import { createRequire } from "node:module";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { serve } from "../serve.mjs";
 
 const require = createRequire(import.meta.url);
@@ -29,7 +31,7 @@ const expect = {
   verified: ["verified (NEAR AI signature)", "120.00", "360.00"],
   cheat: ["verdict blocked", "full_access_key_present", "0.00"],
   "honest-sale": ["700.00", "settling", "bob.testnet"],
-  "agent-buys-agent": ["SCAN_BLOCKED", "buy_agent", "verify_lockout"],
+  "agent-buys-agent": ["scripted replay", "SCAN_BLOCKED", "buy_agent", "verify_lockout", "Real AI buyer transcript"],
 };
 
 async function noHorizontalScroll(p, what) {
@@ -58,6 +60,66 @@ try {
     }
     assert.ok(await p.isDisabled("#next"), "next disabled on the last step");
     await p.close();
+  }
+
+  // S23: copy matches the evidence.
+  {
+    const q = await page({ width: 1280, height: 900 });
+    await q.goto(`${base}#break-in`);
+    await q.waitForSelector('#step[data-step="break-in"]');
+    const planted = q.locator('#step .call[data-outcome="frozen"]');
+    assert.equal(await planted.count(), 1, "S23: the planted-key heartbeat is one FROZEN card");
+    assert.match(await planted.textContent(), /FROZEN/);
+    assert.equal(await q.locator('#step .call[data-outcome="ok"]').count(), 0, "S23: no green OK on the break-in step");
+    await q.goto(`${base}#verified`);
+    await q.waitForSelector('#step[data-step="verified"]');
+    const reused = q.locator('#step .call[data-outcome="unverified"]');
+    assert.equal(await reused.count(), 1, "S23: the reused signature is labelled");
+    assert.match((await reused.textContent()).toLowerCase(), /counted, not verified/);
+    await q.goto(`${base}#cheat`);
+    await q.waitForSelector('#step[data-step="cheat"]');
+    const cheat = await q.textContent("#step");
+    assert.ok(!cheat.includes("two RPC providers") || cheat.includes("not wired yet"), "S23: offline step 4 must not claim two RPC providers");
+    assert.ok(cheat.includes("recorded key list"), "S23: step 4 says the key list is recorded");
+    await q.goto(`${base}#agent-buys-agent`);
+    await q.waitForSelector('#step[data-step="agent-buys-agent"]');
+    assert.equal(await q.locator('#step [data-slot="ai-buyer-transcript"]').count(), 1, "S23: slot for the AI buyer transcript");
+    assert.ok(!(await q.textContent("#step")).includes("An agent buys an agent"));
+    // counts in the footer come from the golden attack report, not typed by hand
+    const golden = JSON.parse(readFileSync(new URL("../../tests/golden/attack.json", import.meta.url), "utf8"));
+    const foot = await q.textContent("footer");
+    assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
+    assert.ok(foot.includes("26 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("regression suite, not independent evidence"));
+    checks += 8;
+    await q.close();
+  }
+
+  // S24: strict CSP meta, no remote script, vendored connector pinned by hash.
+  {
+    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
+    assert.ok(csp, "S24: CSP meta tag present");
+    for (const want of ["default-src 'none'", "script-src 'self'", "style-src 'self'", "connect-src 'self'", "base-uri 'none'", "form-action 'none'"]) assert.ok(csp[1].includes(want), `S24: CSP lacks ${want}`);
+    assert.ok(!/unsafe-|https?:|\*/.test(csp[1]), "S24: CSP has no unsafe-*, remote host or wildcard");
+    const [sum, file] = readFileSync(new URL("../vendor/SHA256SUMS", import.meta.url), "utf8").trim().split(/\s+/);
+    assert.equal(createHash("sha256").update(readFileSync(new URL(`../vendor/${file}`, import.meta.url))).digest("hex"), sum, "S24: vendored connector matches its pinned SHA-256");
+    assert.ok(readFileSync(new URL("../app.js", import.meta.url), "utf8").includes(`./vendor/${file}`), "S24: app.js loads the vendored file");
+    // Under the CSP a page must run with zero CSP violations (console errors are collected in `problems`).
+    const q = await page({ width: 1280, height: 900 });
+    const seen = [];
+    q.on("console", (m) => { if (/Content Security Policy/i.test(m.text())) seen.push(m.text()); });
+    await q.goto(`${base}?network=testnet`);
+    await q.waitForSelector("#testnet-label");
+    assert.deepEqual(seen, [], "S24: no CSP violations while rendering");
+    // An injected inline script must not run.
+    const before = problems.length;
+    await q.evaluate(() => { const s = document.createElement("script"); s.textContent = "window.__pwn = 1"; document.body.append(s); });
+    assert.equal(await q.evaluate(() => window.__pwn), undefined, "S24: inline script blocked by CSP");
+    await q.waitForTimeout(200);
+    for (let i = problems.length - 1; i >= before; i--) if (/Content Security Policy/i.test(problems[i])) problems.splice(i, 1); // the one expected violation
+    checks += 7;
+    await q.close();
   }
 
   // Deep link and error cards: break-in has 5 refused calls + 1 ok.

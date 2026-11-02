@@ -117,6 +117,16 @@ fn break_in() -> Value {
         h.runner(key(HIDDEN_KEY)).heartbeat()
     });
     let refunded = h.m().claimable_of(BOB);
+    // The heartbeat call itself returns without a panic, but its effect is the
+    // freeze: label it that way, and only if the contract state shows it.
+    assert!(
+        refunded > 0,
+        "the planted key must freeze the agent and return the escrow"
+    );
+    let mut planted = planted;
+    planted["display"] = json!("frozen");
+    planted["label"] = json!("FROZEN");
+    planted["note"] = json!("Not a success: the contract saw a self-call signed by a key it never added, froze the agent and returned the open escrow to bob.");
     json!({
         "id": "break-in",
         "title": "Break-in fails",
@@ -200,11 +210,29 @@ fn verified() -> Value {
     calls.push(rec(PAYERS[1], "ft_transfer_call(agent, 12.00) → pay, no signature", || {
         json!({"unused": usd(s.ft(PAYERS[1], 12 * USD, r#"{"kind":"pay","job_id":"job-2"}"#, 100).unwrap_or(0))})
     }));
-    calls.push(rec(
+    let totals = |s: &mut Sim| {
+        let e = serde_json::to_value(s.by(MALLORY).get_earnings()).expect("json");
+        (
+            e["counted"].as_u64().unwrap_or(0),
+            e["verified"].as_u64().unwrap_or(0),
+        )
+    };
+    let (counted0, verified0) = totals(&mut s);
+    let mut reuse = rec(
         PAYERS[0],
         "the same signature again",
         || json!({"unused": usd(s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100).unwrap_or(0))}),
-    ));
+    );
+    // A reused signature is not rejected as a payment: it counts, unverified.
+    let (counted1, verified1) = totals(&mut s);
+    assert!(
+        counted1 > counted0 && verified1 == verified0,
+        "a reused signature must count but not verify"
+    );
+    reuse["display"] = json!("unverified");
+    reuse["label"] = json!("counted, not verified");
+    reuse["note"] = json!("The payment is counted, but the signature was already used (SignatureUsed), so it does not add to the verified total.");
+    calls.push(reuse);
     let mut t = translator_world();
     let e = serde_json::to_value(t.by(MALLORY).get_earnings()).expect("json");
     let n = |k: &str| e[k].as_u64().unwrap_or(0) as u128;
@@ -238,7 +266,7 @@ fn cheat() -> Value {
         "id": "cheat",
         "title": "A cheat is caught before the sale",
         "scenarios": ["S1", "S4", "A1"],
-        "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account also has a hidden full-access key that the contract never added. The buyer's scan reads the key list from two RPC providers and blocks the sale; the buy tool refuses before any transaction is sent.",
+        "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account also has a hidden full-access key that the contract never added. In this offline page the scan reads a recorded key list (a JSON fixture), not a chain; a later testnet mode will read it from more than one RPC provider, which is not wired yet. The scan blocks the sale, and the buy tool refuses before any transaction is sent.",
         "headline": [
             {"label": "claimed gross", "value": usd(n("gross"))},
             {"label": "counted", "value": usd(n("counted"))},
@@ -311,15 +339,20 @@ fn agent_buys_agent() -> Value {
         .collect();
     json!({
         "id": "agent-buys-agent",
-        "title": "An agent buys an agent",
+        "title": "Scripted replay: an agent buys an agent",
         "scenarios": ["S14"],
-        "story": "The summarizer agent shops through the Agent Exit MCP server: it lists agents, checks earnings, scans, refuses the cheat, buys translator inside its max price, checks that the old seller is locked out, and lists translator again. Each response is the MCP tool's JSON (offline mode replays results recorded from the contract).",
+        "story": "A fixed script (no AI model decides anything here) plays the summarizer agent shopping through the Agent Exit MCP server: it lists agents, checks earnings, scans, refuses the cheat, buys translator inside its max price, checks that the old seller is locked out, and lists translator again. Each response is the MCP tool's JSON (offline mode replays results recorded from the contract).",
         "headline": [
             {"label": "bought", "value": g["summary"]["bought"].to_string()},
             {"label": "cheat refused", "value": g["summary"]["cheat_buy_refused"].to_string()},
             {"label": "old seller locked out", "value": g["summary"]["seller_locked_out_after"].to_string()},
         ],
         "mcp_steps": steps,
+        "slot": {
+            "title": "Real AI buyer transcript",
+            "status": "coming",
+            "text": "The real AI buyer transcript goes here: a model (Claude through the MCP server) deciding, refusing the cheat and buying on testnet. Not recorded yet; what is above is a scripted replay."
+        },
     })
 }
 

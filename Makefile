@@ -1,7 +1,8 @@
 # Agent Exit. Every target either does real work or prints "not built yet"
 # and exits non-zero. Nothing here fakes success.
 #
-# Offline targets: verify, test, lint, audit (needs the advisory DB), hash.
+# Offline targets: verify, test, lint, audit (needs the advisory DB), hash, demo.
+# Targets whose help line says "(not built yet)" print that and exit non-zero.
 # Testnet targets are marked [testnet]; they never touch mainnet.
 
 SHELL := /bin/bash
@@ -155,7 +156,7 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 	@test -f contracts/res/SHA256SUMS || { echo "not built yet: contracts/res/SHA256SUMS (run make build on a machine with Docker)" >&2; exit 1; }
 	cd contracts/res && sha256sum -c SHA256SUMS
 
-# ------------------------------------------------------------- not built yet
+# ------------------------------------------------------------- real-node tests
 
 .PHONY: test-sandbox
 test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real local node)
@@ -223,19 +224,27 @@ testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network
 	AGENT_EXIT_ENV=/nonexistent $(MAKE) -s scenes DRY_RUN=1 > /dev/null
 
 .PHONY: attack-sandbox attack-testnet demo demo-setup record web-deploy e2e
-attack-sandbox: ## Attack corpus against near-sandbox
+attack-sandbox: ## (not built yet) Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
-attack-testnet: ## [testnet] A1 A5 A17-A21 live
+attack-testnet: ## (not built yet) [testnet] A1 A5 A17-A21 live
 	$(call not_built,attack-testnet,M2 B2 on the owner's PC)
-demo: ## Whole demo in sandbox
-	$(call not_built,demo,M3)
-demo-setup: ## [testnet] Reset demo agents
+demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-buys-agent replay, then how to open the page
+	@mkdir -p $(OUT)
+	@echo "== 1/3 verify subset: 60 scenarios replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
+	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json
+	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
+	@echo "== 2/3 scripted replay: a fixed script (no AI model) plays the summarizer agent buying translator through the MCP tools"
+	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json
+	@echo "== 3/3 open the page"
+	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
+	@echo "Not shown here: a real AI buyer and real testnet transactions (Testnet: coming)."
+demo-setup: ## (not built yet) [testnet] Reset demo agents
 	$(call not_built,demo-setup,M2 B3)
-record: ## [testnet] Save receipts to fixtures/recorded
+record: ## (not built yet) [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
-web-deploy: ## [testnet] Vercel deploy
+web-deploy: ## (not built yet) [testnet] Vercel deploy
 	$(call not_built,web-deploy,M3 B5)
-e2e: ## [testnet] Playwright against the deployed page with a real wallet
+e2e: ## (not built yet) [testnet] Playwright against the deployed page with a real wallet
 	$(call not_built,e2e,M3 B5)
 
 SCENES := 1 2 3 4 5 6

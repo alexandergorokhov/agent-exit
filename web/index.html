@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Agent Exit demo</title>
   <meta name="description" content="Agent Exit: sell an AI agent with its earnings history, and lock the seller out in one step. A walkthrough of recorded contract results.">
   <link rel="stylesheet" href="style.css">
@@ -13,7 +14,7 @@
     <div class="wrap">
       <p class="eyebrow">NEAR · AI agent marketplace</p>
       <h1>Agent Exit</h1>
-      <p class="lede">Buy an AI agent with its real earnings history, and be sure the seller is locked out. Six steps, each showing what the contract actually answered.</p>
+      <p class="lede">Buy an AI agent with its real earnings history, and be sure the seller is locked out. Six steps, each showing what the contract answered in a recorded run of its code (not a live chain).</p>
       <div id="mode" class="mode" role="status"></div>
     </div>
   </header>
@@ -33,6 +34,7 @@
 
   <footer class="wrap foot">
     <p id="source" class="muted"></p>
+    <p id="evidence" class="muted">Evidence level: a regression suite, not independent evidence. 19 attack families, each blocked by the rule written for it (A9, Base, is not counted until Base is live; A5 uses a placeholder hash until the reproducible build), 0/50 false positives on clean agents; 26 MCP tests.</p>
     <p class="muted">All money is xUSD-FAKE, a fake test dollar with no value. No mainnet, ever. MIT licensed.</p>
   </footer>
 </body>

@@ -93,6 +93,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
 .badge.ok { background: var(--ok-bg); color: var(--ok); }
 .badge.error { background: var(--bad-bg); color: var(--bad); }
+.badge.frozen { background: var(--bad-bg); color: var(--bad); }
+.badge.unverified { background: var(--warn-bg); color: var(--warn-text); }
+.note { margin: 4px 0; font-size: 14px; }
 .err {
   margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--bad-bg); color: var(--bad);
   font-family: var(--mono); font-size: 14px; overflow-wrap: anywhere;
@@ -119,3 +122,5 @@ pre {
   .step { padding: 14px; }
   .steps { grid-template-columns: 1fr 1fr; }
 }
+
+.slot { margin-top: 16px; padding: 12px 16px; border: 1px dashed currentColor; border-radius: 8px; }

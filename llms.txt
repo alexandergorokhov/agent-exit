@@ -1,6 +1,6 @@
 # Agent Exit
 
-> Buy an AI agent with proven earnings and a proven handover, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`), payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified), the agent runs inside owner-set spending limits enforced by the contract, and other agents can buy agents through an MCP server (`make agent-buys-agent`). Rerun offline with `make verify`.
+> Buy an AI agent with earnings you can check on-chain and a handover that locks the seller out, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added, all or nothing), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`: 19 attack families, each blocked by the rule written for it; 0/50 false positives on clean agents — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 uses a placeholder hash), payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified), the agent runs inside owner-set spending limits enforced by the contract, and other agents can buy agents through an MCP server (`make agent-buys-agent` is a scripted replay, no AI model; `make demo` runs the offline story). Rerun offline with `make verify`.
 
 ## Start here
 
@@ -50,6 +50,7 @@
 - [fixtures/judge-attack.json](fixtures/judge-attack.json): edit to plant your own backdoor, then `make attack FIXTURE=fixtures/judge-attack.json`
 - [fixtures/test-signatures/translator.json](fixtures/test-signatures/translator.json): TEST signatures (local key, not NEAR AI Cloud)
 - [docs/NOT-CAUGHT.md](docs/NOT-CAUGHT.md): not caught by design
+- [docs/SCENARIOS.md](docs/SCENARIOS.md): every scenario id (S, E, A, N) and the test behind it
 - [schemas/mcp/buy_agent.input.v1.json](schemas/mcp/buy_agent.input.v1.json): MCP schemas (one input and one output file per tool, plus error.v1.json)
 - [fixtures/mcp/world.json](fixtures/mcp/world.json): contract results recorded for the MCP offline mode
 - [tests/golden/agent-buys-agent.json](tests/golden/agent-buys-agent.json): expected `make agent-buys-agent` output

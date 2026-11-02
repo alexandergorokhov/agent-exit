@@ -3,7 +3,8 @@
 // contract in near-sdk's mocked runtime. `?network=testnet` shows the testnet
 // mode, which only offers a wallet login for now (not wired: coming after deploy).
 
-const NEAR_CONNECT = "https://cdn.jsdelivr.net/npm/@hot-labs/near-connect@0.11.4/+esm";
+// Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
+const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
 const params = new URLSearchParams(location.search);
 const network = params.get("network") === "testnet" ? "testnet" : "offline";
 
@@ -26,16 +27,19 @@ function jsonBlock(label, value, open = false) {
   return d;
 }
 
-function badge(ok) {
-  return el("span", { class: `badge ${ok ? "ok" : "error"}`, text: ok ? "ok" : "error" });
+function badge(kind, label) {
+  return el("span", { class: `badge ${kind}`, text: label || kind });
 }
 
 function callCard(c) {
   const ok = c.outcome === "ok";
-  const li = el("li", { class: "call", "data-outcome": c.outcome },
-    el("div", { class: "call-head" }, badge(ok), el("code", { text: c.call })),
+  // display: how the page labels a call that returned without panicking but is not a plain success.
+  const kind = c.display || c.outcome;
+  const li = el("li", { class: "call", "data-outcome": kind },
+    el("div", { class: "call-head" }, badge(kind, c.label), el("code", { text: c.call })),
     el("div", { class: "by", text: `by ${c.by}` }));
   if (!ok) li.append(el("p", { class: "err", text: c.error }));
+  if (c.note) li.append(el("p", { class: "note", text: c.note }));
   const facts = el("ul", { class: "facts" });
   for (const e of c.events || []) facts.append(el("li", {}, "event ", el("code", { text: e.event })));
   for (const k of c.key_actions || []) facts.append(el("li", {}, `key ${k.action} `, el("code", { text: k.key })));
@@ -48,7 +52,7 @@ function callCard(c) {
 
 function mcpCard(m, i) {
   const li = el("li", { class: "call", "data-outcome": m.ok ? "ok" : "error" },
-    el("div", { class: "call-head" }, el("span", { class: "by", text: `${i + 1}.` }), badge(m.ok), el("code", { text: `${m.tool}(${JSON.stringify(m.args)})` })),
+    el("div", { class: "call-head" }, el("span", { class: "by", text: `${i + 1}.` }), badge(m.ok ? "ok" : "error"), el("code", { text: `${m.tool}(${JSON.stringify(m.args)})` })),
     el("div", { class: "by", text: m.why }));
   if (!m.ok) li.append(el("p", { class: "err", text: `${m.error.code}: ${m.error.message}` }));
   li.append(jsonBlock(m.ok ? "Tool response" : "Tool error", m.ok ? m.response : m.error));
@@ -93,6 +97,7 @@ function render() {
   if (s.scan) kids.push(scanBlock(s.scan));
   if (s.listing) kids.push(el("h3", { text: "The listing bob's scan saw" }), jsonBlock("get_listing()", s.listing));
   if (s.mcp_steps) kids.push(el("h3", { text: "MCP tool calls by the summarizer agent" }), el("ol", { class: "calls" }, s.mcp_steps.map(mcpCard)));
+  if (s.slot) kids.push(el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted", text: s.slot.text })));
   if (s.view) kids.push(el("h3", { text: "View" }), jsonBlock(s.view.name, s.view.value));
   sec.replaceChildren(...kids);
   document.getElementById("prev").disabled = current === 0;
@@ -130,7 +135,7 @@ function renderMode() {
       connector.on("wallet:signIn", (t) => { who.textContent = `Signed in as ${t.accounts[0].accountId} (nothing is sent yet).`; });
       await connector.connect();
     } catch (e) {
-      who.textContent = `Wallet login failed: ${e && e.message ? e.message : e}`;
+      who.textContent = `Wallet login failed (the page's strict CSP blocks wallet hosts until they are allow-listed): ${e && e.message ? e.message : e}`;
     } finally {
       login.disabled = false;
     }

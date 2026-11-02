@@ -92,7 +92,10 @@
                 }
               ]
             }
-          ]
+          ],
+          "display": "frozen",
+          "label": "FROZEN",
+          "note": "Not a success: the contract saw a self-call signed by a key it never added, froze the agent and returned the open escrow to bob."
         }
       ]
     },
@@ -520,7 +523,10 @@
                 }
               ]
             }
-          ]
+          ],
+          "display": "unverified",
+          "label": "counted, not verified",
+          "note": "The payment is counted, but the signature was already used (SignatureUsed), so it does not add to the verified total."
         }
       ],
       "view": {
@@ -596,7 +602,7 @@
         "S4",
         "A1"
       ],
-      "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account also has a hidden full-access key that the contract never added. The buyer's scan reads the key list from two RPC providers and blocks the sale; the buy tool refuses before any transaction is sent.",
+      "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account also has a hidden full-access key that the contract never added. In this offline page the scan reads a recorded key list (a JSON fixture), not a chain; a later testnet mode will read it from more than one RPC provider, which is not wired yet. The scan blocks the sale, and the buy tool refuses before any transaction is sent.",
       "headline": [
         {
           "label": "claimed gross",
@@ -890,11 +896,11 @@
     },
     {
       "id": "agent-buys-agent",
-      "title": "An agent buys an agent",
+      "title": "Scripted replay: an agent buys an agent",
       "scenarios": [
         "S14"
       ],
-      "story": "The summarizer agent shops through the Agent Exit MCP server: it lists agents, checks earnings, scans, refuses the cheat, buys translator inside its max price, checks that the old seller is locked out, and lists translator again. Each response is the MCP tool's JSON (offline mode replays results recorded from the contract).",
+      "story": "A fixed script (no AI model decides anything here) plays the summarizer agent shopping through the Agent Exit MCP server: it lists agents, checks earnings, scans, refuses the cheat, buys translator inside its max price, checks that the old seller is locked out, and lists translator again. Each response is the MCP tool's JSON (offline mode replays results recorded from the contract).",
       "headline": [
         {
           "label": "bought",
@@ -1306,7 +1312,12 @@
             "recorded": true
           }
         }
-      ]
+      ],
+      "slot": {
+        "title": "Real AI buyer transcript",
+        "status": "coming",
+        "text": "The real AI buyer transcript goes here: a model (Claude through the MCP server) deciding, refusing the cheat and buying on testnet. Not recorded yet; what is above is a scripted replay."
+      }
     }
   ]
 }
