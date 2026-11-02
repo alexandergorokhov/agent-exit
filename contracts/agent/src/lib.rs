@@ -134,6 +134,10 @@ pub const RUNNER_GAS_HEARTBEAT: Gas = Gas::from_tgas(30);
 pub const RUNNER_GAS_PAY: Gas = Gas::from_tgas(100);
 /// NEAR kept on the account on top of storage staking (E17).
 pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
+/// Upper bound of the storage one used signature id takes: its `expires`
+/// entry (key 34 + value 8) and ring slot (key 6 + value 32), each with the
+/// 40-byte record overhead, rounded up (A46).
+pub const SIG_ENTRY_BYTES: u128 = 200;
 /// Longest `ft_transfer_call` msg accepted (E10).
 pub const MAX_MSG_LEN: usize = 4_096;
 
@@ -268,7 +272,7 @@ pub struct AgentExit {
     /// sha256(r || s) of every signature that already verified a payment.
     /// One storage entry per signature, outside the state blob that every
     /// call reads and writes (A33).
-    used_sigs: near_sdk::store::LookupSet<[u8; 32]>,
+    used_sigs: verified::UsedSigs,
 }
 
 fn emit(event: &str, data: Value) {
@@ -326,7 +330,7 @@ impl AgentExit {
             token: PAYMENT_TOKEN.parse().expect("valid token"),
             admin: REGISTRY_ADMIN.parse().expect("valid admin"),
             signers: BTreeSet::new(),
-            used_sigs: near_sdk::store::LookupSet::new(b"u"),
+            used_sigs: verified::UsedSigs::new(b'u'),
         }
     }
 
@@ -384,21 +388,40 @@ impl AgentExit {
         p.then(
             Self::ext(env::current_account_id())
                 .with_static_gas(self.cb_gas(GAS_ON_KEYS))
-                .on_runner_key(old, deleted, new_key),
+                .on_runner_key(old, deleted, new_key, self.m.key_batch),
         )
     }
 
     /// Callback of the rotation batch (all-or-nothing): success makes the new
-    /// key the runner key, failure restores the old one (A25).
+    /// key the runner key, failure restores the old one (A25). `batch` is
+    /// the batch's nonce; a callback that lands after `recover_keys` is
+    /// stale and changes no key set. If its batch added a key no set names
+    /// any more, that key is deleted (A44).
     #[private]
     pub fn on_runner_key(
         &mut self,
         old: Vec<String>,
         deleted: Vec<String>,
         new_key: String,
+        batch: u64,
     ) -> bool {
         let ok = promise_ok();
-        self.m.runner_key_done(&old, &deleted, &new_key, ok);
+        if !self.m.runner_key_done(batch, &old, &deleted, &new_key, ok) {
+            let delete = if ok {
+                self.m.retire_untracked(&new_key)
+            } else {
+                None
+            };
+            emit(
+                "stale_callback",
+                json!({"callback": "on_runner_key", "batch": batch, "key_batch": self.m.key_batch,
+                       "key": new_key, "batch_ok": ok, "delete_keys": delete}),
+            );
+            if let Some(k) = delete {
+                self.delete_keys(&[k]);
+            }
+            return false;
+        }
         emit(
             if ok {
                 "runner_key_confirmed"
@@ -556,6 +579,7 @@ impl AgentExit {
                         job_id.as_deref(),
                         &self.signers,
                         &self.used_sigs,
+                        now / core::NANOS_PER_SEC,
                     )
                 });
                 let proof_ok = matches!(check, Some(verified::Outcome::Verified { .. }));
@@ -574,10 +598,15 @@ impl AgentExit {
                         to_owner,
                         to_treasury,
                     } => {
-                        if let (true, Some(verified::Outcome::Verified { sig_id, .. })) =
-                            (verified, &check)
+                        if let (
+                            true,
+                            Some(verified::Outcome::Verified {
+                                sig_id, expires, ..
+                            }),
+                        ) = (verified, &check)
                         {
-                            self.used_sigs.insert(*sig_id);
+                            self.used_sigs
+                                .insert(*sig_id, *expires, now / core::NANOS_PER_SEC);
                         }
                         emit(
                             "payment",
@@ -668,6 +697,18 @@ impl AgentExit {
     pub fn on_handover(&mut self, sale_id: u64) -> U128 {
         let ok = promise_ok();
         let now = env::block_timestamp();
+        // A44: the callback of a buy `recover_sale` already undid.
+        if let Some((refund, delete)) = self.m.stale_handover(sale_id, ok) {
+            emit(
+                "stale_callback",
+                json!({"callback": "on_handover", "sale_id": sale_id, "batch_ok": ok,
+                       "refund": amt(refund), "delete_keys": delete}),
+            );
+            if let Some(k) = delete {
+                self.delete_keys(&[k]);
+            }
+            return U128(refund);
+        }
         let res = self
             .m
             .finish_buy(sale_id, ok, now)
@@ -1125,13 +1166,42 @@ impl AgentExit {
             "escrow_left": amt(self.m.escrow_left()),
             "claimable_total": amt(self.m.claimable_total()),
             "solvent": self.m.solvent(),
+            "near_storage": self.near_storage(),
         })
+    }
+
+    /// NEAR storage solvency (A46): what the account stakes for storage now,
+    /// what the bounded signature window may still add, and whether the
+    /// balance covers both plus `NEAR_RESERVE`. The scan blocks an agent
+    /// that is not solvent.
+    fn near_storage(&self) -> Value {
+        let cost = env::storage_byte_cost();
+        let staked = cost.saturating_mul(env::storage_usage() as u128);
+        let growth = self.sig_growth();
+        let balance = env::account_balance();
+        let need = staked.saturating_add(growth).saturating_add(NEAR_RESERVE);
+        json!({
+            "usage_bytes": env::storage_usage(),
+            "staked": staked.as_yoctonear().to_string(),
+            "balance": balance.as_yoctonear().to_string(),
+            "sig_entries": self.used_sigs.len(),
+            "max_sig_entries": verified::MAX_SIGS,
+            "growth_reserve": growth.as_yoctonear().to_string(),
+            "solvent": balance >= need,
+        })
+    }
+
+    /// Storage the signature window may still add (A46).
+    fn sig_growth(&self) -> NearToken {
+        let room = (verified::MAX_SIGS - self.used_sigs.len()) as u128;
+        env::storage_byte_cost().saturating_mul(room * SIG_ENTRY_BYTES)
     }
 
     pub fn near_withdrawable(&self) -> NearToken {
         let storage = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
         env::account_balance()
             .saturating_sub(storage)
+            .saturating_sub(self.sig_growth())
             .saturating_sub(NEAR_RESERVE)
     }
 

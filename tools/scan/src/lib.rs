@@ -224,6 +224,11 @@ pub struct ContractView {
     /// round-trip flag. Missing = cannot check = block (A36).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub paid_to_total: Option<u64>,
+    /// `get_status.near_storage.solvent`: the NEAR balance covers storage
+    /// staking, the bounded signature window and the reserve. Missing =
+    /// cannot check = block (A46).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub near_storage_solvent: Option<bool>,
 }
 
 /// Payout destinations the agent tracks across all owners, and the quota
@@ -437,6 +442,20 @@ pub fn scan(i: &ScanInput) -> Report {
                 None => "paid_to_total not shown".into(),
             },
         )),
+    }
+
+    // A46: an agent whose NEAR balance cannot cover its storage stops
+    // writing state (every payment, buy and payout fails).
+    if i.contract.near_storage_solvent != Some(true) {
+        f.push(block(
+            "near_storage_insolvent",
+            match i.contract.near_storage_solvent {
+                Some(_) => {
+                    "the NEAR balance does not cover storage staking plus the reserve".into()
+                }
+                None => "near_storage.solvent not shown".into(),
+            },
+        ));
     }
 
     // Contract state.

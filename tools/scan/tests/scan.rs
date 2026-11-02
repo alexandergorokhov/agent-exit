@@ -134,6 +134,13 @@ fn each_rule_blocks_alone() {
             i.contract.paid_to_total = Some(2_001)
         }),
         ("paid_to_bloated", |i| i.contract.paid_to_total = None),
+        // A46: the NEAR balance does not cover storage.
+        ("near_storage_insolvent", |i| {
+            i.contract.near_storage_solvent = Some(false)
+        }),
+        ("near_storage_insolvent", |i| {
+            i.contract.near_storage_solvent = None
+        }),
         ("listing_version_mismatch", |i| {
             i.listing.as_mut().unwrap().listing_version = 2
         }),

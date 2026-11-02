@@ -543,6 +543,36 @@
       }
     },
     {
+      "id": "A44",
+      "what": "a key-batch callback that lands after recover_keys / recover_sale is stale (batch nonce): it changes no key set, deletes a key its late batch added, and a late on_handover refunds the buyer in full",
+      "pass": true,
+      "detail": {
+        "rotation_applied": false,
+        "handover_refund": "1000.00"
+      }
+    },
+    {
+      "id": "A45",
+      "what": "payout destinations are pruned once a finalized sale closed their era and no open earn-out needs them, so the round-trip table cannot block resale for good",
+      "pass": true,
+      "detail": {
+        "while_earnout_open": 1000,
+        "after_finalize": 0
+      }
+    },
+    {
+      "id": "A46",
+      "what": "a NEAR AI proof must carry signed_at within 7 days (not ahead of the block); used signature ids are kept only until they expire, at most 512, so outsiders cannot grow the agent's storage without bound; get_status.near_storage shows NEAR storage solvency and the scan blocks an insolvent agent",
+      "pass": true,
+      "detail": {
+        "old_or_future_proof": [
+          "SignatureExpired",
+          "SignedInFuture"
+        ],
+        "near_storage_solvent": true
+      }
+    },
+    {
       "id": "A39",
       "what": "no withdraw_near while listed: the NEAR balance the buyer scanned stays",
       "pass": true,
@@ -596,7 +626,7 @@
     }
   ],
   "summary": {
-    "passed": 65,
+    "passed": 68,
     "failed": 0
   },
   "not_covered_here": [

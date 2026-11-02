@@ -14,7 +14,13 @@
 //!   (A27);
 //! - each signature verifies at most once (id = sha256(r || s), so flipping
 //!   `v` does not make a new id; high-s signatures are refused by ecrecover's
-//!   malleability flag).
+//!   malleability flag);
+//! - the request carries `metadata.signed_at` (unix seconds, a string) no
+//!   more than `SIG_WINDOW_SECS` old and not ahead of the block by more than
+//!   `SIG_SKEW_SECS`. A used id is kept only until its proof expires, at
+//!   most `MAX_SIGS` at a time, so the agent's storage for outsiders' proofs
+//!   is bounded (A46). A full window means NotVerified (`SigWindowFull`);
+//!   the payment still counts.
 //!
 //! A payment whose proof fails still counts (if not flagged); it is only not
 //! verified, with a reason (E11-E13, A13).
@@ -24,6 +30,89 @@ use near_sdk::serde::Deserialize;
 use std::collections::BTreeSet;
 
 pub const MAX_REQUEST_LEN: usize = 3_072;
+/// How old a proof may be (A46).
+pub const SIG_WINDOW_SECS: u64 = 7 * 86_400;
+/// How far ahead of the block a proof's `signed_at` may be.
+pub const SIG_SKEW_SECS: u64 = 3_600;
+/// Most signature ids kept at a time (A46).
+pub const MAX_SIGS: u32 = 512;
+
+/// Used signature ids, each until its proof expires, in arrival order.
+/// Bounded: at most `MAX_SIGS` entries (A46).
+#[derive(near_sdk::borsh::BorshSerialize, near_sdk::borsh::BorshDeserialize)]
+#[borsh(crate = "near_sdk::borsh")]
+pub struct UsedSigs {
+    /// sig id -> unix second after which its proof is refused anyway.
+    expires: near_sdk::store::LookupMap<[u8; 32], u64>,
+    /// Ring of ids: slot -> id.
+    ring: near_sdk::store::LookupMap<u32, [u8; 32]>,
+    head: u32,
+    len: u32,
+}
+
+impl UsedSigs {
+    pub fn new(prefix: u8) -> Self {
+        UsedSigs {
+            expires: near_sdk::store::LookupMap::new(vec![prefix, b'e']),
+            ring: near_sdk::store::LookupMap::new(vec![prefix, b'r']),
+            head: 0,
+            len: 0,
+        }
+    }
+
+    pub fn len(&self) -> u32 {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn contains(&self, id: &[u8; 32]) -> bool {
+        self.expires.contains_key(id)
+    }
+
+    /// The oldest entry has expired (it can make room).
+    fn head_expired(&self, now_s: u64) -> bool {
+        self.len > 0
+            && self
+                .ring
+                .get(&self.head)
+                .and_then(|id| self.expires.get(id))
+                .is_some_and(|e| *e < now_s)
+    }
+
+    /// No room for a new id, even after pruning.
+    pub fn full(&self, now_s: u64) -> bool {
+        self.len >= MAX_SIGS && !self.head_expired(now_s)
+    }
+
+    /// Drop up to `n` expired ids from the front.
+    pub fn prune(&mut self, now_s: u64, n: usize) {
+        for _ in 0..n {
+            if !self.head_expired(now_s) {
+                break;
+            }
+            if let Some(id) = self.ring.remove(&self.head) {
+                self.expires.remove(&id);
+            }
+            self.head = (self.head + 1) % MAX_SIGS;
+            self.len -= 1;
+        }
+    }
+
+    /// Record `id` (call only after `check` said Verified, so not full).
+    pub fn insert(&mut self, id: [u8; 32], expires: u64, now_s: u64) {
+        self.prune(now_s, 4);
+        if self.len >= MAX_SIGS {
+            return;
+        }
+        let slot = (self.head + self.len) % MAX_SIGS;
+        self.ring.insert(slot, id);
+        self.expires.insert(id, expires);
+        self.len += 1;
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -39,7 +128,12 @@ pub struct NearAiProof {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Outcome {
-    Verified { sig_id: [u8; 32], signer: String },
+    Verified {
+        sig_id: [u8; 32],
+        signer: String,
+        /// Unix second after which this proof is refused (A46).
+        expires: u64,
+    },
     NotVerified(&'static str),
 }
 
@@ -100,7 +194,8 @@ pub fn check(
     amount: u128,
     job_id: Option<&str>,
     signers: &BTreeSet<String>,
-    used: &near_sdk::store::LookupSet<[u8; 32]>,
+    used: &UsedSigs,
+    now_s: u64,
 ) -> Outcome {
     use Outcome::NotVerified as No;
     let Some(job_id) = job_id else {
@@ -132,6 +227,13 @@ pub fn check(
     if req["metadata"]["amount"] != amount.to_string().as_str() {
         return No("WrongAmount");
     }
+    let signed_at = match req["metadata"]["signed_at"].as_str() {
+        None => return No("NoSignedAt"),
+        Some(t) if t.is_empty() || t.len() > 12 || !t.bytes().all(|c| c.is_ascii_digit()) => {
+            return No("BadSignedAt")
+        }
+        Some(t) => t.parse::<u64>().unwrap_or(u64::MAX),
+    };
     let Some(sig) = hex_decode(&p.signature) else {
         return No("BadSignature");
     };
@@ -146,5 +248,19 @@ pub fn check(
     if used.contains(&sig_id) {
         return No("SignatureUsed");
     }
-    Outcome::Verified { sig_id, signer }
+    if signed_at > now_s.saturating_add(SIG_SKEW_SECS) {
+        return No("SignedInFuture");
+    }
+    if signed_at.saturating_add(SIG_WINDOW_SECS) < now_s {
+        return No("SignatureExpired");
+    }
+    if used.full(now_s) {
+        return No("SigWindowFull");
+    }
+    Outcome::Verified {
+        sig_id,
+        signer,
+        // Kept until no window could accept it again.
+        expires: signed_at + SIG_WINDOW_SECS + SIG_SKEW_SECS,
+    }
 }

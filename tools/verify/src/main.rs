@@ -860,7 +860,7 @@ fn run() -> Value {
         && s.m().pending.is_none()
         && s.m().solvent();
     s.by_1y(ALICE).set_runner_key(key(9));
-    s.callback(true).on_runner_key(vec![], vec![], key_str(9));
+    s.runner_key_cb(true, vec![], vec![], key_str(9));
     let resumed = s.runner(key(9)).heartbeat()["ok"] == true;
     let mut s2 = sold_translator();
     s2.by_1y(BOB).set_runner_key(key(CAROL_RUNNER));
@@ -959,6 +959,78 @@ fn run() -> Value {
         s.m().owner_free == bob_free && claim(&s, ALICE) == alice_claim + 100 * USD,
         json!({"seller_claimable": usd(claim(&s, ALICE))}),
     );
+    // Review 3 (A44-A46).
+    let hour = 3_600 * agent_core::NANOS_PER_SEC;
+    let mut s = sold_translator();
+    s.by_1y(BOB).set_runner_key(key(CAROL_RUNNER)).detach();
+    let batch = s.m().key_batch;
+    s.advance(hour + 1);
+    let rk = s.by_1y(BOB).recover_keys();
+    let deleted: Vec<String> = serde_json::from_value(rk["delete_keys"].clone()).unwrap();
+    s.callback(true).on_keys_deleted(deleted);
+    let applied = s
+        .callback(true)
+        .on_runner_key(vec![], vec![], key_str(CAROL_RUNNER), batch);
+    let gone = key_actions(AGENT) == vec![("delete".to_string(), key_str(CAROL_RUNNER))];
+    let mut s2 = listed_translator();
+    s2.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s2.advance(hour + 1);
+    let rs = s2.by(MALLORY).recover_sale();
+    let deleted: Vec<String> = serde_json::from_value(rs["delete_keys"].clone()).unwrap();
+    s2.callback(true).on_keys_deleted(deleted);
+    let refund = s2.callback(true).on_handover(1).0;
+    let buyer_key_gone = key_actions(AGENT) == vec![("delete".to_string(), key_str(BOB_RUNNER))];
+    r.check(
+        "A44",
+        "a key-batch callback that lands after recover_keys / recover_sale is stale (batch nonce): it changes no key set, deletes a key its late batch added, and a late on_handover refunds the buyer in full",
+        !applied
+            && gone
+            && !s.m().known_keys.contains(&key_str(CAROL_RUNNER))
+            && refund == 1_000 * USD
+            && buyer_key_gone
+            && s2.m().owner == ALICE,
+        json!({"rotation_applied": applied, "handover_refund": usd(refund)}),
+    );
+
+    let mut s = translator_world();
+    for i in 0..agent_core::MAX_PAID_TO {
+        s.by_1y(ALICE)
+            .withdraw(U128(1), Some(acc(&format!("junk{i}.testnet"))))
+            .detach();
+    }
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.callback(true).on_handover(1);
+    let open = s.by(MALLORY).get_status()["paid_to_total"].clone();
+    s.advance(31 * DAY);
+    s.by(MALLORY).finalize_earnout(1);
+    let closed = s.by(MALLORY).get_status()["paid_to_total"].clone();
+    r.check(
+        "A45",
+        "payout destinations are pruned once a finalized sale closed their era and no open earn-out needs them, so the round-trip table cannot block resale for good",
+        open == 1_000 && closed == 0,
+        json!({"while_earnout_open": open, "after_finalize": closed}),
+    );
+
+    let mut notes = vec![];
+    for now in [T0 + 8 * DAY + 2 * hour, T0 - hour] {
+        let mut s = Sim::new(AGENT, ALICE);
+        s.now = now;
+        s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+        notes.push(events("payment")[0]["verify"].clone());
+    }
+    let mut s = business_world();
+    let st = s.by(MALLORY).get_status();
+    r.check(
+        "A46",
+        "a NEAR AI proof must carry signed_at within 7 days (not ahead of the block); used signature ids are kept only until they expire, at most 512, so outsiders cannot grow the agent's storage without bound; get_status.near_storage shows NEAR storage solvency and the scan blocks an insolvent agent",
+        notes == vec![json!("SignatureExpired"), json!("SignedInFuture")]
+            && st["near_storage"]["solvent"] == true
+            && st["near_storage"]["max_sig_entries"] == 512,
+        json!({"old_or_future_proof": notes, "near_storage_solvent": st["near_storage"]["solvent"]}),
+    );
+
     let mut s = listed_translator();
     let paused = panics_with("Listed: spending paused", || {
         s.by_1y(ALICE).withdraw_near(NearToken::from_millinear(1));

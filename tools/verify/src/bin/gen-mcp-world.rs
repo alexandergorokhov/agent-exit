@@ -82,6 +82,7 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
             "frozen": st["frozen"],
             "admin": st["admin"], "token": st["token"],
             "paid_to_total": st["paid_to_total"],
+            "near_storage_solvent": st["near_storage"]["solvent"],
         },
         "listing": l.map(|l| json!({
             "listing_version": l["listing_version"], "price": l["price"], "terms": l["terms"],

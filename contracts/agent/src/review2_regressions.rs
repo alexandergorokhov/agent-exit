@@ -161,7 +161,7 @@ fn a33_failed_handover_callback_is_recoverable() {
     // The seller runs, withdraws and lists again.
     s.by_1y(ALICE).withdraw(U128(USD), None);
     s.by_1y(ALICE).set_runner_key(key(9));
-    s.callback(true).on_runner_key(vec![], vec![], key_str(9));
+    s.runner_key_cb(true, vec![], vec![], key_str(9));
     assert_eq!(s.runner(key(9)).heartbeat()["ok"], true);
     s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
@@ -204,7 +204,7 @@ fn a33_failed_rotation_callback_is_recoverable() {
     assert!(s.m().incoming.is_empty() && s.m().retiring.is_empty());
     assert!(s.m().paused && !s.m().frozen);
     s.by_1y(BOB).set_runner_key(key(9));
-    s.callback(true).on_runner_key(vec![], vec![], key_str(9));
+    s.runner_key_cb(true, vec![], vec![], key_str(9));
     assert_eq!(s.runner(key(9)).heartbeat()["ok"], true);
 }
 

@@ -41,7 +41,16 @@
         "treasury": "0",
         "escrow_left": "0",
         "claimable_total": "0",
-        "solvent": true
+        "solvent": true,
+        "near_storage": {
+          "usage_bytes": 0,
+          "staked": "0",
+          "balance": "10000000000000000000000000",
+          "sig_entries": 10,
+          "max_sig_entries": 512,
+          "growth_reserve": "1004000000000000000000000",
+          "solvent": true
+        }
       },
       "earnings": {
         "schema": "earnings.v1",
@@ -270,7 +279,8 @@
           "frozen": false,
           "admin": "admin.testnet",
           "token": "xusd.testnet",
-          "paid_to_total": 0
+          "paid_to_total": 0,
+          "near_storage_solvent": true
         },
         "listing": {
           "listing_version": 1,
@@ -319,7 +329,16 @@
         "treasury": "0",
         "escrow_left": "0",
         "claimable_total": "0",
-        "solvent": true
+        "solvent": true,
+        "near_storage": {
+          "usage_bytes": 0,
+          "staked": "0",
+          "balance": "10000000000000000000000000",
+          "sig_entries": 0,
+          "max_sig_entries": 512,
+          "growth_reserve": "1024000000000000000000000",
+          "solvent": true
+        }
       },
       "earnings": {
         "schema": "earnings.v1",
@@ -553,7 +572,8 @@
           "frozen": false,
           "admin": "admin.testnet",
           "token": "xusd.testnet",
-          "paid_to_total": 0
+          "paid_to_total": 0,
+          "near_storage_solvent": true
         },
         "listing": {
           "listing_version": 1,
@@ -659,7 +679,16 @@
           "treasury": "0",
           "escrow_left": "300000000",
           "claimable_total": "500000000",
-          "solvent": true
+          "solvent": true,
+          "near_storage": {
+            "usage_bytes": 0,
+            "staked": "0",
+            "balance": "10000000000000000000000000",
+            "sig_entries": 10,
+            "max_sig_entries": 512,
+            "growth_reserve": "1004000000000000000000000",
+            "solvent": true
+          }
         },
         "earnings": {
           "schema": "earnings.v1",
@@ -876,7 +905,8 @@
             "frozen": false,
             "admin": "admin.testnet",
             "token": "xusd.testnet",
-            "paid_to_total": 0
+            "paid_to_total": 0,
+            "near_storage_solvent": true
           },
           "listing": null
         }
@@ -952,7 +982,16 @@
           "treasury": "0",
           "escrow_left": "300000000",
           "claimable_total": "500000000",
-          "solvent": true
+          "solvent": true,
+          "near_storage": {
+            "usage_bytes": 0,
+            "staked": "0",
+            "balance": "10000000000000000000000000",
+            "sig_entries": 10,
+            "max_sig_entries": 512,
+            "growth_reserve": "1004000000000000000000000",
+            "solvent": true
+          }
         },
         "earnings": {
           "schema": "earnings.v1",
@@ -1197,7 +1236,8 @@
             "frozen": false,
             "admin": "admin.testnet",
             "token": "xusd.testnet",
-            "paid_to_total": 0
+            "paid_to_total": 0,
+            "near_storage_solvent": true
           },
           "listing": {
             "listing_version": 3,

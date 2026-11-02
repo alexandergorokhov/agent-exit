@@ -94,6 +94,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             admin: Some(PUBLISHED_ADMIN.into()),
             token: Some(PUBLISHED_TOKEN.into()),
             paid_to_total: Some(rng.below(1_500)),
+            near_storage_solvent: Some(true),
         },
         listing: Some(ListingView {
             listing_version: version,

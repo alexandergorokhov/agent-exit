@@ -461,8 +461,7 @@ fn a16_e24_deed_moved_outside_buy_deletes_runner_keys() {
         .on_keys_deleted(vec![key_str(ALICE_RUNNER)]);
     // The new owner sets a runner key; the agent runs again.
     s.by_1y(MALLORY).set_runner_key(key(CAROL_RUNNER));
-    s.callback(true)
-        .on_runner_key(vec![], vec![], key_str(CAROL_RUNNER));
+    s.runner_key_cb(true, vec![], vec![], key_str(CAROL_RUNNER));
     assert_eq!(s.runner(key(CAROL_RUNNER)).heartbeat()["ok"], true);
 }
 

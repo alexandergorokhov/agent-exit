@@ -182,6 +182,19 @@ impl Sim {
         &mut self.c
     }
 
+    /// `on_runner_key` for the latest rotation batch (its nonce, A44).
+    pub fn runner_key_cb(
+        &mut self,
+        ok: bool,
+        old: Vec<String>,
+        deleted: Vec<String>,
+        new_key: String,
+    ) -> bool {
+        let batch = self.c.m.key_batch;
+        self.callback(ok)
+            .on_runner_key(old, deleted, new_key, batch)
+    }
+
     /// A callback whose promise succeeded with `data` (the MPC answer).
     pub fn callback_data(&mut self, data: &Value) -> &mut AgentExit {
         let mut c = self.call(&self.agent.clone());
@@ -273,7 +286,7 @@ fn unsafe_placeholder() -> AgentExit {
         token: acc(TOKEN),
         admin: acc(TOKEN),
         signers: Default::default(),
-        used_sigs: near_sdk::store::LookupSet::new(b"p"),
+        used_sigs: crate::verified::UsedSigs::new(b'p'),
     }
 }
 
@@ -440,8 +453,7 @@ pub fn ft_transfers() -> Vec<(String, u128)> {
 pub fn translator_world() -> Sim {
     let mut s = Sim::new(AGENT, ALICE);
     s.by_1y(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
-    s.callback(true)
-        .on_runner_key(vec![], vec![], key_str(ALICE_RUNNER));
+    s.runner_key_cb(true, vec![], vec![], key_str(ALICE_RUNNER));
     // 10 of the 30 payer payments carry a NEAR AI-shaped signature (TEST
     // FIXTURES): all 6 payers on day 0, p1-p4 on day 1. 10 x 12.00 = 120.00.
     let mut signed = 0;
@@ -469,8 +481,7 @@ pub fn translator_world() -> Sim {
 pub fn cheat_world() -> Sim {
     let mut s = Sim::new(CHEAT, ALICE);
     s.by_1y(ALICE).set_runner_key(key(ALICE_RUNNER)).detach();
-    s.callback(true)
-        .on_runner_key(vec![], vec![], key_str(ALICE_RUNNER));
+    s.runner_key_cb(true, vec![], vec![], key_str(ALICE_RUNNER));
     for day in 0..5u64 {
         s.now = T0 + day * DAY;
         assert_eq!(s.pay(ALICE, 60 * USD), Some(0));

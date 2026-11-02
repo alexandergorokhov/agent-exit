@@ -104,7 +104,8 @@
     "frozen": false,
     "admin": "admin.testnet",
     "token": "xusd.testnet",
-    "paid_to_total": 0
+    "paid_to_total": 0,
+    "near_storage_solvent": true
   },
   "listing": {
     "listing_version": 1,

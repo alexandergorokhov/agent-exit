@@ -378,6 +378,14 @@ pub struct Machine {
     /// When the last key batch started (rotation, deed transfer, recovery);
     /// `recover_keys` is allowed `RECOVER_AFTER_NS` later (A33).
     pub keys_since: Ts,
+    /// Nonce of the latest rotation batch. Every rotation and every
+    /// `recover_*` bumps it; a rotation callback that carries an older nonce
+    /// is stale and changes no key set (A44).
+    pub key_batch: u64,
+    /// The last buy `recover_sale` undid. A late `on_handover` for it is
+    /// stale: it refunds the buyer and deletes the buyer key its batch may
+    /// still have added (A44).
+    pub recovered_buy: Option<Pending>,
 }
 
 /// How long a callback gets before recovery is allowed (A33). A callback
@@ -442,6 +450,8 @@ impl Machine {
             spent: Spent::default(),
             terms_min: TermsMin::PROD,
             keys_since: 0,
+            key_batch: 0,
+            recovered_buy: None,
         }
     }
 
@@ -517,6 +527,7 @@ impl Machine {
         self.incoming.insert(new_key.to_string());
         self.paused = true;
         self.keys_since = now;
+        self.key_batch += 1;
         Ok(old)
     }
 
@@ -525,7 +536,21 @@ impl Machine {
     /// runner key; on failure (the batch is all-or-nothing) the old keys are
     /// restored. Either way the runner can act again: an honest rotation
     /// never freezes or bricks the agent.
-    pub fn runner_key_done(&mut self, old: &[Key], deleted: &[Key], new_key: &str, ok: bool) {
+    ///
+    /// `batch` is the nonce `set_runner_key` gave the batch (`key_batch`).
+    /// A callback for an older batch is stale (a `recover_keys` ran in
+    /// between) and changes nothing; it returns `false` (A44).
+    pub fn runner_key_done(
+        &mut self,
+        batch: u64,
+        old: &[Key],
+        deleted: &[Key],
+        new_key: &str,
+        ok: bool,
+    ) -> bool {
+        if batch != self.key_batch || !self.incoming.contains(new_key) {
+            return false;
+        }
         self.incoming.remove(new_key);
         if ok {
             for k in deleted {
@@ -539,6 +564,13 @@ impl Machine {
             }
         }
         self.paused = self.known_keys.is_empty();
+        true
+    }
+
+    /// Is `key` in any key set? A stale batch may have added a key that no
+    /// set names; the contract deletes such a key (A44).
+    pub fn key_tracked(&self, key: &str) -> bool {
+        self.known_keys.contains(key) || self.incoming.contains(key) || self.retiring.contains(key)
     }
 
     /// Callback after a deletion of `keys`, each in its own receipt (deed
@@ -569,6 +601,7 @@ impl Machine {
         }
         self.retiring.append(&mut self.incoming);
         self.keys_since = now;
+        self.key_batch += 1;
         self.paused = self.known_keys.is_empty();
         Ok(Recovery {
             delete_keys: self.retiring.iter().cloned().collect(),
@@ -600,6 +633,8 @@ impl Machine {
         self.status = self.status_before_listing.clone();
         self.paused = true;
         self.keys_since = now;
+        self.key_batch += 1;
+        self.recovered_buy = Some(p.clone());
         Ok(Recovery {
             delete_keys: self.retiring.iter().cloned().collect(),
             sale: Some(p),
@@ -761,6 +796,35 @@ impl Machine {
     }
 
     /// Callback after the self key batch. `keys_ok` is the batch outcome.
+    /// `on_handover` for the buy `recover_sale` undid (A44). It returns the
+    /// whole payment so the token refunds the buyer (`recover_sale` already
+    /// took it out of `held`). If its batch did run, it added the buyer key
+    /// after the recovery deleted it: that key goes to `retiring` and is
+    /// returned for deletion, so a signature by it is `NotRunner`, never a
+    /// backdoor. `None` if `sale_id` is not the recovered buy.
+    pub fn stale_handover(&mut self, sale_id: u64, keys_ok: bool) -> Option<(Amount, Option<Key>)> {
+        if self.pending.as_ref().is_some_and(|p| p.sale_id == sale_id) {
+            return None;
+        }
+        let p = self.recovered_buy.take_if(|p| p.sale_id == sale_id)?;
+        Some((
+            p.amount,
+            keys_ok
+                .then(|| self.retire_untracked(&p.buyer_pk))
+                .flatten(),
+        ))
+    }
+
+    /// A stale batch may have added `key` after a recovery deleted it. If no
+    /// key set names it, mark it `retiring` and return it for deletion (A44).
+    pub fn retire_untracked(&mut self, key: &str) -> Option<Key> {
+        if self.key_tracked(key) {
+            return None;
+        }
+        self.retiring.insert(key.to_string());
+        Some(key.to_string())
+    }
+
     pub fn finish_buy(&mut self, sale_id: u64, keys_ok: bool, now: Ts) -> Res<BuyResult> {
         let p = match &self.pending {
             Some(p) if p.sale_id == sale_id && self.status == Status::Settling => p.clone(),
@@ -1083,7 +1147,34 @@ impl Machine {
         let s = s.clone();
         self.credit(&s.seller, f.seller_topup);
         self.credit(&s.buyer, f.buyer_refund);
+        self.prune_paid_to();
         Ok(s)
+    }
+
+    /// Drop payout destinations no earn-out can still ask about (A45). An
+    /// entry of epoch `e` matters only to an open sale whose seller epoch is
+    /// `>= e` (`releases_for`). It is dropped once a finalized sale closed
+    /// its era (`seller_epoch >= e`) and no open sale reaches back to it.
+    /// Entries of owners not yet separated by a real sale stay, so moving
+    /// the deed between one's own accounts never clears the table.
+    pub fn prune_paid_to(&mut self) {
+        let sold = self
+            .sales
+            .iter()
+            .filter(|s| s.finalized)
+            .map(|s| s.seller_epoch)
+            .max();
+        let Some(sold) = sold else {
+            return;
+        };
+        let open = self
+            .sales
+            .iter()
+            .filter(|s| !s.finalized)
+            .map(|s| s.seller_epoch)
+            .max();
+        self.paid_to
+            .retain(|_, e| !(*e <= sold && open.is_none_or(|o| *e > o)));
     }
 
     // ----- deed transfer outside buy() ---------------------------------------

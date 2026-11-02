@@ -313,6 +313,7 @@ export class TestnetBackend implements Backend {
         admin: status.admin,
         token: status.token,
         paid_to_total: status.paid_to_total,
+        near_storage_solvent: status.near_storage?.solvent,
       },
       ...(listing ? { listing: listingView(listing) } : {}),
     }, expect);

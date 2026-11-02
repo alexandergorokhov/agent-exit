@@ -23,6 +23,10 @@ fn address(sk: &SigningKey) -> String {
     format!("0x{}", hex::encode(&h[12..]))
 }
 
+/// When every fixture request was made: 2026-01-01T01:00:00Z, the first
+/// payment hour of the simulator (proofs are good for 7 days, A46).
+const SIGNED_AT: &str = "1767229200";
+
 /// 12.00 in base units: every fixture job costs 12.00.
 const AMOUNT: &str = "12000000";
 
@@ -30,7 +34,7 @@ fn sign(sk: &SigningKey, agent: &str, job: &str, payer: &str, prompt: &str) -> V
     let request = json!({
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": AMOUNT},
+        "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": AMOUNT, "signed_at": SIGNED_AT},
     })
     .to_string();
     let response = json!({"choices": [{"message": {"role": "assistant", "content": format!("answer to {job}")}}]})

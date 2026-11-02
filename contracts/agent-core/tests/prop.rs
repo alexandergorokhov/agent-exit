@@ -452,7 +452,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                         deleted,
                         new_key,
                     } => {
-                        w.m.runner_key_done(&old, &deleted, &new_key, ok);
+                        {
+                            let b = w.m.key_batch;
+                            w.m.runner_key_done(b, &old, &deleted, &new_key, ok);
+                        }
                         // An honest rotation never bricks the agent: the
                         // runner key works again (success, or the old keys
                         // restored), or the owner can rotate again.
@@ -718,7 +721,7 @@ fn prop_invariants_random_sequences() {
         let deleted = m
             .set_runner_key("alice", "ed25519:alice-runner", T0)
             .unwrap();
-        m.runner_key_done(&[], &deleted, "ed25519:alice-runner", true);
+        m.runner_key_done(m.key_batch, &[], &deleted, "ed25519:alice-runner", true);
         let mut w = World {
             m,
             now: T0,
@@ -855,7 +858,7 @@ fn prop_buyer_cannot_shrink_earnout() {
     r.run(&prop::collection::vec(post, 1..60), |acts| {
         let mut m = Machine::new("translator", "alice");
         let d = m.set_runner_key("alice", "ed25519:a", T0).unwrap();
-        m.runner_key_done(&[], &d, "ed25519:a", true);
+        m.runner_key_done(m.key_batch, &[], &d, "ed25519:a", true);
         // Pre-sale history so the seller has round trips of their own.
         m.pay("c1.near", 5 * USD, false, T0);
         m.withdraw("alice", USD, "c4.near").unwrap();

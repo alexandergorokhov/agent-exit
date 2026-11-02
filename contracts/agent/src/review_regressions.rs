@@ -67,7 +67,8 @@ fn a25_rotation_gap_does_not_freeze() {
     }
     assert!(!s.m().frozen);
     assert_eq!(s.c.get_claimable(acc(BOB)).0, 0);
-    s.callback(true).on_runner_key(
+    s.runner_key_cb(
+        true,
         vec![key_str(BOB_RUNNER)],
         vec![key_str(BOB_RUNNER)],
         key_str(CAROL_RUNNER),
@@ -84,7 +85,8 @@ fn a25_rotation_gap_does_not_freeze() {
 fn a25_failed_rotation_restores_old_key() {
     let mut s = sold_translator();
     s.by_1y(BOB).set_runner_key(key(CAROL_RUNNER));
-    s.callback(false).on_runner_key(
+    s.runner_key_cb(
+        false,
         vec![key_str(BOB_RUNNER)],
         vec![key_str(BOB_RUNNER)],
         key_str(CAROL_RUNNER),

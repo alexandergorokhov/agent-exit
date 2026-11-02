@@ -823,7 +823,8 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
             "model": model,
             "messages": [{"role": "user", "content": "Translate to French: the agent was sold."}],
             "max_tokens": 32,
-            "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": amount.to_string()},
+            "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": amount.to_string(),
+                         "signed_at": (now_ns() / 1_000_000_000).to_string()},
         })
         .to_string();
         let t0 = Instant::now();
@@ -986,6 +987,7 @@ async fn scan_agent(
             "open_auth_until": w["open_auth_until"].as_str().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0),
             "frozen": st["frozen"], "admin": st["admin"], "token": st["token"],
             "paid_to_total": st["paid_to_total"],
+            "near_storage_solvent": st["near_storage"]["solvent"],
         },
         "listing": if listing.is_null() { Value::Null } else {
             json!({"listing_version": listing["listing_version"], "price": listing["price"], "terms": listing["terms"]})
