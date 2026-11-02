@@ -212,6 +212,14 @@ impl Chain {
                 return tx;
             }
         };
+        // A node refuses a function-call key whose allowance cannot cover
+        // the attached gas at its pessimistic price, and the error comes back
+        // as a bare `InvalidTransaction({})`. Check first and say why.
+        if let Some(e) = self.allowance_short(who, tgas).await {
+            println!("  FAIL {label:<40} {e}");
+            tx.error = Some(e);
+            return tx;
+        }
         let sent = Contract(receiver_id)
             .call_function(method, args)
             .transaction()
@@ -249,6 +257,25 @@ impl Chain {
                 .unwrap_or_default()
         );
         tx
+    }
+
+    /// `Some(reason)` if `who` signs with a function-call key whose
+    /// allowance is below what the node reserves for `tgas` (attached gas at
+    /// a pessimistic 1e9 yocto per gas, 10x the testnet minimum price).
+    pub async fn allowance_short(&self, who: &Acct, tgas: u64) -> Option<String> {
+        let keys = self.keys(who.id.as_str()).await.ok()?;
+        let k = keys.iter().find(|k| k.public_key == who.pk)?;
+        let scan::Permission::FunctionCall { allowance: Some(a), .. } = &k.permission else {
+            return None;
+        };
+        let have: u128 = a.parse().ok()?;
+        let need = tgas as u128 * 1_000_000_000_000 * 1_000_000_000;
+        (have < need).then(|| {
+            format!(
+                "AllowanceTooLow: key {} has {} yoctoNEAR of gas allowance, {tgas} TGas needs about {need}; the owner refreshes it with set_runner_key",
+                who.pk, have
+            )
+        })
     }
 
     pub async fn view_on(

@@ -122,6 +122,13 @@ impl Sim {
     }
 
     pub fn env(&self, c: &Call) {
+        // Keep what the outgoing simulator's last call left (beyond the
+        // storage that call was given).
+        let used = near_sdk::env::storage_usage().saturating_sub(LAST_BASE.get());
+        USAGE.with(|u| {
+            u.borrow_mut().insert(CURRENT.get(), used);
+        });
+        LAST_BASE.set(c.storage);
         let ctx = VMContextBuilder::new()
             .current_account_id(acc(&self.agent))
             .predecessor_account_id(acc(&c.predecessor))
@@ -131,7 +138,9 @@ impl Sim {
             .prepaid_gas(c.gas)
             .block_timestamp(self.now)
             .account_balance(self.balance)
-            .storage_usage(c.storage)
+            .storage_usage(
+                c.storage + USAGE.with(|u| u.borrow().get(&self.id).copied().unwrap_or_default()),
+            )
             .build();
         let current = near_sdk::mock::with_mocked_blockchain(|b| b.take_storage());
         let mine = STORES.with(|st| {
@@ -247,7 +256,7 @@ impl Sim {
         self.now += ns;
     }
 
-    pub fn m(&self) -> &Machine {
+    pub fn m(&self) -> &Machine<crate::meter_store::NearStore> {
         &self.c.m
     }
 
@@ -268,7 +277,13 @@ type Storage = std::collections::HashMap<Vec<u8>, Vec<u8>>;
 thread_local! {
     static STORES: std::cell::RefCell<std::collections::HashMap<u64, Storage>> =
         Default::default();
+    /// Storage usage each simulator's collections reached (bytes), so a
+    /// call that overwrites a row starts from the real usage, not 0.
+    static USAGE: std::cell::RefCell<std::collections::HashMap<u64, u64>> =
+        Default::default();
     static CURRENT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    /// The `storage` the current call was given on top of the tracked usage.
+    static LAST_BASE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
     static NEXT_ID: std::cell::Cell<u64> = const { std::cell::Cell::new(1) };
 }
 
@@ -282,7 +297,7 @@ impl Drop for Sim {
 /// mocked runtime (overwritten right after in `Sim::new`).
 fn unsafe_placeholder() -> AgentExit {
     AgentExit {
-        m: Machine::new("placeholder", "placeholder"),
+        m: Machine::with_store("placeholder", "placeholder"),
         token: acc(TOKEN),
         admin: acc(TOKEN),
         signers: Default::default(),

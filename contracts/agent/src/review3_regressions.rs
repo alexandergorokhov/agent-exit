@@ -222,6 +222,24 @@ fn a45_paid_to_is_pruned_after_the_earnout_closes() {
     s.advance(31 * DAY);
     s.by(MALLORY).finalize_earnout(1);
     assert_eq!(s.by(MALLORY).get_status()["paid_to_total"], 0);
+    assert_eq!(s.m().paid_to_epoch("junk0.testnet"), None, "pruned");
+    // A pruned destination paid again is a new entry of the current owner.
+    s.pay(PAYERS[1], 100 * USD);
+    s.by_1y(BOB)
+        .withdraw(U128(1), Some(acc("junk0.testnet")))
+        .detach();
+    assert_eq!(
+        s.m().paid_to_epoch("junk0.testnet"),
+        Some(s.m().owner_epoch)
+    );
+    assert_eq!(s.m().paid_to_this_owner(), 1);
+    assert!(s.m().flags_for("junk0.testnet").round_trip);
+    s.callback(true).on_transfer_out(
+        OutKind::OwnerWithdraw,
+        acc("junk0.testnet"),
+        U128(1),
+        Some(acc(BOB)),
+    );
     // A deed moved between bob's own accounts keeps bob's entries.
     s.pay(PAYERS[0], 100 * USD);
     s.by_1y(BOB)
@@ -229,7 +247,7 @@ fn a45_paid_to_is_pruned_after_the_earnout_closes() {
         .detach();
     s.by_1y(BOB)
         .nft_transfer(acc(CAROL), DEED_ID.into(), None, None);
-    assert_eq!(s.by(MALLORY).get_status()["paid_to_total"], 1);
+    assert_eq!(s.by(MALLORY).get_status()["paid_to_total"], 2);
 }
 
 // ------------------------------------------------------------ M2 (A46)
@@ -300,11 +318,232 @@ fn a46_near_storage_solvency_is_shown_and_kept() {
         .parse()
         .unwrap();
     assert!(growth > 0);
+    let staked: u128 = st["near_storage"]["staked"]
+        .as_str()
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert!(staked > 0, "payer and day rows are real storage");
     let max = s.by(MALLORY).near_withdrawable();
     assert_eq!(
         max.as_yoctonear(),
-        s.balance.as_yoctonear() - growth - NEAR_RESERVE.as_yoctonear()
+        s.balance.as_yoctonear() - staked - growth - NEAR_RESERVE.as_yoctonear()
     );
     s.balance = NearToken::from_millinear(1_500);
     assert_eq!(s.by(MALLORY).get_status()["near_storage"]["solvent"], false);
+}
+
+// ------------------------------------------- A47: outsiders and the state blob
+
+/// A 64-character payer id (the longest NEAR account id).
+fn long_payer(i: usize) -> String {
+    let id = format!("{i:0>56}.testnet");
+    assert_eq!(id.len(), 64);
+    id
+}
+
+/// A47 (local-node finding at 12d1ab7: about 584 distinct 64-character
+/// payers made every call trap while loading state). Payer and day rows
+/// live under their own storage keys; the state blob holds aggregates only,
+/// so its size, and the cost of loading it, does not grow with payers.
+#[test]
+fn a47_state_blob_is_flat_in_the_number_of_payers() {
+    let mut s = sold_translator();
+    s.by_1y(BOB).set_limits(demo_limits());
+    let before = s.c.state_bytes();
+    let rows_before = s.m().meter.tracked_payers;
+    let pooled_before = s.m().meter.other.totals.payments;
+    for i in 0..1_200 {
+        assert_eq!(
+            s.pay(&long_payer(i), 5 * USD),
+            Some(0),
+            "{i}: {:?}",
+            events("refused")
+        );
+    }
+    let m = s.m();
+    assert_eq!(m.meter.tracked_payers, agent_core::meter::MAX_PAYERS as u64);
+    assert_eq!(
+        m.meter.other.totals.payments,
+        pooled_before + 1_200 - (1_000 - rows_before)
+    );
+    let after = s.c.state_bytes();
+    // The aggregates are fixed width: same size (give or take an Option).
+    assert!(after <= before + 16, "state blob {before} -> {after} bytes");
+    assert!(after < 8_000, "{after}");
+    // Every view and call still works and reads one blob plus a few rows.
+    let st = s.by(MALLORY).get_status();
+    assert_eq!(st["near_storage"]["payer_entries"], 1_000);
+    let e = s.c.get_earnings();
+    assert_eq!(e.tracked_payers, 1_000);
+    assert!(e.days.len() as u64 <= agent_core::meter::EARNINGS_DAYS);
+    let row = s.c.get_payer(acc(&long_payer(7))).expect("own row");
+    assert_eq!(row.totals.gross, 5 * USD);
+    assert!(
+        s.c.get_payer(acc(&long_payer(1_100))).is_none(),
+        "pooled into other"
+    );
+    assert_eq!(s.runner(key(BOB_RUNNER)).heartbeat()["ok"], true);
+    let v = s.runner(key(BOB_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
+    assert_eq!(v["ok"], true);
+    // And the agent can still be sold.
+    s.by_1y(BOB)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(s.buy(CAROL, 1_000 * USD, CAROL_RUNNER), None);
+    let sale_id = s.m().pending.as_ref().unwrap().sale_id;
+    assert_eq!(s.callback(true).on_handover(sale_id).0, 0);
+    assert_eq!(s.m().owner, CAROL);
+}
+
+/// A47: the host cost of a view (storage reads included, as the mocked
+/// runtime counts it) is the same with 10 payers and with 1,000.
+#[test]
+fn a47_view_cost_is_flat() {
+    let cost = |n: usize| {
+        let mut s = translator_world();
+        for i in 0..n {
+            s.pay(&long_payer(i), USD);
+        }
+        s.env(&s.call(MALLORY));
+        let g0 = near_sdk::env::used_gas();
+        let _ = s.c.get_status();
+        let _ = s.c.get_earnings();
+        near_sdk::env::used_gas().as_gas() - g0.as_gas()
+    };
+    let (small, big) = (cost(10), cost(1_000));
+    assert_eq!(small, big, "view gas {small} vs {big}");
+}
+
+/// A47: a new payer gets its own row only with a payment of at least 1.00
+/// (the payment pays for the row); smaller first payments are pooled.
+#[test]
+fn a47_small_first_payments_do_not_add_rows() {
+    let mut s = translator_world();
+    let rows = s.m().meter.tracked_payers;
+    assert_eq!(s.pay("tiny.testnet", USD / 2), Some(0));
+    assert_eq!(s.m().meter.tracked_payers, rows);
+    assert!(s.c.get_payer(acc("tiny.testnet")).is_none());
+    assert_eq!(s.c.get_earnings().gross, s.m().meter.total.gross);
+    assert_eq!(s.pay("tiny.testnet", USD), Some(0));
+    assert_eq!(s.m().meter.tracked_payers, rows + 1);
+}
+
+/// A47: day rows are capped at `MAX_DAYS`; the oldest are dropped and the
+/// totals stay.
+#[test]
+fn a47_day_rows_are_bounded() {
+    let mut s = translator_world();
+    let gross = s.m().meter.total.gross;
+    let n = agent_core::meter::MAX_DAYS + 20;
+    for _ in 0..n {
+        s.advance(DAY);
+        s.pay(PAYERS[0], USD);
+    }
+    assert_eq!(s.m().meter.days_total(), agent_core::meter::MAX_DAYS);
+    assert_eq!(s.m().meter.total.gross, gross + n as u128 * USD);
+    let page = s.c.get_earnings_days(Some(0), Some(100));
+    assert_eq!(page.len(), 100);
+    assert!(page.windows(2).all(|w| w[0].day < w[1].day));
+}
+
+/// Confirm every pending key deletion (the `on_keys_deleted` callback).
+fn settle_deletions(s: &mut Sim) {
+    let keys: Vec<String> = s.m().retiring.iter().cloned().collect();
+    if !keys.is_empty() {
+        s.callback(true).on_keys_deleted(keys);
+    }
+}
+
+/// A47 (PC follow-up: the brick came at 586 entries whatever the name
+/// length, so entries, not bytes). Every table outsiders or a long life can
+/// grow is built past its cap or far past 586 entries, and the serialized
+/// state blob stays a few KB: payout destinations (3,000), claimable
+/// balances (700), past owners (600), finalized sales (40), payers (done
+/// above) and day rows (done above).
+#[test]
+fn a47_every_growable_table_stays_out_of_the_blob() {
+    const SMALL: u64 = 10_000;
+    let mut s = translator_world();
+    let start = s.c.state_bytes();
+    let check = |s: &Sim, what: &str| {
+        let b = s.c.state_bytes();
+        assert!(
+            b < SMALL,
+            "{what}: state blob {b} bytes (started at {start})"
+        );
+    };
+    // Payout destinations: 1,000 per owner, 3,000 over three owners.
+    let owners = [ALICE, BOB, CAROL];
+    for (k, o) in owners.iter().enumerate() {
+        if k > 0 {
+            let prev = owners[k - 1];
+            s.by_1y(prev)
+                .nft_transfer(acc(o), DEED_ID.into(), None, None);
+            settle_deletions(&mut s);
+            s.pay(PAYERS[0], 2_000 * USD);
+        }
+        for i in 0..agent_core::MAX_PAID_TO {
+            s.by_1y(o)
+                .withdraw(U128(1), Some(acc(&format!("dest-{k}-{i}.testnet"))))
+                .detach();
+        }
+    }
+    assert_eq!(s.m().paid_to_total(), 3_000);
+    check(&s, "paid_to");
+    // Claimable balances: FAULT INJECTION, 700 failed claim payouts.
+    for i in 0..700 {
+        s.callback(false).on_transfer_out(
+            OutKind::Claim,
+            acc(&format!("claimer-{i}.testnet")),
+            U128(1),
+            None,
+        );
+    }
+    assert_eq!(s.m().claimable_accounts, 700);
+    assert_eq!(s.c.get_claimable(acc("claimer-699.testnet")).0, 1);
+    check(&s, "claimable");
+    // Past owners: 600 more deed moves.
+    let mut owner = CAROL.to_string();
+    for i in 0..600 {
+        let next = format!("owner-{i}.testnet");
+        s.by_1y(&owner)
+            .nft_transfer(acc(&next), DEED_ID.into(), None, None);
+        settle_deletions(&mut s);
+        owner = next;
+    }
+    assert!(s.m().past_owners >= 600);
+    assert!(s.m().is_past_owner("owner-0.testnet"));
+    assert!(s.m().flags_for("sub.owner-0.testnet").seller_subaccount);
+    check(&s, "past_owners");
+    // Finalized sales: 40 list / buy / finalize cycles.
+    let pair = [(BOB, BOB_RUNNER), (CAROL, CAROL_RUNNER)];
+    for i in 0..40 {
+        let (buyer, pk) = pair[i % 2];
+        let seller = s.m().owner.clone();
+        if s.m().known_keys.is_empty() {
+            s.by_1y(&seller).set_runner_key(key(9)).detach();
+            s.runner_key_cb(true, vec![], vec![], key_str(9));
+        }
+        s.by_1y(&seller)
+            .list_for_sale(U128(10 * USD), CODE_HASH.into(), None);
+        assert_eq!(
+            s.buy(buyer, 10 * USD, pk),
+            None,
+            "{i}: {:?}",
+            events("refused")
+        );
+        let id = s.m().pending.as_ref().unwrap().sale_id;
+        assert_eq!(s.callback(true).on_handover(id).0, 0);
+        s.advance(31 * DAY);
+        s.by(MALLORY).finalize_earnout(id);
+    }
+    assert_eq!(s.m().closed_sales, 40);
+    assert!(s.m().sales.is_empty());
+    assert_eq!(s.c.get_sales(None, None).len(), 20);
+    check(&s, "sales");
+    // Every view still answers.
+    let st = s.by(MALLORY).get_status();
+    assert_eq!(st["closed_sales"], 40);
+    let _ = s.c.get_earnings();
+    let _ = s.c.nft_token(DEED_ID.into());
 }

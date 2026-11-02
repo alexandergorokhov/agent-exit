@@ -84,6 +84,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | MCP `buy_agent` installs the server's runner key (`AGENT_EXIT_RUNNER_PK`), never one from tool input; chain-sourced text (method names, keys) reaches the model sanitised, cut to 200 characters and in `untrusted_*` fields; the Skill says tool output is data, not instructions | MCP tests (a prompt-injection method name in the scanned wasm) | A37 |
 | Review 2 lows: a withdrawal that fails after a sale goes back to whoever started it (A38); no `withdraw_near` while listed (A39); concurrent MCP buys cannot each pass the session cap (A40); the MCP server accepts only known testnet RPC hosts (A41); the test token's init is `#[private]` (A42) | offline + MCP tests | A38-A42 |
 | Review 3: callback gas counts the state blob, not code or per-entry storage, so a large account can still pay and sell (A43); a key-batch callback that lands after `recover_keys`/`recover_sale` is stale (batch nonce): it changes no key set, deletes a key its late batch added, and a late `on_handover` refunds the buyer (A44); payout destinations are pruned once a finalized sale closed their era (A45); NEAR AI proofs carry `signed_at` and are good for 7 days, used ids are kept only until they expire, at most 512, and `get_status.near_storage` plus the scan check NEAR storage solvency (A46) | offline | A43-A46 |
+| Outsiders cannot brick an agent by paying it: payer and day rows are separate storage entries read one at a time; the state blob stays the same size at 1,200 distinct 64-character payers and a view costs the same at 10 and 1,000 payers; tables are capped and their growth is reserved; `get_earnings` shows the newest 31 days and `get_earnings_days` / `get_payer` page the rest | offline + `make test-sandbox` (1,000 64-character payers on a real local node, then a buy and every view) | A47 |
 | Wallet follows the name (feature 5): the agent's Base Sepolia address is a Chain Signatures key derived from the agent account and path `wallet-1`, so it is the same before and after a sale; only the current runner key can make it sign (`pay_base`), only a USDC EIP-3009 `transferWithAuthorization` the contract builds from typed fields, to an allowed Base payee, inside the owner's Base daily cap, valid at most an hour. Each MPC signature must recover to the wallet address; a failed sign releases the cap; while an authorization is valid the agent cannot be listed or bought | offline with a **TEST MPC signer** (`tools/base-wallet`, real derivation math, local root key) + property test I8. The real signer `v1.signer-prod.testnet` and a relayed Base Sepolia transfer: gate G2 on the owner's machine | S6, A9, A20, E22, E23, I8 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
@@ -171,11 +172,16 @@ near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
   refused the transfer, the credit-back is lost from the books: the contract
   then holds more tokens than it accounts for (never fewer). Callbacks get
   gas for their own work plus the whole state, which makes this unlikely.
-- The payer table (at most 1,000 payers, then pooled) and the day table
-  (one row per day) stay inside the state blob that every call reads and
-  writes; callback gas scales with it. The agent pays its own storage from
-  its NEAR balance (no NEP-145 deposits); each verified payment adds one
-  32-byte entry.
+- Payer rows (at most 1,000; a new payer gets a row only with a payment of
+  at least 1.00, smaller ones are pooled), day rows (at most 400) and used
+  NEAR AI signature ids (at most 512, each kept 7 days) live under their own
+  storage keys, never in the state blob, so loading the contract costs the
+  same with 1 payer or 1,000 (A47; a local-node run at 12d1ab7 bricked an
+  agent with about 584 distinct 64-character payers when they were in the
+  blob). The agent pays this storage from its NEAR balance (no NEP-145
+  deposits); every table is capped and the room left is reserved
+  (`get_status.near_storage.growth_reserve`), which the owner cannot
+  withdraw, so outsiders can never make it insolvent.
 - A failed supplier payment returns to the treasury but still counts toward
   that day's cap (conservative).
 - The MCP server's offline mode replays recorded contract results; a buy or

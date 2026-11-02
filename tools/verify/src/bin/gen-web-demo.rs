@@ -116,7 +116,7 @@ fn break_in() -> Value {
     let planted = rec("translator.testnet (hidden key)", "heartbeat()", || {
         h.runner(key(HIDDEN_KEY)).heartbeat()
     });
-    let refunded = *h.m().claimable.get(BOB).unwrap_or(&0);
+    let refunded = h.m().claimable_of(BOB);
     json!({
         "id": "break-in",
         "title": "Break-in fails",

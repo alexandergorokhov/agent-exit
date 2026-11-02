@@ -46,6 +46,7 @@ use std::collections::{BTreeSet, HashMap};
 mod base_tests;
 #[cfg(test)]
 mod fuzz_tests;
+pub mod meter_store;
 #[cfg(test)]
 mod review2_regressions;
 #[cfg(test)]
@@ -138,6 +139,10 @@ pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 /// entry (key 34 + value 8) and ring slot (key 6 + value 32), each with the
 /// 40-byte record overhead, rounded up (A46).
 pub const SIG_ENTRY_BYTES: u128 = 200;
+/// Upper bound of one payer row: key (2 + 64) + value (75) + 40 (A47).
+pub const PAYER_ENTRY_BYTES: u128 = 200;
+/// Upper bound of one day row and its list slot (A47).
+pub const DAY_ENTRY_BYTES: u128 = 200;
 /// Longest `ft_transfer_call` msg accepted (E10).
 pub const MAX_MSG_LEN: usize = 4_096;
 
@@ -261,7 +266,7 @@ impl From<OutKind> for TransferKind {
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct AgentExit {
-    m: Machine,
+    m: Machine<meter_store::NearStore>,
     /// The one accepted NEP-141 token (the FAKE test dollar in the demo).
     token: AccountId,
     /// Registry admin: may only edit the NEAR AI signer list (threat model
@@ -322,7 +327,10 @@ impl AgentExit {
     #[init]
     #[private]
     pub fn new(owner_id: AccountId, base_address: Option<String>) -> Self {
-        let mut m = Machine::new(env::current_account_id().as_str(), owner_id.as_str());
+        let mut m = Machine::<meter_store::NearStore>::with_store(
+            env::current_account_id().as_str(),
+            owner_id.as_str(),
+        );
         m.terms_min = TERMS_MIN;
         m.base.address = base_address.map(|a| norm_address(&a));
         Self {
@@ -1118,6 +1126,26 @@ impl AgentExit {
         self.m.earnings(env::block_timestamp())
     }
 
+    /// Day rows, oldest first, `limit` at most 100 (A47). `get_earnings`
+    /// shows the newest 31; this pages through all kept rows.
+    pub fn get_earnings_days(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<core::meter::DayRow> {
+        self.m.meter.days(
+            &self.m.store,
+            from_index.unwrap_or(0),
+            limit.unwrap_or(100).min(100),
+        )
+    }
+
+    /// One payer's row (A47); `None` if the payer has no row of its own.
+    pub fn get_payer(&self, account_id: AccountId) -> Option<core::meter::PayerStats> {
+        use core::MeterStore;
+        self.m.store.payer(account_id.as_str())
+    }
+
     pub fn known_keys(&self) -> Vec<String> {
         self.m.known_keys.iter().cloned().collect()
     }
@@ -1130,12 +1158,22 @@ impl AgentExit {
         self.m.listing.as_ref().map(|l| self.listing_json(l))
     }
 
-    pub fn get_sales(&self) -> Vec<Value> {
-        self.m.sales.iter().map(|s| self.sale_json(s)).collect()
+    /// Sales by id, oldest first: ids `from_index + 1 ..`, at most `limit`
+    /// (default 20, at most 50). Without `from_index`, the newest `limit`.
+    /// Open earn-outs come from the state, finalized ones from the history
+    /// (A47).
+    pub fn get_sales(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<Value> {
+        let last = self.m.next_sale_id.saturating_sub(1);
+        let limit = limit.unwrap_or(20).min(50);
+        let from = from_index.unwrap_or(last.saturating_sub(limit));
+        (from + 1..=last.min(from.saturating_add(limit)))
+            .filter_map(|id| self.m.sale(id))
+            .map(|s| self.sale_json(&s))
+            .collect()
     }
 
     pub fn get_claimable(&self, account_id: AccountId) -> U128 {
-        U128(*self.m.claimable.get(account_id.as_str()).unwrap_or(&0))
+        U128(self.m.claimable_of(account_id.as_str()))
     }
 
     pub fn get_status(&self) -> Value {
@@ -1153,7 +1191,11 @@ impl AgentExit {
             "signers": self.signers,
             "terms_min": self.m.terms_min,
             "terms_config": self.m.terms_min.config(),
-            "paid_to_total": self.m.paid_to.len(),
+            "paid_to_total": self.m.paid_to_total(),
+            "open_sales": self.m.sales.len(),
+            "closed_sales": self.m.closed_sales,
+            "claimable_accounts": self.m.claimable_accounts,
+            "past_owners": self.m.past_owners,
             "paid_to_owner": self.m.paid_to_this_owner(),
             "incoming_keys": self.m.incoming,
             "retiring_keys": self.m.retiring,
@@ -1186,15 +1228,28 @@ impl AgentExit {
             "balance": balance.as_yoctonear().to_string(),
             "sig_entries": self.used_sigs.len(),
             "max_sig_entries": verified::MAX_SIGS,
+            "payer_entries": self.m.meter.tracked_payers,
+            "max_payer_entries": core::meter::MAX_PAYERS,
+            "day_entries": self.m.meter.days_total(),
+            "max_day_entries": core::meter::MAX_DAYS,
             "growth_reserve": growth.as_yoctonear().to_string(),
             "solvent": balance >= need,
         })
     }
 
-    /// Storage the signature window may still add (A46).
+    /// Storage outsiders may still add: signature ids (A46), payer rows
+    /// and day rows (A47). Each table is capped, so this is a bound; the
+    /// owner cannot withdraw it, so outsiders can never make the agent
+    /// unable to pay for its storage.
     fn sig_growth(&self) -> NearToken {
-        let room = (verified::MAX_SIGS - self.used_sigs.len()) as u128;
-        env::storage_byte_cost().saturating_mul(room * SIG_ENTRY_BYTES)
+        let sigs = (verified::MAX_SIGS - self.used_sigs.len()) as u128 * SIG_ENTRY_BYTES;
+        let payers = (core::meter::MAX_PAYERS as u128)
+            .saturating_sub(self.m.meter.tracked_payers as u128)
+            * PAYER_ENTRY_BYTES;
+        let days = (core::meter::MAX_DAYS as u128)
+            .saturating_sub(self.m.meter.days_total() as u128)
+            * DAY_ENTRY_BYTES;
+        env::storage_byte_cost().saturating_mul(sigs + payers + days)
     }
 
     pub fn near_withdrawable(&self) -> NearToken {
@@ -1616,7 +1671,7 @@ impl AgentExit {
             "listing_version": self.m.listing_version,
             "earnings": {"gross": amt(e.gross), "counted": amt(e.counted), "verified": amt(e.verified),
                          "flagged": amt(e.flagged), "counted_payers": e.counted_payers},
-            "sales": self.m.sales.len(),
+            "sales": self.m.sales.len() as u64 + self.m.closed_sales,
             "escrow_left": amt(self.m.escrow_left()),
             "frozen": self.m.frozen,
             "known_keys_hash": self.m.known_keys_hash(),

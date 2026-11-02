@@ -801,8 +801,8 @@ fn run() -> Value {
     r.check(
         "A31",
         "buyer pays every customer 1 base unit after the sale: their payments are flagged round_trip for the next buyer but still release the seller's earn-out (only pre-sale round trips count against it)",
-        flagged == 600 * USD && s.m().sales[0].released == 300 * USD && s.m().sales[0].returned == 0,
-        json!({"flagged_round_trip": usd(flagged), "seller_released": usd(s.m().sales[0].released)}),
+        flagged == 600 * USD && s.m().sale(1).unwrap().released == 300 * USD && s.m().sale(1).unwrap().returned == 0,
+        json!({"flagged_round_trip": usd(flagged), "seller_released": usd(s.m().sale(1).unwrap().released)}),
     );
 
     let mut s = translator_world();
@@ -959,6 +959,21 @@ fn run() -> Value {
         s.m().owner_free == bob_free && claim(&s, ALICE) == alice_claim + 100 * USD,
         json!({"seller_claimable": usd(claim(&s, ALICE))}),
     );
+    // A47: outsiders cannot grow the state blob.
+    let mut s = translator_world();
+    let before = s.c.state_bytes();
+    for i in 0..1_000 {
+        s.pay(&format!("{i:0>56}.testnet"), USD);
+    }
+    let after = s.c.state_bytes();
+    let st = s.by(MALLORY).get_status();
+    r.check(
+        "A47",
+        "1,000 distinct 64-character payers do not grow the state blob (payer, day, payout-destination, claimable, past-owner and sale-history rows are separate storage entries), so loading the contract costs the same; every view still answers",
+        after <= before + 16 && st["near_storage"]["payer_entries"] == 1_000,
+        json!({"state_blob_bytes_before": before, "state_blob_bytes_after": after, "payer_entries": st["near_storage"]["payer_entries"]}),
+    );
+
     // Review 3 (A44-A46).
     let hour = 3_600 * agent_core::NANOS_PER_SEC;
     let mut s = sold_translator();

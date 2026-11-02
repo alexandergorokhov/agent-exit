@@ -543,6 +543,16 @@
       }
     },
     {
+      "id": "A47",
+      "what": "1,000 distinct 64-character payers do not grow the state blob (payer, day, payout-destination, claimable, past-owner and sale-history rows are separate storage entries), so loading the contract costs the same; every view still answers",
+      "pass": true,
+      "detail": {
+        "state_blob_bytes_before": 804,
+        "state_blob_bytes_after": 804,
+        "payer_entries": 1000
+      }
+    },
+    {
       "id": "A44",
       "what": "a key-batch callback that lands after recover_keys / recover_sale is stale (batch nonce): it changes no key set, deletes a key its late batch added, and a late on_handover refunds the buyer in full",
       "pass": true,
@@ -626,7 +636,7 @@
     }
   ],
   "summary": {
-    "passed": 68,
+    "passed": 69,
     "failed": 0
   },
   "not_covered_here": [

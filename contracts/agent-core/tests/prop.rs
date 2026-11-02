@@ -156,7 +156,10 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
         prop_assert!(m.treasury >= l.treasury_snapshot);
     }
     // I2: per sale, paid now + escrow = price; released + returned <= escrow.
-    for s in &m.sales {
+    // Open sales in the blob; finalized ones in the history (A47).
+    prop_assert!(m.sales.iter().all(|s| !s.finalized));
+    prop_assert_eq!(m.closed_sales as usize, m.store.sales.len());
+    for s in m.sales.iter().chain(m.store.sales.values()) {
         prop_assert_eq!(s.paid_now + s.escrow, s.price);
         prop_assert!(s.released + s.returned <= s.escrow);
         if s.finalized {
@@ -167,8 +170,8 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     let e = m.earnings(w.now);
     prop_assert!(e.verified <= e.counted && e.counted <= e.gross);
     // I11: payer map bounded.
-    prop_assert!(m.meter.payers.len() <= meter::MAX_PAYERS);
-    prop_assert!(m.paid_to.len() <= MAX_PAID_TO_TOTAL);
+    prop_assert!(m.store.payers.len() <= meter::MAX_PAYERS);
+    prop_assert!((m.paid_to_total() as usize) <= MAX_PAID_TO_TOTAL);
     prop_assert!(m.paid_to_this_owner() <= MAX_PAID_TO);
     // A25: incoming / retiring / known never overlap.
     prop_assert!(m.incoming.is_disjoint(&m.known_keys));
@@ -197,8 +200,8 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
         Act::Pay(p, x) => {
             let payer = ACTORS[p];
             let amount = x as Amount;
-            let payers_before = w.m.meter.payers.len();
-            let days_before = w.m.meter.days.len();
+            let payers_before = w.m.store.payers.len();
+            let days_before = w.m.store.days.len();
             let r = w.m.pay(payer, amount, x % 3 == 0, w.now);
             match r {
                 PayResult::Refund(_) => {
@@ -232,8 +235,8 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                         prop_assert_eq!(total, 0);
                     }
                     // I11: at most one new payer and one new day per payment.
-                    prop_assert!(w.m.meter.payers.len() <= payers_before + 1);
-                    prop_assert!(w.m.meter.days.len() <= days_before + 1);
+                    prop_assert!(w.m.store.payers.len() <= payers_before + 1);
+                    prop_assert!(w.m.store.days.len() <= days_before + 1);
                 }
             }
         }
@@ -300,7 +303,7 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 } => {
                     // A29: the seller's unwithdrawn revenue went to the seller.
                     prop_assert_eq!(w.m.owner_free, 0);
-                    prop_assert!(*w.m.claimable.get(&s).unwrap_or(&0) >= seller_revenue);
+                    prop_assert!(w.m.claimable_of(&s) >= seller_revenue);
                     prop_assert!(!w.m.incoming.contains(&p.buyer_pk));
                     // I1: paid => deed moved, seller keys gone, buyer key added.
                     prop_assert_eq!(&s, &seller);
@@ -327,7 +330,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                         let before_buy = w.before_buy.take().unwrap();
                         prop_assert!(w.m.frozen);
                         prop_assert_eq!(&w.m.owner, &seller);
-                        prop_assert_eq!(w.m.sales.len(), before_buy.sales.len());
+                        prop_assert_eq!(
+                            w.m.sales.len() + w.m.closed_sales as usize,
+                            before_buy.sales.len() + before_buy.closed_sales as usize
+                        );
                         prop_assert!(w.m.sales.iter().all(|s| s.id != p.sale_id));
                         prop_assert!(w.m.listing.is_none());
                         prop_assert!(
@@ -346,13 +352,16 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.next_sale_id = w.m.next_sale_id;
                     // Payments may have arrived while settling; compare the rest.
                     expect.meter = w.m.meter.clone();
+                    expect.store = w.m.store.clone();
                     expect.held = w.m.held;
                     expect.owner_free = w.m.owner_free;
                     expect.treasury = w.m.treasury;
-                    expect.paid_to = w.m.paid_to.clone();
+                    expect.paid_to_by_epoch = w.m.paid_to_by_epoch.clone();
+                    expect.paid_to_dead = w.m.paid_to_dead.clone();
                     // Only payments while settling may have changed these;
                     // the rolled-back sale left no record (A34).
-                    expect.claimable = w.m.claimable.clone();
+                    expect.claimable_sum = w.m.claimable_sum;
+                    expect.claimable_accounts = w.m.claimable_accounts;
                     expect.sales = w.m.sales.clone();
                     prop_assert!(w.m.sales.iter().all(|s| s.id != p.sale_id));
                     prop_assert!(!w.m.frozen);
@@ -364,15 +373,12 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             if !w.in_flight.is_empty() {
                 let (k, to, by, amt) = w.in_flight.remove(i % w.in_flight.len());
                 let owner_before = w.m.owner.clone();
-                let claim_before = by.as_ref().map(|b| *w.m.claimable.get(b).unwrap_or(&0));
+                let claim_before = by.as_ref().map(|b| w.m.claimable_of(b));
                 w.m.transfer_done(k, &to, by.as_deref(), amt, ok);
                 // A38: a failed withdrawal goes back to whoever started it.
                 if let (false, TransferKind::OwnerWithdraw, Some(b)) = (ok, k, &by) {
                     if *b != owner_before {
-                        prop_assert_eq!(
-                            *w.m.claimable.get(b).unwrap_or(&0),
-                            claim_before.unwrap() + amt
-                        );
+                        prop_assert_eq!(w.m.claimable_of(b), claim_before.unwrap() + amt);
                     }
                 }
             }
@@ -534,7 +540,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 prop_assert_eq!(&w.m.owner, &before.owner);
                 prop_assert!(w.m.pending.is_none() && w.m.listing.is_none());
                 prop_assert!(w.m.status != Status::Listed && w.m.status != Status::Settling);
-                prop_assert_eq!(w.m.sales.len(), before.sales.len());
+                prop_assert_eq!(
+                    w.m.sales.len() + w.m.closed_sales as usize,
+                    before.sales.len() + before.closed_sales as usize
+                );
                 prop_assert!(w.m.known_keys.is_empty() && w.m.paused);
                 prop_assert!(r.delete_keys.contains(&p.buyer_pk));
                 for k in &p.prev_keys {
@@ -592,7 +601,9 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             if let Ok(RunnerCheck::BackdoorProven { .. }) = r {
                 prop_assert!(w.m.frozen);
                 BACKDOORS.fetch_add(1, Relaxed);
-                for s in &w.m.sales {
+                // Every open earn-out was cut and moved to the history.
+                prop_assert!(w.m.sales.is_empty());
+                for s in w.m.store.sales.values() {
                     prop_assert!(s.finalized);
                 }
             }
@@ -739,9 +750,11 @@ fn prop_invariants_random_sequences() {
         // Every sequence ends past every earn-out window and closes each one,
         // so finalization is covered at any PROP_CASES.
         step(&mut w, &Act::Time(366 * 86_400))?;
-        for i in 0..w.m.sales.len() {
-            step(&mut w, &Act::Finalize(i))?;
+        // Finalizing moves a sale out of `sales`, so always take the first.
+        for _ in 0..w.m.sales.len() {
+            step(&mut w, &Act::Finalize(0))?;
         }
+        prop_assert!(w.m.sales.is_empty());
         Ok(())
     })
     .unwrap();
@@ -820,7 +833,7 @@ fn prop_storage_bounded() {
     for i in 0..(meter::MAX_PAYERS + 5) {
         m.pay(&format!("payer{i}"), USD, false, T0);
     }
-    assert_eq!(m.meter.payers.len(), meter::MAX_PAYERS);
+    assert_eq!(m.store.payers.len(), meter::MAX_PAYERS);
     assert_eq!(m.meter.other.totals.payments, 5);
     let e = m.earnings(T0);
     assert_eq!(e.gross, (meter::MAX_PAYERS as Amount + 5) * USD);

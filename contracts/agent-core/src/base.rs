@@ -244,7 +244,7 @@ pub fn relay_calldata(
     d
 }
 
-impl crate::Machine {
+impl<S: crate::Store + Default> crate::Machine<S> {
     /// Owner's Base limits; same rules as `set_limits` (call after it).
     pub fn set_base_limits(&mut self, caller: &str, limits: BaseLimits) -> Res<()> {
         self.only_owner(caller)?;

@@ -99,7 +99,7 @@ fn snapshot(s: &mut Sim, key_owners: Value, hidden_full: Option<String>) -> Valu
         "earnings": c.get_earnings(),
         "listing": c.get_listing(),
         "limits": c.get_limits(),
-        "sales": c.get_sales(),
+        "sales": c.get_sales(None, None),
         "access_keys": scan["chain"]["keys"],
         "key_owners": key_owners,
         "scan_input": scan,

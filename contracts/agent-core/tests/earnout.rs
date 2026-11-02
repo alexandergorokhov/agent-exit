@@ -30,7 +30,7 @@ fn sold_agent() -> Machine {
 }
 
 fn end(m: &Machine) -> Ts {
-    m.sales[0].window_end
+    m.sale(1).expect("sale 1").window_end
 }
 
 #[test]
@@ -50,12 +50,12 @@ fn s7_earnout_partial() {
     for i in 0..4u64 {
         m.pay("p1", 25 * USD, false, T0 + (i + 1) * DAY_NS);
     }
-    assert_eq!(m.claimable["alice"], 50 * USD);
+    assert_eq!(m.claimable_of("alice"), 50 * USD);
     let s = m.finalize_earnout(1, end(&m)).unwrap();
     assert_eq!(s.released, 60 * USD);
     assert_eq!(s.returned, 240 * USD);
-    assert_eq!(m.claimable["alice"], 60 * USD);
-    assert_eq!(m.claimable["bob"], 240 * USD);
+    assert_eq!(m.claimable_of("alice"), 60 * USD);
+    assert_eq!(m.claimable_of("bob"), 240 * USD);
     assert!(m.solvent());
 }
 
@@ -64,8 +64,8 @@ fn s8_earnout_silence() {
     let mut m = sold_agent();
     assert_eq!(m.finalize_earnout(1, end(&m) - 1), Err(Error::WindowOpen));
     m.finalize_earnout(1, end(&m)).unwrap();
-    assert_eq!(m.claimable["alice"], 60 * USD);
-    assert_eq!(m.claimable["bob"], 240 * USD);
+    assert_eq!(m.claimable_of("alice"), 60 * USD);
+    assert_eq!(m.claimable_of("bob"), 240 * USD);
 }
 
 #[test]
@@ -81,8 +81,8 @@ fn s9_earnout_full() {
     }
     assert_eq!(m.sales[0].released, 300 * USD);
     m.finalize_earnout(1, end(&m)).unwrap();
-    assert_eq!(m.claimable["alice"], 300 * USD);
-    assert!(!m.claimable.contains_key("bob"));
+    assert_eq!(m.claimable_of("alice"), 300 * USD);
+    assert!(!(m.claimable_of("bob") > 0));
 }
 
 #[test]
@@ -102,7 +102,7 @@ fn s10_wash_after_sale() {
         }
         r => panic!("{r:?}"),
     }
-    assert!(!m.claimable.contains_key("alice"));
+    assert!(!(m.claimable_of("alice") > 0));
 }
 
 #[test]
@@ -127,8 +127,9 @@ fn a23_core_hidden_key_freezes_and_cuts() {
         }
     );
     assert!(m.frozen);
-    assert!(m.sales[0].cut);
-    assert_eq!(m.claimable["bob"], 290 * USD);
+    assert!(m.sale(1).unwrap().cut);
+    assert!(m.sales.is_empty(), "the cut sale moved to the history");
+    assert_eq!(m.claimable_of("bob"), 290 * USD);
     assert_eq!(m.runner_guard("translator", BOB_PK), Err(Error::Frozen));
     // The owner can still take revenue out (I10).
     assert_eq!(m.withdraw("bob", 20 * USD, "bob"), Ok(20 * USD));

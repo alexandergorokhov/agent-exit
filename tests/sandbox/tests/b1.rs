@@ -358,3 +358,115 @@ async fn e5_rollback_refunds_buyer() {
         .unwrap()
         .contains(&json!(alice_runner.public_key().to_string())));
 }
+
+/// One payer: created by `batcher`, takes 1.00 from the faucet, pays it to
+/// the agent. Sequential within the payer, concurrent across batchers.
+async fn one_payer(
+    net: NetworkConfig,
+    batcher: AccountId,
+    batcher_signer: Arc<Signer>,
+    xusd: AccountId,
+    agent: AccountId,
+    label: String,
+) -> Result<(), String> {
+    let id: AccountId = format!("{label}.{batcher}").parse().map_err(|e| format!("{e:?}"))?;
+    assert_eq!(id.as_str().len(), 64, "{id}");
+    let sk = generate_secret_key().unwrap();
+    Account::create_account(id.clone())
+        .fund_myself(batcher, NearToken::from_millinear(50))
+        .with_public_key(sk.public_key())
+        .with_signer(batcher_signer)
+        .send_to(&net)
+        .await
+        .map_err(|e| format!("create {id}: {e:?}"))?
+        .assert_success();
+    let signer = Signer::from_secret_key(sk).unwrap();
+    for (method, args, yocto) in [
+        ("faucet", json!({"amount": USD.to_string()}), 0u128),
+        (
+            "ft_transfer_call",
+            json!({"receiver_id": agent, "amount": USD.to_string(), "msg": ""}),
+            1,
+        ),
+    ] {
+        let r = Contract(xusd.clone())
+            .call_function(method, args)
+            .transaction()
+            .gas(NearGas::from_tgas(100))
+            .deposit(NearToken::from_yoctonear(yocto))
+            .with_signer(id.clone(), signer.clone())
+            .send_to(&net)
+            .await
+            .map_err(|e| format!("{method} {id}: {e:?}"))?;
+        r.into_result().map_err(|e| format!("{method} {id}: {e:?}"))?;
+    }
+    Ok(())
+}
+
+/// A47 (local-node finding at 12d1ab7: about 584 distinct 64-character
+/// payers made every call trap while loading state). 1,000 distinct
+/// 64-character payers pay 1.00 each; then every view still works, the
+/// agent is bought, and the new owner's runner key works.
+#[tokio::test]
+async fn a47_thousand_long_payers_then_buy_and_views() {
+    const PAYERS: usize = 1_000;
+    const BATCHERS: usize = 50;
+    let (w, xusd, agent, alice, bob, _alice_runner, _setup) = listed().await;
+    let t0 = std::time::Instant::now();
+    let mut batchers = vec![];
+    for b in 0..BATCHERS {
+        batchers.push(w.account(&format!("b{b:02}"), 2 + (PAYERS / BATCHERS) as u128 / 10).await);
+    }
+    let mut set = tokio::task::JoinSet::new();
+    for (b, batcher) in batchers.iter().enumerate() {
+        let (net, bid, bsig) = (w.net.clone(), batcher.id.clone(), batcher.signer.clone());
+        let (xusd, agent_id) = (xusd.clone(), agent.id.clone());
+        set.spawn(async move {
+            let room = 64 - 1 - bid.as_str().len();
+            for i in 0..PAYERS / BATCHERS {
+                let label = format!("{:0>room$}", b * 1_000 + i);
+                one_payer(net.clone(), bid.clone(), bsig.clone(), xusd.clone(), agent_id.clone(), label)
+                    .await?;
+            }
+            Ok::<(), String>(())
+        });
+    }
+    while let Some(r) = set.join_next().await {
+        r.expect("task").expect("payer");
+    }
+    println!("A47: {PAYERS} payers paid in {:?}", t0.elapsed());
+
+    for (method, args) in [
+        ("get_status", json!({})),
+        ("get_earnings", json!({})),
+        ("get_earnings_days", json!({})),
+        ("get_listing", json!({})),
+        ("nft_token", json!({"token_id": "deed"})),
+    ] {
+        let v = w.view(&agent.id, method, args).await;
+        assert!(!v.is_null(), "{method}");
+    }
+    let e = w.view(&agent.id, "get_earnings", json!({})).await;
+    assert_eq!(e["tracked_payers"], PAYERS as u64 + 1, "p1 plus the 1,000");
+    let st = w.view(&agent.id, "get_status", json!({})).await;
+    println!("A47 near_storage: {}", st["near_storage"]);
+    assert_eq!(st["near_storage"]["solvent"], true);
+
+    let bob_runner = generate_secret_key().unwrap();
+    buy(&w, &xusd, &agent.id, &bob, bob_runner.public_key().to_string())
+        .await
+        .unwrap();
+    let deed = w.view(&agent.id, "nft_token", json!({"token_id": "deed"})).await;
+    assert_eq!(deed["owner_id"], bob.id.to_string());
+    let alice_bal = w.view(&xusd, "ft_balance_of", json!({"account_id": alice.id})).await;
+    assert_eq!(alice_bal, json!((700 * USD).to_string()));
+    let new = Acc {
+        id: agent.id.clone(),
+        sk: bob_runner.clone(),
+        signer: Signer::from_secret_key(bob_runner).unwrap(),
+    };
+    let ok = w.call(&new, &agent.id, "heartbeat", json!({}), 0).await.unwrap();
+    assert_eq!(ok["ok"], true);
+    let st = w.view(&agent.id, "get_status", json!({})).await;
+    assert_eq!(st["owner"], bob.id.to_string());
+}

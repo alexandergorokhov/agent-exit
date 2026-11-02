@@ -382,8 +382,8 @@ pub fn plan(cmd: Command) -> Vec<Step> {
 /// NEAR each created account gets from ROOT (agents hold their wasm's storage).
 pub const FUNDING: [(&str, u32); 15] = [
     ("xusd", 4),
-    ("translator", 7),
-    ("cheat", 7),
+    ("translator", 11),
+    ("cheat", 11),
     ("summarizer", 2),
     ("alice", 3),
     ("bob", 3),

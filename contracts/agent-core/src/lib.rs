@@ -17,7 +17,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub use meter::{Earnings, Flags, Meter};
+/// Former name of `Store`.
+pub use meter::Store as MeterStore;
+pub use meter::{DayStats, Earnings, Flags, MemStore, Meter, Store};
 pub use policy::{Limits, Policy, Spent};
 
 pub type Amount = u128;
@@ -45,6 +47,8 @@ pub enum Error {
     KeysChanged,
     Underpaid,
     NotEnoughGas,
+    /// `MAX_OPEN_SALES` earn-outs are open: finalize one before listing (A47).
+    TooManyOpenSales,
     OpenApproval,
     SelfBuy,
     BadTerms,
@@ -326,12 +330,13 @@ pub enum RunnerCheck {
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
-pub struct Machine {
+pub struct Machine<S = MemStore> {
     pub agent: Account,
     pub owner: Account,
     pub owner_epoch: u64,
-    /// Every account that owned the deed before (their payments are `self`).
-    pub past_owners: BTreeSet<Account>,
+    /// How many accounts owned the deed before (each in `store`; their
+    /// payments are `self`).
+    pub past_owners: u64,
     pub status: Status,
     /// Status to go back to if a listing is cancelled.
     pub status_before_listing: Status,
@@ -351,16 +356,29 @@ pub struct Machine {
     pub approvals: BTreeMap<Account, u64>,
     pub next_approval_id: u64,
     pub meter: Meter,
+    /// Open earn-outs (at most `MAX_OPEN_SALES`). Finalized sales move to
+    /// the sale history in `store` (A47).
     pub sales: Vec<Sale>,
+    /// Sales in the history.
+    pub closed_sales: u64,
+    /// Highest seller epoch of a finalized sale (paid_to pruning, A45).
+    pub closed_max_epoch: Option<u64>,
     pub next_sale_id: u64,
-    pub claimable: BTreeMap<Account, Amount>,
+    /// Sum of the claimable balances (each in `store`).
+    pub claimable_sum: Amount,
+    /// Accounts with a claimable balance.
+    pub claimable_accounts: u64,
     /// Owner's free token balance (revenue).
     pub owner_free: Amount,
     /// Tokens the contract believes it holds (excludes transfers in flight).
     pub held: Amount,
     /// Accounts the agent sent tokens to (for the `round_trip` flag), with
     /// the owner epoch of the first send. Bounded (A30).
-    pub paid_to: BTreeMap<Account, u64>,
+    /// Entries live in `store`; here only their count per owner epoch.
+    pub paid_to_by_epoch: BTreeMap<u64, u64>,
+    /// Epochs whose entries were pruned (A45); a stored entry with one of
+    /// these epochs counts as absent.
+    pub paid_to_dead: BTreeSet<u64>,
     /// Latest `valid_before` of any Base authorization the agent signed or
     /// asked the MPC signer to sign (feature 5); list and buy are refused
     /// until it passes (A9).
@@ -386,6 +404,10 @@ pub struct Machine {
     /// stale: it refunds the buyer and deletes the buyer key its batch may
     /// still have added (A44).
     pub recovered_buy: Option<Pending>,
+    /// Per-payer and per-day rows (A47). In the contract this is a handle to
+    /// separate storage keys and adds nothing to the state blob.
+    #[serde(skip)]
+    pub store: S,
 }
 
 /// How long a callback gets before recovery is allowed (A33). A callback
@@ -407,6 +429,9 @@ pub const MAX_PAID_TO: usize = 1_000;
 /// Hard cap over all owners. `get_status.paid_to_total` shows the size and
 /// the scan blocks an agent whose buyer would not get a full quota (A36).
 pub const MAX_PAID_TO_TOTAL: usize = 3_000;
+/// Open earn-outs at a time; each needs a real sale, and listing waits
+/// until one is finalized (A47).
+pub const MAX_OPEN_SALES: usize = 16;
 
 /// Hash of a key set as the buyer saw it: sha256 over the sorted keys joined
 /// by `\n`, hex encoded.
@@ -419,11 +444,17 @@ pub fn keys_hash<'a>(keys: impl IntoIterator<Item = &'a Key>) -> String {
 
 impl Machine {
     pub fn new(agent: &str, owner: &str) -> Self {
+        Machine::with_store(agent, owner)
+    }
+}
+
+impl<S: Store + Default> Machine<S> {
+    pub fn with_store(agent: &str, owner: &str) -> Self {
         Machine {
             agent: agent.into(),
             owner: owner.into(),
             owner_epoch: 1,
-            past_owners: BTreeSet::new(),
+            past_owners: 0,
             status: Status::Active,
             status_before_listing: Status::Active,
             listing: None,
@@ -438,11 +469,15 @@ impl Machine {
             next_approval_id: 0,
             meter: Meter::default(),
             sales: Vec::new(),
+            closed_sales: 0,
+            closed_max_epoch: None,
             next_sale_id: 1,
-            claimable: BTreeMap::new(),
+            claimable_sum: 0,
+            claimable_accounts: 0,
             owner_free: 0,
             held: 0,
-            paid_to: BTreeMap::new(),
+            paid_to_by_epoch: BTreeMap::new(),
+            paid_to_dead: BTreeSet::new(),
             open_auth_until: 0,
             base: base::BaseWallet::default(),
             limits: Limits::default(),
@@ -452,6 +487,7 @@ impl Machine {
             keys_since: 0,
             key_batch: 0,
             recovered_buy: None,
+            store: S::default(),
         }
     }
 
@@ -490,13 +526,71 @@ impl Machine {
     }
 
     pub fn claimable_total(&self) -> Amount {
-        self.claimable.values().sum()
+        self.claimable_sum
+    }
+
+    /// `who`'s claimable balance.
+    pub fn claimable_of(&self, who: &str) -> Amount {
+        self.store.claimable(who)
     }
 
     fn credit(&mut self, who: &str, amount: Amount) {
         if amount > 0 {
-            *self.claimable.entry(who.to_string()).or_default() += amount;
+            let had = self.store.claimable(who);
+            if had == 0 {
+                self.claimable_accounts += 1;
+            }
+            self.store.put_claimable(who, had + amount);
+            self.claimable_sum += amount;
         }
+    }
+
+    /// A sale, open or finalized.
+    pub fn sale(&self, id: u64) -> Option<Sale> {
+        self.sales
+            .iter()
+            .find(|s| s.id == id)
+            .cloned()
+            .or_else(|| self.store.sale(id))
+    }
+
+    /// Move finalized sales out of the state blob into the history (A47).
+    fn close_finalized_sales(&mut self) {
+        let (done, open): (Vec<Sale>, Vec<Sale>) = std::mem::take(&mut self.sales)
+            .into_iter()
+            .partition(|s| s.finalized);
+        self.sales = open;
+        for s in done {
+            self.closed_sales += 1;
+            self.closed_max_epoch = Some(
+                self.closed_max_epoch
+                    .map_or(s.seller_epoch, |m| m.max(s.seller_epoch)),
+            );
+            self.store.put_sale(&s);
+        }
+    }
+
+    fn add_past_owner(&mut self, who: &str) {
+        if !self.store.past_owner(who) {
+            self.store.put_past_owner(who);
+            self.past_owners += 1;
+        }
+    }
+
+    pub fn is_past_owner(&self, who: &str) -> bool {
+        self.store.past_owner(who)
+    }
+
+    /// The owner epoch `to` was first paid in, unless pruned (A45).
+    pub fn paid_to_epoch(&self, to: &str) -> Option<u64> {
+        self.store
+            .paid_to(to)
+            .filter(|e| !self.paid_to_dead.contains(e))
+    }
+
+    /// Payout destinations tracked (all owners, pruned ones excluded).
+    pub fn paid_to_total(&self) -> u64 {
+        self.paid_to_by_epoch.values().sum()
     }
 
     // ----- keys -------------------------------------------------------------
@@ -681,6 +775,9 @@ impl Machine {
         self.not_settling()?;
         if self.frozen {
             return Err(Error::Frozen);
+        }
+        if self.sales.len() >= MAX_OPEN_SALES {
+            return Err(Error::TooManyOpenSales);
         }
         if self.status == Status::Listed {
             return Err(Error::AlreadyListed);
@@ -870,7 +967,8 @@ impl Machine {
         let seller_revenue = std::mem::take(&mut self.owner_free);
         self.credit(&l.seller, seller_revenue);
         // Deed moves, owner epoch bumps, seller keys are gone.
-        self.past_owners.insert(self.owner.clone());
+        let seller = self.owner.clone();
+        self.add_past_owner(&seller);
         self.owner = p.buyer.clone();
         self.owner_epoch += 1;
         self.approvals.clear();
@@ -941,10 +1039,13 @@ impl Machine {
 
     /// Anyone with a claimable balance pulls it.
     pub fn claim(&mut self, caller: &str) -> Res<Amount> {
-        let amount = self.claimable.remove(caller).unwrap_or(0);
+        let amount = self.store.claimable(caller);
         if amount == 0 {
             return Err(Error::NothingToClaim);
         }
+        self.store.put_claimable(caller, 0);
+        self.claimable_sum -= amount;
+        self.claimable_accounts -= 1;
         self.held -= amount;
         Ok(amount)
     }
@@ -973,22 +1074,26 @@ impl Machine {
     /// agent need no entry: their payments are flagged `self` anyway, so the
     /// owner can always withdraw to themselves (I10).
     fn note_paid_to(&mut self, to: &str) -> Res<()> {
-        if self.flags_for(to).self_pay || self.paid_to.contains_key(to) {
+        if self.flags_for(to).self_pay || self.paid_to_epoch(to).is_some() {
             return Ok(());
         }
-        if self.paid_to_this_owner() >= MAX_PAID_TO || self.paid_to.len() >= MAX_PAID_TO_TOTAL {
+        if self.paid_to_this_owner() >= MAX_PAID_TO
+            || self.paid_to_total() as usize >= MAX_PAID_TO_TOTAL
+        {
             return Err(Error::PaidToFull);
         }
-        self.paid_to.insert(to.to_string(), self.owner_epoch);
+        // A stored entry of a pruned epoch is overwritten.
+        self.store.put_paid_to(to, self.owner_epoch);
+        *self.paid_to_by_epoch.entry(self.owner_epoch).or_default() += 1;
         Ok(())
     }
 
     /// Payout destinations the current owner added (A36).
     pub fn paid_to_this_owner(&self) -> usize {
-        self.paid_to
-            .values()
-            .filter(|e| **e == self.owner_epoch)
-            .count()
+        self.paid_to_by_epoch
+            .get(&self.owner_epoch)
+            .copied()
+            .unwrap_or(0) as usize
     }
 
     /// Does a payment by `payer` release from `sale`'s earn-out? Not if it is
@@ -999,25 +1104,26 @@ impl Machine {
         !flags.self_pay
             && !flags.seller_subaccount
             && !self
-                .paid_to
-                .get(payer)
-                .is_some_and(|epoch| *epoch <= sale.seller_epoch)
+                .paid_to_epoch(payer)
+                .is_some_and(|epoch| epoch <= sale.seller_epoch)
     }
 
     // ----- payments and earn-out --------------------------------------------
 
     /// Classify a payment by who paid.
     pub fn flags_for(&self, payer: &str) -> Flags {
-        let is_self =
-            payer == self.agent || payer == self.owner || self.past_owners.contains(payer);
-        let mut parents = std::iter::once(&self.agent)
-            .chain(std::iter::once(&self.owner))
-            .chain(self.past_owners.iter());
-        let sub = parents.any(|p| payer.len() > p.len() + 1 && payer.ends_with(&format!(".{p}")));
+        // One lookup per name and per parent of the payer, never a scan of
+        // all past owners (A47).
+        let ours = |a: &str| a == self.agent || a == self.owner || self.store.past_owner(a);
+        let is_self = ours(payer);
+        let sub = payer
+            .char_indices()
+            .filter(|(_, c)| *c == '.')
+            .any(|(i, _)| i + 1 < payer.len() && ours(&payer[i + 1..]));
         Flags {
             self_pay: is_self,
             seller_subaccount: !is_self && sub,
-            round_trip: !is_self && !sub && self.paid_to.contains_key(payer),
+            round_trip: !is_self && !sub && self.paid_to_epoch(payer).is_some(),
         }
     }
 
@@ -1033,7 +1139,8 @@ impl Machine {
         let flags = self.flags_for(payer);
         let counted = !flags.any();
         let verified = counted && verified;
-        self.meter.record(payer, amount, flags, verified, now);
+        self.meter
+            .record(&mut self.store, payer, amount, flags, verified, now);
         self.held += amount;
         let (to_owner, to_treasury) = money::split_revenue(amount, self.limits.treasury_bps);
         self.owner_free += to_owner;
@@ -1128,14 +1235,10 @@ impl Machine {
     /// Close an earn-out after its window. Anyone may call; a second call is a
     /// no-op that returns the same `Sale` (E21).
     pub fn finalize_earnout(&mut self, sale_id: u64, now: Ts) -> Res<Sale> {
-        let idx = self
-            .sales
-            .iter()
-            .position(|s| s.id == sale_id)
-            .ok_or(Error::UnknownSale)?;
-        if self.sales[idx].finalized {
-            return Ok(self.sales[idx].clone());
-        }
+        let Some(idx) = self.sales.iter().position(|s| s.id == sale_id) else {
+            // Finalized before: the same answer again (E21).
+            return self.store.sale(sale_id).ok_or(Error::UnknownSale);
+        };
         if now < self.sales[idx].window_end {
             return Err(Error::WindowOpen);
         }
@@ -1147,6 +1250,7 @@ impl Machine {
         let s = s.clone();
         self.credit(&s.seller, f.seller_topup);
         self.credit(&s.buyer, f.buyer_refund);
+        self.close_finalized_sales();
         self.prune_paid_to();
         Ok(s)
     }
@@ -1158,13 +1262,7 @@ impl Machine {
     /// Entries of owners not yet separated by a real sale stay, so moving
     /// the deed between one's own accounts never clears the table.
     pub fn prune_paid_to(&mut self) {
-        let sold = self
-            .sales
-            .iter()
-            .filter(|s| s.finalized)
-            .map(|s| s.seller_epoch)
-            .max();
-        let Some(sold) = sold else {
+        let Some(sold) = self.closed_max_epoch else {
             return;
         };
         let open = self
@@ -1173,8 +1271,16 @@ impl Machine {
             .filter(|s| !s.finalized)
             .map(|s| s.seller_epoch)
             .max();
-        self.paid_to
-            .retain(|_, e| !(*e <= sold && open.is_none_or(|o| *e > o)));
+        let dead: Vec<u64> = self
+            .paid_to_by_epoch
+            .keys()
+            .copied()
+            .filter(|e| *e <= sold && open.is_none_or(|o| *e > o))
+            .collect();
+        for e in dead {
+            self.paid_to_by_epoch.remove(&e);
+            self.paid_to_dead.insert(e);
+        }
     }
 
     // ----- deed transfer outside buy() ---------------------------------------
@@ -1209,7 +1315,8 @@ impl Machine {
             self.status = self.status_before_listing.clone();
         }
         self.listing_version += 1;
-        self.past_owners.insert(self.owner.clone());
+        let old = self.owner.clone();
+        self.add_past_owner(&old);
         self.owner = receiver.to_string();
         self.owner_epoch += 1;
         // The keys stay `retiring` until `keys_deleted` confirms (A25).
@@ -1250,6 +1357,7 @@ impl Machine {
             for (_, buyer, r) in &returned {
                 self.credit(buyer, *r);
             }
+            self.close_finalized_sales();
             return Ok(RunnerCheck::BackdoorProven { returned });
         }
         self.not_settling()?;
@@ -1265,6 +1373,6 @@ impl Machine {
     }
 
     pub fn earnings(&self, now: Ts) -> Earnings {
-        self.meter.earnings(now)
+        self.meter.earnings(&self.store, now)
     }
 }

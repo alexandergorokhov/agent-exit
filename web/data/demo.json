@@ -540,6 +540,7 @@
           "counted_from_fresh_payers": 0,
           "tracked_payers": 8,
           "other_payers_gross": 0,
+          "days_total": 6,
           "days": [
             {
               "day": 20454,
@@ -641,6 +642,7 @@
           "counted_from_fresh_payers": 0,
           "tracked_payers": 2,
           "other_payers_gross": 0,
+          "days_total": 5,
           "days": [
             {
               "day": 20454,
@@ -852,6 +854,10 @@
           },
           "terms_config": "prod",
           "paid_to_total": 0,
+          "open_sales": 1,
+          "closed_sales": 0,
+          "claimable_accounts": 1,
+          "past_owners": 1,
           "paid_to_owner": 0,
           "incoming_keys": [],
           "retiring_keys": [],
@@ -867,12 +873,16 @@
           "claimable_total": "500000000",
           "solvent": true,
           "near_storage": {
-            "usage_bytes": 0,
-            "staked": "0",
+            "usage_bytes": 2278,
+            "staked": "22780000000000000000000",
             "balance": "10000000000000000000000000",
             "sig_entries": 10,
             "max_sig_entries": 512,
-            "growth_reserve": "1004000000000000000000000",
+            "payer_entries": 8,
+            "max_payer_entries": 1000,
+            "day_entries": 6,
+            "max_day_entries": 400,
+            "growth_reserve": "3776000000000000000000000",
             "solvent": true
           }
         }

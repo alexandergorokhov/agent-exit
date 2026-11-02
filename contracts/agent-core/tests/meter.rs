@@ -25,11 +25,11 @@ fn e16_payer_cap_pools_into_other() {
     for i in 0..meter::MAX_PAYERS {
         m.pay(&format!("payer{i}.testnet"), USD, false, T0);
     }
-    let before = m.meter.payers.len();
+    let before = m.store.payers.len();
     m.pay("payer-1001.testnet", USD, false, T0);
-    assert_eq!(m.meter.payers.len(), before);
+    assert_eq!(m.store.payers.len(), before);
     assert_eq!(m.meter.other.totals.gross, USD);
     // Known payers still get their own row.
     m.pay("payer0.testnet", USD, false, T0);
-    assert_eq!(m.meter.payers["payer0.testnet"].totals.payments, 2);
+    assert_eq!(m.store.payers["payer0.testnet"].totals.payments, 2);
 }

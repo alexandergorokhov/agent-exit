@@ -54,7 +54,7 @@ fn a31_buyer_round_trips_do_not_starve_earnout() {
     assert!(s.by(BOB).get_earnings().flagged_round_trip >= 600 * USD);
     s.advance(31 * DAY);
     s.by(MALLORY).finalize_earnout(1);
-    let sale = &s.m().sales[0];
+    let sale = &s.m().sale(1).expect("finalized sale in the history");
     assert_eq!(sale.released, 300 * USD, "the seller got the whole escrow");
     assert_eq!(sale.returned, 0);
 }
@@ -238,16 +238,18 @@ fn a33_failed_deletion_callback_is_recoverable() {
 
 /// A33 (review 2 R4, inverted): every callback gets gas for reading and
 /// writing the whole state on top of its own work, so outsiders' payments
-/// (1,000 payers here) cannot push a callback out of gas.
+/// (1,000 payers here) cannot push a callback out of gas. Since A47 the
+/// payers are not in the state blob at all, so it stays small.
 #[test]
 fn a33_callback_gas_grows_with_state() {
     let mut s = sold_translator();
     for i in 0..1000 {
         let p = format!("payer-with-a-longish-name-{i:04}.testnet");
-        s.pay(&p, USD / 10);
+        s.pay(&p, USD);
     }
+    assert_eq!(s.m().meter.tracked_payers, 1000);
     let bytes = near_sdk::borsh::to_vec(&s.c).unwrap().len() as u64;
-    assert!(bytes > 100_000, "{bytes}");
+    assert!(bytes < 8_000, "{bytes}");
     let mut c = s.call(BOB);
     c.deposit = near_sdk::NearToken::from_yoctonear(1);
     // On chain the account's storage also holds the code (about 440 KB) and
@@ -264,7 +266,6 @@ fn a33_callback_gas_grows_with_state() {
     let after = s.c.state_bytes();
     assert!(after >= bytes && after < bytes + 200, "{bytes} -> {after}");
     let state_io = near_sdk::Gas::from_gas(after * GAS_PER_STATE_BYTE);
-    assert!(state_io.as_tgas() >= 7, "{state_io}");
     assert_eq!(*gas, GAS_ON_KEYS.saturating_add(state_io));
 }
 
@@ -397,7 +398,7 @@ fn a36_buyer_does_not_inherit_a_full_round_trip_table() {
         .pay(acc(SUMMARIZER), U128(5 * USD));
     assert_eq!(v["ok"], true);
     // The seller-era entries still count against the seller's earn-out.
-    assert!(s.m().paid_to.get("junk7.testnet") == Some(&1));
+    assert!(s.m().paid_to_epoch("junk7.testnet") == Some(1));
 }
 
 /// A38 (review 2 L1): the seller starts a withdrawal, the agent is sold
@@ -415,7 +416,7 @@ fn a38_failed_withdraw_after_sale_goes_back_to_who_started_it() {
     let sale_id = s.m().pending.as_ref().unwrap().sale_id;
     s.callback(true).on_handover(sale_id);
     let bob_free = s.m().owner_free;
-    let alice_claim = *s.m().claimable.get(ALICE).unwrap_or(&0);
+    let alice_claim = s.m().claimable_of(ALICE);
     // The withdrawal's callback arrives after the sale: failed.
     s.callback(false).on_transfer_out(
         OutKind::OwnerWithdraw,
@@ -424,7 +425,7 @@ fn a38_failed_withdraw_after_sale_goes_back_to_who_started_it() {
         Some(acc(ALICE)),
     );
     assert_eq!(s.m().owner_free, bob_free, "not the buyer's money");
-    assert_eq!(s.m().claimable[ALICE], alice_claim + 100 * USD);
+    assert_eq!(s.m().claimable_of(ALICE), alice_claim + 100 * USD);
     assert!(s.m().solvent());
 }
 

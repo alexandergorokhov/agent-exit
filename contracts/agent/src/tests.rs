@@ -301,10 +301,10 @@ fn e10_malformed_or_huge_msg() {
 #[test]
 fn e15_dust_refunded() {
     let mut s = translator_world();
-    let payers = s.m().meter.payers.len();
+    let payers = s.m().meter.tracked_payers;
     assert_eq!(s.pay("dust.testnet", 50_000), Some(50_000));
     assert!(refused("Dust"));
-    assert_eq!(s.m().meter.payers.len(), payers);
+    assert_eq!(s.m().meter.tracked_payers, payers);
 }
 
 #[test]
