@@ -190,6 +190,12 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | TR5 | Start-up gating: offline by default; real mode needs testnet, a key and the agent account, else exit 2 | ts | `translator.test.ts` |
 | TR6 | NEAR AI 401 and 402 are clear, not retried, and the key is never repeated | ts | `translator.test.ts` |
 | TR7 | Hostile text is data only: it sits in the user message, the system prompt is fixed | ts | `translator.test.ts` |
+| BW1 | Testnet scan input carries `get_base_wallet` and the MPC root key read from `v1.signer-prod.testnet` | ts | `mcp/test/base_scan.test.ts` |
+| BW2 | The real scanner accepts the right Base address and blocks a different one (`base_address_mismatch`) | ts | `base_scan.test.ts` |
+| BW3 | The two RPC providers must agree on the MPC key; any doubt blocks as `base_wallet_unchecked` | ts | `base_scan.test.ts` |
+| BW4 | Only the published MPC signer is asked; the agent cannot name another | ts | `base_scan.test.ts` |
+| BW5 | An agent without `get_base_wallet` is blocked as `base_wallet_unchecked`, not a crash | ts | `base_scan.test.ts` |
+| BW6 | Offline fixtures: translator scans clean of Base findings; cheat is still blocked | ts | `base_scan.test.ts` |
 | M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
 | M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
 | M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |
