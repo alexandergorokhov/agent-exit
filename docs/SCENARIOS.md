@@ -178,6 +178,13 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | S26 | **No overclaims in wording.** The page says "Agent Exit · sell an AI agent safely", not "marketplace"; the handover is "one transaction" and payouts are claimable afterwards, never "all or nothing" for the whole sale | ci | `meta.rs::s25_readme_first_screen`, `smoke.mjs` |
 | S27 | **No wallet login button** until testnet mode is live (`TESTNET_LIVE` in `web/app.js`); the "Why only on NEAR" box is on the page | node | `web/test/smoke.mjs` |
 | S28 | **`make demo` prints a short summary**; the JSON goes to `out/` | ci | `meta.rs::s25_readme_first_screen` |
+| TR1 | `translator-serve` offline: a recorded fixture, labelled as such, in the shape the contract checks | ts | `mcp/test/translator.test.ts` |
+| TR2 | Real mode: the signed request names agent, job, payer and amount; the proof matches the signed bytes; a signature that does not sign `model:req:resp` is never handed out as a proof | ts | `translator.test.ts` |
+| TR3 | Job input is validated (limits) before anything is sent | ts | `translator.test.ts` |
+| TR4 | The HTTP server listens on loopback only; `POST /job`, health, size and job limits | ts | `translator.test.ts` |
+| TR5 | Start-up gating: offline by default; real mode needs testnet, a key and the agent account, else exit 2 | ts | `translator.test.ts` |
+| TR6 | NEAR AI 401 and 402 are clear, not retried, and the key is never repeated | ts | `translator.test.ts` |
+| TR7 | Hostile text is data only: it sits in the user message, the system prompt is fixed | ts | `translator.test.ts` |
 | M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
 | M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
 | M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |
