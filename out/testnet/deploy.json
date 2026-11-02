@@ -1,0 +1,511 @@
+{
+  "accounts": {
+    "alice": "alice.agentexit.testnet",
+    "bob": "bob.agentexit.testnet",
+    "carol": "carol.agentexit.testnet",
+    "cheat": "cheat.agentexit.testnet",
+    "p1": "p1.agentexit.testnet",
+    "p2": "p2.agentexit.testnet",
+    "p3": "p3.agentexit.testnet",
+    "p4": "p4.agentexit.testnet",
+    "p5": "p5.agentexit.testnet",
+    "p6": "p6.agentexit.testnet",
+    "summarizer": "summarizer.agentexit.testnet",
+    "translator": "translator.agentexit.testnet",
+    "x.alice": "x.alice.agentexit.testnet",
+    "xusd": "xusd.agentexit.testnet"
+  },
+  "agent_checks": [
+    {
+      "agent": "translator.agentexit.testnet",
+      "checks": {
+        "admin": true,
+        "base_address": true,
+        "mpc": true,
+        "token": true
+      }
+    },
+    {
+      "agent": "cheat.agentexit.testnet",
+      "checks": {
+        "admin": true,
+        "base_address": true,
+        "mpc": true,
+        "token": true
+      }
+    }
+  ],
+  "agent_code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+  "base_addresses": {
+    "cheat": "0x933eaa47955c76d81cc42742b4621dbba143d016",
+    "translator": "0x8cb2c5430c7d6065241997c470e729ffe850e625"
+  },
+  "earnings": {
+    "cheat": {
+      "counted": 0,
+      "counted_from_fresh_payers": 0,
+      "counted_payers": 0,
+      "days": [
+        {
+          "counted": 0,
+          "day": 20759,
+          "gross": 500000000,
+          "payments": 5,
+          "verified": 0
+        }
+      ],
+      "days_total": 1,
+      "flagged": 500000000,
+      "flagged_round_trip": 0,
+      "flagged_self": 300000000,
+      "flagged_seller_subaccount": 200000000,
+      "fresh_payers": 0,
+      "gross": 500000000,
+      "other_payers_gross": 500000000,
+      "payments": 5,
+      "schema": "earnings.v1",
+      "tracked_payers": 0,
+      "verified": 0
+    },
+    "translator": {
+      "counted": 360000000,
+      "counted_from_fresh_payers": 360000000,
+      "counted_payers": 6,
+      "days": [
+        {
+          "counted": 360000000,
+          "day": 20759,
+          "gross": 500000000,
+          "payments": 33,
+          "verified": 0
+        }
+      ],
+      "days_total": 1,
+      "flagged": 140000000,
+      "flagged_round_trip": 0,
+      "flagged_self": 100000000,
+      "flagged_seller_subaccount": 40000000,
+      "fresh_payers": 6,
+      "gross": 500000000,
+      "other_payers_gross": 140000000,
+      "payments": 33,
+      "schema": "earnings.v1",
+      "tracked_payers": 6,
+      "verified": 0
+    }
+  },
+  "mpc": {
+    "public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
+    "signer": "v1.signer-prod.testnet"
+  },
+  "pass": true,
+  "root": "agentexit.testnet",
+  "schema": "testnet-deploy.v1",
+  "seed": [
+    {
+      "by": "alice.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "new_owner_id": "cheat.agentexit.testnet",
+              "old_owner_id": "alice.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "counted": false,
+              "day": 20759,
+              "flags": {
+                "round_trip": false,
+                "self": true,
+                "seller_subaccount": false
+              },
+              "job_id": null,
+              "payer": "alice.agentexit.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "seller_earnout_release": "0",
+              "to_owner": "100000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/AFrYqgeCJH8ra131YQGWwueVBag56kYv9P94i2ZmvAmp",
+      "label": "alice pays cheat 100.00",
+      "method": "ft_transfer_call",
+      "ms": 6274,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "AFrYqgeCJH8ra131YQGWwueVBag56kYv9P94i2ZmvAmp",
+      "value": "100000000"
+    },
+    {
+      "by": "x.alice.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "new_owner_id": "cheat.agentexit.testnet",
+              "old_owner_id": "x.alice.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "counted": false,
+              "day": 20759,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": true
+              },
+              "job_id": null,
+              "payer": "x.alice.agentexit.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "seller_earnout_release": "0",
+              "to_owner": "100000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/pP7b7JYHhqFjLnp9DEfRrpvp1jdrbrxBXTMapncmo77",
+      "label": "x.alice pays cheat 100.00",
+      "method": "ft_transfer_call",
+      "ms": 7084,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "pP7b7JYHhqFjLnp9DEfRrpvp1jdrbrxBXTMapncmo77",
+      "value": "100000000"
+    },
+    {
+      "by": "x.alice.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "new_owner_id": "cheat.agentexit.testnet",
+              "old_owner_id": "x.alice.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "counted": false,
+              "day": 20759,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": true
+              },
+              "job_id": null,
+              "payer": "x.alice.agentexit.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "100000000",
+              "seller_earnout_release": "0",
+              "to_owner": "100000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/6ZdFTdhqtG1g3ezz9mVAPASagTfMZT5oJcqY5mDsuU3T",
+      "label": "x.alice pays cheat 100.00",
+      "method": "ft_transfer_call",
+      "ms": 6626,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "6ZdFTdhqtG1g3ezz9mVAPASagTfMZT5oJcqY5mDsuU3T",
+      "value": "100000000"
+    }
+  ],
+  "translator_keys_after_lock": [
+    {
+      "permission": {
+        "allowance": "5000000000000000000000000",
+        "method_names": [
+          "heartbeat",
+          "accept_job",
+          "pay",
+          "pay_base"
+        ],
+        "receiver_id": "translator.agentexit.testnet"
+      },
+      "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+    }
+  ],
+  "txs": [
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "500000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "alice.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/8bWbm3A3rq1hSrtBSu5PkR8QtxJZU6WbmqCTBWu6vnC7",
+      "label": "mint alice.agentexit.testnet",
+      "method": "mint",
+      "ms": 5141,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "8bWbm3A3rq1hSrtBSu5PkR8QtxJZU6WbmqCTBWu6vnC7",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "40000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "x.alice.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/27VxKTpxGJycY9yEWG5M9ep1rVpHgJ2jEgNs17T6rbPn",
+      "label": "mint x.alice.agentexit.testnet",
+      "method": "mint",
+      "ms": 5325,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "27VxKTpxGJycY9yEWG5M9ep1rVpHgJ2jEgNs17T6rbPn",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p1.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/HFmRk4cm1cPpyWF5eSW9Yiyzeg2YchVwPQ9M85EEenJi",
+      "label": "mint p1.agentexit.testnet",
+      "method": "mint",
+      "ms": 5326,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "HFmRk4cm1cPpyWF5eSW9Yiyzeg2YchVwPQ9M85EEenJi",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p2.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/67XMnELDCYGkfGmim14p3XcyXQWL8ButQfJRp4DuXC28",
+      "label": "mint p2.agentexit.testnet",
+      "method": "mint",
+      "ms": 5346,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "67XMnELDCYGkfGmim14p3XcyXQWL8ButQfJRp4DuXC28",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p3.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/EXbQkaGhmmE9nL9VHAQy7q5t2uSb4P5yF6BmhCvFeZhL",
+      "label": "mint p3.agentexit.testnet",
+      "method": "mint",
+      "ms": 4854,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "EXbQkaGhmmE9nL9VHAQy7q5t2uSb4P5yF6BmhCvFeZhL",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p4.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/AxCE6yCNGzQXrtKw3631i2bQSrm8Cf4TiruysppJwHgL",
+      "label": "mint p4.agentexit.testnet",
+      "method": "mint",
+      "ms": 5662,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "AxCE6yCNGzQXrtKw3631i2bQSrm8Cf4TiruysppJwHgL",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p5.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/5R1HUZaMyXaknpz8MA1g5rSCT5rH3QL47Gq8kJdPzRNa",
+      "label": "mint p5.agentexit.testnet",
+      "method": "mint",
+      "ms": 4850,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "5R1HUZaMyXaknpz8MA1g5rSCT5rH3QL47Gq8kJdPzRNa",
+      "value": null
+    },
+    {
+      "by": "agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "60000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "p6.agentexit.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/D8igMqAYw2iPV9yhv8tnAffTQ8HekKjKjaP736BZq6zo",
+      "label": "mint p6.agentexit.testnet",
+      "method": "mint",
+      "ms": 5522,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "D8igMqAYw2iPV9yhv8tnAffTQ8HekKjKjaP736BZq6zo",
+      "value": null
+    }
+  ]
+}
