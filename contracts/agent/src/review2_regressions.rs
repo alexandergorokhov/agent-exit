@@ -250,7 +250,9 @@ fn a33_callback_gas_grows_with_state() {
     assert!(bytes > 100_000, "{bytes}");
     let mut c = s.call(BOB);
     c.deposit = near_sdk::NearToken::from_yoctonear(1);
-    c.storage = bytes;
+    // On chain the account's storage also holds the code (about 440 KB) and
+    // the used_sigs entries; the callback gas counts the state blob only (A43).
+    c.storage = 440_000 + bytes;
     s.env(&c);
     s.c.set_runner_key(key(CAROL_RUNNER));
     let cb = self_calls(AGENT);
@@ -258,7 +260,10 @@ fn a33_callback_gas_grows_with_state() {
         .iter()
         .find(|(m, _)| m == "on_runner_key")
         .expect("callback");
-    let state_io = near_sdk::Gas::from_gas(bytes * GAS_PER_STATE_BYTE);
+    // The blob as the call left it (the new key is now `incoming`).
+    let after = s.c.state_bytes();
+    assert!(after >= bytes && after < bytes + 200, "{bytes} -> {after}");
+    let state_io = near_sdk::Gas::from_gas(after * GAS_PER_STATE_BYTE);
     assert!(state_io.as_tgas() >= 7, "{state_io}");
     assert_eq!(*gas, GAS_ON_KEYS.saturating_add(state_io));
 }

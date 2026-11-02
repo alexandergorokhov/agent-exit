@@ -47,6 +47,8 @@ mod base_tests;
 #[cfg(test)]
 mod review2_regressions;
 #[cfg(test)]
+mod review3_regressions;
+#[cfg(test)]
 mod review_regressions;
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;
@@ -124,8 +126,10 @@ pub const RUNNER_METHODS: &str = "heartbeat,accept_job,pay,pay_base";
 pub const RUNNER_ALLOWANCE: NearToken = NearToken::from_near(5);
 /// Gas a runner attaches: `heartbeat` (state read and write only).
 pub const RUNNER_GAS_HEARTBEAT: Gas = Gas::from_tgas(30);
-/// Gas a runner attaches: `pay` (ft_transfer 10 TGas + callback 10 TGas + execution).
-pub const RUNNER_GAS_PAY: Gas = Gas::from_tgas(60);
+/// Gas a runner attaches: `pay` (ft_transfer 10 TGas + callback 15 TGas,
+/// both plus the state term, + execution). 100 TGas covers the largest
+/// state the bounded tables allow (A43).
+pub const RUNNER_GAS_PAY: Gas = Gas::from_tgas(100);
 /// NEAR kept on the account on top of storage staking (E17).
 pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 /// Longest `ft_transfer_call` msg accepted (E10).
@@ -284,17 +288,6 @@ fn promise_ok() -> bool {
     )
 }
 
-/// Gas to read and write the whole state once (A33).
-fn state_gas() -> Gas {
-    Gas::from_gas(env::storage_usage().saturating_mul(GAS_PER_STATE_BYTE))
-}
-
-/// A callback's gas: its own work plus the state term, so a callback does
-/// not run out of gas as outsiders' payments grow the state (A33).
-pub fn cb_gas(base: Gas) -> Gas {
-    base.saturating_add(state_gas())
-}
-
 fn pk(s: &str) -> PublicKey {
     s.parse().unwrap_or_else(|_| env::panic_str("BadKey"))
 }
@@ -388,7 +381,7 @@ impl AgentExit {
         );
         p.then(
             Self::ext(env::current_account_id())
-                .with_static_gas(cb_gas(GAS_ON_KEYS))
+                .with_static_gas(self.cb_gas(GAS_ON_KEYS))
                 .on_runner_key(old, deleted, new_key),
         )
     }
@@ -625,8 +618,8 @@ impl AgentExit {
                 // the state, so the bar grows with it (A33).
                 let gas_ok = left
                     >= MIN_BUY_GAS
-                        .saturating_add(state_gas())
-                        .saturating_add(state_gas());
+                        .saturating_add(self.state_gas())
+                        .saturating_add(self.state_gas());
                 let buyer_key = String::from(&buyer_runner_pk);
                 let plan = match self.m.begin_buy(
                     sender_id.as_str(),
@@ -659,7 +652,7 @@ impl AgentExit {
                 batch
                     .then(
                         Self::ext(env::current_account_id())
-                            .with_static_gas(cb_gas(GAS_ON_HANDOVER))
+                            .with_static_gas(self.cb_gas(GAS_ON_HANDOVER))
                             .on_handover(plan.sale_id),
                     )
                     .into()
@@ -941,7 +934,7 @@ impl AgentExit {
             )
             .then(
                 Self::ext(env::current_account_id())
-                    .with_static_gas(cb_gas(GAS_ON_BASE_SIGNED))
+                    .with_static_gas(self.cb_gas(GAS_ON_BASE_SIGNED))
                     .with_unused_gas_weight(0)
                     .on_base_signed(a.id),
             )
@@ -1223,7 +1216,7 @@ impl AgentExit {
             )
             .then(
                 Self::ext(env::current_account_id())
-                    .with_static_gas(GAS_NFT_RESOLVE)
+                    .with_static_gas(self.cb_gas(GAS_NFT_RESOLVE))
                     .nft_resolve_transfer(previous, receiver_id, token_id, None),
             )
             .into()
@@ -1405,6 +1398,25 @@ fn norm_address(a: &str) -> String {
 }
 
 impl AgentExit {
+    /// Bytes of the contract state blob (`STATE`), which every call reads and
+    /// writes: the machine, the signer list and the account ids. Not the
+    /// account's storage: that also counts the contract code and the
+    /// `used_sigs` entries, which no callback reads (A43).
+    pub fn state_bytes(&self) -> u64 {
+        near_sdk::borsh::object_length(self).unwrap_or(0) as u64
+    }
+
+    /// Gas to read and write the state blob once (A33, A43).
+    pub fn state_gas(&self) -> Gas {
+        Gas::from_gas(self.state_bytes().saturating_mul(GAS_PER_STATE_BYTE))
+    }
+
+    /// A callback's gas: its own work plus the state term, so a callback does
+    /// not run out of gas as outsiders' payments grow the state (A33).
+    pub fn cb_gas(&self, base: Gas) -> Gas {
+        base.saturating_add(self.state_gas())
+    }
+
     fn only_admin(&self) {
         if env::predecessor_account_id() != self.admin {
             env::panic_str("NotAdmin");
@@ -1438,7 +1450,7 @@ impl AgentExit {
             )
             .then(
                 Self::ext(env::current_account_id())
-                    .with_static_gas(cb_gas(GAS_ON_TRANSFER_OUT))
+                    .with_static_gas(self.cb_gas(GAS_ON_TRANSFER_OUT))
                     .on_transfer_out(kind, to, U128(amount), by),
             )
     }
@@ -1516,7 +1528,7 @@ impl AgentExit {
         }
         all.then(
             Self::ext(me)
-                .with_static_gas(cb_gas(GAS_ON_KEYS))
+                .with_static_gas(self.cb_gas(GAS_ON_KEYS))
                 .on_keys_deleted(keys.to_vec()),
         )
         .detach();

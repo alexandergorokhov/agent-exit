@@ -85,7 +85,8 @@ impl World {
         // attach what the method needs (AGENTS.md "Gas per runner call").
         let tgas = match method {
             "heartbeat" => 30,
-            "pay" => 60,
+            "pay" => 100,
+            "pay_base" => 300,
             _ => 300,
         };
         let r = Contract(contract.clone())

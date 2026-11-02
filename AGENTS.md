@@ -128,7 +128,8 @@ a fresh key. Attach only what the call needs:
 | Runner call | Attach | Why |
 |---|---|---|
 | `heartbeat` | 30 TGas (`RUNNER_GAS_HEARTBEAT`) | state read and write only |
-| `pay` | 60 TGas (`RUNNER_GAS_PAY`) | `ft_transfer` 10 TGas + callback 10 TGas + execution |
+| `pay` | 100 TGas (`RUNNER_GAS_PAY`) | `ft_transfer` 10 TGas + callback 15 TGas, each plus the state term (70 Mgas per byte of the state blob, at most about 20 TGas with full tables), + execution |
+| `pay_base` | 300 TGas (`RUNNER_GAS_PAY_BASE`) | the MPC `sign` call gets everything left after the callback's share |
 
 Unused gas is refunded, and only burnt gas reduces the allowance: 5 NEAR
 covers thousands of heartbeats. To refresh the allowance the owner rotates
