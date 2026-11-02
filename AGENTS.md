@@ -88,8 +88,14 @@ Environment: `AGENT_EXIT_NETWORK` = `offline` (default) or `testnet`
 (read-only; anything else, any mainnet RPC or non-`.testnet` account makes
 the server exit 2). Write tools (`buy_agent`, `list_for_sale`) need
 `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID`; without them they
-return `WRITE_DISABLED`. `AGENT_EXIT_SESSION_CAP` (default 1500 dollars)
-caps what one session may spend. Keys only from env, never from files.
+return `WRITE_DISABLED`. `buy_agent` also needs `AGENT_EXIT_RUNNER_PK`, the
+public key it installs as the bought agent's runner key; it is never a tool
+argument, so a model cannot be talked into handing the runner key to someone
+else. `AGENT_EXIT_SESSION_CAP` (default 1500 dollars) caps what one session
+may spend. `AGENT_EXIT_MIN_WINDOW_SECS` shortens the earn-out window
+`buy_agent` accepts (demo only; outputs then say `terms_config: "demo"`).
+Keys only from env, never from files. Text that comes from the chain is in
+fields named `untrusted_*`, sanitised and cut to 200 characters.
 
 ## JSON outputs and their schema names
 

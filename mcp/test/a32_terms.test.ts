@@ -6,10 +6,10 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RUNNER_PK, valid, world, writer } from "./helpers.js";
+import { valid, world, writer } from "./helpers.js";
 
 const buy = (extra: Record<string, unknown> = {}) => ({
-  agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK, ...extra,
+  agent: "translator.testnet", max_price: 1000, confirm: true, ...extra,
 });
 
 /** A copy of the offline world with translator changed by `edit`. */

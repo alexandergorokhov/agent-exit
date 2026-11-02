@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { RUNNER_PK, valid, writer } from "./helpers.js";
 
 const buy = (agent: string, extra: Record<string, unknown>) => ({
-  agent, max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK, ...extra,
+  agent, max_price: 1000, confirm: true, ...extra,
 });
 
 test("E29 refusals happen before anything is sent", async () => {
@@ -15,8 +15,9 @@ test("E29 refusals happen before anything is sent", async () => {
       [buy("translator.testnet", { confirm: false }), "CONFIRM_REQUIRED"],
       [buy("translator.testnet", { max_price: 999.99 }), "OVER_MAX_PRICE"],
       [buy("cheat.testnet", { max_price: 600 }), "SCAN_BLOCKED"],
-      [{ agent: "translator.testnet", confirm: true, buyer_runner_pk: RUNNER_PK }, "BAD_INPUT"], // no max_price
-      [buy("translator.testnet", { buyer_runner_pk: "ed25519:not-a-key" }), "BAD_INPUT"],
+      [{ agent: "translator.testnet", confirm: true }, "BAD_INPUT"], // no max_price
+      // The runner key is not a tool argument (A37).
+      [buy("translator.testnet", { buyer_runner_pk: RUNNER_PK }), "BAD_INPUT"],
       [buy("nobody.testnet", {}), "UNKNOWN_AGENT"],
     ];
     for (const [args, code] of cases) {

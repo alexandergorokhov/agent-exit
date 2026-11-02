@@ -15,6 +15,9 @@ export interface Config {
   accountId: string | null;
   /** Testnet only: signing key (never logged, never written). */
   hasPrivateKey: boolean;
+  /** The runner key buy_agent installs on a bought agent (A37). Only from
+   * the server env (AGENT_EXIT_RUNNER_PK), never from tool input. */
+  runnerPk: string | null;
   /** Most this server may spend in one session, in xUSD-FAKE dollars. */
   sessionCap: number;
   rpc: [string, string];
@@ -76,6 +79,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   for (const a of agents) {
     if (!a.endsWith(".testnet")) throw new ConfigError(`agent ${a} is not a .testnet account`);
   }
+  const runnerPk = env.AGENT_EXIT_RUNNER_PK?.trim() || null;
+  if (runnerPk && !/^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(runnerPk)) {
+    throw new ConfigError("AGENT_EXIT_RUNNER_PK must be an ed25519 public key (ed25519:<base58>)");
+  }
   const minWindow = Number(env.AGENT_EXIT_MIN_WINDOW_SECS ?? PUBLISHED_MIN_TERMS.min_window_secs);
   if (!Number.isInteger(minWindow) || minWindow < 60) throw new ConfigError("AGENT_EXIT_MIN_WINDOW_SECS must be a whole number >= 60");
   const cap = Number(env.AGENT_EXIT_SESSION_CAP ?? "1500");
@@ -87,6 +94,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     allowWrite: env.AGENT_EXIT_ALLOW_WRITE === "1",
     accountId: env.AGENT_EXIT_ACCOUNT_ID?.trim() || null,
     hasPrivateKey: Boolean(env.AGENT_EXIT_PRIVATE_KEY),
+    runnerPk,
     sessionCap: cap,
     rpc,
     agents,

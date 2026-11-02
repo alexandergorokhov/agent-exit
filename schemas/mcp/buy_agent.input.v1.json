@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "agent-exit/mcp/buy_agent.input.v1.json",
   "title": "buy_agent input",
-  "description": "Buy a listed agent. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Scans first and refuses on any finding. Refuses earn-out terms below the minimum (30% escrow, seller floor at most 50% of it, 30-day window).",
+  "description": "Buy a listed agent. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Scans first and refuses on any finding. Refuses earn-out terms below the minimum (30% escrow, seller floor at most 50% of it, 30-day window). The runner key installed on the bought agent is the server's AGENT_EXIT_RUNNER_PK, never a tool argument.",
   "type": "object",
   "properties": {
     "agent": {
@@ -21,11 +21,6 @@
     "confirm": {
       "type": "boolean",
       "description": "must be true"
-    },
-    "buyer_runner_pk": {
-      "type": "string",
-      "pattern": "^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$",
-      "description": "your runner's public key; the contract adds it as the only function-call key"
     },
     "min_escrow_pct": {
       "type": "number",
@@ -49,8 +44,7 @@
   "required": [
     "agent",
     "max_price",
-    "confirm",
-    "buyer_runner_pk"
+    "confirm"
   ],
   "additionalProperties": false
 }

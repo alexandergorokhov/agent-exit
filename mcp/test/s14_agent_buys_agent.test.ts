@@ -28,7 +28,7 @@ test("S14 agent buys agent through MCP (offline, recorded contract results)", as
     assert.equal(scan.body.safe_to_buy, true);
 
     const buy = await s.call("buy_agent", {
-      agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK,
+      agent: "translator.testnet", max_price: 1000, confirm: true,
     });
     assert.ok(valid("buy_agent", buy));
     assert.equal(buy.ok, true, JSON.stringify(buy.body));
@@ -49,7 +49,7 @@ test("S14 agent buys agent through MCP (offline, recorded contract results)", as
 
     // A second buy of the same agent: it is no longer listed.
     const again = await s.call("buy_agent", {
-      agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK,
+      agent: "translator.testnet", max_price: 1000, confirm: true,
     });
     assert.equal(again.body.error.code, "NOT_LISTED");
   } finally {

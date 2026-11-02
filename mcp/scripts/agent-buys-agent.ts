@@ -26,6 +26,8 @@ async function main(): Promise<number> {
     AGENT_EXIT_ALLOW_WRITE: "1",
     AGENT_EXIT_ACCOUNT_ID: buyer,
     AGENT_EXIT_SESSION_CAP: "1500",
+    // The runner key comes from the server env, never from tool input (A37).
+    AGENT_EXIT_RUNNER_PK: runnerPk,
   });
   const steps: unknown[] = [];
   let allValid = true;
@@ -42,7 +44,7 @@ async function main(): Promise<number> {
   await step("cheat claims 500.00 gross: how much is real?", "get_earnings", { agent: "cheat.testnet" });
   await step("scan the cheap one first", "scan_agent", { agent: "cheat.testnet" });
   const refused = await step("try to buy it anyway: refused before any transaction", "buy_agent", {
-    agent: "cheat.testnet", max_price: 600, confirm: true, buyer_runner_pk: runnerPk,
+    agent: "cheat.testnet", max_price: 600, confirm: true,
   });
   const earn = await step("translator: real customers?", "get_earnings", { agent: "translator.testnet" });
   const scan = await step("scan translator", "scan_agent", { agent: "translator.testnet" });
@@ -50,7 +52,7 @@ async function main(): Promise<number> {
     agent: "translator.testnet", account: "alice.testnet",
   });
   const buy = await step("buy translator inside max_price, confirmed", "buy_agent", {
-    agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: runnerPk,
+    agent: "translator.testnet", max_price: 1000, confirm: true,
   });
   const lock = await step("is the old seller locked out?", "verify_lockout", {
     agent: "translator.testnet", account: "alice.testnet",

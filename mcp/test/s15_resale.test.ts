@@ -1,7 +1,7 @@
 // S15 (MCP part): the new owner lists the agent again; the old seller cannot.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { RUNNER_PK, valid, writer } from "./helpers.js";
+import { valid, writer } from "./helpers.js";
 
 test("S15 resale through MCP", async () => {
   const alice = await writer("alice.testnet");
@@ -19,7 +19,7 @@ test("S15 resale through MCP", async () => {
     assert.equal(nc.body.error.code, "CONFIRM_REQUIRED");
     const early = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
     assert.equal(early.body.error.code, "NOT_OWNER");
-    await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK });
+    await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
     const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
     assert.ok(valid("list_for_sale", l));
     assert.equal(l.ok, true, JSON.stringify(l.body));

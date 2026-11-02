@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { connect } from "../src/client.js";
-import { RUNNER_PK, valid } from "./helpers.js";
+import { valid } from "./helpers.js";
 
 const envs: Record<string, string>[] = [{}, { AGENT_EXIT_ALLOW_WRITE: "1" }, { AGENT_EXIT_ACCOUNT_ID: "summarizer.testnet" }];
 for (const env of envs) {
@@ -21,7 +21,7 @@ for (const env of envs) {
         assert.ok(valid(tool, r));
       }
       const b = await s.call("buy_agent", {
-        agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: RUNNER_PK,
+        agent: "translator.testnet", max_price: 1000, confirm: true,
       });
       assert.equal(b.body.error.code, "WRITE_DISABLED");
       const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
