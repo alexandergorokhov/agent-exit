@@ -245,9 +245,12 @@ fn a33_callback_gas_grows_with_state() {
     let mut s = sold_translator();
     for i in 0..1000 {
         let p = format!("payer-with-a-longish-name-{i:04}.testnet");
+        if s.m().meter.tracked_payers < 1000 {
+            s.register(&p);
+        }
         s.pay(&p, USD);
     }
-    assert_eq!(s.m().meter.tracked_payers, 1000);
+    assert_eq!(s.m().meter.tracked_payers, 1000, "all registered (A49)");
     let bytes = near_sdk::borsh::to_vec(&s.c).unwrap().len() as u64;
     assert!(bytes < 8_000, "{bytes}");
     let mut c = s.call(BOB);

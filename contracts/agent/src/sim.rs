@@ -252,6 +252,14 @@ impl Sim {
         self.ft(buyer, amount, &Self::buy_msg(v, &h, pk), 300)
     }
 
+    /// `who` pays `PAYER_ROW_DEPOSIT` NEAR for its own payer row (A49).
+    pub fn register(&mut self, who: &str) {
+        let mut c = self.call(who);
+        c.deposit = crate::PAYER_ROW_DEPOSIT;
+        self.env(&c);
+        self.c.storage_deposit(None, None);
+    }
+
     pub fn advance(&mut self, ns: u64) {
         self.now += ns;
     }
@@ -471,6 +479,10 @@ pub fn translator_world() -> Sim {
     s.runner_key_cb(true, vec![], vec![], key_str(ALICE_RUNNER));
     // 10 of the 30 payer payments carry a NEAR AI-shaped signature (TEST
     // FIXTURES): all 6 payers on day 0, p1-p4 on day 1. 10 x 12.00 = 120.00.
+    // The six customers registered payer rows (A49).
+    for p in PAYERS {
+        s.register(p);
+    }
     let mut signed = 0;
     for day in 0..5u64 {
         s.now = T0 + day * DAY + 3_600 * agent_core::NANOS_PER_SEC;

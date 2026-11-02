@@ -141,6 +141,10 @@ pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 pub const SIG_ENTRY_BYTES: u128 = 200;
 /// Upper bound of one payer row: key (2 + 64) + value (75) + 40 (A47).
 pub const PAYER_ENTRY_BYTES: u128 = 200;
+/// NEAR a payer row costs (`storage_deposit`, A49): its storage at 1e19
+/// yoctoNEAR per byte. Not refundable: the row stays for good.
+pub const PAYER_ROW_DEPOSIT: NearToken =
+    NearToken::from_yoctonear(PAYER_ENTRY_BYTES * 10_000_000_000_000_000_000);
 /// Upper bound of one day row and its list slot (A47).
 pub const DAY_ENTRY_BYTES: u128 = 200;
 /// Longest `ft_transfer_call` msg accepted (E10).
@@ -1140,6 +1144,54 @@ impl AgentExit {
         )
     }
 
+    /// NEP-145 style: register `account_id` (default: the caller) as a
+    /// payer with its own row, for `PAYER_ROW_DEPOSIT` NEAR (A49). The row
+    /// is what lets the agent's earnings count it as a distinct payer;
+    /// payments without a row are pooled. Excess is refunded; an account
+    /// already registered gets the whole deposit back. Refused (deposit
+    /// refunded) when the table holds `MAX_PAYERS` rows.
+    #[payable]
+    pub fn storage_deposit(
+        &mut self,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> Value {
+        let _ = registration_only;
+        let who = account_id.unwrap_or_else(env::predecessor_account_id);
+        let paid = env::attached_deposit();
+        let fresh = self.m.store_payer_missing(who.as_str());
+        let refund = if fresh {
+            if paid < PAYER_ROW_DEPOSIT {
+                env::panic_str("StorageDepositTooSmall");
+            }
+            if !self.m.register_payer(who.as_str()) {
+                env::panic_str("PayersFull");
+            }
+            emit(
+                "payer_registered",
+                json!({"account": who, "by": env::predecessor_account_id()}),
+            );
+            paid.saturating_sub(PAYER_ROW_DEPOSIT)
+        } else {
+            paid
+        };
+        if !refund.is_zero() {
+            Promise::new(env::predecessor_account_id())
+                .transfer(refund)
+                .detach();
+        }
+        self.storage_balance()
+    }
+
+    pub fn storage_balance_of(&self, account_id: AccountId) -> Option<Value> {
+        (!self.m.store_payer_missing(account_id.as_str())).then(|| self.storage_balance())
+    }
+
+    pub fn storage_balance_bounds(&self) -> Value {
+        let d = PAYER_ROW_DEPOSIT.as_yoctonear().to_string();
+        json!({"min": d, "max": d})
+    }
+
     /// One payer's row (A47); `None` if the payer has no row of its own.
     pub fn get_payer(&self, account_id: AccountId) -> Option<core::meter::PayerStats> {
         use core::MeterStore;
@@ -1237,19 +1289,17 @@ impl AgentExit {
         })
     }
 
-    /// Storage outsiders may still add: signature ids (A46), payer rows
-    /// and day rows (A47). Each table is capped, so this is a bound; the
+    /// Storage outsiders may still add for free: signature ids (A46) and
+    /// day rows (A47). Each table is capped, so this is a bound; the
     /// owner cannot withdraw it, so outsiders can never make the agent
     /// unable to pay for its storage.
     fn sig_growth(&self) -> NearToken {
         let sigs = (verified::MAX_SIGS - self.used_sigs.len()) as u128 * SIG_ENTRY_BYTES;
-        let payers = (core::meter::MAX_PAYERS as u128)
-            .saturating_sub(self.m.meter.tracked_payers as u128)
-            * PAYER_ENTRY_BYTES;
+        // Payer rows are paid by their `storage_deposit` (A49).
         let days = (core::meter::MAX_DAYS as u128)
             .saturating_sub(self.m.meter.days_total() as u128)
             * DAY_ENTRY_BYTES;
-        env::storage_byte_cost().saturating_mul(sigs + payers + days)
+        env::storage_byte_cost().saturating_mul(sigs + days)
     }
 
     pub fn near_withdrawable(&self) -> NearToken {
@@ -1731,6 +1781,10 @@ impl AgentExit {
             "listed_at": U64(l.listed_at),
             "treasury_snapshot": amt(l.treasury_snapshot),
         })
+    }
+
+    fn storage_balance(&self) -> Value {
+        json!({"total": PAYER_ROW_DEPOSIT.as_yoctonear().to_string(), "available": "0"})
     }
 
     fn sale_json(&self, s: &core::Sale) -> Value {

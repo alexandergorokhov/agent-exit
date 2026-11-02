@@ -428,6 +428,24 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         .view(&c.id("translator"), "get_earnings", json!({}))
         .await?;
     if e["gross"].as_u64().unwrap_or(0) < (500 * USD) as u64 {
+        // A49: each customer pays 0.002 NEAR for its own payer row, so the
+        // earnings count it as a distinct payer.
+        for p in ["p1", "p2", "p3", "p4", "p5", "p6"] {
+            let who = c.acct(p)?;
+            let t = c
+                .call(
+                    &format!("{p} registers a payer row on translator"),
+                    &who,
+                    c.id("translator").as_str(),
+                    "storage_deposit",
+                    json!({}),
+                    2_000_000_000_000_000_000_000,
+                    30,
+                )
+                .await;
+            out.tx(&t);
+            ok(&t)?;
+        }
         for p in ["p1", "p2", "p3", "p4", "p5", "p6"] {
             for j in 0..5 {
                 let t = pay(

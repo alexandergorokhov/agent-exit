@@ -963,7 +963,11 @@ fn run() -> Value {
     let mut s = translator_world();
     let before = s.c.state_bytes();
     for i in 0..1_000 {
-        s.pay(&format!("{i:0>56}.testnet"), USD);
+        let p = format!("{i:0>56}.testnet");
+        if s.m().meter.tracked_payers < 1_000 {
+            s.register(&p);
+        }
+        s.pay(&p, USD);
     }
     let after = s.c.state_bytes();
     let st = s.by(MALLORY).get_status();

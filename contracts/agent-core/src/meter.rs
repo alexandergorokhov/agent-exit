@@ -198,10 +198,10 @@ pub const MAX_DAYS: u64 = 400;
 /// Day rows `get_earnings` returns (the newest); `get_earnings_days` pages
 /// through the rest.
 pub const EARNINGS_DAYS: u64 = 31;
-/// A payer not tracked yet gets its own entry only with a payment of at
-/// least this (1.00): the payment pays for the storage it adds. Smaller
-/// first payments go to the `other` bucket (A47).
-pub const MIN_NEW_PAYER: Amount = USD;
+// A payer gets its own row only by registering (`storage_deposit` on the
+// contract, which takes NEAR for the row's storage). Payments alone never
+// add a row: they are pooled in `other`. Test tokens are free, NEAR is
+// not, so filling the table costs real NEAR (A49).
 
 /// Aggregates only: everything here is O(1) in the number of payers and
 /// days. Per-payer and per-day rows live in the `Store` (A47).
@@ -310,8 +310,7 @@ impl Meter {
         row.totals.add(amount, counted, verified);
 
         let existing = st.payer(payer);
-        let tracked = existing.is_some()
-            || ((self.tracked_payers as usize) < MAX_PAYERS && amount >= MIN_NEW_PAYER);
+        let tracked = existing.is_some();
         if !tracked {
             let o = &mut self.other;
             o.totals.add(amount, counted, verified);
@@ -322,13 +321,11 @@ impl Meter {
             st.put_day(today, &row);
             return;
         }
-        let mut stats = existing.unwrap_or_else(|| {
-            self.tracked_payers += 1;
-            PayerStats {
-                first_ts: now,
-                ..Default::default()
-            }
-        });
+        let mut stats = existing.unwrap_or_default();
+        if stats.totals.payments == 0 {
+            // First payment of a registered payer.
+            stats.first_ts = now;
+        }
         let first_day = stats.first_ts / DAY_NS;
         if counted {
             let newly = stats.totals.counted == 0;
@@ -353,6 +350,17 @@ impl Meter {
         stats.flags.round_trip |= flags.round_trip;
         st.put_payer(payer, &stats);
         st.put_day(today, &row);
+    }
+
+    /// Give `payer` its own row (A49). `false` if it has one already or the
+    /// table is full (`MAX_PAYERS`).
+    pub fn register(&mut self, st: &mut impl Store, payer: &str) -> bool {
+        if (self.tracked_payers as usize) >= MAX_PAYERS || st.payer(payer).is_some() {
+            return false;
+        }
+        st.put_payer(payer, &PayerStats::default());
+        self.tracked_payers += 1;
+        true
     }
 
     /// Append `day` to the day list; drop the oldest row past `MAX_DAYS`.

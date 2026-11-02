@@ -544,8 +544,8 @@
           "counted_payers": 6,
           "fresh_payers": 0,
           "counted_from_fresh_payers": 0,
-          "tracked_payers": 8,
-          "other_payers_gross": 0,
+          "tracked_payers": 6,
+          "other_payers_gross": 140000000,
           "days_total": 6,
           "days": [
             {
@@ -646,8 +646,8 @@
           "counted_payers": 0,
           "fresh_payers": 0,
           "counted_from_fresh_payers": 0,
-          "tracked_payers": 2,
-          "other_payers_gross": 0,
+          "tracked_payers": 0,
+          "other_payers_gross": 500000000,
           "days_total": 5,
           "days": [
             {
@@ -879,16 +879,16 @@
           "claimable_total": "500000000",
           "solvent": true,
           "near_storage": {
-            "usage_bytes": 2278,
-            "staked": "22780000000000000000000",
+            "usage_bytes": 2016,
+            "staked": "20160000000000000000000",
             "balance": "10000000000000000000000000",
             "sig_entries": 10,
             "max_sig_entries": 512,
-            "payer_entries": 8,
+            "payer_entries": 6,
             "max_payer_entries": 1000,
             "day_entries": 6,
             "max_day_entries": 400,
-            "growth_reserve": "3776000000000000000000000",
+            "growth_reserve": "1792000000000000000000000",
             "solvent": true
           }
         }

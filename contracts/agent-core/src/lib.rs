@@ -529,6 +529,17 @@ impl<S: Store + Default> Machine<S> {
         self.claimable_sum
     }
 
+    /// `payer` has no row of its own.
+    pub fn store_payer_missing(&self, payer: &str) -> bool {
+        self.store.payer(payer).is_none()
+    }
+
+    /// Give `payer` its own payer row (A49): the contract takes a NEAR
+    /// storage deposit for it first. `false` if already registered or full.
+    pub fn register_payer(&mut self, payer: &str) -> bool {
+        self.meter.register(&mut self.store, payer)
+    }
+
     /// `who`'s claimable balance.
     pub fn claimable_of(&self, who: &str) -> Amount {
         self.store.claimable(who)

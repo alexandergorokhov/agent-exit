@@ -354,6 +354,9 @@ fn a47_state_blob_is_flat_in_the_number_of_payers() {
     let rows_before = s.m().meter.tracked_payers;
     let pooled_before = s.m().meter.other.totals.payments;
     for i in 0..1_200 {
+        if s.m().meter.tracked_payers < 1_000 {
+            s.register(&long_payer(i));
+        }
         assert_eq!(
             s.pay(&long_payer(i), 5 * USD),
             Some(0),
@@ -402,6 +405,9 @@ fn a47_view_cost_is_flat() {
     let cost = |n: usize| {
         let mut s = translator_world();
         for i in 0..n {
+            if s.m().meter.tracked_payers < 1_000 {
+                s.register(&long_payer(i));
+            }
             s.pay(&long_payer(i), USD);
         }
         s.env(&s.call(MALLORY));
@@ -414,18 +420,70 @@ fn a47_view_cost_is_flat() {
     assert_eq!(small, big, "view gas {small} vs {big}");
 }
 
-/// A47: a new payer gets its own row only with a payment of at least 1.00
-/// (the payment pays for the row); smaller first payments are pooled.
+/// A49: payments alone never add a payer row (test tokens are free); a
+/// row costs `PAYER_ROW_DEPOSIT` NEAR through `storage_deposit`. Too small a
+/// deposit and a full table are refused (the deposit goes back with the
+/// failed call); a second registration refunds the whole deposit.
 #[test]
-fn a47_small_first_payments_do_not_add_rows() {
+fn a49_payer_rows_cost_near() {
     let mut s = translator_world();
     let rows = s.m().meter.tracked_payers;
-    assert_eq!(s.pay("tiny.testnet", USD / 2), Some(0));
-    assert_eq!(s.m().meter.tracked_payers, rows);
-    assert!(s.c.get_payer(acc("tiny.testnet")).is_none());
-    assert_eq!(s.c.get_earnings().gross, s.m().meter.total.gross);
-    assert_eq!(s.pay("tiny.testnet", USD), Some(0));
+    for i in 0..50 {
+        assert_eq!(s.pay(&format!("faucet-{i}.testnet"), 100 * USD), Some(0));
+    }
+    assert_eq!(s.m().meter.tracked_payers, rows, "no rows from payments");
+    assert!(s.c.get_payer(acc("faucet-0.testnet")).is_none());
+    assert!(s.c.storage_balance_of(acc("faucet-0.testnet")).is_none());
+    let mut c = s.call("faucet-0.testnet");
+    c.deposit = PAYER_ROW_DEPOSIT.saturating_sub(NearToken::from_yoctonear(1));
+    s.env(&c);
+    assert_eq!(
+        panic_text(|| {
+            s.c.storage_deposit(None, None);
+        }),
+        "StorageDepositTooSmall"
+    );
+    s.register("faucet-0.testnet");
+    assert!(s.c.storage_balance_of(acc("faucet-0.testnet")).is_some());
     assert_eq!(s.m().meter.tracked_payers, rows + 1);
+    // Again: the whole deposit comes back.
+    let mut c = s.call("faucet-0.testnet");
+    c.deposit = PAYER_ROW_DEPOSIT;
+    s.env(&c);
+    s.c.storage_deposit(None, None);
+    assert_eq!(s.m().meter.tracked_payers, rows + 1);
+    let refunds = near_sdk::test_utils::get_created_receipts()
+        .into_iter()
+        .filter(|r| r.receiver_id.as_str() == "faucet-0.testnet")
+        .count();
+    assert_eq!(refunds, 1, "the second deposit is refunded");
+    // The deposit covers the longest row: a 64-character payer, registered
+    // and then paying, grows storage by at most `PAYER_ENTRY_BYTES`.
+    let long = format!("{}.testnet", "l".repeat(56));
+    assert_eq!(long.len(), 64);
+    s.pay(&long, 100 * USD);
+    let before = near_sdk::env::storage_usage();
+    s.register(&long);
+    s.pay(&long, 100 * USD);
+    let grew = near_sdk::env::storage_usage() as u128 - before as u128;
+    assert!(
+        grew > 0 && grew <= PAYER_ENTRY_BYTES,
+        "row grew {grew} bytes"
+    );
+    // Full table.
+    let rows = rows + 1;
+    for i in 0..(agent_core::meter::MAX_PAYERS as u64 - rows - 1) {
+        s.register(&format!("row-{i}.testnet"));
+    }
+    let mut c = s.call("late.testnet");
+    c.deposit = PAYER_ROW_DEPOSIT;
+    s.env(&c);
+    assert_eq!(
+        panic_text(|| {
+            s.c.storage_deposit(None, None);
+        }),
+        "PayersFull"
+    );
 }
 
 /// A47: day rows are capped at `MAX_DAYS`; the oldest are dropped and the

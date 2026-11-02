@@ -733,6 +733,10 @@ fn prop_invariants_random_sequences() {
             .set_runner_key("alice", "ed25519:alice-runner", T0)
             .unwrap();
         m.runner_key_done(m.key_batch, &[], &deleted, "ed25519:alice-runner", true);
+        // Half the actors registered a payer row (A49); the rest are pooled.
+        for a in ACTORS.iter().step_by(2) {
+            m.register_payer(a);
+        }
         let mut w = World {
             m,
             now: T0,
@@ -831,6 +835,10 @@ fn prop_storage_bounded() {
     // E16 / I11: after MAX_PAYERS distinct payers, new ones pool into `other`.
     let mut m = Machine::new("translator", "alice");
     for i in 0..(meter::MAX_PAYERS + 5) {
+        assert_eq!(
+            m.register_payer(&format!("payer{i}")),
+            i < meter::MAX_PAYERS
+        );
         m.pay(&format!("payer{i}"), USD, false, T0);
     }
     assert_eq!(m.store.payers.len(), meter::MAX_PAYERS);

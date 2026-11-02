@@ -381,6 +381,18 @@ async fn one_payer(
         .map_err(|e| format!("create {id}: {e:?}"))?
         .assert_success();
     let signer = Signer::from_secret_key(sk).unwrap();
+    // A49: a payer row costs NEAR (0.002, `PAYER_ROW_DEPOSIT`).
+    Contract(agent.clone())
+        .call_function("storage_deposit", json!({}))
+        .transaction()
+        .gas(NearGas::from_tgas(30))
+        .deposit(NearToken::from_millinear(2))
+        .with_signer(id.clone(), signer.clone())
+        .send_to(&net)
+        .await
+        .map_err(|e| format!("storage_deposit {id}: {e:?}"))?
+        .into_result()
+        .map_err(|e| format!("storage_deposit {id}: {e:?}"))?;
     for (method, args, yocto) in [
         ("faucet", json!({"amount": USD.to_string()}), 0u128),
         (
@@ -405,7 +417,7 @@ async fn one_payer(
 
 /// A47 (local-node finding at 12d1ab7: about 584 distinct 64-character
 /// payers made every call trap while loading state). 1,000 distinct
-/// 64-character payers pay 1.00 each; then every view still works, the
+/// 64-character payers register a payer row (A49) and pay 1.00 each; then every view still works, the
 /// agent is bought, and the new owner's runner key works.
 #[tokio::test]
 async fn a47_thousand_long_payers_then_buy_and_views() {
@@ -447,7 +459,8 @@ async fn a47_thousand_long_payers_then_buy_and_views() {
         assert!(!v.is_null(), "{method}");
     }
     let e = w.view(&agent.id, "get_earnings", json!({})).await;
-    assert_eq!(e["tracked_payers"], PAYERS as u64 + 1, "p1 plus the 1,000");
+    // p1 paid without a payer row (pooled); the 1,000 registered (A49).
+    assert_eq!(e["tracked_payers"], PAYERS as u64);
     let st = w.view(&agent.id, "get_status", json!({})).await;
     println!("A47 near_storage: {}", st["near_storage"]);
     assert_eq!(st["near_storage"]["solvent"], true);
