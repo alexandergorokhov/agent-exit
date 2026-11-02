@@ -295,7 +295,7 @@ pub fn info(step: Step) -> StepInfo {
         DeployXusd => ("deploy-xusd", "deploy the FAKE test dollar to xusd.ROOT, new(admin_id = ROOT)", &[], "out/testnet/deploy.json"),
         MintXusd => ("mint-xusd", "mint xUSD-FAKE: bob, carol, summarizer 2,000.00; p1-p6 200.00; alice, x.alice 300.00; register both agents", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/deploy.json"),
         DeriveBaseAddresses => ("derive-base", "read v1.signer-prod.testnet public_key; derive each agent's Base Sepolia address for path wallet-1 (tools/base-wallet)", &[], "out/testnet/deploy.json"),
-        DeployAgents => ("deploy-agents", "deploy target/near-testnet/agent_exit.wasm to translator.ROOT and cheat.ROOT, new(owner_id = alice, base_address); check get_status token/admin/mpc and the code hash", &[], "out/testnet/deploy.json"),
+        DeployAgents => ("deploy-agents", "deploy agent_exit.wasm (contracts/res reproducible build when present, else target/near-testnet) to translator.ROOT and cheat.ROOT, new(owner_id = alice, base_address); check get_status token/admin/mpc and the code hash", &[], "out/testnet/deploy.json"),
         RunnerKeys => ("runner-keys", "alice sets a runner key on both agents (set_runner_key, 1 yocto); wait for runner_key_confirmed", &[], "out/testnet/deploy.json"),
         LockTranslator => ("lock-translator", "delete translator's setup full-access key (locked account); cheat keeps its own (the planted backdoor)", &[], "out/testnet/deploy.json"),
         SeedWorld => ("seed-world", "fixed world: p1-p6 pay translator 5 x 12.00 each, alice 2 x 50.00, x.alice 40.00; alice and x.alice pay cheat 500.00", &[], "out/testnet/seed.json"),
@@ -397,23 +397,42 @@ pub fn plan(cmd: Command) -> Vec<Step> {
 }
 
 /// NEAR each created account gets from ROOT (agents hold their wasm's storage).
-pub const FUNDING: [(&str, u32); 15] = [
-    ("xusd", 4),
-    ("translator", 11),
-    ("cheat", 11),
-    ("summarizer", 2),
-    ("alice", 3),
-    ("bob", 3),
-    ("carol", 2),
-    ("p1", 1),
-    ("p2", 1),
-    ("p3", 1),
-    ("p4", 1),
-    ("p5", 1),
-    ("p6", 1),
-    ("x.alice", 1),
-    ("g1 agent (per run)", 7),
+/// NEAR each account gets at deploy, in milliNEAR. Lean, because the
+/// testnet faucet gives 2 NEAR a request. An agent account must still cover
+/// its code (~5.3 NEAR for 522 KB), the growth reserve its contract demands
+/// (912 rows x 200 bytes = 1.83 NEAR) and `NEAR_RESERVE` (1 NEAR), or the
+/// scan calls it insolvent (A46): 9 NEAR leaves ~0.8 spare.
+pub const FUNDING: [(&str, u32); 14] = [
+    ("xusd", 2_500),
+    ("translator", 9_000),
+    ("cheat", 9_000),
+    ("summarizer", 1_000),
+    ("alice", 1_000),
+    ("bob", 1_000),
+    ("carol", 500),
+    ("p1", 500),
+    ("p2", 500),
+    ("p3", 500),
+    ("p4", 500),
+    ("p5", 500),
+    ("p6", 500),
+    ("x.alice", 500),
 ];
+
+/// The fresh agent each G1 run creates (not part of the deploy).
+pub const G1_AGENT_MILLI: u32 = 9_000;
+
+/// Gas and storage the root itself spends during the deploy.
+pub const ROOT_MARGIN_MILLI: u32 = 1_000;
+
+pub fn funding_milli(name: &str) -> Option<u32> {
+    FUNDING.iter().find(|(n, _)| *n == name).map(|(_, m)| *m)
+}
+
+/// What the root must hold before `make deploy-testnet` starts.
+pub fn deploy_need_milli() -> u128 {
+    FUNDING.iter().map(|(_, m)| *m as u128).sum::<u128>() + ROOT_MARGIN_MILLI as u128
+}
 
 pub fn plan_json(cmd: Command, cfg: &Config, env_found: bool) -> Value {
     let steps: Vec<Value> = plan(cmd)
@@ -437,7 +456,8 @@ pub fn plan_json(cmd: Command, cfg: &Config, env_found: bool) -> Value {
         "mpc_signer": MPC_SIGNER,
         "base_chain_id": BASE_CHAIN_ID,
         "secrets_present": cfg.secrets_present,
-        "near_needed": FUNDING.iter().map(|(_, n)| n).sum::<u32>() + 3,
+        "near_needed": deploy_need_milli().div_ceil(1000),
+        "g1_near_per_run": G1_AGENT_MILLI / 1000,
         "steps": steps,
         "money": "xUSD-FAKE only; Base Sepolia test USDC; never mainnet",
     })

@@ -175,7 +175,7 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
     out.set("agent_code_hash", json!(agent_hash));
 
     println!("check-root");
-    let need: u128 = FUNDING.iter().map(|(_, n)| *n as u128).sum::<u128>() * 10u128.pow(24);
+    let need: u128 = deploy_need_milli() * 10u128.pow(21);
     let have = c.balance_near(&c.cfg.root).await?;
     let keys = c.keys(&c.cfg.root).await?;
     if !keys.iter().any(|k| k.public_key == c.root.pk) {
@@ -190,13 +190,13 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
             "{} holds {} NEAR; the plan needs about {} (testnet faucet)",
             c.cfg.root,
             have / 10u128.pow(24),
-            need / 10u128.pow(24)
+            need.div_ceil(10u128.pow(24))
         ));
     }
 
     println!("create-accounts");
     let mut accounts = BTreeMap::new();
-    for (name, near) in FUNDING.iter().filter(|(n, _)| !n.contains(' ')) {
+    for (name, milli) in FUNDING.iter() {
         let id = c.id(name);
         let parent = if *name == "x.alice" {
             c.acct("alice")?
@@ -207,7 +207,7 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
             println!("  skip {id} (exists)");
         } else {
             let t = c
-                .create(&format!("create {id}"), &parent, &id, name, *near)
+                .create(&format!("create {id}"), &parent, &id, name, *milli)
                 .await?;
             out.tx(&t);
             ok(&t)?;
@@ -519,7 +519,7 @@ async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
     let id = c.id(&name);
     println!("g1-deploy {id}");
     let t = c
-        .create(&format!("create {id}"), &c.root, &id, &name, 7)
+        .create(&format!("create {id}"), &c.root, &id, &name, G1_AGENT_MILLI)
         .await?;
     out.tx(&t);
     ok(&t)?;

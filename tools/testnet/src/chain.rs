@@ -277,7 +277,10 @@ impl Chain {
     pub async fn allowance_short(&self, who: &Acct, tgas: u64) -> Option<String> {
         let keys = self.keys(who.id.as_str()).await.ok()?;
         let k = keys.iter().find(|k| k.public_key == who.pk)?;
-        let scan::Permission::FunctionCall { allowance: Some(a), .. } = &k.permission else {
+        let scan::Permission::FunctionCall {
+            allowance: Some(a), ..
+        } = &k.permission
+        else {
             return None;
         };
         let have: u128 = a.parse().ok()?;
@@ -382,12 +385,15 @@ impl Chain {
         parent: &Acct,
         id: &str,
         key_name: &str,
-        near: u32,
+        milli_near: u32,
     ) -> Res<Tx> {
         let sk = self.keys.get_or_create(key_name)?;
         let t0 = Instant::now();
         let r = Account::create_account(id.parse().map_err(|e| format!("{e:?}"))?)
-            .fund_myself(parent.id.clone(), NearToken::from_near(near as u128))
+            .fund_myself(
+                parent.id.clone(),
+                NearToken::from_millinear(milli_near as u128),
+            )
             .with_public_key(sk.public_key())
             .with_signer(parent.signer.clone())
             .send_to(&self.net)

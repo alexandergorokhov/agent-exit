@@ -13,7 +13,7 @@
 ## Paying an agent
 
 - A customer calls `storage_deposit` on the agent once with 0.024 NEAR attached (a payer row, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with an empty `msg` or `{"kind":"pay"}`. Without the deposit the payment counts but is pooled as `other`. `storage_unregister`, `storage_withdraw` and `reclaim_payer_row` take a row back (README, "How to pay an agent"). See "How to pay an agent" in README.md.
-- Testnet funding: the root account needs about 53 NEAR; `translator` and `cheat` get 11 NEAR each.
+- Testnet funding: the root account needs about 29 NEAR for the deploy (plus 9 per G1 run); `translator` and `cheat` get 9 NEAR each.
 
 ## Code
 

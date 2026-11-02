@@ -106,3 +106,33 @@ fn dry_run_names_secrets_but_never_prints_them() {
         .iter()
         .all(|s| s["missing"].as_array().unwrap().is_empty()));
 }
+
+/// Lean funding (the faucet gives 2 NEAR a request): the deploy fits in
+/// about 30 NEAR, yet each agent account still covers its code, the growth
+/// reserve its contract demands (512 signature + 400 day rows of 200 bytes)
+/// and the 1 NEAR reserve, or the scan would call it insolvent (A46).
+#[test]
+fn lean_funding_still_keeps_agents_solvent() {
+    use testnet_plan::{deploy_need_milli, funding_milli, G1_AGENT_MILLI};
+    let wasm = std::fs::metadata(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../contracts/res/agent_exit.wasm"
+    ))
+    .map(|m| m.len() as u128)
+    .unwrap_or(522_403);
+    // 1e19 yocto per byte = 1e-5 NEAR = 0.01 milliNEAR per byte.
+    let need_milli = (wasm + 8_000 /* state */ + (512 + 400) * 200) / 100 + 1_000;
+    for a in ["translator", "cheat"] {
+        let f = funding_milli(a).expect(a) as u128;
+        assert!(
+            f >= need_milli + 300,
+            "{a}: {f} mNEAR < {need_milli} + 300 margin"
+        );
+    }
+    assert!(G1_AGENT_MILLI as u128 >= need_milli + 300);
+    let total = deploy_need_milli();
+    assert!(
+        total <= 30_000,
+        "deploy needs {total} mNEAR; keep it under 30 NEAR"
+    );
+}
