@@ -129,9 +129,24 @@ fuzz: ## Property-based fuzzing of outsider inputs: ft_on_transfer msg, NEAR AI 
 	FUZZ_CASES=$(FUZZ_CASES) cargo test --locked --offline -p agent-exit fuzz_ -- --test-threads=4
 
 .PHONY: lint
-lint: ## rustfmt check + clippy -D warnings
+lint: ## rustfmt check + clippy -D warnings + the ABI build (abi-check)
 	cargo fmt --all -- --check
 	cargo clippy --workspace --all-targets --locked -- -D warnings
+	$(MAKE) --no-print-directory abi-check
+
+# The ABI build compiles host code with near-sdk's ABI feature, which neither
+# clippy nor the unit tests do; it broke unseen twice. Runs whenever cargo-near
+# is installed and fails if either contract does not build.
+.PHONY: abi-check
+abi-check: ## cargo near build (agent + xusd, with ABI) when cargo-near is installed
+	@if command -v cargo-near >/dev/null; then \
+	  set -e; \
+	  (cd contracts/agent && cargo near build non-reproducible-wasm --out-dir ../../target/near-abi-check) && \
+	  (cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-abi-check) && \
+	  echo "abi-check: agent and xusd build with ABI"; \
+	else \
+	  echo "abi-check: skipped, cargo-near not installed (cargo install cargo-near --locked)" >&2; \
+	fi
 
 .PHONY: audit
 audit: ## cargo audit (needs cargo-audit + advisory DB) and check ignored advisories stay out of the wasm

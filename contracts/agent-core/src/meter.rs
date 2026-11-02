@@ -28,7 +28,10 @@ pub const FRESH_WINDOW_NS: u64 = 7 * DAY_NS;
     BorshSerialize,
     BorshDeserialize,
 )]
-#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(borsh::BorshSchema, schemars::JsonSchema)
+)]
 pub struct Flags {
     /// Paid by the agent itself, its owner or any past owner.
     #[serde(rename = "self")]
@@ -48,7 +51,10 @@ impl Flags {
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
-#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(borsh::BorshSchema, schemars::JsonSchema)
+)]
 pub struct Bucket {
     pub gross: Amount,
     pub counted: Amount,
@@ -72,7 +78,10 @@ impl Bucket {
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
-#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(borsh::BorshSchema, schemars::JsonSchema)
+)]
 pub struct PayerStats {
     pub totals: Bucket,
     pub first_ts: Ts,

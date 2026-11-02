@@ -39,8 +39,9 @@ pub const MAX_SIGS: u32 = 512;
 
 /// Used signature ids, each until its proof expires, in arrival order.
 /// Bounded: at most `MAX_SIGS` entries (A46).
-#[derive(near_sdk::borsh::BorshSerialize, near_sdk::borsh::BorshDeserialize)]
-#[borsh(crate = "near_sdk::borsh")]
+// `near` adds BorshSchema exactly when the ABI build needs it (the store
+// collections implement it only under near-sdk's ABI feature).
+#[near_sdk::near(serializers = [borsh])]
 pub struct UsedSigs {
     /// sig id -> unix second after which its proof is refused anyway.
     expires: near_sdk::store::LookupMap<[u8; 32], u64>,
