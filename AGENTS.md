@@ -17,7 +17,8 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 8. Scan one agent | `make scan FILE=fixtures/scan/cheat.json` | `scan-report.v1` JSON on stdout, `"verdict": "blocked"`; exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input |
 | 9. MCP tests | `make mcp-test` | `# pass 18`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
 | 10. Agent buys agent | `make agent-buys-agent` | stderr one line per MCP call; `out/agent-buys-agent.json` with `"schema": "agent-buys-agent.v1"`, `"pass": true`, `summary.seller_locked_out_after: true` |
-| 11. Targets not built yet | `make fuzz` | prints `not built yet: fuzz (...)`, exit 1 (never fake success) |
+| 11. Demo page | `make web-test` (needs the `playwright` package with Chromium) | `web-test: N checks passed (desktop + 375px, offline + testnet flag)`; exit 0. `make web` serves it on port 8080 |
+| 12. Targets not built yet | `make fuzz` | prints `not built yet: fuzz (...)`, exit 1 (never fake success) |
 
 `make verify` takes about 2 minutes (10,000 property cases with a fixed seed).
 Set `PROP_CASES=500 make verify` for a faster pass.
@@ -43,6 +44,7 @@ Set `PROP_CASES=500 make verify` for a faster pass.
 - `tools/scan/src/lib.rs`: the client backdoor scan rules;
   `tools/scan/src/corpus.rs`: the seeded attack corpus (16 families + clean).
 - `tools/attack/src/main.rs`: `make attack`; `tests/golden/attack.json` its expected output.
+- `web/`: the demo page (`make web`, `make web-test`); `web/data/demo.json` is recorded from the contract by `make web-data`.
 - `docs/NOT-CAUGHT.md`: what the scan does not catch, by design (N1-N6).
 
 - `contracts/agent-core/src/policy.rs`: spending limits (feature 12): price

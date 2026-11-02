@@ -48,6 +48,8 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make mcp-test` | The MCP server's tests offline (18 tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
 | `make agent-buys-agent` | The `summarizer` agent, as an MCP client, lists agents, sees `cheat`'s earnings are fake, gets its buy refused (`SCAN_BLOCKED`), scans `translator` clean, buys it (`max_price` 1000, `confirm`), checks `alice` is locked out and lists the agent again. `out/agent-buys-agent.json` (`agent-buys-agent.v1`). |
 | `make mcp` | Start the MCP server on stdio. Offline by default; write tools need `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID` (`buy_agent` also `AGENT_EXIT_RUNNER_PK`). Config for Claude Code and Codex: [`AGENTS.md`](AGENTS.md). |
+| `make web` | The demo page at http://127.0.0.1:8080: the six demo steps (break-in fails, the business inside its limits, verified vs unverified earnings, a cheat caught, an honest sale, an agent buys an agent), each with the contract's real error text or event JSON. Offline by default: it shows `web/data/demo.json`, **recorded from the contract code** by `make web-data` (reproducible). `?network=testnet` shows the testnet mode: a NEAR wallet login (NEAR Connect) and the label `testnet: coming after deploy`; nothing is read from or sent to the chain yet. |
+| `make web-test` | Playwright smoke test of the page in Chromium (desktop and 375 px wide, external requests blocked): every step's key result is on screen, no horizontal scroll, no console errors, the testnet flag is labelled. Needs the `playwright` npm package with Chromium; not part of `make ci`. |
 | `make test` | All tests (`PROP_CASES=10000` property cases, fixed seed). |
 | `make lint` | `rustfmt --check` and `clippy -D warnings`. |
 | `make audit` | `cargo audit` (needs `cargo install cargo-audit`). Four advisories in near-sdk's native test runtime are ignored in `.cargo/audit.toml`; the same target proves those crates are not in the contract wasm. |
@@ -89,7 +91,9 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 
 Not built yet (later batches): the testnet deploy and live runs (B3),
 testnet writes through MCP (they return `NOT_BUILT`), fuzz targets, Chain
-Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
+Signatures Base wallet and `pay_base` (S6), `accept_job`, the page's testnet
+mode (only the wallet login exists), its deploy (`make web-deploy`) and a
+Playwright run against the deployed page (`make e2e`). Their
 `make` targets say `not built yet`.
 
 ## How the handover works (prototype A, "locked account")
@@ -182,6 +186,8 @@ mcp/                    MCP server (TypeScript, stdio) + tests + scripted agent-
 schemas/mcp/            JSON schemas v1 for every MCP tool input and output
 skills/agent-exit/      Agent Skill: scan before you buy
 fixtures/mcp/world.json recorded contract results the MCP offline mode replays
+web/                    the demo page (static, no build step) + serve.mjs + Playwright smoke test
+web/data/demo.json      contract results recorded for the page (`make web-data`)
 fixtures/judge-attack.json  edit me: plant your own backdoor
 fixtures/test-signatures/   TEST signatures (local keys) for NEAR Verified
 docs/NOT-CAUGHT.md      what is not caught, by design

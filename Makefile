@@ -49,9 +49,31 @@ golden: ## Rewrite tests/golden/verify.json from the current code (review the di
 	cargo run --quiet --locked --offline -p attack -- --out tests/golden/attack.json > /dev/null
 
 .PHONY: mcp-golden
-mcp-golden: mcp-build ## Rewrite fixtures/mcp/world.json and tests/golden/agent-buys-agent.json (review the diff!)
+mcp-golden: mcp-build ## Rewrite fixtures/mcp/world.json, tests/golden/agent-buys-agent.json and web/data/demo.json (review the diff!)
 	cargo run --quiet --locked --offline -p verify --bin gen-mcp-world
 	node mcp/dist/scripts/agent-buys-agent.js --out tests/golden/agent-buys-agent.json
+	cargo run --quiet --locked --offline -p verify --bin gen-web-demo
+
+# ---------------------------------------------------------------- demo page (web/)
+
+WEB_PORT ?= 8080
+NODE_GLOBAL := $(shell npm root -g 2>/dev/null)
+
+.PHONY: web-data
+web-data: ## Rewrite web/data/demo.json from the contract (review the diff!)
+	cargo run --quiet --locked --offline -p verify --bin gen-web-demo
+
+.PHONY: web
+web: ## Serve the demo page on http://127.0.0.1:8080 (offline, recorded; ?network=testnet shows the unwired testnet mode)
+	@command -v node >/dev/null || { echo "node not installed: the page server needs Node >= 20" >&2; exit 1; }
+	cargo run --quiet --locked --offline -p verify --bin gen-web-demo -- --check
+	node web/serve.mjs $(WEB_PORT)
+
+.PHONY: web-test
+web-test: ## Playwright smoke test of the page (Chromium, desktop + 375px, no network)
+	@command -v node >/dev/null || { echo "node not installed: web-test needs Node >= 20" >&2; exit 1; }
+	cargo run --quiet --locked --offline -p verify --bin gen-web-demo -- --check
+	NODE_PATH="$${NODE_PATH:+$$NODE_PATH:}$(NODE_GLOBAL)" node web/test/smoke.mjs
 
 # ---------------------------------------------------------------- MCP + Skill
 
@@ -127,7 +149,7 @@ test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real loca
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
-.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-dev web-deploy e2e
+.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-deploy e2e
 attack-sandbox: ## Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
 attack-testnet: ## [testnet] A1 A5 A17-A21 live
@@ -144,11 +166,9 @@ demo-setup: ## [testnet] Reset demo agents
 	$(call not_built,demo-setup,M2 B3)
 record: ## [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
-web-dev: ## Local hosted page
-	$(call not_built,web-dev,M3 B5)
 web-deploy: ## [testnet] Vercel deploy
 	$(call not_built,web-deploy,M3 B5)
-e2e: ## Playwright against the page
+e2e: ## [testnet] Playwright against the deployed page with a real wallet
 	$(call not_built,e2e,M3 B5)
 
 SCENES := 1 2 3 4 5 6

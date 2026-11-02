@@ -25,6 +25,9 @@
 - [mcp/src/backend.ts](mcp/src/backend.ts): offline (recorded) and testnet (read-only) data for the MCP server
 - [mcp/src/server.ts](mcp/src/server.ts): MCP stdio server
 - [mcp/scripts/agent-buys-agent.ts](mcp/scripts/agent-buys-agent.ts): scripted agent-buys-agent run
+- [web/index.html](web/index.html): demo page (`make web`; offline, recorded; `?network=testnet` is labelled not wired)
+- [web/app.js](web/app.js): renders the six demo steps from web/data/demo.json
+- [tools/verify/src/bin/gen-web-demo.rs](tools/verify/src/bin/gen-web-demo.rs): records web/data/demo.json from the contract (`make web-data`)
 - [mcp/mcp-config.example.json](mcp/mcp-config.example.json): MCP client config
 
 ## Tests and outputs
@@ -44,4 +47,6 @@
 - [schemas/mcp/buy_agent.input.v1.json](schemas/mcp/buy_agent.input.v1.json): MCP schemas (one input and one output file per tool, plus error.v1.json)
 - [fixtures/mcp/world.json](fixtures/mcp/world.json): contract results recorded for the MCP offline mode
 - [tests/golden/agent-buys-agent.json](tests/golden/agent-buys-agent.json): expected `make agent-buys-agent` output
+- [web/data/demo.json](web/data/demo.json): contract results recorded for the demo page
+- [web/test/smoke.mjs](web/test/smoke.mjs): `make web-test` Playwright smoke test
 - [mcp/test/s14_agent_buys_agent.test.ts](mcp/test/s14_agent_buys_agent.test.ts): S14 agent buys agent via MCP

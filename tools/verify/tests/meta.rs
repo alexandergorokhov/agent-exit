@@ -62,7 +62,14 @@ fn unbuilt_make_targets_fail_loudly() {
         eprintln!("make not installed; skipped");
         return;
     }
-    for t in ["attack-sandbox", "fuzz", "web-dev", "scene-1", "gate-g1"] {
+    for t in [
+        "attack-sandbox",
+        "fuzz",
+        "web-deploy",
+        "e2e",
+        "scene-1",
+        "gate-g1",
+    ] {
         let out = Command::new("make")
             .arg("-s")
             .arg(t)
@@ -134,6 +141,48 @@ fn mcp_world_fixture_is_recorded_from_the_contract() {
     assert_eq!(v["schema"], "mcp-world.v1");
     assert_eq!(v["network"], "offline");
     assert!(v["_note"].as_str().unwrap().contains("xUSD-FAKE"));
+}
+
+#[test]
+fn web_demo_data_is_recorded_from_the_contract() {
+    let out = Command::new(env!("CARGO_BIN_EXE_gen-web-demo"))
+        .arg("--check")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let v: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(root().join("web/data/demo.json")).unwrap())
+            .unwrap();
+    assert_eq!(v["schema"], "web-demo.v1");
+    assert!(v["money"].as_str().unwrap().contains("xUSD-FAKE"));
+    let ids: Vec<&str> = v["steps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| s["id"].as_str().unwrap())
+        .collect();
+    // The demo order in AGENT-EXIT.md.
+    assert_eq!(
+        ids,
+        [
+            "break-in",
+            "business",
+            "verified",
+            "cheat",
+            "honest-sale",
+            "agent-buys-agent"
+        ]
+    );
+    let page = std::fs::read_to_string(root().join("web/app.js")).unwrap();
+    assert!(page.contains("testnet: coming after deploy"));
+    assert!(
+        !page.contains("mainnet"),
+        "the page never names a mainnet network"
+    );
 }
 
 #[test]
