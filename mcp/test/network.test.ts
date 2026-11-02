@@ -18,6 +18,11 @@ test("mainnet is refused at startup", () => {
     assert.match(r.stderr, /refus|not a \.testnet/);
   }
   assert.throws(() => assertNotMainnet("https://free.rpc.fastnear.com/mainnet"));
+  // A41: mainnet endpoints whose URL does not say "mainnet" are refused too.
+  for (const u of ["https://rpc.fastnear.com", "https://free.rpc.fastnear.com", "https://near.lava.build", "https://rpc.near.org", "https://rpc.testnet.near.org.evil.com", "https://user@rpc.testnet.near.org", "http://rpc.testnet.near.org"]) {
+    assert.throws(() => assertNotMainnet(u), new RegExp("refusing"), u);
+  }
+  for (const u of ["https://rpc.testnet.near.org", "https://test.rpc.fastnear.com"]) assertNotMainnet(u);
 });
 
 test("default is offline", () => {

@@ -54,11 +54,29 @@ function findScan(repo: string): string | null {
   return null;
 }
 
-/** Refuse anything that is not testnet. */
+/** Known NEAR testnet RPC hosts (A41). A mainnet endpoint need not say
+ * "mainnet" in its URL, so anything not on this list is refused. */
+export const TESTNET_RPC_HOSTS = [
+  "rpc.testnet.near.org",
+  "archival-rpc.testnet.near.org",
+  "test.rpc.fastnear.com",
+  "rpc.testnet.fastnear.com",
+  "archival-rpc.testnet.fastnear.com",
+];
+
+/** Refuse anything that is not a known testnet RPC over https. */
 export function assertNotMainnet(url: string): void {
-  const u = url.toLowerCase();
-  if (u.includes("mainnet") || !u.startsWith("https://")) {
-    throw new ConfigError(`refusing RPC ${url}: testnet over https only, never mainnet`);
+  let host = "";
+  let ok = false;
+  try {
+    const u = new URL(url);
+    host = u.hostname.toLowerCase();
+    ok = u.protocol === "https:" && !u.username && !u.password && !u.port && TESTNET_RPC_HOSTS.includes(host) && !url.toLowerCase().includes("mainnet");
+  } catch {
+    ok = false;
+  }
+  if (!ok) {
+    throw new ConfigError(`refusing RPC ${url}: only known testnet RPC hosts over https (${TESTNET_RPC_HOSTS.join(", ")}), never mainnet`);
   }
 }
 

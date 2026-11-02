@@ -449,7 +449,7 @@ pub fn sold_translator() -> Sim {
     let sale_id = s.m().pending.as_ref().expect("settling").sale_id;
     assert_eq!(s.callback(true).on_handover(sale_id).0, 0);
     s.callback(true)
-        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
     s
 }
 

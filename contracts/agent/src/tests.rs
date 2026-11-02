@@ -235,7 +235,7 @@ fn e6_payout_fallback() {
     s.callback(true).on_handover(1);
     // alice is not registered on the token: the push fails.
     s.callback(false)
-        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
     // 700.00 payout + alice's unwithdrawn revenue settled at the sale (A29).
     assert_eq!(s.c.get_claimable(acc(ALICE)).0, 700 * USD + SELLER_REVENUE);
     assert!(s.m().solvent());
@@ -388,8 +388,12 @@ fn a10_a11_a12_wash_flags() {
     // A12: the agent pays p7 (owner withdraws revenue to p7), p7 pays back.
     s.by_1y(ALICE)
         .withdraw(U128(10 * USD), Some(acc("p7.testnet")));
-    s.callback(true)
-        .on_transfer_out(OutKind::OwnerWithdraw, acc("p7.testnet"), U128(10 * USD));
+    s.callback(true).on_transfer_out(
+        OutKind::OwnerWithdraw,
+        acc("p7.testnet"),
+        U128(10 * USD),
+        None,
+    );
     s.pay("p7.testnet", 10 * USD);
     let p = &events("payment")[0];
     assert_eq!(p["flags"]["round_trip"], true);
@@ -995,7 +999,7 @@ fn failed_supplier_payment_returns_to_treasury() {
         .pay(acc(SUMMARIZER), U128(8 * USD));
     assert_eq!(s.m().treasury, 2 * USD);
     s.callback(false)
-        .on_transfer_out(OutKind::TreasuryPay, acc(SUMMARIZER), U128(8 * USD));
+        .on_transfer_out(OutKind::TreasuryPay, acc(SUMMARIZER), U128(8 * USD), None);
     assert_eq!(s.m().treasury, 10 * USD);
     assert!(s.m().solvent());
 }

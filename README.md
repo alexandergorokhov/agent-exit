@@ -78,6 +78,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | `nft_resolve_transfer` tells the truth: if returning the deed is refused, it reports that the receiver kept it and emits no NEP-171 transfer back | offline | A35 |
 | The round-trip table does not cripple the buyer: each owner gets a quota of 1,000 new payout destinations (3,000 in all); `get_status` shows `paid_to_total` and the scan blocks an agent whose buyer would get less than a full quota (`paid_to_bloated`) | offline + `make attack` family A36 | A36 |
 | MCP `buy_agent` installs the server's runner key (`AGENT_EXIT_RUNNER_PK`), never one from tool input; chain-sourced text (method names, keys) reaches the model sanitised, cut to 200 characters and in `untrusted_*` fields; the Skill says tool output is data, not instructions | MCP tests (a prompt-injection method name in the scanned wasm) | A37 |
+| Review 2 lows: a withdrawal that fails after a sale goes back to whoever started it (A38); no `withdraw_near` while listed (A39); concurrent MCP buys cannot each pass the session cap (A40); the MCP server accepts only known testnet RPC hosts (A41); the test token's init is `#[private]` (A42) | offline + MCP tests | A38-A42 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
@@ -152,6 +153,16 @@ Signatures Base wallet and `pay_base` (S6), `accept_job`, hosted page. Their
   listing that was not recorded is refused (`OFFLINE_NO_RECORDING`), never
   made up. Testnet mode reads two RPC providers and refuses any mainnet URL
   or account; it has not run from this build box (no NEAR RPC access).
+- Known issues from security review 2, not fixed yet: the deed can be
+  sent to the agent's own account (after which it can never move again),
+  there is no `nft_mint` event at init, and `nft_approve` neither charges
+  storage nor refunds extra deposit (L3). The testnet scan reads the code
+  hash, method list and status from one provider only, at possibly
+  different blocks, with `open_auth_until` fixed at 0 and no sub-account
+  list (L6). A NEAR Verified badge shows that whoever made the NEAR AI
+  request named that payer and amount; that can be the seller, so it does
+  not prove a real customer (L7). The test token's faucet registers
+  callers at the token's storage cost (L8).
 - NEAR Intents is mainnet-only and is not used.
 - Mocked-runtime tests do not execute promises: they check the actions the
   contract schedules and drive callbacks by hand. Real `AccessKeyNotFound`

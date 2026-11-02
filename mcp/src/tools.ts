@@ -304,10 +304,22 @@ export class Tools {
     if (price > BigInt(units(maxPrice))) {
       throw new ToolError("OVER_MAX_PRICE", `price ${usd(price)} > max_price ${maxPrice.toFixed(2)}`, { price: usd(price) });
     }
+    // A40: reserve the price before any await, so concurrent buy_agent calls
+    // cannot each pass the cap. Released again if the buy does not happen.
     const cap = BigInt(units(this.cfg.sessionCap));
     if (this.spent + price > cap) {
       throw new ToolError("SESSION_CAP", `session spend would be ${usd(this.spent + price)} > cap ${usd(cap)} (AGENT_EXIT_SESSION_CAP)`);
     }
+    this.spent += price;
+    try {
+      return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
+    } catch (e) {
+      this.spent -= price;
+      throw e;
+    }
+  }
+
+  private async buyReserved(agent: string, buyer: string, pk: string, quoted: Json, price: bigint, t: Json, min: MinTerms): Promise<Json> {
     const r = await this.scan(agent, { listing_version: quoted.listing_version, price: quoted.price, min_terms: min });
     if (r.verdict !== "clean") {
       throw new ToolError("SCAN_BLOCKED", `scan verdict ${r.verdict}: not buying`, {
@@ -318,7 +330,6 @@ export class Tools {
     const { known_keys_hash } = r.buy_args;
     const listing_version: number = quoted.listing_version;
     const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash);
-    this.spent += price;
     const after = await this.backend.agent(agent);
     const s = out.sale;
     return {

@@ -394,3 +394,48 @@ fn a36_buyer_does_not_inherit_a_full_round_trip_table() {
     // The seller-era entries still count against the seller's earn-out.
     assert!(s.m().paid_to.get("junk7.testnet") == Some(&1));
 }
+
+/// A38 (review 2 L1): the seller starts a withdrawal, the agent is sold
+/// before the token's answer comes back, and the transfer failed. The
+/// credit-back goes to the seller (claimable), not to the buyer's revenue.
+#[test]
+fn a38_failed_withdraw_after_sale_goes_back_to_who_started_it() {
+    let mut s = listed_translator();
+    // The listing froze the limits, not withdrawals: alice withdraws 100.00.
+    s.by_1y(ALICE).cancel_listing();
+    s.by_1y(ALICE).withdraw(U128(100 * USD), None);
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    let sale_id = s.m().pending.as_ref().unwrap().sale_id;
+    s.callback(true).on_handover(sale_id);
+    let bob_free = s.m().owner_free;
+    let alice_claim = *s.m().claimable.get(ALICE).unwrap_or(&0);
+    // The withdrawal's callback arrives after the sale: failed.
+    s.callback(false).on_transfer_out(
+        OutKind::OwnerWithdraw,
+        acc(ALICE),
+        U128(100 * USD),
+        Some(acc(ALICE)),
+    );
+    assert_eq!(s.m().owner_free, bob_free, "not the buyer's money");
+    assert_eq!(s.m().claimable[ALICE], alice_claim + 100 * USD);
+    assert!(s.m().solvent());
+}
+
+/// A39 (review 2 L2): no `withdraw_near` while listed; the buyer scanned
+/// the agent's NEAR balance too.
+#[test]
+fn a39_no_near_withdrawal_while_listed() {
+    let mut s = listed_translator();
+    assert_eq!(
+        panic_text(|| {
+            s.by_1y(ALICE)
+                .withdraw_near(near_sdk::NearToken::from_millinear(1));
+        }),
+        "Listed: spending paused"
+    );
+    s.by_1y(ALICE).cancel_listing();
+    s.by_1y(ALICE)
+        .withdraw_near(near_sdk::NearToken::from_millinear(1));
+}

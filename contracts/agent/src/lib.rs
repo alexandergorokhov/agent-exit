@@ -678,9 +678,21 @@ impl AgentExit {
 
     /// Push falls back to pull: a failed transfer is credited back (E6).
     #[private]
-    pub fn on_transfer_out(&mut self, kind: OutKind, to: AccountId, amount: U128) -> bool {
+    pub fn on_transfer_out(
+        &mut self,
+        kind: OutKind,
+        to: AccountId,
+        amount: U128,
+        by: Option<AccountId>,
+    ) -> bool {
         let ok = promise_ok();
-        self.m.transfer_done(kind.into(), to.as_str(), amount.0, ok);
+        self.m.transfer_done(
+            kind.into(),
+            to.as_str(),
+            by.as_ref().map(|b| b.as_str()),
+            amount.0,
+            ok,
+        );
         if !ok {
             emit(
                 "transfer_failed",
@@ -708,7 +720,7 @@ impl AgentExit {
             .m
             .withdraw(caller.as_str(), amount.0, to.as_str())
             .unwrap_or_else(|e| fail(e));
-        self.send(OutKind::OwnerWithdraw, to.as_str(), a)
+        self.send_by(OutKind::OwnerWithdraw, to.as_str(), a, Some(caller))
     }
 
     /// Owner takes NEAR above storage staking plus `NEAR_RESERVE` (E17, I10).
@@ -721,6 +733,10 @@ impl AgentExit {
         }
         if self.m.status == core::Status::Settling {
             fail(core::Error::SaleInProgress);
+        }
+        // A39: the buyer scanned the agent's NEAR balance too.
+        if self.m.status == core::Status::Listed {
+            fail(core::Error::SpendingPaused);
         }
         if amount > self.near_withdrawable() {
             env::panic_str("StorageReserve");
@@ -1127,6 +1143,17 @@ impl AgentExit {
     }
 
     fn send(&mut self, kind: OutKind, to: &str, amount: Amount) -> Promise {
+        self.send_by(kind, to, amount, None)
+    }
+
+    /// `by`: who started it (owner withdrawals), for the credit-back (A38).
+    fn send_by(
+        &mut self,
+        kind: OutKind,
+        to: &str,
+        amount: Amount,
+        by: Option<AccountId>,
+    ) -> Promise {
         let to: AccountId = to.parse().expect("valid account");
         ext_ft_core::ext(self.token.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
@@ -1139,7 +1166,7 @@ impl AgentExit {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(cb_gas(GAS_ON_TRANSFER_OUT))
-                    .on_transfer_out(kind, to, U128(amount)),
+                    .on_transfer_out(kind, to, U128(amount), by),
             )
     }
 

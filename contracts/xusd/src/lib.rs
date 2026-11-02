@@ -42,7 +42,10 @@ pub struct Xusd {
 
 #[near]
 impl Xusd {
+    /// Only the token account itself may initialise it (deploy + init in one
+    /// batch), so nobody can front-run the init and pick the admin (A42).
     #[init]
+    #[private]
     pub fn new(admin_id: AccountId) -> Self {
         Self {
             token: FungibleToken::new(Key::Token),

@@ -60,3 +60,28 @@ test("E29 an unrecorded offline buy is refused, not faked", async () => {
     await s.close();
   }
 });
+
+test("A40 concurrent buy_agent calls cannot each pass the session cap", async () => {
+  const s = await writer("summarizer.testnet", { AGENT_EXIT_SESSION_CAP: "1500" });
+  try {
+    const rs = await Promise.all([s.call("buy_agent", buy("translator.testnet", {})), s.call("buy_agent", buy("translator.testnet", {}))]);
+    const codes = rs.map((r) => (r.ok ? "ok" : r.body.error.code)).sort();
+    assert.ok(codes.includes("SESSION_CAP"), JSON.stringify(codes));
+    assert.equal(codes.filter((c) => c === "ok").length, 1, JSON.stringify(codes));
+  } finally {
+    await s.close();
+  }
+});
+
+test("A40 a refused buy releases its reservation", async () => {
+  const s = await writer("summarizer.testnet", { AGENT_EXIT_SESSION_CAP: "1000" });
+  try {
+    const blocked = await s.call("buy_agent", buy("cheat.testnet", { max_price: 600 }));
+    assert.equal(blocked.body.error.code, "SCAN_BLOCKED");
+    const r = await s.call("buy_agent", buy("translator.testnet", {}));
+    assert.equal(r.ok, true, JSON.stringify(r.body));
+    assert.equal(r.body.session_spent, "1000.00");
+  } finally {
+    await s.close();
+  }
+});

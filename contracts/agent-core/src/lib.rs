@@ -838,15 +838,27 @@ impl Machine {
     // ----- token transfers out ----------------------------------------------
 
     /// A transfer started by the contract finished. On failure the amount is
-    /// credited back (push falls back to pull, E6).
-    pub fn transfer_done(&mut self, kind: TransferKind, to: &str, amount: Amount, ok: bool) {
+    /// credited back (push falls back to pull, E6). `by` is who started an
+    /// owner withdrawal: if the deed moved before the callback, the money is
+    /// still theirs, as a claimable balance, not the new owner's (A38).
+    pub fn transfer_done(
+        &mut self,
+        kind: TransferKind,
+        to: &str,
+        by: Option<&str>,
+        amount: Amount,
+        ok: bool,
+    ) {
         if ok {
             return;
         }
         self.held += amount;
         match kind {
             TransferKind::SellerPayout | TransferKind::Claim => self.credit(to, amount),
-            TransferKind::OwnerWithdraw => self.owner_free += amount,
+            TransferKind::OwnerWithdraw => match by {
+                Some(b) if b != self.owner => self.credit(b, amount),
+                _ => self.owner_free += amount,
+            },
             // A failed supplier payment goes back to the treasury. The day's
             // spending is not reduced (the cap counts attempts, conservative).
             TransferKind::TreasuryPay => self.treasury += amount,

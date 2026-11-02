@@ -25,7 +25,7 @@ fn sold_agent() -> Machine {
         r => panic!("{r:?}"),
     }
     // The seller payout is in flight; it lands.
-    m.transfer_done(TransferKind::SellerPayout, "alice", 700 * USD, true);
+    m.transfer_done(TransferKind::SellerPayout, "alice", None, 700 * USD, true);
     m
 }
 

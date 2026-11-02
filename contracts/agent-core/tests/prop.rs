@@ -124,7 +124,7 @@ fn act() -> impl Strategy<Value = Act> {
 struct World {
     m: Machine,
     now: Ts,
-    in_flight: Vec<(TransferKind, String, Amount)>,
+    in_flight: Vec<(TransferKind, String, Option<String>, Amount)>,
     before_buy: Option<Machine>,
     key_counter: u64,
     /// Highest daily cap in force at any point of the current (epoch, day).
@@ -310,7 +310,8 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                         prop_assert!(!w.m.known_keys.contains(k));
                     }
                     SALES.fetch_add(1, Relaxed);
-                    w.in_flight.push((TransferKind::SellerPayout, s, payout));
+                    w.in_flight
+                        .push((TransferKind::SellerPayout, s, None, payout));
                 }
                 BuyResult::RolledBack {
                     unused,
@@ -361,14 +362,25 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
         }
         Act::Resolve(i, ok) => {
             if !w.in_flight.is_empty() {
-                let (k, to, amt) = w.in_flight.remove(i % w.in_flight.len());
-                w.m.transfer_done(k, &to, amt, ok);
+                let (k, to, by, amt) = w.in_flight.remove(i % w.in_flight.len());
+                let owner_before = w.m.owner.clone();
+                let claim_before = by.as_ref().map(|b| *w.m.claimable.get(b).unwrap_or(&0));
+                w.m.transfer_done(k, &to, by.as_deref(), amt, ok);
+                // A38: a failed withdrawal goes back to whoever started it.
+                if let (false, TransferKind::OwnerWithdraw, Some(b)) = (ok, k, &by) {
+                    if *b != owner_before {
+                        prop_assert_eq!(
+                            *w.m.claimable.get(b).unwrap_or(&0),
+                            claim_before.unwrap() + amt
+                        );
+                    }
+                }
             }
         }
         Act::Claim(c) => {
             if let Ok(amt) = w.m.claim(ACTORS[c]) {
                 w.in_flight
-                    .push((TransferKind::Claim, ACTORS[c].to_string(), amt));
+                    .push((TransferKind::Claim, ACTORS[c].to_string(), None, amt));
             }
         }
         Act::Withdraw(c, f) => {
@@ -379,8 +391,12 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 prop_assert_eq!(&w.m, &before);
             }
             if let Ok(a) = r {
-                w.in_flight
-                    .push((TransferKind::OwnerWithdraw, ACTORS[c].to_string(), a));
+                w.in_flight.push((
+                    TransferKind::OwnerWithdraw,
+                    ACTORS[c].to_string(),
+                    Some(ACTORS[c].to_string()),
+                    a,
+                ));
             }
         }
         Act::Time(s) => w.now += s * NANOS_PER_SEC,
@@ -633,8 +649,12 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                         prop_assert!(total <= before.limits.daily_cap);
                         prop_assert!(amount <= before.treasury);
                         prop_assert_eq!(w.m.treasury, before.treasury - amount);
-                        w.in_flight
-                            .push((TransferKind::TreasuryPay, payee.to_string(), amount));
+                        w.in_flight.push((
+                            TransferKind::TreasuryPay,
+                            payee.to_string(),
+                            None,
+                            amount,
+                        ));
                     }
                     Err(e) => {
                         if e == Error::PolicyViolation(Policy::DailyCap) {

@@ -227,7 +227,7 @@ fn run() -> Value {
     s.buy(BOB, 1_000 * USD, BOB_RUNNER);
     s.callback(true).on_handover(1);
     s.callback(false)
-        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD));
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
     let cl = claim(&s, ALICE);
     r.check(
         "E6",
@@ -339,8 +339,12 @@ fn run() -> Value {
     let mut s = translator_world();
     s.by_1y(ALICE)
         .withdraw(U128(10 * USD), Some(acc("p7.testnet")));
-    s.callback(true)
-        .on_transfer_out(OutKind::OwnerWithdraw, acc("p7.testnet"), U128(10 * USD));
+    s.callback(true).on_transfer_out(
+        OutKind::OwnerWithdraw,
+        acc("p7.testnet"),
+        U128(10 * USD),
+        None,
+    );
     s.pay("p7.testnet", 10 * USD);
     let rt = events("payment")[0]["flags"]["round_trip"] == true;
     s.pay(ALICE, 5 * USD);
@@ -933,6 +937,37 @@ fn run() -> Value {
         "a seller who filled the round-trip table (1000 junk destinations) does not leave the buyer with PaidToFull: the quota is per owner; get_status shows paid_to_total and the scan blocks a table the buyer could not fill",
         fresh && st["paid_to_total"] == 1_001 && st["paid_to_owner"] == 1,
         json!({"paid_to_total": st["paid_to_total"], "paid_to_owner": st["paid_to_owner"]}),
+    );
+
+    let mut s = translator_world();
+    s.by_1y(ALICE).withdraw(U128(100 * USD), None);
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.callback(true).on_handover(1);
+    let bob_free = s.m().owner_free;
+    let alice_claim = claim(&s, ALICE);
+    s.callback(false).on_transfer_out(
+        OutKind::OwnerWithdraw,
+        acc(ALICE),
+        U128(100 * USD),
+        Some(acc(ALICE)),
+    );
+    r.check(
+        "A38",
+        "a seller's withdrawal that fails after the agent was sold is credited back to the seller (claimable), not to the buyer's revenue",
+        s.m().owner_free == bob_free && claim(&s, ALICE) == alice_claim + 100 * USD,
+        json!({"seller_claimable": usd(claim(&s, ALICE))}),
+    );
+    let mut s = listed_translator();
+    let paused = panics_with("Listed: spending paused", || {
+        s.by_1y(ALICE).withdraw_near(NearToken::from_millinear(1));
+    });
+    r.check(
+        "A39",
+        "no withdraw_near while listed: the NEAR balance the buyer scanned stays",
+        paused,
+        json!({"error": "Listed: spending paused"}),
     );
 
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();

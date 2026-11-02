@@ -533,10 +533,26 @@
         "paid_to_total": 1001,
         "paid_to_owner": 1
       }
+    },
+    {
+      "id": "A38",
+      "what": "a seller's withdrawal that fails after the agent was sold is credited back to the seller (claimable), not to the buyer's revenue",
+      "pass": true,
+      "detail": {
+        "seller_claimable": "500.00"
+      }
+    },
+    {
+      "id": "A39",
+      "what": "no withdraw_near while listed: the NEAR balance the buyer scanned stays",
+      "pass": true,
+      "detail": {
+        "error": "Listed: spending paused"
+      }
     }
   ],
   "summary": {
-    "passed": 58,
+    "passed": 60,
     "failed": 0
   },
   "not_covered_here": [
