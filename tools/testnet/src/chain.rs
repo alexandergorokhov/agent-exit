@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use std::time::Instant;
-use testnet_plan::{Config, EXPLORER_TX};
+use testnet_plan::{check_secret_mode, Config, EXPLORER_TX};
 
 pub type Res<T> = Result<T, String>;
 
@@ -112,6 +112,7 @@ impl KeyStore {
 
     /// The key named `name`, created (and saved, 0600) if missing.
     pub fn get_or_create(&self, name: &str) -> Res<SecretKey> {
+        self.check()?;
         if let Some(k) = self.get(name) {
             return Ok(k);
         }
@@ -131,6 +132,17 @@ impl KeyStore {
             .map_err(|e| format!("{}: {e}", self.path(name)))?;
         writeln!(f, "{sk}").map_err(|e| e.to_string())?;
         Ok(sk)
+    }
+
+    /// Refuse a key directory or key file that group or others can read.
+    pub fn check(&self) -> Res<()> {
+        check_secret_mode(&self.dir)?;
+        for e in std::fs::read_dir(&self.dir).into_iter().flatten().flatten() {
+            if let Some(p) = e.path().to_str() {
+                check_secret_mode(p)?;
+            }
+        }
+        Ok(())
     }
 
     /// Every secret value held here (to make sure none reaches out/).

@@ -7,8 +7,8 @@
 // needs max_price, stays inside the session spend cap, and scans first:
 // any finding refuses the buy before anything is sent.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, type MinTerms, type ScanExpect, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
@@ -133,14 +133,73 @@ export function units(dollars: number): string {
 
 // ------------------------------------------------------------------ tools
 
+/** What this account has spent today (UTC), in base units. Kept in a file
+ * (mode 600) when `file` is set, so a restart does not give the model a fresh
+ * cap. Reads and writes are synchronous: no await sits between the check and
+ * the reservation. An unreadable file refuses the buy rather than passing it. */
+export class SpendLedger {
+  private mem = 0n;
+  constructor(
+    private file: string | null,
+    private account: string,
+  ) {}
+
+  private day(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private read(): Record<string, Record<string, string>> {
+    if (!this.file) return {};
+    if (!existsSync(this.file)) return {};
+    try {
+      const j = JSON.parse(readFileSync(this.file, "utf8"));
+      if (j === null || typeof j !== "object" || Array.isArray(j)) throw new Error("not an object");
+      return j;
+    } catch (e) {
+      throw new ToolError("SESSION_CAP", `the spend file ${this.file} cannot be read (${(e as Error).message}); refusing to buy without a known spend`);
+    }
+  }
+
+  total(): bigint {
+    if (!this.file) return this.mem;
+    try {
+      return BigInt(this.read()[this.account]?.[this.day()] ?? "0");
+    } catch (e) {
+      if (e instanceof ToolError) throw e;
+      throw new ToolError("SESSION_CAP", `the spend file ${this.file} holds a bad amount; refusing to buy without a known spend`);
+    }
+  }
+
+  add(delta: bigint): void {
+    if (!this.file) {
+      this.mem += delta;
+      return;
+    }
+    const all = this.read();
+    const mine = (all[this.account] ??= {});
+    const next = this.total() + delta;
+    mine[this.day()] = (next < 0n ? 0n : next).toString();
+    mkdirSync(dirname(this.file), { recursive: true });
+    const tmp = `${this.file}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(all, null, 2) + "\n", { mode: 0o600 });
+    renameSync(tmp, this.file);
+  }
+}
+
 export class Tools {
-  private spent = 0n;
+  private ledger: SpendLedger;
+  /** Spent so far today by this account (this session when no spend file is set). */
+  private get spent(): bigint {
+    return this.ledger.total();
+  }
 
   constructor(
     private cfg: Config,
     private backend: Backend,
     public schemas: SchemaSet,
-  ) {}
+  ) {
+    this.ledger = new SpendLedger(cfg.spendFile, cfg.accountId ?? "-");
+  }
 
   private base(tool: ToolName): Json {
     return { schema_version: `agent-exit.mcp.${tool}.v1`, network: this.backend.network };
@@ -289,6 +348,11 @@ export class Tools {
   private async buyAgent(agent: string, maxPrice: number, confirm: boolean, a: Json): Promise<Json> {
     const buyer = this.writeGate();
     if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", "buy_agent needs confirm: true");
+    // Review-4 L4: on testnet only agents the operator listed can be bought. The
+    // model chooses `confirm` and `max_price`; it cannot widen this list or the cap.
+    if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
+      throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet buy_agent only buys agents the operator listed`);
+    }
     // A37: the runner key comes from the server env only, so a model talked
     // into it cannot hand the bought agent's runner key to someone else.
     const pk = this.cfg.runnerPk;
@@ -319,12 +383,12 @@ export class Tools {
     if (this.spent + price > cap) {
       throw new ToolError("SESSION_CAP", `session spend would be ${usd(this.spent + price)} > cap ${usd(cap)} (AGENT_EXIT_SESSION_CAP)`);
     }
-    this.spent += price;
+    this.ledger.add(price);
     try {
       return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
     } catch (e) {
       // buyReserved only throws before the transaction is sent; after it, it returns.
-      this.spent -= price;
+      this.ledger.add(-price);
       throw e;
     }
   }

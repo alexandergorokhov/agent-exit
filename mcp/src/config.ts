@@ -20,6 +20,9 @@ export interface Config {
   runnerPk: string | null;
   /** Most this server may spend in one session, in xUSD-FAKE dollars. */
   sessionCap: number;
+  /** Where the spend per account and UTC day is kept across restarts (null: memory only).
+   * Testnet defaults to out/mcp-spend.json; AGENT_EXIT_SPEND_FILE overrides. */
+  spendFile: string | null;
   rpc: [string, string];
   agents: string[];
   expectedCodeHash: string | null;
@@ -129,6 +132,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     hasPrivateKey: Boolean(env.AGENT_EXIT_PRIVATE_KEY),
     runnerPk,
     sessionCap: cap,
+    spendFile: env.AGENT_EXIT_SPEND_FILE || (network === "testnet" ? join(repo, "out", "mcp-spend.json") : null),
     rpc,
     agents,
     expectedCodeHash: env.AGENT_EXIT_CODE_HASH ?? null,

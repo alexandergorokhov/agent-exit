@@ -22,7 +22,23 @@ fn tmp(name: &str, text: &str) -> String {
     std::fs::create_dir_all(&dir).unwrap();
     let p = dir.join(name);
     std::fs::write(&p, text).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600)).unwrap();
     p.to_string_lossy().into()
+}
+
+#[test]
+fn dry_run_refuses_a_group_readable_env_file() {
+    let p = tmp(
+        "loose.env",
+        "AGENT_EXIT_ROOT_KEY=ed25519:secret-value-xyz\n",
+    );
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o644)).unwrap();
+    let (ok, out, err) = run(&p, &["deploy"]);
+    assert!(!ok);
+    assert!(err.contains("chmod 600"), "{err}");
+    assert!(!out.contains("secret-value-xyz") && !err.contains("secret-value-xyz"));
 }
 
 #[test]

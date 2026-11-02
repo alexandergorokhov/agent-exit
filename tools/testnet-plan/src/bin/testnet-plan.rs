@@ -12,6 +12,10 @@ fn main() {
         std::process::exit(2);
     };
     let path = env_path();
+    if let Err(e) = check_secret_mode(&path) {
+        eprintln!("refused: {e}");
+        std::process::exit(1);
+    }
     let (env, found) = match std::fs::read_to_string(&path) {
         Ok(t) => (parse_env(&t), true),
         Err(_) => (default_env(), false),

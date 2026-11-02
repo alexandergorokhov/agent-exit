@@ -22,6 +22,11 @@ async fn main() {
         std::process::exit(2);
     };
     let path = env_path();
+    // The env file holds the root full-access key: group- or world-readable is refused.
+    if let Err(e) = check_secret_mode(&path) {
+        eprintln!("refused: {e}");
+        std::process::exit(1);
+    }
     let text = std::fs::read_to_string(&path);
     let dry = args.iter().any(|a| a == "--dry-run");
     let env = match (&text, dry) {

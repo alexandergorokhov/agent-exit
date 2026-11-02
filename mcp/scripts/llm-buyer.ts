@@ -36,7 +36,13 @@ const GOAL = "You are summarizer. Buy a translation agent under 1,000 xUSD that 
 const say = (l: string) => process.stderr.write(`llm-buyer: ${l}\n`);
 
 async function main(): Promise<number> {
-  const env = loadModelEnv();
+  let env: Record<string, string>;
+  try {
+    env = loadModelEnv();
+  } catch (e) {
+    say(`refused: ${(e as Error).message}`);
+    return 2;
+  }
   // A key pasted several times over is a common mistake. Say so, never print it.
   for (const k of ["NEARAI_API_KEY", "ANTHROPIC_API_KEY"] as const) {
     const n = env[k] ? repeatedKey(env[k]) : null;

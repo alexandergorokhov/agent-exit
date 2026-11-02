@@ -9,7 +9,7 @@
 //
 // Providers: NEAR AI Cloud (OpenAI-compatible chat completions) first, the
 // Anthropic API as a fallback. The model call is the only network use.
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 
 // ------------------------------------------------------------------ types
@@ -228,11 +228,25 @@ export function parseEnvFile(text: string): Record<string, string> {
   return out;
 }
 
+/** The env file holds keys: refuse it when group or others can read it. A
+ * missing file is fine. The message never shows a value. */
+export function checkSecretFileMode(path: string): void {
+  let mode: number;
+  try {
+    mode = statSync(path).mode;
+  } catch {
+    return;
+  }
+  if (mode & 0o077) throw new Error(`${path} is mode ${(mode & 0o777).toString(8)}: run chmod 600 on it (values not shown)`);
+}
+
 /** Process env first, then the env file (AGENT_EXIT_ENV or ~/.agent-exit.env). */
 export function loadModelEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
   let file: Record<string, string> = {};
+  const path = env.AGENT_EXIT_ENV || `${homedir()}/.agent-exit.env`;
+  checkSecretFileMode(path);
   try {
-    file = parseEnvFile(readFileSync(env.AGENT_EXIT_ENV || `${homedir()}/.agent-exit.env`, "utf8"));
+    file = parseEnvFile(readFileSync(path, "utf8"));
   } catch {
     /* no env file: the process env may have everything */
   }

@@ -64,6 +64,23 @@ pub fn parse_env(text: &str) -> BTreeMap<String, String> {
     m
 }
 
+/// Files and directories that hold secrets (the env file, the key files and
+/// their directory) must not be readable by group or others. A missing path is
+/// fine here. The message never shows a value.
+pub fn check_secret_mode(path: &str) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+    let Ok(meta) = std::fs::metadata(path) else {
+        return Ok(());
+    };
+    let mode = meta.permissions().mode() & 0o777;
+    if mode & 0o077 != 0 {
+        return Err(format!(
+            "{path} is mode {mode:o}: run chmod 600 on it (chmod 700 for a directory); values not shown"
+        ));
+    }
+    Ok(())
+}
+
 /// `~/.agent-exit.env`, or `AGENT_EXIT_ENV` if set.
 pub fn env_path() -> String {
     std::env::var("AGENT_EXIT_ENV").unwrap_or_else(|_| {
@@ -463,6 +480,37 @@ mod tests {
             .iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect()
+    }
+
+    #[test]
+    fn secret_files_must_be_mode_600() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("tp-mode-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("env");
+        std::fs::write(&f, "ROOT_KEY=secret-value\n").unwrap();
+        let p = f.to_str().unwrap();
+        for mode in [0o644, 0o640, 0o604, 0o660, 0o666] {
+            std::fs::set_permissions(&f, std::fs::Permissions::from_mode(mode)).unwrap();
+            let e = check_secret_mode(p).unwrap_err();
+            assert!(
+                e.contains("chmod 600") && !e.contains("secret-value"),
+                "{mode:o}: {e}"
+            );
+        }
+        for mode in [0o600, 0o400] {
+            std::fs::set_permissions(&f, std::fs::Permissions::from_mode(mode)).unwrap();
+            assert!(check_secret_mode(p).is_ok(), "{mode:o}");
+        }
+        // a missing file is the caller's business
+        assert!(check_secret_mode(dir.join("missing").to_str().unwrap()).is_ok());
+        // a directory of keys: 0700 passes, 0755 does not
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)).unwrap();
+        assert!(check_secret_mode(dir.to_str().unwrap()).is_ok());
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(check_secret_mode(dir.to_str().unwrap()).is_err());
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

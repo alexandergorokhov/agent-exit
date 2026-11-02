@@ -11,15 +11,21 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
-import { checkAuthorization, checkBaseRpc, checkRelayerKey, CHAIN_ID, DRY_RUN_PLAN, parseEnvFile, scrub } from "./g2-guards.mjs";
+import { checkAuthorization, checkBaseRpc, checkChainsig, checkRelayerKey, checkSecretFileMode, CHAIN_ID, requireTestnet, DRY_RUN_PLAN, parseEnvFile, scrub } from "./g2-guards.mjs";
 
 const USDC = "0x036cbd53842c5426634e7929541ec2318f3dcf7e";
 const MPC = "v1.signer-prod.testnet";
 
 function loadEnv() {
   const env = { ...process.env };
+  const p = process.env.AGENT_EXIT_ENV || `${homedir()}/.agent-exit.env`;
   try {
-    const p = process.env.AGENT_EXIT_ENV || `${homedir()}/.agent-exit.env`;
+    checkSecretFileMode(p); // the file holds keys: group- or world-readable is refused
+  } catch (e) {
+    console.error(`g2-relay: ${e.message}`);
+    process.exit(1);
+  }
+  try {
     for (const [k, v] of Object.entries(parseEnvFile(readFileSync(p, "utf8")))) if (!(k in env)) env[k] = v;
   } catch { /* the runner passes what is needed */ }
   return env;
@@ -40,7 +46,7 @@ const save = () => { mkdirSync(dirname(outFile), { recursive: true }); writeFile
 const fail = (msg) => { result.error = scrub(msg, secrets).slice(0, 600); save(); console.error(`g2-relay: ${result.error}`); process.exit(1); };
 
 async function main() {
-  if (env.AGENT_EXIT_NETWORK && env.AGENT_EXIT_NETWORK !== "testnet") fail("AGENT_EXIT_NETWORK is not testnet");
+  requireTestnet(env);
   const rpc = env.BASE_SEPOLIA_RPC || "https://sepolia.base.org";
   checkBaseRpc(rpc);
   const relayerKey = checkRelayerKey(env.BASE_RELAYER_KEY);
@@ -68,6 +74,8 @@ async function main() {
   } catch (e) {
     result.chainsig_js_error = scrub(e?.message || e, secrets).slice(0, 400);
   }
+
+  checkChainsig(result); // a mismatch, or no derivation at all, stops here
 
   // 2. Chain and token checks.
   const chainId = await pub.getChainId();

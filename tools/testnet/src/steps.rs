@@ -118,6 +118,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
     let keys = KeyStore {
         dir: cfg.keys_dir.clone(),
     };
+    keys.check()?; // key files and their directory: owner only
     let mut secrets: Vec<String> = SECRET_VARS
         .iter()
         .filter_map(|k| env.get(*k).cloned())
