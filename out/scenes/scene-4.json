@@ -9,21 +9,6 @@
         "code": "full_access_key_present",
         "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account",
         "severity": "block"
-      },
-      {
-        "code": "code_hash_mismatch",
-        "detail": "deployed DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa != published 3ZMurGa9zoXAtGV4f5wzwAmBDJ1gPXXNXLahqKHVTkos",
-        "severity": "block"
-      },
-      {
-        "code": "unexpected_method",
-        "detail": "method `__contract_abi` is not in the published contract",
-        "severity": "block"
-      },
-      {
-        "code": "unexpected_method",
-        "detail": "method `contract_source_metadata` is not in the published contract",
-        "severity": "block"
       }
     ],
     "schema": "scan-report.v1",
@@ -154,7 +139,7 @@
     },
     "expected": {
       "admin": "agentexit.testnet",
-      "code_hash": "3ZMurGa9zoXAtGV4f5wzwAmBDJ1gPXXNXLahqKHVTkos",
+      "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
       "listing_version": 1,
       "price": "500000000",
       "token": "xusd.agentexit.testnet"
@@ -169,90 +154,10 @@
         "window_secs": 2592000
       }
     },
-    "now_ns": 1793628206016894567,
+    "now_ns": 1793633682163894676,
     "schema": "scan-input.v1"
   },
   "scene": 4,
   "schema": "scene.v1",
-  "txs": [
-    {
-      "by": "alice.agentexit.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "agent": "cheat.agentexit.testnet",
-              "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
-              "escrow": "150000000",
-              "known_keys": [
-                "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
-              ],
-              "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
-              "listed_at": "1793628197508403200",
-              "listing_version": 1,
-              "paid_now": "350000000",
-              "price": "500000000",
-              "schema": "listing.v1",
-              "seller": "alice.agentexit.testnet",
-              "terms": {
-                "earnout_bps": 3000,
-                "floor_bps": 2000,
-                "share_bps": 5000,
-                "window_secs": 2592000
-              },
-              "terms_config": "prod",
-              "terms_min": {
-                "max_floor_bps": 5000,
-                "min_earnout_bps": 3000,
-                "min_window_secs": 2592000
-              },
-              "token": "xusd.agentexit.testnet",
-              "treasury_snapshot": "0"
-            }
-          ],
-          "event": "listed",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/21YqQXdFy5aeMRZs2ZDF5qAex1RKZyQbziUtYEY6oLgj",
-      "label": "alice lists cheat at 500.00",
-      "method": "list_for_sale",
-      "ms": 5456,
-      "ok": true,
-      "receiver": "cheat.agentexit.testnet",
-      "tx": "21YqQXdFy5aeMRZs2ZDF5qAex1RKZyQbziUtYEY6oLgj",
-      "value": {
-        "agent": "cheat.agentexit.testnet",
-        "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
-        "escrow": "150000000",
-        "known_keys": [
-          "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
-        ],
-        "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
-        "listed_at": "1793628197508403200",
-        "listing_version": 1,
-        "paid_now": "350000000",
-        "price": "500000000",
-        "schema": "listing.v1",
-        "seller": "alice.agentexit.testnet",
-        "terms": {
-          "earnout_bps": 3000,
-          "floor_bps": 2000,
-          "share_bps": 5000,
-          "window_secs": 2592000
-        },
-        "terms_config": "prod",
-        "terms_min": {
-          "max_floor_bps": 5000,
-          "min_earnout_bps": 3000,
-          "min_window_secs": 2592000
-        },
-        "token": "xusd.agentexit.testnet",
-        "treasury_snapshot": "0"
-      }
-    }
-  ],
   "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent"
 }

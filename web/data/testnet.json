@@ -111,14 +111,7 @@
       "scene": 4,
       "pass": true,
       "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent",
-      "txs": [
-        {
-          "label": "alice lists cheat at 500.00",
-          "ok": true,
-          "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/21YqQXdFy5aeMRZs2ZDF5qAex1RKZyQbziUtYEY6oLgj"
-        }
-      ]
+      "txs": []
     },
     "honest-sale": {
       "scene": 5,
