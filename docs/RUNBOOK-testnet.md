@@ -85,7 +85,7 @@ G2 not run (no Base Sepolia key). Output: `out/gates/`.
 | 2 | Spending limits: cap 50.00, a pay of 8.00 passes, 45.00 is refused (PolicyViolation) | [refused pay](https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci) |
 | 6 | An agent buys an agent: summarizer buys translator from bob | [summarizer buys](https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL) |
 
-All outputs of the first run: branch `testnet/run-2026-11-02`.
+All outputs of the first run are committed in `out/testnet/`, `out/gates/` and `out/scenes/`.
 
 ## 7. Replay the demo
 
