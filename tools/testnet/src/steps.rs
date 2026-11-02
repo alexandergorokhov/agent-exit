@@ -69,9 +69,19 @@ impl Out {
     }
 }
 
+/// The wasm to deploy and to scan against: `$var`, else the reproducible
+/// build in contracts/res (what `make deploy-testnet` deploys), else the
+/// local build. Deploy and scenes must agree, or the scan reports
+/// code_hash_mismatch (found on testnet).
 fn wasm(var: &str, default: &str) -> Res<Vec<u8>> {
-    let path =
-        std::env::var(var).unwrap_or_else(|_| format!("{ROOT_DIR}/target/near-testnet/{default}"));
+    let res = format!("{ROOT_DIR}/contracts/res/{default}");
+    let path = std::env::var(var).unwrap_or_else(|_| {
+        if std::path::Path::new(&res).exists() {
+            res
+        } else {
+            format!("{ROOT_DIR}/target/near-testnet/{default}")
+        }
+    });
     std::fs::read(&path).map_err(|e| format!("{path}: {e} (run make build-testnet first)"))
 }
 

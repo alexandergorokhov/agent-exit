@@ -23,6 +23,10 @@ pub const REPORT_SCHEMA: &str = "scan-report.v1";
 /// contract's `RUNNER_METHODS`).
 pub const RUNNER_METHODS: [&str; 4] = ["heartbeat", "accept_job", "pay", "pay_base"];
 
+/// Read-only exports the reproducible cargo-near build adds on its own: the
+/// embedded ABI and NEP-330 source metadata. Not in the `#[near] impl`.
+pub const BUILD_EXPORTS: [&str; 2] = ["__contract_abi", "contract_source_metadata"];
+
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
@@ -434,7 +438,7 @@ pub fn scan(i: &ScanInput) -> Report {
             ),
         ));
     }
-    let published: BTreeSet<&str> = PUBLISHED_METHODS.into_iter().collect();
+    let published: BTreeSet<&str> = PUBLISHED_METHODS.into_iter().chain(BUILD_EXPORTS).collect();
     for m in &i.chain.methods {
         let lower = m.to_ascii_lowercase();
         if UPGRADE_WORDS.iter().any(|w| lower.contains(w)) {

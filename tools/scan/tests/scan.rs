@@ -316,3 +316,16 @@ fn a51_base_address_is_derived_from_the_mpc_key() {
     none.contract.base_wallet.as_mut().unwrap().address = None;
     assert_eq!(scan(&none).verdict, "clean");
 }
+
+/// The reproducible cargo-near build also exports its embedded ABI and the
+/// NEP-330 source metadata (both read-only). Found on testnet: scanning the
+/// deployed agent flagged them as unexpected methods.
+#[test]
+fn build_exports_are_not_unexpected_methods() {
+    let mut i = judge();
+    i.chain.methods.push("__contract_abi".into());
+    i.chain.methods.push("contract_source_metadata".into());
+    assert_eq!(scan(&i).verdict, "clean");
+    i.chain.methods.push("migrate_state".into());
+    assert_ne!(scan(&i).verdict, "clean");
+}
