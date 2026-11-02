@@ -530,35 +530,6 @@ fn remaining_payments(seed: &[(&'static str, u128)], gross: u128) -> Vec<(&'stat
     left
 }
 
-#[cfg(test)]
-mod seed_tests {
-    use super::*;
-
-    #[test]
-    fn rerun_pays_only_what_is_missing() {
-        assert_eq!(remaining_payments(&CHEAT_SEED, 0).len(), 5);
-        assert_eq!(
-            remaining_payments(&CHEAT_SEED, 200 * USD),
-            vec![("alice", 100), ("x.alice", 100), ("x.alice", 100)]
-        );
-        assert!(remaining_payments(&CHEAT_SEED, 500 * USD).is_empty());
-    }
-
-    #[test]
-    fn mints_cover_the_seed() {
-        // alice: 2 x 50 to translator + her cheat payments; x.alice: 40 + hers.
-        let cheat = |w: &str| -> u128 {
-            CHEAT_SEED
-                .iter()
-                .filter(|(n, _)| *n == w)
-                .map(|(_, a)| a)
-                .sum()
-        };
-        assert!(100 + cheat("alice") <= 500);
-        assert!(40 + cheat("x.alice") <= 300);
-    }
-}
-
 // ------------------------------------------------------------------ G1
 
 async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
@@ -1424,4 +1395,33 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
     }
     out.write()?;
     r
+}
+
+#[cfg(test)]
+mod seed_tests {
+    use super::*;
+
+    #[test]
+    fn rerun_pays_only_what_is_missing() {
+        assert_eq!(remaining_payments(&CHEAT_SEED, 0).len(), 5);
+        assert_eq!(
+            remaining_payments(&CHEAT_SEED, 200 * USD),
+            vec![("alice", 100), ("x.alice", 100), ("x.alice", 100)]
+        );
+        assert!(remaining_payments(&CHEAT_SEED, 500 * USD).is_empty());
+    }
+
+    #[test]
+    fn mints_cover_the_seed() {
+        // alice: 2 x 50 to translator + her cheat payments; x.alice: 40 + hers.
+        let cheat = |w: &str| -> u128 {
+            CHEAT_SEED
+                .iter()
+                .filter(|(n, _)| *n == w)
+                .map(|(_, a)| a)
+                .sum()
+        };
+        assert!(100 + cheat("alice") <= 500);
+        assert!(40 + cheat("x.alice") <= 300);
+    }
 }
