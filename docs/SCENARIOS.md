@@ -160,6 +160,12 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | LB5 | No API key: exit 2 | ts | `llm_buyer.test.ts` |
 | LB6 | The env file is read for model variables only; base URL guards | ts | `llm_buyer.test.ts` |
 | LB7 | An endless or erroring model fails the run (step limit, model errors) | ts | `llm_buyer.test.ts` |
+| LB8 | The model is the cheapest chat model that supports tools, else the default (`deepseek-ai/DeepSeek-V4.1-Flash-1017`); the choice is always logged | ts | `mcp/test/llm_buyer_nearai.test.ts` |
+| LB9 | Token usage is recorded per reply and in total | ts | `llm_buyer_nearai.test.ts` |
+| LB10 | HTTP 401 and 402 end the run with a clear message and are not retried | ts | `llm_buyer_nearai.test.ts` |
+| LB11 | A key pasted several times in the env file is detected (warning) without printing it | ts | `llm_buyer_nearai.test.ts` |
+| LB12 | `make llm-buyer-check`: one tiny authenticated chat call; 401/402 and no key get clear errors | ts | `llm_buyer_nearai.test.ts` |
+| S-PG | `get_sales(from_index, limit)` is paginated, so the sale history never has to be read whole | unit | `contracts/agent` |
 | M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
 | M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
 | M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |

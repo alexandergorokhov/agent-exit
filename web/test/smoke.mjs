@@ -89,7 +89,8 @@ try {
     const golden = JSON.parse(readFileSync(new URL("../../tests/golden/attack.json", import.meta.url), "utf8"));
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
-    assert.ok(foot.includes("51 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
+    assert.ok(foot.includes("56 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();

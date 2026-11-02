@@ -294,11 +294,18 @@ fn s22_docs_do_not_overclaim() {
         assert!(!t.contains("# pass 18"), "{f}: stale MCP test count");
         assert!(!t.contains("18 tests"), "{f}: stale MCP test count");
     }
+    // The counts come from the golden attack report, so they cannot go stale.
+    let g: serde_json::Value = serde_json::from_str(&read("tests/golden/attack.json")).unwrap();
+    let total = g["families"].as_array().unwrap().len();
+    let counted = g["summary"]["families"].as_u64().unwrap();
+    let claim = format!(
+        "{total} attack families, {counted} counted (A9 Base not counted until live); each blocked by its rule"
+    );
     for f in ["README.md", "AGENTS.md", "llms.txt"] {
         let t = read(f);
         assert!(
-            t.contains("19 attack families"),
-            "{f}: missing the reworded claim"
+            t.contains(&claim),
+            "{f}: missing the claim built from the golden: {claim}"
         );
         assert!(
             t.contains("regression suite, not independent evidence"),
@@ -411,5 +418,44 @@ fn s25_docs_explain_paying_and_the_found_bug() {
     let sc = read("docs/SCENARIOS.md");
     for id in ["A43", "A44", "A45", "A46", "A47", "A48", "A49"] {
         assert!(sc.contains(&format!("| {id} |")), "{id} is listed");
+    }
+}
+
+/// The MCP test count in the docs is one number everywhere and never below
+/// the number of top-level `test(` declarations (some tests are generated, so
+/// the real count, from `make mcp-test`, can be higher).
+#[test]
+fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
+    let mut declared = 0;
+    for e in std::fs::read_dir(format!("{}/../../mcp/test", env!("CARGO_MANIFEST_DIR"))).unwrap() {
+        let p = e.unwrap().path();
+        if p.to_string_lossy().ends_with(".test.ts") {
+            declared += std::fs::read_to_string(p)
+                .unwrap()
+                .lines()
+                .filter(|l| l.starts_with("test("))
+                .count();
+        }
+    }
+    let re = |t: &str| -> Vec<usize> {
+        t.match_indices(" MCP tests")
+            .filter_map(|(i, _)| {
+                let d: String = t[..i]
+                    .chars()
+                    .rev()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect();
+                (!d.is_empty()).then(|| d.chars().rev().collect::<String>().parse().unwrap())
+            })
+            .collect()
+    };
+    for f in ["README.md", "web/index.html"] {
+        for n in re(&read(f)) {
+            assert!(
+                n >= declared,
+                "{f}: {n} MCP tests but {declared} are declared"
+            );
+            assert_eq!(n, 56, "{f}: the MCP test count differs from make mcp-test");
+        }
     }
 }
