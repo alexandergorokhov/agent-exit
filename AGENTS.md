@@ -18,7 +18,9 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 9. MCP tests | `make mcp-test` | `# pass 18`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
 | 10. Agent buys agent | `make agent-buys-agent` | stderr one line per MCP call; `out/agent-buys-agent.json` with `"schema": "agent-buys-agent.v1"`, `"pass": true`, `summary.seller_locked_out_after: true` |
 | 11. Demo page | `make web-test` (needs the `playwright` package with Chromium) | `web-test: N checks passed (desktop + 375px, offline + testnet flag)`; exit 0. `make web` serves it on port 8080 |
-| 12. Targets not built yet | `make fuzz` | prints `not built yet: fuzz (...)`, exit 1 (never fake success) |
+| 12. Fuzz | `make fuzz` (`FUZZ_CASES=3000`) | `test result: ok. 4 passed`; exit 0 |
+| 13. Testnet plan, offline | `make deploy-testnet DRY_RUN=1`, `make gates DRY_RUN=1`, `make scenes DRY_RUN=1` | `DRY RUN (...): nothing is sent.` then numbered steps; exit 0 |
+| 14. Targets not built yet | `make record` | prints `not built yet: record (...)`, exit 1 (never fake success) |
 
 `make verify` takes about 2 minutes (10,000 property cases with a fixed seed).
 Set `PROP_CASES=500 make verify` for a faster pass.

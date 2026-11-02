@@ -50,6 +50,8 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make mcp` | Start the MCP server on stdio. Offline by default; write tools need `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID` (`buy_agent` also `AGENT_EXIT_RUNNER_PK`). Config for Claude Code and Codex: [`AGENTS.md`](AGENTS.md). |
 | `make web` | The demo page at http://127.0.0.1:8080: the six demo steps (break-in fails, the business inside its limits, verified vs unverified earnings, a cheat caught, an honest sale, an agent buys an agent), each with the contract's real error text or event JSON. Offline by default: it shows `web/data/demo.json`, **recorded from the contract code** by `make web-data` (reproducible). `?network=testnet` shows the testnet mode: a NEAR wallet login (NEAR Connect) and the label `testnet: coming after deploy`; nothing is read from or sent to the chain yet. |
 | `make web-test` | Playwright smoke test of the page in Chromium (desktop and 375 px wide, external requests blocked): every step's key result is on screen, no horizontal scroll, no console errors, the testnet flag is labelled. Needs the `playwright` npm package with Chromium; not part of `make ci`. |
+| `make fuzz` | Property-based fuzzing (proptest) of everything an outsider controls: the `ft_on_transfer` msg (random bytes, random JSON, mutated real pay/buy msgs), NEAR AI proofs, `set_limits` arguments and MPC `sign` answers. No panic, full refund or accepted, never a forged verified badge, books stay solvent. `FUZZ_CASES=3000` per target (about 6 min). |
+| `make deploy-testnet DRY_RUN=1`, `make gates DRY_RUN=1`, `make scenes DRY_RUN=1` | Offline: print exactly what the testnet day will do, step by step, which secrets each step needs (by name) and which file it writes. Refuses an env file that names anything but testnet. |
 | `make test` | All tests (`PROP_CASES=10000` property cases, fixed seed). |
 | `make lint` | `rustfmt --check` and `clippy -D warnings`. |
 | `make audit` | `cargo audit` (needs `cargo install cargo-audit`). Four advisories in near-sdk's native test runtime are ignored in `.cargo/audit.toml`; the same target proves those crates are not in the contract wasm. |
@@ -90,8 +92,10 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Agent buys agent through MCP: six tools, JSON schemas `schemas/mcp/*.v1.json`, read-only by default, `buy_agent` needs `confirm`, `max_price`, a session spend cap and a clean scan | offline: the server replays results **recorded from the real contract code** (`fixtures/mcp/world.json`, reproducible); nothing is sent. Testnet mode (`AGENT_EXIT_NETWORK=testnet`) is read-only, written but not run here | S14, S15 (MCP part), E29, E30, S17 |
 | Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 
-Not built yet (later batches): the testnet deploy and live runs (B3),
-testnet writes through MCP (they return `NOT_BUILT`), fuzz targets,
+Written, compiled and dry-run tested here, but not yet run (they need
+testnet, Base Sepolia and NEAR AI Cloud, which this build box cannot reach):
+the testnet deploy, gates G1/G2/G6 and the six scenes (see "Testnet day"
+below). Not built yet (later batches): testnet writes through MCP (they return `NOT_BUILT`), fuzz targets,
 `accept_job`, the page's testnet
 mode (only the wallet login exists), its deploy (`make web-deploy`) and a
 Playwright run against the deployed page (`make e2e`). Their
@@ -117,6 +121,25 @@ Playwright run against the deployed page (`make e2e`). Their
   buyer is refunded. The listing is locked during settlement.
 - Moving the deed with plain `nft_transfer` runs the same key deletion and
   pauses the agent until the new owner sets a runner key.
+
+## Testnet day (owner's machine)
+
+Everything below runs from the repo root on a machine that can reach NEAR
+testnet, Base Sepolia and NEAR AI Cloud. Secrets stay in `~/.agent-exit.env`
+(template: `.env.example`) and `~/.agent-exit/keys/` (0600); nothing prints
+them, and the runner refuses to write a file in `out/` that would contain
+one. Anything but testnet is refused. The runner is `tools/testnet` (Rust,
+near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
+`make verify`).
+
+| Step | Command | Writes |
+|---|---|---|
+| 0 | `make deploy-testnet DRY_RUN=1` (and `gates`, `scenes`) | nothing: prints the plan |
+| 1 | `make testnet-setup` (npm install for the G2 relay) | `scripts/testnet/node_modules` |
+| 2 | `make deploy-testnet`: builds the wasm with the testnet token/admin/MPC compiled in, creates the accounts, deploys, runner keys, locks translator, seeds the fixed world | `out/testnet/deploy.json` |
+| 3 | `make gates`: G1 key handover on a fresh agent, G6 NEAR AI signature verified by the contract, G2 MPC signs `pay_base` 5 times (latency) and the relay sends it on Base Sepolia | `out/gates/g1.json`, `g6.json`, `g2-sign.json`, `g2.json` |
+| 4 | `make scenes` (order 3, 4, 5, 1, 2, 6; waits out an open Base authorization before listing) | `out/scenes/scene-N.json` |
+| later | `make scene-N RECORDED=1` replays a recorded scene offline (tx links, real errors) | |
 
 ## Honest limits
 
@@ -180,6 +203,9 @@ Playwright run against the deployed page (`make e2e`). Their
 contracts/agent-core/   pure state machine + money math + property tests (no NEAR runtime)
 contracts/agent/        the NEAR contract (deed, meter, listing, buy, escrow) + simulator + unit tests
 contracts/xusd/         FAKE test dollar (NEP-141), capped faucet
+tools/testnet-plan/     testnet day plan + guards (offline, dry run)
+tools/testnet/          testnet runner (own workspace, near-api): deploy, gates, scenes
+scripts/testnet/        G2 relay (chainsig.js, viem)
 tools/base-wallet/      Base wallet client: Chain Signatures derivation, TEST MPC signer, EIP-3009 auth check
 tools/verify/           offline rerun kit behind `make verify`; gen-test-signatures
 tools/scan/             client backdoor scan (lib + `scan` CLI) and the seeded corpus

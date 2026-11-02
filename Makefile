@@ -108,6 +108,11 @@ attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/at
 scan: ## Scan one agent: make scan FILE=fixtures/scan/cheat.json (exit 0 clean, 2 blocked, 3 inconclusive)
 	cargo run --quiet --locked --offline -p scan -- $(FILE)
 
+FUZZ_CASES ?= 3000
+.PHONY: fuzz
+fuzz: ## Property-based fuzzing of outsider inputs: ft_on_transfer msg, NEAR AI proofs, set_limits args, MPC answers [FUZZ_CASES=3000]
+	FUZZ_CASES=$(FUZZ_CASES) cargo test --locked --offline -p agent-exit fuzz_ -- --test-threads=4
+
 .PHONY: lint
 lint: ## rustfmt check + clippy -D warnings
 	cargo fmt --all -- --check
@@ -149,19 +154,71 @@ test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real loca
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
-.PHONY: attack-sandbox attack-testnet fuzz demo deploy-testnet seed-testnet demo-setup record web-deploy e2e
+# ------------------------------------------------------------- testnet day
+# Runs on the owner's machine (NEAR RPC, Base Sepolia and NEAR AI Cloud are
+# reachable there). Reads ~/.agent-exit.env (see .env.example); refuses
+# anything but testnet. DRY_RUN=1 prints the plan offline and sends nothing.
+
+TESTNET_ROOT ?= $(shell sed -n 's/^AGENT_EXIT_ROOT=//p' $(HOME)/.agent-exit.env 2>/dev/null | tail -1)
+TESTNET_ROOT := $(if $(TESTNET_ROOT),$(TESTNET_ROOT),agentexit.testnet)
+TESTNET_RUN = cd tools/testnet && cargo run --quiet --release --locked --
+PLAN = cargo run --quiet --locked --offline -p testnet-plan --
+
+.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes testnet-plan-test
+build-testnet: ## [testnet] Build both wasm with the testnet token, admin and MPC signer compiled in -> target/near-testnet
+	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
+	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
+
+testnet-setup: ## [testnet] npm install for the G2 relay (chainsig.js, viem); network once
+	cd scripts/testnet && npm install --no-audit --no-fund
+
+deploy-testnet: ## [testnet] Create accounts, deploy xusd + translator + cheat, runner keys, lock translator, seed the fixed world [DRY_RUN=1]
+ifdef DRY_RUN
+	@$(PLAN) deploy
+else
+	$(MAKE) build-testnet
+	$(TESTNET_RUN) deploy
+endif
+
+seed-testnet: deploy-testnet ## [testnet] Same as deploy-testnet (every step skips what is done)
+
+gates: ## [testnet] Gates G1 (key handover), G6 (NEAR AI signature on-chain), G2 (Chain Signatures Base) -> out/gates/ [DRY_RUN=1]
+ifdef DRY_RUN
+	@$(PLAN) gates
+else
+	$(TESTNET_RUN) gates
+endif
+
+gate-g1 gate-g2 gate-g6: gate-%: ## [testnet] One gate -> out/gates/ [DRY_RUN=1]
+ifdef DRY_RUN
+	@$(PLAN) $*
+else
+	$(TESTNET_RUN) $*
+endif
+
+gate-g2-relay: ## [testnet] Relay the last G2 signature on Base Sepolia (after make testnet-setup)
+	node scripts/testnet/g2-relay.mjs out/gates/g2-sign.json
+
+scenes: ## [testnet] The six demo scenes in recording order 3 4 5 1 2 6 -> out/scenes/ [DRY_RUN=1]
+ifdef DRY_RUN
+	@$(PLAN) scenes
+else
+	$(TESTNET_RUN) scenes
+endif
+
+testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network)
+	cargo test --quiet --locked --offline -p testnet-plan
+	AGENT_EXIT_ENV=/nonexistent $(PLAN) deploy > /dev/null
+	AGENT_EXIT_ENV=/nonexistent $(MAKE) -s scenes DRY_RUN=1 > /dev/null
+
+.PHONY: attack-sandbox attack-testnet demo demo-setup record web-deploy e2e
 attack-sandbox: ## Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
 attack-testnet: ## [testnet] A1 A5 A17-A21 live
 	$(call not_built,attack-testnet,M2 B2 on the owner's PC)
-fuzz: ## cargo-fuzz targets
-	$(call not_built,fuzz,M2 B2)
 demo: ## Whole demo in sandbox
 	$(call not_built,demo,M3)
-deploy-testnet: ## [testnet] Deploy global contract, agents, xusd
-	$(call not_built,deploy-testnet,M2 B3 on the owner's PC)
-seed-testnet: ## [testnet] Seed the fixed world
-	$(call not_built,seed-testnet,M2 B3 on the owner's PC)
 demo-setup: ## [testnet] Reset demo agents
 	$(call not_built,demo-setup,M2 B3)
 record: ## [testnet] Save receipts to fixtures/recorded
@@ -173,10 +230,17 @@ e2e: ## [testnet] Playwright against the deployed page with a real wallet
 
 SCENES := 1 2 3 4 5 6
 .PHONY: $(addprefix scene-,$(SCENES))
-$(addprefix scene-,$(SCENES)): ## Demo scene N (NETWORK=sandbox|testnet, RECORDED=1)
-	$(call not_built,$@,M2 B3 / M3 B5)
+$(addprefix scene-,$(SCENES)): scene-%: ## [testnet] Demo scene N -> out/scenes/scene-N.json [DRY_RUN=1] [RECORDED=1 shows the recorded run offline]
+ifdef DRY_RUN
+	@$(PLAN) scene-$*
+else ifdef RECORDED
+	@test -f out/scenes/scene-$*.json || { echo "not recorded yet: out/scenes/scene-$*.json (run make scene-$* on testnet)" >&2; exit 1; }
+	@node -e 'const s=require("./out/scenes/scene-$*.json"); console.log(`scene $${s.scene}: $${s.what}\npass: $${s.pass}`); for (const t of s.txs||[]) console.log(`  $${t.ok?"ok  ":"FAIL"} $${t.label}$${t.error?"  "+t.error.slice(0,160):""}$${t.explorer?"  "+t.explorer:""}`)'
+else
+	$(TESTNET_RUN) scene-$*
+endif
 
-GATES := g0 g1 g2 g3 g4 g6
+GATES := g0 g3 g4
 .PHONY: $(addprefix gate-,$(GATES))
 $(addprefix gate-,$(GATES)): ## Day-1 gate scripts
 	$(call not_built,$@,M1 gates)

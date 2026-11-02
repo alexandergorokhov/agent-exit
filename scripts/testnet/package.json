@@ -1,0 +1,12 @@
+{
+  "name": "agent-exit-testnet-scripts",
+  "private": true,
+  "description": "Gate G2 relay: chainsig.js derives the agent's Base Sepolia address; viem relays the contract-signed EIP-3009 transfer. Testnet only.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "chainsig.js": "1.1.16",
+    "viem": "2.21.55"
+  }
+}

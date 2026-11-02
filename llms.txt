@@ -21,6 +21,12 @@
 - [tools/scan/src/lib.rs](tools/scan/src/lib.rs): client backdoor scan (scan-input.v1 -> scan-report.v1)
 - [tools/scan/src/corpus.rs](tools/scan/src/corpus.rs): seeded attack corpus and clean controls
 - [tools/attack/src/main.rs](tools/attack/src/main.rs): `make attack` (corpus + contract refusals + judge fixture)
+- [tools/base-wallet/src/lib.rs](tools/base-wallet/src/lib.rs): Base wallet client (feature 5): Chain Signatures derivation, TEST MPC signer, EIP-3009 auth check
+- [contracts/agent-core/src/base.rs](contracts/agent-core/src/base.rs): pay_base rules and the EIP-3009 digest
+- [tools/testnet-plan/src/lib.rs](tools/testnet-plan/src/lib.rs): testnet day plan and testnet-only guards (`make deploy-testnet DRY_RUN=1`)
+- [tools/testnet/src/steps.rs](tools/testnet/src/steps.rs): testnet runner: deploy, gates G1/G2/G6, scenes 1-6
+- [scripts/testnet/g2-relay.mjs](scripts/testnet/g2-relay.mjs): G2 relay (chainsig.js + viem) on Base Sepolia
+- [contracts/agent/src/fuzz_tests.rs](contracts/agent/src/fuzz_tests.rs): `make fuzz` targets
 - [mcp/src/tools.ts](mcp/src/tools.ts): MCP tools list_agents, get_earnings, scan_agent, buy_agent, verify_lockout, list_for_sale
 - [mcp/src/backend.ts](mcp/src/backend.ts): offline (recorded) and testnet (read-only) data for the MCP server
 - [mcp/src/server.ts](mcp/src/server.ts): MCP stdio server

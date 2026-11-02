@@ -30,6 +30,7 @@ dependencies = [
  "base-wallet",
  "near-contract-standards",
  "near-sdk",
+ "proptest",
  "serde_json",
 ]
 
@@ -2523,6 +2524,13 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys",
+]
+
+[[package]]
+name = "testnet-plan"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

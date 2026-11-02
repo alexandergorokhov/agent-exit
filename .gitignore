@@ -1,7 +1,13 @@
 /target
 **/target
 node_modules/
-out/
+# Run outputs; the testnet records and sandbox logs are kept (no secrets:
+# the runner refuses to write one).
+out/*
+!out/gates/
+!out/scenes/
+!out/testnet/
+!out/sandbox/
 .env
 .env.*
 !.env.example

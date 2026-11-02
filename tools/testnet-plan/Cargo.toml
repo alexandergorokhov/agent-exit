@@ -1,0 +1,10 @@
+[package]
+name = "testnet-plan"
+description = "Agent Exit testnet day: env loading, testnet-only guards and the step plan that `make deploy-testnet`, `make gates` and `make scenes` run (and print with --dry-run, offline)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+serde_json.workspace = true

@@ -1,0 +1,27 @@
+[package]
+name = "agent-exit-testnet"
+description = "Agent Exit testnet runner: deploy, gates G1/G2/G6 and the six demo scenes on NEAR testnet (never mainnet). Runs on the owner's machine; `--dry-run` prints the plan offline."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# Its own workspace (like tests/sandbox): the NEAR RPC client stays out of
+# `make verify`.
+[workspace]
+
+[dependencies]
+testnet-plan = { path = "../testnet-plan" }
+base-wallet = { path = "../base-wallet" }
+agent-core = { path = "../../contracts/agent-core" }
+scan = { path = "../scan" }
+near-api = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "process"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde_json = "1"
+sha2 = "0.10"
+hex = "0.4"
+bs58 = "0.5"
+base64 = "0.22"
+k256 = { version = "0.13", features = ["ecdsa"] }
+sha3 = "0.10"
