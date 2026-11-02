@@ -48,8 +48,27 @@ sequenceDiagram
 - **Offline, every time:** 60 scenarios replayed through the real contract code against checked-in goldens (`make verify`), property tests, 74 MCP tests and 10 script tests. All offline results use a mocked runtime or JSON fixtures.
 - **Attack suite:** 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) checks against the reproducible-build hash in `contracts/res/SHA256SUMS` (agent_exit.wasm `be4b898d…`, built in the pinned cargo-near Docker image; `make build` reproduces it). The suite was written by the same author as the rules.
 - **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.024 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
-- **Testnet: coming.** Contract ids, a real `buy()` transaction and the old seller's rejected transaction will be linked here as explorer links. None exists yet.
+- **Live on NEAR testnet** (links below): the six demo scenes and the key-handover gate ran on testnet on 2026-11-02 with the reproducible build; outputs in `out/scenes/`, `out/gates/`, `out/testnet/`.
 - **No AI model in the loop yet.** The agent-buys-agent run is a scripted replay; `make llm-buyer` runs a real model through the MCP tools and writes `out/llm-buyer.json`; the real model run is pending on testnet day, and until then the page has an empty slot for the real AI buyer transcript.
+
+### Live on NEAR testnet
+
+The six demo scenes ran on testnet on 2026-11-02. The deployed agent code hash `DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa` is the reproducible build in `contracts/res` (`be4b898d…`). Agents: [translator.agentexit.testnet](https://testnet.nearblocks.io/address/translator.agentexit.testnet), [cheat.agentexit.testnet](https://testnet.nearblocks.io/address/cheat.agentexit.testnet). Money is `xUSD-FAKE`.
+
+| What | Transaction |
+|---|---|
+| Honest sale: bob buys translator in one `ft_transfer_call` | [Auv99RhD…](https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF) |
+| Old seller withdraws the treasury: `NotOwner` | [FHQnYPs7…](https://testnet.nearblocks.io/txns/FHQnYPs7GhGtob53pNE3zFRQzEvv2HyVNWCHvT8csGHo) |
+| Old seller adds her own runner key: `NotOwner` | [DrujnnU9…](https://testnet.nearblocks.io/txns/DrujnnU9LcSon7hzes1JJEYU39LUzhog99iZDQapTuZy) |
+| Old seller moves the deed to herself: `NotOwner` | [7F1XbdUN…](https://testnet.nearblocks.io/txns/7F1XbdUNqJrvUWpFC9TYbc3zM43H9vgopaMi4szTxq6x) |
+| Old seller spends from the Base wallet: `NotRunner` | [2EHZJxkD…](https://testnet.nearblocks.io/txns/2EHZJxkD7j2BYuN7u8k9XgtcJsaGfaxEnHjDAKiiKKb3) |
+| Old seller's runner key and the deleted setup key | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
+| New owner's runner key works | [CR8LjSDN…](https://testnet.nearblocks.io/txns/CR8LjSDNrCjmA8AsERzUZDr3AhnayJvGk3om8JgvMqrC) |
+| Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [4jL6cCWB…](https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci) |
+| An agent account (summarizer) buys translator; scripted client, no AI model | [26F5bi5y…](https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL) |
+| Gate G1, fresh agent sold and the old keys fail | [DqFxuA8q…](https://testnet.nearblocks.io/txns/DqFxuA8qWiSpj2yuJsXcJERym3w69PkLkyC6R7GfysQw) |
+
+Not run on testnet: G6 (a real NEAR AI signature on-chain; needs NEAR AI credit) and G2 (the Base Sepolia payment; needs a Base relayer key). The cheat scan (scene 4) and the earnings view (scene 3) are read-only and recorded in `out/scenes/`.
 
 AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 

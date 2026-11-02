@@ -339,7 +339,7 @@ fn s22_readme_hero_comes_first() {
     assert!(at("make demo") < fold);
     assert!(at("```mermaid") < fold);
     assert!(at("609b135") < fold && at("63d597c") < fold);
-    assert!(at("Testnet: coming") < fold);
+    assert!(at("Live on NEAR testnet") < fold);
     assert!(
         !r[..fold].contains("| Claim |"),
         "claims table must be below the fold"
@@ -521,4 +521,25 @@ fn s25_readme_first_screen() {
     assert!(read(".gitignore").lines().any(|l| l == ".claude/"));
     let mk = read("Makefile");
     assert!(mk.contains("scripts/demo-summary.mjs") && mk.contains("-p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null"));
+}
+
+/// Every NearBlocks transaction the README links was recorded by the testnet
+/// runner (out/testnet, out/gates, out/scenes): no invented links.
+#[test]
+fn readme_testnet_links_are_recorded_runs() {
+    let r = read("README.md");
+    let mut recorded = String::new();
+    for dir in ["out/testnet", "out/gates", "out/scenes"] {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join(dir);
+        for e in std::fs::read_dir(&p).unwrap_or_else(|_| panic!("{dir} missing")) {
+            recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
+        }
+    }
+    let mut n = 0;
+    for part in r.split("testnet.nearblocks.io/txns/").skip(1) {
+        let hash: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        assert!(recorded.contains(&hash), "README links tx {hash}, not in out/");
+        n += 1;
+    }
+    assert!(n >= 5, "README should link the live testnet runs ({n} links)");
 }
