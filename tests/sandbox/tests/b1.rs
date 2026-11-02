@@ -359,87 +359,202 @@ async fn e5_rollback_refunds_buyer() {
         .contains(&json!(alice_runner.public_key().to_string())));
 }
 
-/// One payer: created by `batcher`, takes 1.00 from the faucet, pays it to
-/// the agent. Sequential within the payer, concurrent across batchers.
+/// NEAR a payer gets from its batcher: the row deposit (0.024), its own
+/// account storage (~0.002) and the gas the node checks before it accepts a
+/// transaction: attached gas at a pessimistic price (about 6.6 x the minimum
+/// over the receipt depth), so 100 Tgas needs ~0.066 NEAR liquid. The PC
+/// run at 3ff6600 funded 0.05 and attached 100 Tgas to `faucet`: refused as
+/// `InvalidTransaction` (not enough balance) before anything ran.
+const PAYER_NEAR_MILLI: u128 = 200;
+/// The payer row deposit (`PAYER_ROW_DEPOSIT`, A49/A54).
+const ROW_DEPOSIT_MILLI: u128 = 24;
+
+/// Liquid NEAR of `id`, for error messages.
+async fn near_of(net: &NetworkConfig, id: &AccountId) -> String {
+    match Account(id.clone()).view().fetch_from(net).await {
+        Ok(v) => format!("{} (storage {} bytes)", v.data.amount, v.data.storage_usage),
+        Err(e) => format!("unknown ({e:?})"),
+    }
+}
+
+async fn account_exists(net: &NetworkConfig, id: &AccountId) -> bool {
+    Account(id.clone()).view().fetch_from(net).await.is_ok()
+}
+
+/// Sign and send one function call as `who`, with a fresh signer each try
+/// (no stale nonce cache). A transaction the node refused (`InvalidTransaction`,
+/// a nonce or expiry clash under load, a transport error) is retried with
+/// backoff; an executed call that failed is not. The error names the call
+/// and `who`'s NEAR balance, so a funding shortfall is obvious.
+#[allow(clippy::too_many_arguments)]
+async fn call_retry(
+    net: &NetworkConfig,
+    who: &AccountId,
+    sk: &SecretKey,
+    contract: &AccountId,
+    method: &str,
+    args: Value,
+    tgas: u64,
+    deposit: NearToken,
+) -> Result<(), String> {
+    let mut last = String::new();
+    for attempt in 0..5u32 {
+        if attempt > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(500 << attempt)).await;
+        }
+        let signer = Signer::from_secret_key(sk.clone()).map_err(|e| format!("{e:?}"))?;
+        match Contract(contract.clone())
+            .call_function(method, args.clone())
+            .transaction()
+            .gas(NearGas::from_tgas(tgas))
+            .deposit(deposit)
+            .with_signer(who.clone(), signer)
+            .send_to(net)
+            .await
+        {
+            Ok(r) => {
+                return r
+                    .into_result()
+                    .map(|_| ())
+                    .map_err(|e| format!("{method} by {who}: executed and failed: {e:?}"))
+            }
+            Err(e) => last = format!("{e:?}"),
+        }
+    }
+    Err(format!(
+        "{method} by {who}: refused 5 times, last: {last}; {who} holds {}",
+        near_of(net, who).await
+    ))
+}
+
+/// One payer: created by `batcher`, registers a payer row (0.024 NEAR),
+/// takes 1.00 from the faucet and pays it to the agent. Sequential within
+/// the payer, concurrent across batchers.
 async fn one_payer(
     net: NetworkConfig,
     batcher: AccountId,
-    batcher_signer: Arc<Signer>,
+    batcher_sk: SecretKey,
     xusd: AccountId,
     agent: AccountId,
     label: String,
 ) -> Result<(), String> {
-    let id: AccountId = format!("{label}.{batcher}").parse().map_err(|e| format!("{e:?}"))?;
+    let id: AccountId = format!("{label}.{batcher}")
+        .parse()
+        .map_err(|e| format!("{e:?}"))?;
     assert_eq!(id.as_str().len(), 64, "{id}");
     let sk = generate_secret_key().unwrap();
-    Account::create_account(id.clone())
-        .fund_myself(batcher, NearToken::from_millinear(80))
-        .with_public_key(sk.public_key())
-        .with_signer(batcher_signer)
-        .send_to(&net)
-        .await
-        .map_err(|e| format!("create {id}: {e:?}"))?
-        .assert_success();
-    let signer = Signer::from_secret_key(sk).unwrap();
-    // A49/A54: a payer row costs NEAR (0.024, `PAYER_ROW_DEPOSIT`: the row,
-    // its deposit record and the payer's own signature slots).
-    Contract(agent.clone())
-        .call_function("storage_deposit", json!({}))
-        .transaction()
-        .gas(NearGas::from_tgas(30))
-        .deposit(NearToken::from_millinear(24))
-        .with_signer(id.clone(), signer.clone())
-        .send_to(&net)
-        .await
-        .map_err(|e| format!("storage_deposit {id}: {e:?}"))?
-        .into_result()
-        .map_err(|e| format!("storage_deposit {id}: {e:?}"))?;
-    for (method, args, yocto) in [
-        ("faucet", json!({"amount": USD.to_string()}), 0u128),
-        (
-            "ft_transfer_call",
-            json!({"receiver_id": agent, "amount": USD.to_string(), "msg": ""}),
-            1,
-        ),
-    ] {
-        let r = Contract(xusd.clone())
-            .call_function(method, args)
-            .transaction()
-            .gas(NearGas::from_tgas(100))
-            .deposit(NearToken::from_yoctonear(yocto))
-            .with_signer(id.clone(), signer.clone())
+    let mut created = false;
+    let mut last = String::new();
+    for attempt in 0..5u32 {
+        if attempt > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(500 << attempt)).await;
+            // A create that landed but whose answer was lost.
+            if account_exists(&net, &id).await {
+                created = true;
+                break;
+            }
+        }
+        let bsig = Signer::from_secret_key(batcher_sk.clone()).map_err(|e| format!("{e:?}"))?;
+        match Account::create_account(id.clone())
+            .fund_myself(batcher.clone(), NearToken::from_millinear(PAYER_NEAR_MILLI))
+            .with_public_key(sk.public_key())
+            .with_signer(bsig)
             .send_to(&net)
             .await
-            .map_err(|e| format!("{method} {id}: {e:?}"))?;
-        r.into_result().map_err(|e| format!("{method} {id}: {e:?}"))?;
+        {
+            Ok(r) => {
+                r.into_result()
+                    .map_err(|e| format!("create {id}: executed and failed: {e:?}"))?;
+                created = true;
+                break;
+            }
+            Err(e) => last = format!("{e:?}"),
+        }
     }
+    if !created {
+        return Err(format!(
+            "create {id}: refused 5 times, last: {last}; batcher {batcher} holds {}",
+            near_of(&net, &batcher).await
+        ));
+    }
+    // A49/A54: a payer row costs NEAR (0.024, `PAYER_ROW_DEPOSIT`: the row,
+    // its deposit record and the payer's own signature slots).
+    call_retry(
+        &net,
+        &id,
+        &sk,
+        &agent,
+        "storage_deposit",
+        json!({}),
+        10,
+        NearToken::from_millinear(ROW_DEPOSIT_MILLI),
+    )
+    .await?;
+    call_retry(
+        &net,
+        &id,
+        &sk,
+        &xusd,
+        "faucet",
+        json!({"amount": USD.to_string()}),
+        30,
+        NearToken::from_yoctonear(0),
+    )
+    .await?;
+    call_retry(
+        &net,
+        &id,
+        &sk,
+        &xusd,
+        "ft_transfer_call",
+        json!({"receiver_id": agent, "amount": USD.to_string(), "msg": ""}),
+        100,
+        NearToken::from_yoctonear(1),
+    )
+    .await?;
     Ok(())
 }
 
 /// A47 (local-node finding at 12d1ab7: about 584 distinct 64-character
-/// payers made every call trap while loading state). 1,000 distinct
-/// 64-character payers register a payer row (A49) and pay 1.00 each; then every view still works, the
-/// agent is bought, and the new owner's runner key works.
+/// payers made every call trap while loading state). 1,050 distinct
+/// 64-character payers register a payer row (A49; no cap, A50) and pay 1.00
+/// each; then every view still works, the agent is bought, and the new
+/// owner's runner key works.
 #[tokio::test]
 async fn a47_thousand_long_payers_then_buy_and_views() {
-    const PAYERS: usize = 1_000;
+    const PAYERS: usize = 1_050;
     const BATCHERS: usize = 50;
+    const PER_BATCHER: usize = PAYERS / BATCHERS;
     let (w, xusd, agent, alice, bob, _alice_runner, _setup) = listed().await;
     let t0 = std::time::Instant::now();
+    // Each batcher funds its payers (0.2 NEAR each) and pays for creating
+    // them; 10 NEAR covers 21 payers several times over.
+    let batcher_near: u128 = 10;
+    assert!(
+        PER_BATCHER as u128 * PAYER_NEAR_MILLI < batcher_near * 1_000 / 2,
+        "batcher funding too low for its payers"
+    );
     let mut batchers = vec![];
     for b in 0..BATCHERS {
-        batchers.push(w.account(&format!("b{b:02}"), 2 + (PAYERS / BATCHERS) as u128 / 10).await);
+        batchers.push(w.account(&format!("b{b:02}"), batcher_near).await);
     }
     let mut set = tokio::task::JoinSet::new();
     for (b, batcher) in batchers.iter().enumerate() {
-        let (net, bid, bsig) = (w.net.clone(), batcher.id.clone(), batcher.signer.clone());
+        let (net, bid, bsk) = (w.net.clone(), batcher.id.clone(), batcher.sk.clone());
         let (xusd, agent_id) = (xusd.clone(), agent.id.clone());
         set.spawn(async move {
             let room = 64 - 1 - bid.as_str().len();
-            for i in 0..PAYERS / BATCHERS {
+            for i in 0..PER_BATCHER {
                 let label = format!("{:0>room$}", b * 1_000 + i);
-                one_payer(net.clone(), bid.clone(), bsig.clone(), xusd.clone(), agent_id.clone(), label)
-                    .await?;
+                one_payer(
+                    net.clone(),
+                    bid.clone(),
+                    bsk.clone(),
+                    xusd.clone(),
+                    agent_id.clone(),
+                    label,
+                )
+                .await?;
             }
             Ok::<(), String>(())
         });
@@ -460,26 +575,41 @@ async fn a47_thousand_long_payers_then_buy_and_views() {
         assert!(!v.is_null(), "{method}");
     }
     let e = w.view(&agent.id, "get_earnings", json!({})).await;
-    // p1 paid without a payer row (pooled); the 1,000 registered (A49).
+    // p1 paid without a payer row (pooled); all 1,050 registered: no cap
+    // (A50), and none of their rows is empty.
     assert_eq!(e["tracked_payers"], PAYERS as u64);
     let st = w.view(&agent.id, "get_status", json!({})).await;
     println!("A47 near_storage: {}", st["near_storage"]);
     assert_eq!(st["near_storage"]["solvent"], true);
+    assert_eq!(st["empty_payer_rows"], 0);
 
     let bob_runner = generate_secret_key().unwrap();
-    buy(&w, &xusd, &agent.id, &bob, bob_runner.public_key().to_string())
-        .await
-        .unwrap();
-    let deed = w.view(&agent.id, "nft_token", json!({"token_id": "deed"})).await;
+    buy(
+        &w,
+        &xusd,
+        &agent.id,
+        &bob,
+        bob_runner.public_key().to_string(),
+    )
+    .await
+    .unwrap();
+    let deed = w
+        .view(&agent.id, "nft_token", json!({"token_id": "deed"}))
+        .await;
     assert_eq!(deed["owner_id"], bob.id.to_string());
-    let alice_bal = w.view(&xusd, "ft_balance_of", json!({"account_id": alice.id})).await;
+    let alice_bal = w
+        .view(&xusd, "ft_balance_of", json!({"account_id": alice.id}))
+        .await;
     assert_eq!(alice_bal, json!((700 * USD).to_string()));
     let new = Acc {
         id: agent.id.clone(),
         sk: bob_runner.clone(),
         signer: Signer::from_secret_key(bob_runner).unwrap(),
     };
-    let ok = w.call(&new, &agent.id, "heartbeat", json!({}), 0).await.unwrap();
+    let ok = w
+        .call(&new, &agent.id, "heartbeat", json!({}), 0)
+        .await
+        .unwrap();
     assert_eq!(ok["ok"], true);
     let st = w.view(&agent.id, "get_status", json!({})).await;
     assert_eq!(st["owner"], bob.id.to_string());
