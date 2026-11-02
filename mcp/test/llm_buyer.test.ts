@@ -152,6 +152,23 @@ test("LB7 the step limit and model errors end the run", async () => {
   assert.equal((summarize(e) as { pass: boolean }).pass, false);
 });
 
+test("LB12 a token budget ends the run before the next model call (owner's API credit is capped)", async () => {
+  const mcp: McpLike = { tools: async () => [{ name: "list_agents", description: "", inputSchema: {} }], call: async () => ({ ok: true, body: {} }) };
+  let calls = 0;
+  const heavy: ModelClient = {
+    provider: "mock",
+    model: "m",
+    async complete(): Promise<ModelReply> {
+      calls++;
+      return { content: "", tool_calls: [call(String(calls), "list_agents", {})], model: "m", response_id: null, headers: {}, usage: { prompt_tokens: 30_000, completion_tokens: 1_000 } };
+    },
+  };
+  const t = await runBuyer({ model: heavy, mcp, system: "s", goal: "g", maxSteps: 50, maxTotalTokens: 100_000 });
+  assert.equal(t.status, "budget");
+  assert.equal(calls, 4, "stops once 4 x 31k > 100k, never makes a 5th call");
+  assert.equal((summarize(t) as { pass: boolean }).pass, false);
+});
+
 // ------------------------------------------------------------------ providers
 
 const SECRET = "nearai-key-0123456789abcdef";

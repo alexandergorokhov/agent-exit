@@ -169,6 +169,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | LB9 | Token usage is recorded per reply and in total | ts | `llm_buyer_nearai.test.ts` |
 | LB10 | HTTP 401 and 402 end the run with a clear message and are not retried | ts | `llm_buyer_nearai.test.ts` |
 | LB11 | A key pasted several times in the env file is detected (warning) without printing it | ts | `llm_buyer_nearai.test.ts` |
+| LB12 | A token budget (default 150,000, `--max-tokens` / `LLM_MAX_TOTAL_TOKENS`) ends the run before the next model call, status `budget`, never a pass; default 12 steps (the owner's API credit is capped at $5) | ts | `llm_buyer.test.ts` |
 | LB12 | `make llm-buyer-check`: one tiny authenticated chat call; 401/402 and no key get clear errors | ts | `llm_buyer_nearai.test.ts` |
 | S-PG | `get_sales(from_index, limit)` is paginated, so the sale history never has to be read whole | unit | `contracts/agent` |
 | L6 | **The page is served with security headers.** `web/serve.mjs`, `web/_headers` and `web/vercel.json` send the CSP (the page's own plus `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`, also on 404s. The vendored connector's remote wallet manifests stay blocked until their hosts are reviewed (`web/vendor/README.md`) | node | `web/test/smoke.mjs` |

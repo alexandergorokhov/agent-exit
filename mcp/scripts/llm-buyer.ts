@@ -88,7 +88,8 @@ async function main(): Promise<number> {
     mcp,
     system: systemPrompt(skill),
     goal: arg("--goal") ?? GOAL,
-    maxSteps: Number(arg("--max-steps") ?? "20"),
+    maxSteps: Number(arg("--max-steps") ?? "12"),
+    maxTotalTokens: Number(arg("--max-tokens") ?? process.env.LLM_MAX_TOTAL_TOKENS ?? "150000"),
     log: (l) => process.stderr.write(`  ${l}\n`),
   });
   await s.close();

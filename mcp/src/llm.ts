@@ -83,7 +83,7 @@ export interface Transcript {
   tools: string[];
   messages: Message[];
   steps: Step[];
-  status: "done" | "max_steps" | "model_error";
+  status: "done" | "max_steps" | "budget" | "model_error";
   error?: string;
   /** HTTP status of a model API error, when that is what ended the run. */
   error_status?: number;
@@ -125,6 +125,10 @@ export async function runBuyer(opts: {
   system: string;
   goal: string;
   maxSteps?: number;
+  /** Stop before the next model call once the reported tokens reach this (the
+   * owner's API credit is capped). Default 150,000: well under $1 on a
+   * Haiku-class model. */
+  maxTotalTokens?: number;
   log?: (line: string) => void;
 }): Promise<Transcript> {
   const log = opts.log ?? (() => {});
@@ -133,9 +137,15 @@ export async function runBuyer(opts: {
   const messages: Message[] = [{ role: "user", content: opts.goal }];
   const t: Transcript = { system: opts.system, goal: opts.goal, tools: [...known], messages, steps: [], status: "done" };
   const max = opts.maxSteps ?? 20;
+  const budget = opts.maxTotalTokens ?? 150_000;
   for (let n = 1; ; n++) {
     if (n > max) {
       t.status = "max_steps";
+      return t;
+    }
+    if (totalUsage(t.steps).total_tokens >= budget) {
+      t.status = "budget";
+      t.error = `token budget ${budget} reached`;
       return t;
     }
     let reply: ModelReply;
