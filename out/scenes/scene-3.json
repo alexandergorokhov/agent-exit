@@ -1,0 +1,58 @@
+{
+  "cheat": {
+    "counted": 0,
+    "counted_from_fresh_payers": 0,
+    "counted_payers": 0,
+    "days": [
+      {
+        "counted": 0,
+        "day": 20759,
+        "gross": 500000000,
+        "payments": 5,
+        "verified": 0
+      }
+    ],
+    "days_total": 1,
+    "flagged": 500000000,
+    "flagged_round_trip": 0,
+    "flagged_self": 300000000,
+    "flagged_seller_subaccount": 200000000,
+    "fresh_payers": 0,
+    "gross": 500000000,
+    "other_payers_gross": 500000000,
+    "payments": 5,
+    "schema": "earnings.v1",
+    "tracked_payers": 0,
+    "verified": 0
+  },
+  "pass": true,
+  "scene": 3,
+  "schema": "scene.v1",
+  "translator": {
+    "counted": 360000000,
+    "counted_from_fresh_payers": 360000000,
+    "counted_payers": 6,
+    "days": [
+      {
+        "counted": 360000000,
+        "day": 20759,
+        "gross": 500000000,
+        "payments": 33,
+        "verified": 0
+      }
+    ],
+    "days_total": 1,
+    "flagged": 140000000,
+    "flagged_round_trip": 0,
+    "flagged_self": 100000000,
+    "flagged_seller_subaccount": 40000000,
+    "fresh_payers": 6,
+    "gross": 500000000,
+    "other_payers_gross": 140000000,
+    "payments": 33,
+    "schema": "earnings.v1",
+    "tracked_payers": 6,
+    "verified": 0
+  },
+  "what": "verified vs unverified: get_earnings of translator and cheat side by side"
+}

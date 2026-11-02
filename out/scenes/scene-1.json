@@ -1,0 +1,143 @@
+{
+  "keys": [
+    {
+      "permission": {
+        "allowance": "4999782870185374700000000",
+        "method_names": [
+          "heartbeat",
+          "accept_job",
+          "pay",
+          "pay_base"
+        ],
+        "receiver_id": "translator.agentexit.testnet"
+      },
+      "public_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+    }
+  ],
+  "pass": true,
+  "scene": 1,
+  "schema": "scene.v1",
+  "txs": [
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotOwner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/FHQnYPs7GhGtob53pNE3zFRQzEvv2HyVNWCHvT8csGHo",
+      "label": "alice: withdraw 1.00",
+      "method": "withdraw",
+      "ms": 5089,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "FHQnYPs7GhGtob53pNE3zFRQzEvv2HyVNWCHvT8csGHo",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotOwner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/DrujnnU9LcSon7hzes1JJEYU39LUzhog99iZDQapTuZy",
+      "label": "alice: set_runner_key (her own key)",
+      "method": "set_runner_key",
+      "ms": 5376,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "DrujnnU9LcSon7hzes1JJEYU39LUzhog99iZDQapTuZy",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotOwner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/3rmdH6NLw6BzX7GYo7CbW42JCsYYMdcyBiBMfXkpqHkn",
+      "label": "alice: list_for_sale 1.00",
+      "method": "list_for_sale",
+      "ms": 5468,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "3rmdH6NLw6BzX7GYo7CbW42JCsYYMdcyBiBMfXkpqHkn",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotOwner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB",
+      "label": "alice: set_limits",
+      "method": "set_limits",
+      "ms": 5117,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotOwner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/7F1XbdUNqJrvUWpFC9TYbc3zM43H9vgopaMi4szTxq6x",
+      "label": "alice: nft_transfer the deed to herself",
+      "method": "nft_transfer",
+      "ms": 5119,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "7F1XbdUNqJrvUWpFC9TYbc3zM43H9vgopaMi4szTxq6x",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotRunner\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/2EHZJxkD7j2BYuN7u8k9XgtcJsaGfaxEnHjDAKiiKKb3",
+      "label": "alice: pay_base (the Base wallet)",
+      "method": "pay_base",
+      "ms": 5026,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "2EHZJxkD7j2BYuN7u8k9XgtcJsaGfaxEnHjDAKiiKKb3",
+      "value": null
+    },
+    {
+      "by": "translator.agentexit.testnet",
+      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"CNyZL72sTARnWhCjnEDR5H9uq4u7TtyFAPK7t8tsnaJy\\\",\\\"block_height\\\":275909274,\\\"error\\\":\\\"access key ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+      "events": [],
+      "explorer": null,
+      "label": "alice's old runner key: heartbeat",
+      "method": "heartbeat",
+      "ms": 1037,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": null,
+      "value": null
+    },
+    {
+      "by": "translator.agentexit.testnet",
+      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"BHpDsp87ALGL2RA4QrEbjZC96c5R1RCq2YmJbZ6bzya4\\\",\\\"block_height\\\":275909275,\\\"error\\\":\\\"access key ed25519:88pGqRc6311knnwZe2D9f6Q7ynpMBgnVfdSr9qfrzeUc does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+      "events": [],
+      "explorer": null,
+      "label": "translator's deleted setup key: heartbeat",
+      "method": "heartbeat",
+      "ms": 919,
+      "ok": false,
+      "receiver": "translator.agentexit.testnet",
+      "tx": null,
+      "value": null
+    },
+    {
+      "by": "translator.agentexit.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/CR8LjSDNrCjmA8AsERzUZDr3AhnayJvGk3om8JgvMqrC",
+      "label": "bob's runner key: heartbeat",
+      "method": "heartbeat",
+      "ms": 4819,
+      "ok": true,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "CR8LjSDNrCjmA8AsERzUZDr3AhnayJvGk3om8JgvMqrC",
+      "value": {
+        "ok": true,
+        "owner_epoch": 2
+      }
+    }
+  ],
+  "what": "break-in: alice calls withdraw, set_runner_key, list_for_sale, set_limits, nft_transfer, pay_base (each refused); her old runner key and the deleted setup key fail at the node; key list before/after"
+}

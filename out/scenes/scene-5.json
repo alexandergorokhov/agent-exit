@@ -1,0 +1,348 @@
+{
+  "alice_received": "700000000",
+  "keys_after": [
+    {
+      "permission": {
+        "allowance": "5000000000000000000000000",
+        "method_names": [
+          "heartbeat",
+          "accept_job",
+          "pay",
+          "pay_base"
+        ],
+        "receiver_id": "translator.agentexit.testnet"
+      },
+      "public_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+    }
+  ],
+  "keys_before": [
+    {
+      "permission": {
+        "allowance": "5000000000000000000000000",
+        "method_names": [
+          "heartbeat",
+          "accept_job",
+          "pay",
+          "pay_base"
+        ],
+        "receiver_id": "translator.agentexit.testnet"
+      },
+      "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+    }
+  ],
+  "pass": true,
+  "sale": [
+    {
+      "buyer": "bob.agentexit.testnet",
+      "escrow": "300000000",
+      "known_keys": [
+        "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+      ],
+      "overpay_refund": "0",
+      "owner_epoch": 2,
+      "paid_now": "700000000",
+      "price": "1000000000",
+      "sale_id": 1,
+      "seller": "alice.agentexit.testnet",
+      "seller_revenue_claimable": "500000000",
+      "window_end": "1796220541589316765"
+    }
+  ],
+  "scan": {
+    "agent": "translator.agentexit.testnet",
+    "buy_args": {
+      "known_keys_hash": "3983259e274f8ba57fd9acdd2be6fdc3db80e457809a1a046209a06808b1402c",
+      "listing_version": 1,
+      "price": "1000000000"
+    },
+    "findings": [],
+    "schema": "scan-report.v1",
+    "verdict": "clean"
+  },
+  "scan_input": {
+    "agent": "translator.agentexit.testnet",
+    "chain": {
+      "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+      "keys": [
+        {
+          "permission": {
+            "allowance": "5000000000000000000000000",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "receiver_id": "translator.agentexit.testnet"
+          },
+          "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+        }
+      ],
+      "keys_second_provider": [
+        {
+          "permission": {
+            "allowance": "5000000000000000000000000",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "receiver_id": "translator.agentexit.testnet"
+          },
+          "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+        }
+      ],
+      "methods": [
+        "__contract_abi",
+        "add_signer",
+        "cancel_listing",
+        "claim",
+        "contract_source_metadata",
+        "finalize_earnout",
+        "ft_on_transfer",
+        "get_base_wallet",
+        "get_claimable",
+        "get_earnings",
+        "get_earnings_days",
+        "get_limits",
+        "get_listing",
+        "get_payer",
+        "get_sales",
+        "get_signers",
+        "get_status",
+        "heartbeat",
+        "known_keys",
+        "known_keys_hash",
+        "list_for_sale",
+        "near_withdrawable",
+        "new",
+        "nft_approve",
+        "nft_is_approved",
+        "nft_metadata",
+        "nft_resolve_transfer",
+        "nft_revoke",
+        "nft_revoke_all",
+        "nft_supply_for_owner",
+        "nft_token",
+        "nft_tokens",
+        "nft_tokens_for_owner",
+        "nft_total_supply",
+        "nft_transfer",
+        "nft_transfer_call",
+        "on_base_signed",
+        "on_handover",
+        "on_keys_deleted",
+        "on_runner_key",
+        "on_transfer_out",
+        "pay",
+        "pay_base",
+        "reclaim_payer_row",
+        "recover_keys",
+        "recover_sale",
+        "remove_signer",
+        "set_limits",
+        "set_runner_key",
+        "storage_balance_bounds",
+        "storage_balance_of",
+        "storage_deposit",
+        "storage_unregister",
+        "storage_withdraw",
+        "withdraw",
+        "withdraw_near"
+      ],
+      "subaccounts": []
+    },
+    "contract": {
+      "admin": "agentexit.testnet",
+      "base_wallet": {
+        "address": "0x8cb2c5430c7d6065241997c470e729ffe850e625",
+        "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
+        "path": "wallet-1"
+      },
+      "frozen": false,
+      "known_keys": [
+        "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+      ],
+      "known_keys_hash": "3983259e274f8ba57fd9acdd2be6fdc3db80e457809a1a046209a06808b1402c",
+      "listing_version": 1,
+      "near_storage_solvent": true,
+      "open_approvals": 0,
+      "open_auth_until": 0,
+      "owner": "alice.agentexit.testnet",
+      "paid_to_total": 0,
+      "status": "Listed",
+      "token": "xusd.agentexit.testnet"
+    },
+    "expected": {
+      "admin": "agentexit.testnet",
+      "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+      "listing_version": 1,
+      "price": "1000000000",
+      "token": "xusd.agentexit.testnet"
+    },
+    "listing": {
+      "listing_version": 1,
+      "price": "1000000000",
+      "terms": {
+        "earnout_bps": 3000,
+        "floor_bps": 2000,
+        "share_bps": 5000,
+        "window_secs": 2592000
+      }
+    },
+    "now_ns": 1793628537516523871,
+    "schema": "scan-input.v1"
+  },
+  "scene": 5,
+  "schema": "scene.v1",
+  "status_after": {
+    "admin": "agentexit.testnet",
+    "agent": "translator.agentexit.testnet",
+    "claimable_accounts": 1,
+    "claimable_total": "500000000",
+    "closed_sales": 0,
+    "empty_payer_rows": 0,
+    "escrow_left": "300000000",
+    "frozen": false,
+    "held": "800000000",
+    "incoming_keys": [],
+    "known_keys": [
+      "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+    ],
+    "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
+    "listing_version": 2,
+    "near_storage": {
+      "balance": "9139990483405166800000001",
+      "day_entries": 1,
+      "empty_payer_entries": 0,
+      "growth_reserve": "1822000000000000000000000",
+      "max_day_entries": 400,
+      "max_sig_entries": 512,
+      "payer_deposits": "144000000000000000000000",
+      "payer_entries": 6,
+      "sig_entries": 0,
+      "solvent": true,
+      "staked": "5255760000000000000000000",
+      "usage_bytes": 525576
+    },
+    "open_approvals": 0,
+    "open_sales": 1,
+    "owner": "bob.agentexit.testnet",
+    "owner_epoch": 2,
+    "owner_free": "0",
+    "paid_to_owner": 0,
+    "paid_to_total": 0,
+    "past_owners": 1,
+    "paused": false,
+    "retiring_keys": [],
+    "schema": "agent-status.v1",
+    "signers": [],
+    "solvent": true,
+    "status": "Sold",
+    "terms_config": "prod",
+    "terms_min": {
+      "max_floor_bps": 5000,
+      "min_earnout_bps": 3000,
+      "min_window_secs": 2592000
+    },
+    "token": "xusd.agentexit.testnet",
+    "tracked_payers": 6,
+    "treasury": "0"
+  },
+  "txs": [
+    {
+      "by": "bob.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "1000000000",
+              "new_owner_id": "translator.agentexit.testnet",
+              "old_owner_id": "bob.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "add_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2",
+              "amount": "1000000000",
+              "buyer": "bob.agentexit.testnet",
+              "delete_keys": [
+                "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
+              ],
+              "sale_id": 1
+            }
+          ],
+          "event": "settling",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "memo": "agent_exit:buy",
+              "new_owner_id": "bob.agentexit.testnet",
+              "old_owner_id": "alice.agentexit.testnet",
+              "token_ids": [
+                "deed"
+              ]
+            }
+          ],
+          "event": "nft_transfer",
+          "standard": "nep171",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "buyer": "bob.agentexit.testnet",
+              "escrow": "300000000",
+              "known_keys": [
+                "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+              ],
+              "overpay_refund": "0",
+              "owner_epoch": 2,
+              "paid_now": "700000000",
+              "price": "1000000000",
+              "sale_id": 1,
+              "seller": "alice.agentexit.testnet",
+              "seller_revenue_claimable": "500000000",
+              "window_end": "1796220541589316765"
+            }
+          ],
+          "event": "sale",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "700000000",
+              "memo": "agent_exit:SellerPayout",
+              "new_owner_id": "alice.agentexit.testnet",
+              "old_owner_id": "translator.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF",
+      "label": "bob buys translator (one ft_transfer_call)",
+      "method": "ft_transfer_call",
+      "ms": 8680,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF",
+      "value": "1000000000"
+    }
+  ],
+  "what": "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00"
+}

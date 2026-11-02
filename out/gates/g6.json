@@ -1,0 +1,17 @@
+{
+  "samples": [
+    {
+      "error": {
+        "error": {
+          "code": null,
+          "message": "No spending limit configured. Please contact support to set up credits.",
+          "param": null,
+          "type": "no_limit_configured"
+        }
+      },
+      "model": "openai/gpt-oss-120b",
+      "status": 402
+    }
+  ],
+  "schema": "gate-g6.v1"
+}
