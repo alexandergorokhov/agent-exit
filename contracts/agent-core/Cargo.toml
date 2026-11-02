@@ -11,6 +11,8 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 hex.workspace = true
+# Keccak for the EIP-712 digest of Base payments (feature 5).
+sha3 = { version = "0.10", default-features = false }
 
 # Schema derives for the contract ABI (`cargo near build` generates it from a
 # native build). Not compiled into the wasm.

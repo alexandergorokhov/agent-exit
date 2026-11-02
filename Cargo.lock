@@ -19,6 +19,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "sha3 0.10.9",
 ]
 
 [[package]]
@@ -26,6 +27,7 @@ name = "agent-exit"
 version = "0.1.0"
 dependencies = [
  "agent-core",
+ "base-wallet",
  "near-contract-standards",
  "near-sdk",
  "serde_json",
@@ -94,6 +96,18 @@ dependencies = [
  "dunce",
  "fs_extra",
  "pkg-config",
+]
+
+[[package]]
+name = "base-wallet"
+version = "0.1.0"
+dependencies = [
+ "agent-core",
+ "bs58 0.5.1",
+ "hex",
+ "k256",
+ "serde_json",
+ "sha3 0.10.9",
 ]
 
 [[package]]
@@ -2697,6 +2711,7 @@ version = "0.1.0"
 dependencies = [
  "agent-core",
  "agent-exit",
+ "base-wallet",
  "hex",
  "k256",
  "near-sdk",

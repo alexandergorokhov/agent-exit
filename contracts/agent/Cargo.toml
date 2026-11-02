@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 # In-process simulator (mocked NEAR runtime) used by unit tests and tools/verify.
-sim = ["near-sdk/unit-testing"]
+sim = ["near-sdk/unit-testing", "dep:base-wallet"]
 
 [dependencies]
 # `unstable` exposes env::ecrecover (NEAR Verified badge).
@@ -18,6 +18,9 @@ near-sdk = { workspace = true, features = ["unstable"] }
 agent-core = { path = "../agent-core" }
 near-contract-standards.workspace = true
 serde_json.workspace = true
+# Offline TEST MPC signer for the simulator (feature 5); not in the wasm.
+base-wallet = { path = "../../tools/base-wallet", optional = true }
 
 [dev-dependencies]
+base-wallet = { path = "../../tools/base-wallet" }
 near-sdk = { workspace = true, features = ["unit-testing", "unstable"] }

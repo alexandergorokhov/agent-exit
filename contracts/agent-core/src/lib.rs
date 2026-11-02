@@ -7,6 +7,7 @@
 //!
 //! Amounts are token base units (the FAKE test dollar has 6 decimals).
 
+pub mod base;
 pub mod meter;
 pub mod money;
 pub mod policy;
@@ -71,6 +72,10 @@ pub enum Error {
     /// Recovery asked for before `RECOVER_AFTER_NS` passed: the callback may
     /// still run (A33).
     RecoverTooEarly,
+    /// `pay_base` on an agent deployed without a Base wallet address.
+    BaseWalletNotSet,
+    /// A Base authorization valid for more than an hour (E23).
+    ValidityTooLong,
     /// A runner payment or incoming payment outside the owner's limits.
     PolicyViolation(Policy),
 }
@@ -356,8 +361,12 @@ pub struct Machine {
     /// Accounts the agent sent tokens to (for the `round_trip` flag), with
     /// the owner epoch of the first send. Bounded (A30).
     pub paid_to: BTreeMap<Account, u64>,
-    /// Latest `valid_before` of any Base authorization the agent signed (B3).
+    /// Latest `valid_before` of any Base authorization the agent signed or
+    /// asked the MPC signer to sign (feature 5); list and buy are refused
+    /// until it passes (A9).
     pub open_auth_until: Ts,
+    /// The agent's Base Sepolia wallet (feature 5).
+    pub base: base::BaseWallet,
     /// Owner's limits (feature 12); they move with the deed.
     pub limits: Limits,
     /// The agent's own funds; only the runner spends them, inside the limits.
@@ -427,6 +436,7 @@ impl Machine {
             held: 0,
             paid_to: BTreeMap::new(),
             open_auth_until: 0,
+            base: base::BaseWallet::default(),
             limits: Limits::default(),
             treasury: 0,
             spent: Spent::default(),

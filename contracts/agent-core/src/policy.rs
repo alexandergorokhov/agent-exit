@@ -27,6 +27,10 @@ pub enum Policy {
     DailyCap,
     /// An incoming job payment below `price_floor`.
     PriceFloor,
+    /// `pay_base` to an address not in the Base payees (feature 5).
+    BasePayee,
+    /// Base authorized today + this one > the Base daily cap (feature 5).
+    BaseDailyCap,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]

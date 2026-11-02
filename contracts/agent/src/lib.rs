@@ -43,6 +43,8 @@ use near_sdk::{
 use std::collections::{BTreeSet, HashMap};
 
 #[cfg(test)]
+mod base_tests;
+#[cfg(test)]
 mod review2_regressions;
 #[cfg(test)]
 mod review_regressions;
@@ -98,6 +100,20 @@ const fn parse_u64(s: &str) -> u64 {
     assert!(n >= 60, "AGENT_EXIT_MIN_WINDOW_SECS must be at least 60");
     n
 }
+
+/// The Chain Signatures MPC signer the Base wallet uses (feature 5). Pinned
+/// at build time like the token; testnet default.
+pub const MPC_SIGNER: &str = match option_env!("AGENT_EXIT_MPC") {
+    Some(a) => a,
+    None => "v1.signer-prod.testnet",
+};
+/// MPC `sign` domain 0 = secp256k1 (Ethereum-style keys).
+pub const MPC_DOMAIN_SECP256K1: u64 = 0;
+/// Gas a runner attaches to `pay_base`: the MPC `sign` call gets what is
+/// left after the callback's share.
+pub const RUNNER_GAS_PAY_BASE: Gas = Gas::from_tgas(300);
+pub const GAS_MPC_SIGN_MIN: Gas = Gas::from_tgas(100);
+pub const GAS_ON_BASE_SIGNED: Gas = Gas::from_tgas(20);
 
 /// Methods the runner's function-call key may call (receiver = the agent).
 pub const RUNNER_METHODS: &str = "heartbeat,accept_job,pay,pay_base";
@@ -179,6 +195,34 @@ pub struct LimitsArgs {
     /// The only accounts the runner may pay.
     pub allowed_payees: Vec<AccountId>,
     pub split: Split,
+    /// Base Sepolia limits (feature 5); absent = the Base wallet pays nobody.
+    #[serde(default)]
+    pub base: Option<BaseLimitsArgs>,
+}
+
+/// Base Sepolia limits inside `set_limits` (feature 5). Leaving `base` out
+/// sets the Base cap to 0 and the payees to none.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, NearSchema)]
+#[serde(crate = "near_sdk::serde", deny_unknown_fields)]
+#[abi(json)]
+pub struct BaseLimitsArgs {
+    /// Most USDC (6 decimals, base units) the runner may authorize per UTC day.
+    pub daily_cap: U128,
+    /// The only Base addresses the runner may pay (`0x` + 40 hex).
+    pub payees: Vec<String>,
+}
+
+impl From<BaseLimitsArgs> for core::base::BaseLimits {
+    fn from(a: BaseLimitsArgs) -> Self {
+        core::base::BaseLimits {
+            daily_cap: a.daily_cap.0,
+            payees: a
+                .payees
+                .iter()
+                .map(|p| core::base::norm_address(p).unwrap_or_else(|| p.clone()))
+                .collect(),
+        }
+    }
 }
 
 impl From<LimitsArgs> for Limits {
@@ -270,11 +314,18 @@ impl AgentExit {
     /// The deployer (the seller) chooses only the first owner: the admin, the
     /// token and the signer list are not init arguments (A26). The signer
     /// list starts empty; only the pinned registry admin edits it.
+    ///
+    /// `base_address`: the agent's Chain Signatures Base address (derived
+    /// from this account and path `wallet-1`; `tools/base-wallet derive`).
+    /// It cannot change later. Every MPC signature is checked against it, so
+    /// a wrong one only makes `pay_base` fail; the buyer's scan compares it
+    /// with its own derivation.
     #[init]
     #[private]
-    pub fn new(owner_id: AccountId) -> Self {
+    pub fn new(owner_id: AccountId, base_address: Option<String>) -> Self {
         let mut m = Machine::new(env::current_account_id().as_str(), owner_id.as_str());
         m.terms_min = TERMS_MIN;
+        m.base.address = base_address.map(|a| norm_address(&a));
         Self {
             m,
             token: PAYMENT_TOKEN.parse().expect("valid token"),
@@ -768,8 +819,12 @@ impl AgentExit {
     pub fn set_limits(&mut self, limits: LimitsArgs) -> Value {
         near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
+        let base = limits.base.clone().map(Into::into).unwrap_or_default();
         self.m
             .set_limits(caller.as_str(), limits.into())
+            .unwrap_or_else(|e| fail(e));
+        self.m
+            .set_base_limits(caller.as_str(), base)
             .unwrap_or_else(|e| fail(e));
         let v = self.get_limits();
         emit("limits_set", v.clone());
@@ -825,6 +880,144 @@ impl AgentExit {
         json!({"ok": true, "paid": data})
     }
 
+    /// Feature 5: the runner pays `to` on Base Sepolia from the agent's Chain
+    /// Signatures wallet. The contract builds one USDC EIP-3009
+    /// `transferWithAuthorization` digest from these fields (never a payload
+    /// from the caller), inside the owner's Base limits, valid at most an
+    /// hour (`valid_secs`, default 600), and asks the MPC signer to sign it.
+    /// `on_base_signed` checks the signature against the wallet address and
+    /// emits `base_auth_signed` with relay-ready `v, r, s` and calldata; any
+    /// relayer broadcasts it. Until `valid_before` passes the agent cannot be
+    /// listed or bought (A9). Attach `RUNNER_GAS_PAY_BASE`.
+    pub fn pay_base(&mut self, to: String, amount: U128, valid_secs: Option<u64>) -> Value {
+        if let Some(v) = self.runner_guard() {
+            return v;
+        }
+        let now = env::block_timestamp();
+        let spent_before = self.m.base.spent_today(self.m.owner_epoch, now);
+        let plan = match self
+            .m
+            .begin_base_pay(&to, amount.0, valid_secs.unwrap_or(600), now)
+        {
+            Ok(p) => p,
+            Err(e) => {
+                let detail = match &e {
+                    core::Error::PolicyViolation(core::Policy::BaseDailyCap) => format!(
+                        ": {} + {} > Base daily cap {} USDC",
+                        usd(spent_before),
+                        usd(amount.0),
+                        usd(self.m.base.limits.daily_cap)
+                    ),
+                    core::Error::PolicyViolation(core::Policy::BasePayee) => {
+                        format!(": {to} is not an allowed Base payee")
+                    }
+                    core::Error::ValidityTooLong => {
+                        format!(": at most {} s", core::base::MAX_VALID_SECS)
+                    }
+                    _ => String::new(),
+                };
+                env::panic_str(&format!("{e}{detail}"))
+            }
+        };
+        let a = &plan.auth;
+        emit(
+            "base_sign_requested",
+            json!({"auth_id": a.id, "owner_epoch": a.owner_epoch, "from": a.from, "to": a.to,
+                   "value": amt(a.value), "valid_before": a.valid_before, "nonce": a.nonce,
+                   "digest": a.digest, "mpc": MPC_SIGNER, "path": core::base::BASE_PATH}),
+        );
+        let args = json!({"request": {
+            "path": core::base::BASE_PATH,
+            "payload_v2": {"Ecdsa": verified::hex_lower(&plan.digest)},
+            "domain_id": MPC_DOMAIN_SECP256K1,
+        }});
+        Promise::new(MPC_SIGNER.parse().expect("valid MPC account"))
+            .function_call_weight(
+                "sign",
+                args.to_string().into_bytes(),
+                NearToken::from_yoctonear(1),
+                GAS_MPC_SIGN_MIN,
+                near_sdk::GasWeight(1),
+            )
+            .then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(cb_gas(GAS_ON_BASE_SIGNED))
+                    .with_unused_gas_weight(0)
+                    .on_base_signed(a.id),
+            )
+            .detach();
+        json!({"ok": true, "pending": true, "auth_id": a.id, "from": a.from, "to": a.to,
+               "value": amt(a.value), "valid_before": a.valid_before})
+    }
+
+    /// MPC callback: the signature must recover to the wallet address. Then
+    /// it is issued (low-s normalised for the token's `ecrecover`), otherwise
+    /// the reserved cap is released and `sign_failed` says why (E22).
+    #[private]
+    pub fn on_base_signed(&mut self, auth_id: u64) -> Value {
+        let Some(auth) = self.m.base.pending.get(&auth_id).cloned() else {
+            return json!({"ok": false, "reason": "UnknownAuth"});
+        };
+        let sig = match env::promise_result_checked(0, 2_048) {
+            Ok(bytes) => mpc_signature(&bytes),
+            Err(_) => Err("SignFailed"),
+        };
+        let digest: [u8; 32] = verified::hex_decode(&auth.digest)
+            .and_then(|d| d.try_into().ok())
+            .expect("stored digest");
+        let checked = sig.and_then(|(r, s, rid)| {
+            let mut rs = [0u8; 64];
+            rs[..32].copy_from_slice(&r);
+            rs[32..].copy_from_slice(&s);
+            let pk = env::ecrecover(&digest, &rs, rid, false).ok_or("BadSignature")?;
+            let h = env::keccak256_array(pk);
+            if format!("0x{}", verified::hex_lower(&h[12..])) != auth.from {
+                return Err("BaseAddressMismatch");
+            }
+            Ok(low_s(r, s, rid))
+        });
+        match checked {
+            Ok((r, s, v)) => {
+                self.m.finish_base_pay(auth_id, true);
+                let from = core::base::parse_address(&auth.from).expect("valid");
+                let to = core::base::parse_address(&auth.to).expect("valid");
+                let nonce: [u8; 32] = verified::hex_decode(&auth.nonce)
+                    .and_then(|d| d.try_into().ok())
+                    .expect("stored nonce");
+                let calldata = core::base::relay_calldata(
+                    &from,
+                    &to,
+                    auth.value,
+                    auth.valid_after,
+                    auth.valid_before,
+                    &nonce,
+                    v,
+                    &r,
+                    &s,
+                );
+                let data = json!({
+                    "auth_id": auth_id, "owner_epoch": auth.owner_epoch,
+                    "chain_id": core::base::BASE_CHAIN_ID, "token": core::base::BASE_USDC,
+                    "from": auth.from, "to": auth.to, "value": amt(auth.value),
+                    "valid_after": auth.valid_after, "valid_before": auth.valid_before,
+                    "nonce": auth.nonce, "digest": auth.digest,
+                    "v": v, "r": format!("0x{}", verified::hex_lower(&r)),
+                    "s": format!("0x{}", verified::hex_lower(&s)),
+                    "calldata": format!("0x{}", verified::hex_lower(&calldata)),
+                });
+                emit("base_auth_signed", data.clone());
+                json!({"ok": true, "auth": data})
+            }
+            Err(reason) => {
+                self.m.finish_base_pay(auth_id, false);
+                let data = json!({"auth_id": auth_id, "reason": reason, "released": amt(auth.value),
+                                  "open_auth_until": U64(self.m.open_auth_until)});
+                emit("sign_failed", data.clone());
+                json!({"ok": false, "sign_failed": data})
+            }
+        }
+    }
+
     /// Runner liveness call. Like every runner method it must be a self-call
     /// signed by a key this contract added. A self-call signed by any other
     /// key proves a hidden key: the agent freezes, `backdoor_proven` is
@@ -855,6 +1048,33 @@ impl AgentExit {
             "spent_today": amt(spent),
             "cap_left_today": amt(l.daily_cap.saturating_sub(spent)),
             "day": now / core::DAY_NS,
+        })
+    }
+
+    /// The Base Sepolia wallet (`base-wallet.v1`): address, limits, today's
+    /// use, open and recent authorizations.
+    pub fn get_base_wallet(&self) -> Value {
+        let b = &self.m.base;
+        let now = env::block_timestamp();
+        let spent = b.spent_today(self.m.owner_epoch, now);
+        json!({
+            "schema": "base-wallet.v1",
+            "agent": self.m.agent,
+            "owner": self.m.owner,
+            "owner_epoch": self.m.owner_epoch,
+            "address": b.address,
+            "chain_id": core::base::BASE_CHAIN_ID,
+            "token": core::base::BASE_USDC,
+            "domain_separator": format!("0x{}", verified::hex_lower(&core::base::usdc_domain())),
+            "mpc": MPC_SIGNER,
+            "path": core::base::BASE_PATH,
+            "daily_cap": amt(b.limits.daily_cap),
+            "payees": b.limits.payees,
+            "spent_today": amt(spent),
+            "cap_left_today": amt(b.limits.daily_cap.saturating_sub(spent)),
+            "open_auth_until": U64(self.m.open_auth_until),
+            "pending": b.pending.values().collect::<Vec<_>>(),
+            "signed": b.signed,
         })
     }
 
@@ -1120,6 +1340,59 @@ impl AgentExit {
             _ => false,
         }
     }
+}
+
+/// Parse the MPC signer's `sign` result: `{"big_r": {"affine_point": hex33},
+/// "s": {"scalar": hex32}, "recovery_id": n}`, optionally tagged
+/// (`"scheme": "Secp256k1"` or wrapped in `{"Secp256k1": ...}`).
+pub fn mpc_signature(bytes: &[u8]) -> Result<([u8; 32], [u8; 32], u8), &'static str> {
+    let v: Value = serde_json::from_slice(bytes).map_err(|_| "BadSignResponse")?;
+    let v = v.get("Secp256k1").cloned().unwrap_or(v);
+    let r = v["big_r"]["affine_point"]
+        .as_str()
+        .and_then(verified::hex_decode)
+        .filter(|p| p.len() == 33 && (p[0] == 2 || p[0] == 3))
+        .ok_or("BadSignResponse")?;
+    let s = v["s"]["scalar"]
+        .as_str()
+        .and_then(verified::hex_decode)
+        .filter(|s| s.len() == 32)
+        .ok_or("BadSignResponse")?;
+    let rid = v["recovery_id"]
+        .as_u64()
+        .filter(|r| *r <= 1)
+        .ok_or("BadSignResponse")? as u8;
+    Ok((
+        r[1..].try_into().expect("32"),
+        s.try_into().expect("32"),
+        rid,
+    ))
+}
+
+/// secp256k1 group order.
+const SECP_N: [u8; 32] = [
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+    0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b, 0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41,
+];
+const SECP_HALF_N: [u8; 32] = [
+    0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0x5d, 0x57, 0x6e, 0x73, 0x57, 0xa4, 0x50, 0x1d, 0xdf, 0xe9, 0x2f, 0x46, 0x68, 0x1b, 0x20, 0xa0,
+];
+
+/// USDC's `ecrecover` refuses high-s signatures: use (r, n - s) and flip v.
+/// Returns (r, s, v) with v in {27, 28}.
+pub fn low_s(r: [u8; 32], s: [u8; 32], rid: u8) -> ([u8; 32], [u8; 32], u8) {
+    if s <= SECP_HALF_N {
+        return (r, s, 27 + rid);
+    }
+    let mut out = [0u8; 32];
+    let mut borrow = 0i16;
+    for i in (0..32).rev() {
+        let d = SECP_N[i] as i16 - s[i] as i16 - borrow;
+        borrow = (d < 0) as i16;
+        out[i] = (d + 256 * borrow) as u8;
+    }
+    (r, out, 27 + (rid ^ 1))
 }
 
 fn norm_address(a: &str) -> String {

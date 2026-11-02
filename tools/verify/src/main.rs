@@ -970,6 +970,111 @@ fn run() -> Value {
         json!({"error": "Listed: spending paused"}),
     );
 
+    // Feature 5: the Base wallet, with the offline TEST MPC signer.
+    let mpc = base_wallet::MockMpc::default();
+    let supplier = "0x00000000000000000000000000000000000000a1";
+    let base_limits = |s: &mut Sim, who: &str| {
+        let mut l = demo_limits();
+        l.base = Some(agent_exit::BaseLimitsArgs {
+            daily_cap: U128(5 * agent_core::base::USDC),
+            payees: vec![supplier.into()],
+        });
+        s.by_1y(who).set_limits(l);
+    };
+    let base_pay = |s: &mut Sim, runner: u8, ok: bool| -> Value {
+        let r = s
+            .runner(key(runner))
+            .pay_base(supplier.into(), U128(agent_core::base::USDC), None);
+        let calls = mpc_sign_calls();
+        let digest: [u8; 32] = hex::decode(
+            calls[0].0["request"]["payload_v2"]["Ecdsa"]
+                .as_str()
+                .unwrap_or_default(),
+        )
+        .unwrap_or_default()
+        .try_into()
+        .unwrap_or([0; 32]);
+        let id = r["auth_id"].as_u64().unwrap_or_default();
+        if ok {
+            let answer = mpc.sign(AGENT, agent_core::base::BASE_PATH, &digest);
+            s.callback_data(&answer).on_base_signed(id)
+        } else {
+            s.callback(false).on_base_signed(id)
+        }
+    };
+    let mut s = translator_world();
+    let address = mpc.derive_address(AGENT, agent_core::base::BASE_PATH);
+    base_limits(&mut s, ALICE);
+    let before = base_pay(&mut s, ALICE_RUNNER, true);
+    let before_ok = base_wallet::check_auth(&before["auth"]).ok();
+    let open_blocks = panics_with("OpenApproval", || {
+        s.by_1y(ALICE)
+            .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    });
+    s.now += 601 * agent_core::NANOS_PER_SEC;
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.buy(BOB, 1_000 * USD, BOB_RUNNER);
+    s.callback(true).on_handover(1);
+    s.callback(true)
+        .on_keys_deleted(vec![key_str(ALICE_RUNNER)]);
+    let after = base_pay(&mut s, BOB_RUNNER, true);
+    let after_ok = base_wallet::check_auth(&after["auth"]).ok();
+    r.check(
+        "S6",
+        "wallet follows the name (mock MPC): the agent's Base address for path wallet-1 is the same before and after the sale; alice's runner signs a 1.00 USDC EIP-3009 authorization before, bob's after; each signature recovers to that address",
+        before_ok.as_deref() == Some(address.as_str())
+            && after_ok.as_deref() == Some(address.as_str())
+            && before["auth"]["owner_epoch"] == 1
+            && after["auth"]["owner_epoch"] == 2,
+        json!({"address": address, "before_epoch": before["auth"]["owner_epoch"],
+               "after_epoch": after["auth"]["owner_epoch"], "calldata_selector": "0xe3ee160e"}),
+    );
+    r.check(
+        "A9",
+        "a signed Base authorization still valid blocks the listing (OpenApproval) until valid_before passes",
+        open_blocks,
+        json!({"error": "OpenApproval"}),
+    );
+    let alice_refused = panics_with("NotRunner", || {
+        s.by(ALICE)
+            .pay_base(supplier.into(), U128(agent_core::base::USDC), None);
+    });
+    let alice_limits = panics_with("NotOwner", || base_limits(&mut s, ALICE));
+    r.check(
+        "A20",
+        "after the sale the old seller cannot make the Base wallet sign (pay_base: NotRunner) or change its limits (NotOwner)",
+        alice_refused && alice_limits,
+        json!({"pay_base": "NotRunner", "set_limits": "NotOwner"}),
+    );
+    let mut s = translator_world();
+    base_limits(&mut s, ALICE);
+    let failed_sign = base_pay(&mut s, ALICE_RUNNER, false);
+    let w = s.by(BOB).get_base_wallet();
+    let retry = base_pay(&mut s, ALICE_RUNNER, true);
+    r.check(
+        "E22",
+        "MPC sign fails: sign_failed, the reserved Base cap is released, nothing stays open; the retry uses a new nonce and signs",
+        failed_sign["ok"] == false
+            && w["spent_today"] == "0"
+            && w["open_auth_until"] == "0"
+            && retry["ok"] == true,
+        json!({"sign_failed": failed_sign["sign_failed"]["reason"]}),
+    );
+    let too_long = panics_with("ValidityTooLong", || {
+        s.runner(key(ALICE_RUNNER)).pay_base(
+            supplier.into(),
+            U128(agent_core::base::USDC),
+            Some(3_601),
+        );
+    });
+    r.check(
+        "E23",
+        "a Base authorization valid for more than an hour is refused ValidityTooLong",
+        too_long,
+        json!({"error": "ValidityTooLong: at most 3600 s"}),
+    );
+
     let passed = r.checks.iter().filter(|c| c["pass"] == true).count();
     let failed = r.checks.len() - passed;
     json!({
@@ -990,8 +1095,8 @@ fn run() -> Value {
              "where": "owner's machine, day-1 gate G6"},
             {"id": "S5,E5,E6,A17,A21", "part": "real key errors, real token refunds, gas",
              "where": "near-sandbox (make test-sandbox) or testnet"},
-            {"id": "S6,A18,A20", "part": "Chain Signatures Base wallet and pay_base",
-             "where": "batch B3"},
+            {"id": "S6,G2", "part": "the real MPC signer (v1.signer-prod.testnet) and a relayed Base Sepolia transfer (signatures here come from a local TEST MPC key)",
+             "where": "owner's machine, gate G2 (make gates)"},
             {"id": "S11,S12", "part": "the same limits on a real node (sandbox/testnet)",
              "where": "near-sandbox or testnet"},
         ],

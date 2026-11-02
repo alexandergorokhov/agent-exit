@@ -549,10 +549,54 @@
       "detail": {
         "error": "Listed: spending paused"
       }
+    },
+    {
+      "id": "S6",
+      "what": "wallet follows the name (mock MPC): the agent's Base address for path wallet-1 is the same before and after the sale; alice's runner signs a 1.00 USDC EIP-3009 authorization before, bob's after; each signature recovers to that address",
+      "pass": true,
+      "detail": {
+        "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+        "before_epoch": 1,
+        "after_epoch": 2,
+        "calldata_selector": "0xe3ee160e"
+      }
+    },
+    {
+      "id": "A9",
+      "what": "a signed Base authorization still valid blocks the listing (OpenApproval) until valid_before passes",
+      "pass": true,
+      "detail": {
+        "error": "OpenApproval"
+      }
+    },
+    {
+      "id": "A20",
+      "what": "after the sale the old seller cannot make the Base wallet sign (pay_base: NotRunner) or change its limits (NotOwner)",
+      "pass": true,
+      "detail": {
+        "pay_base": "NotRunner",
+        "set_limits": "NotOwner"
+      }
+    },
+    {
+      "id": "E22",
+      "what": "MPC sign fails: sign_failed, the reserved Base cap is released, nothing stays open; the retry uses a new nonce and signs",
+      "pass": true,
+      "detail": {
+        "sign_failed": "SignFailed"
+      }
+    },
+    {
+      "id": "E23",
+      "what": "a Base authorization valid for more than an hour is refused ValidityTooLong",
+      "pass": true,
+      "detail": {
+        "error": "ValidityTooLong: at most 3600 s"
+      }
     }
   ],
   "summary": {
-    "passed": 60,
+    "passed": 65,
     "failed": 0
   },
   "not_covered_here": [
@@ -567,9 +611,9 @@
       "where": "near-sandbox (make test-sandbox) or testnet"
     },
     {
-      "id": "S6,A18,A20",
-      "part": "Chain Signatures Base wallet and pay_base",
-      "where": "batch B3"
+      "id": "S6,G2",
+      "part": "the real MPC signer (v1.signer-prod.testnet) and a relayed Base Sepolia transfer (signatures here come from a local TEST MPC key)",
+      "where": "owner's machine, gate G2 (make gates)"
     },
     {
       "id": "S11,S12",

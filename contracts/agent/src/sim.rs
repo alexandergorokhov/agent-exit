@@ -67,6 +67,9 @@ pub struct Call {
     pub gas: Gas,
     /// One promise result for a callback: `Some(true)` success, `Some(false)` failure.
     pub result: Option<bool>,
+    /// The success value of that promise (default empty), e.g. the MPC
+    /// signer's answer for `on_base_signed`.
+    pub result_data: Vec<u8>,
     /// Account storage in bytes (`env::storage_usage`); the mocked runtime
     /// never writes the contract state, so tests set it.
     pub storage: u64,
@@ -96,7 +99,10 @@ impl Sim {
             balance: NearToken::from_near(10),
         };
         s.env(&s.call(agent));
-        s.c = AgentExit::new(acc(owner));
+        // The agent's Base address under the offline TEST MPC signer.
+        let base =
+            base_wallet::MockMpc::default().derive_address(agent, agent_core::base::BASE_PATH);
+        s.c = AgentExit::new(acc(owner), Some(base));
         // The registry admin allowlists the LOCAL TEST signer.
         s.by(ADMIN).add_signer(test_signer());
         s
@@ -110,6 +116,7 @@ impl Sim {
             deposit: NearToken::from_yoctonear(0),
             gas: Gas::from_tgas(300),
             result: None,
+            result_data: vec![],
             storage: 0,
         }
     }
@@ -140,7 +147,7 @@ impl Sim {
             c.result
                 .map(|ok| {
                     vec![if ok {
-                        PromiseResult::Successful(vec![])
+                        PromiseResult::Successful(c.result_data.clone())
                     } else {
                         PromiseResult::Failed
                     }]
@@ -171,6 +178,15 @@ impl Sim {
     pub fn callback(&mut self, ok: bool) -> &mut AgentExit {
         let mut c = self.call(&self.agent.clone());
         c.result = Some(ok);
+        self.env(&c);
+        &mut self.c
+    }
+
+    /// A callback whose promise succeeded with `data` (the MPC answer).
+    pub fn callback_data(&mut self, data: &Value) -> &mut AgentExit {
+        let mut c = self.call(&self.agent.clone());
+        c.result = Some(true);
+        c.result_data = data.to_string().into_bytes();
         self.env(&c);
         &mut self.c
     }
@@ -336,6 +352,36 @@ pub fn self_calls(agent: &str) -> Vec<(String, Gas)> {
     out
 }
 
+/// `sign` calls the contract scheduled on the MPC signer: (args, deposit, gas).
+pub fn mpc_sign_calls() -> Vec<(Value, NearToken, Gas)> {
+    use near_sdk::mock::MockAction;
+    let mut out = vec![];
+    for r in get_created_receipts() {
+        if r.receiver_id.as_str() != MPC_SIGNER {
+            continue;
+        }
+        for a in r.actions {
+            if let MockAction::FunctionCallWeight {
+                method_name,
+                args,
+                attached_deposit,
+                prepaid_gas,
+                ..
+            } = a
+            {
+                if method_name == b"sign" {
+                    out.push((
+                        serde_json::from_slice(&args).expect("json args"),
+                        attached_deposit,
+                        prepaid_gas,
+                    ));
+                }
+            }
+        }
+    }
+    out
+}
+
 /// Receipts the contract scheduled on itself that carry a key action.
 pub fn key_receipts(agent: &str) -> usize {
     use near_sdk::mock::MockAction;
@@ -464,6 +510,7 @@ pub fn demo_limits() -> LimitsArgs {
             owner_bps: 8_000,
             treasury_bps: 2_000,
         },
+        base: None,
     }
 }
 

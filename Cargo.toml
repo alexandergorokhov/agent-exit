@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["contracts/agent-core", "contracts/agent", "contracts/xusd", "tools/verify", "tools/scan", "tools/attack"]
+members = ["contracts/agent-core", "contracts/agent", "contracts/xusd", "tools/verify", "tools/scan", "tools/attack", "tools/base-wallet"]
 exclude = ["tests/sandbox"]
 
 [workspace.package]

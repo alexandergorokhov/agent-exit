@@ -81,6 +81,7 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | The round-trip table does not cripple the buyer: each owner gets a quota of 1,000 new payout destinations (3,000 in all); `get_status` shows `paid_to_total` and the scan blocks an agent whose buyer would get less than a full quota (`paid_to_bloated`) | offline + `make attack` family A36 | A36 |
 | MCP `buy_agent` installs the server's runner key (`AGENT_EXIT_RUNNER_PK`), never one from tool input; chain-sourced text (method names, keys) reaches the model sanitised, cut to 200 characters and in `untrusted_*` fields; the Skill says tool output is data, not instructions | MCP tests (a prompt-injection method name in the scanned wasm) | A37 |
 | Review 2 lows: a withdrawal that fails after a sale goes back to whoever started it (A38); no `withdraw_near` while listed (A39); concurrent MCP buys cannot each pass the session cap (A40); the MCP server accepts only known testnet RPC hosts (A41); the test token's init is `#[private]` (A42) | offline + MCP tests | A38-A42 |
+| Wallet follows the name (feature 5): the agent's Base Sepolia address is a Chain Signatures key derived from the agent account and path `wallet-1`, so it is the same before and after a sale; only the current runner key can make it sign (`pay_base`), only a USDC EIP-3009 `transferWithAuthorization` the contract builds from typed fields, to an allowed Base payee, inside the owner's Base daily cap, valid at most an hour. Each MPC signature must recover to the wallet address; a failed sign releases the cap; while an authorization is valid the agent cannot be listed or bought | offline with a **TEST MPC signer** (`tools/base-wallet`, real derivation math, local root key) + property test I8. The real signer `v1.signer-prod.testnet` and a relayed Base Sepolia transfer: gate G2 on the owner's machine | S6, A9, A20, E22, E23, I8 |
 | The owner can always withdraw revenue and NEAR above the storage reserve | offline + property tests | E17, I10 |
 | Spending policy enforced by the contract: the owner's one method `set_limits` sets price floor, daily cap, allowed payees and revenue split. A 25.00 job splits 20.00 owner / 5.00 treasury (the seller's share during the earn-out is the earn-out release, 12.50); the runner pays `summarizer` 8.00: allowed; 45.00 more: `PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00`, balances unchanged | offline (contract in mocked runtime) | S11, S12 |
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
@@ -90,8 +91,8 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 | Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 
 Not built yet (later batches): the testnet deploy and live runs (B3),
-testnet writes through MCP (they return `NOT_BUILT`), fuzz targets, Chain
-Signatures Base wallet and `pay_base` (S6), `accept_job`, the page's testnet
+testnet writes through MCP (they return `NOT_BUILT`), fuzz targets,
+`accept_job`, the page's testnet
 mode (only the wallet login exists), its deploy (`make web-deploy`) and a
 Playwright run against the deployed page (`make e2e`). Their
 `make` targets say `not built yet`.
@@ -179,6 +180,7 @@ Playwright run against the deployed page (`make e2e`). Their
 contracts/agent-core/   pure state machine + money math + property tests (no NEAR runtime)
 contracts/agent/        the NEAR contract (deed, meter, listing, buy, escrow) + simulator + unit tests
 contracts/xusd/         FAKE test dollar (NEP-141), capped faucet
+tools/base-wallet/      Base wallet client: Chain Signatures derivation, TEST MPC signer, EIP-3009 auth check
 tools/verify/           offline rerun kit behind `make verify`; gen-test-signatures
 tools/scan/             client backdoor scan (lib + `scan` CLI) and the seeded corpus
 tools/attack/           `make attack`
