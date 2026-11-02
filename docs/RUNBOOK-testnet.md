@@ -124,3 +124,5 @@ To show the recorded run without a chain: `make demo` and `make web`.
 - `make demo-setup` (reset the world) not built; replay needs a fresh root.
 - Stress tests (STR-*) being written; run them on the sandbox when they land.
 - Judge review 3 (2026-11-02): 41/60. Next, by points per effort: real AI buyer run (needs an API key, +2.5), page testnet links (+1.5), video (+1.5), G6 with NEAR AI credit (+1.5), scene 4 re-run on the fixed scan, hosted page.
+- Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (contract: `withdraw` while Listed adds payout rows that `near_storage` does not reserve) is open, fix pending the owner's decision; it needs a new wasm and a fresh testnet deploy. STR-17 (MCP spend cap across processes) is fixed.
+- Real AI buyer: waiting for the Anthropic key; one capped run (12 steps, 150k tokens).
