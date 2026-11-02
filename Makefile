@@ -93,11 +93,21 @@ mcp-test: mcp-build ## MCP tests offline (S14, S15, E29, E30, schemas, skill) + 
 	cargo run --quiet --locked --offline -p verify --bin gen-mcp-world -- --check
 	cd mcp && node --test --test-concurrency=4 'dist/test/*.test.js'
 	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json
+	$(MAKE) -s scripts-test
+
+.PHONY: scripts-test
+scripts-test: ## Offline: safety rules of scripts/testnet (testnet only, no secret echoed, DRY_RUN)
+	node --test 'scripts/testnet/test/*.test.mjs'
 
 .PHONY: agent-buys-agent
 agent-buys-agent: mcp-build ## Scripted offline run: summarizer buys translator via MCP -> out/agent-buys-agent.json
 	@mkdir -p $(OUT)
 	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json
+
+.PHONY: llm-buyer
+llm-buyer: mcp-build ## A real model (NEAR AI Cloud, else Anthropic) reads the Skill and buys via MCP, offline fixtures -> out/llm-buyer.json (needs NEARAI_API_KEY in ~/.agent-exit.env; exit 2 without)
+	@mkdir -p $(OUT)
+	node mcp/dist/scripts/llm-buyer.js --out $(OUT)/llm-buyer.json
 
 .PHONY: attack
 attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/attack.json [N=200 SEED=42 CLEAN=50 FIXTURE=fixtures/judge-attack.json]
@@ -197,8 +207,8 @@ else
 	$(TESTNET_RUN) $*
 endif
 
-gate-g2-relay: ## [testnet] Relay the last G2 signature on Base Sepolia (after make testnet-setup)
-	node scripts/testnet/g2-relay.mjs out/gates/g2-sign.json
+gate-g2-relay: ## [testnet] Relay the last G2 signature on Base Sepolia (after make testnet-setup) [DRY_RUN=1]
+	DRY_RUN=$(DRY_RUN) node scripts/testnet/g2-relay.mjs out/gates/g2-sign.json
 
 scenes: ## [testnet] The six demo scenes in recording order 3 4 5 1 2 6 -> out/scenes/ [DRY_RUN=1]
 ifdef DRY_RUN

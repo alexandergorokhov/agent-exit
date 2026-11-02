@@ -78,6 +78,8 @@ export interface Backend {
   scanInput(id: string, expect: ScanExpect): Promise<Json>;
   buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome>;
   list(id: string, seller: string, price: string): Promise<{ listing: Json; recorded: boolean }>;
+  /** Throws ALLOWANCE_LOW unless the function-call key has at least `min` yoctoNEAR of allowance (no-op offline). */
+  assertAllowance(account: string, publicKey: string, min: bigint): Promise<void>;
   /** Results of owner-only calls attempted by `account`, when known. */
   probes(id: string, account: string): Promise<Record<string, string> | null>;
 }
@@ -159,6 +161,8 @@ export class OfflineBackend implements Backend {
     return { listing: rec.listing, recorded: true };
   }
 
+  async assertAllowance(): Promise<void> {}
+
   async probes(id: string, account: string): Promise<Record<string, string> | null> {
     const rec = this.bought.get(id);
     if (rec && rec.old_owner_probes.account === account) return rec.old_owner_probes.results;
@@ -168,31 +172,51 @@ export class OfflineBackend implements Backend {
 
 // ------------------------------------------------------------------ testnet
 
-/** Function export names of a wasm module (the deployed contract's methods). */
+const MAX_EXPORTS = 10_000;
+
+/** Function export names of a wasm module (the deployed contract's methods).
+ * Every read stays inside the buffer and inside its section; a malformed
+ * module throws instead of spinning (L5). */
 export function wasmExports(code: Uint8Array): string[] {
+  const bad = (why: string): never => {
+    throw new ToolError("RPC_ERROR", `malformed wasm: ${why}`);
+  };
+  if (code.length < 8) bad("too short");
   let i = 8;
+  let limit = code.length;
+  const byte = (): number => {
+    if (i >= limit) bad("read past the end");
+    return code[i++];
+  };
   const leb = (): number => {
     let r = 0;
-    let shift = 0;
-    for (;;) {
-      const b = code[i++];
-      r |= (b & 0x7f) << shift;
-      if ((b & 0x80) === 0) return r >>> 0;
-      shift += 7;
+    for (let shift = 0; shift < 35; shift += 7) {
+      const b = byte();
+      r += (b & 0x7f) * 2 ** shift;
+      if ((b & 0x80) === 0) {
+        if (r > 0xffffffff) bad("integer too large");
+        return r;
+      }
     }
+    return bad("integer too long");
   };
   const names: string[] = [];
   while (i < code.length) {
-    const id = code[i++];
+    limit = code.length;
+    const id = byte();
     const size = leb();
     const end = i + size;
+    if (end > code.length) bad("section longer than the module");
     if (id === 7) {
+      limit = end;
       const n = leb();
+      if (n > MAX_EXPORTS) bad("too many exports");
       for (let k = 0; k < n; k++) {
         const len = leb();
+        if (i + len > end) bad("name longer than its section");
         const name = new TextDecoder().decode(code.subarray(i, i + len));
         i += len;
-        const kind = code[i++];
+        const kind = byte();
         leb();
         if (kind === 0) names.push(name);
       }
@@ -204,20 +228,32 @@ export function wasmExports(code: Uint8Array): string[] {
 
 export class TestnetBackend implements Backend {
   network: Network = "testnet";
-  constructor(private cfg: Config) {}
+  constructor(
+    private cfg: Config,
+    private fetchImpl: typeof fetch = fetch,
+  ) {}
 
   private async rpc(url: string, params: Json): Promise<Json> {
     let res: Response;
     try {
-      res = await fetch(url, {
+      res = await this.fetchImpl(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method: "query", params }),
+        // L5: a redirect could send a read to a host that is not allowlisted.
+        redirect: "error",
+        signal: AbortSignal.timeout(this.cfg.rpcTimeoutMs),
       });
     } catch (e) {
       throw new ToolError("RPC_ERROR", `RPC ${url} unreachable: ${(e as Error).message}`);
     }
-    const body = (await res.json()) as Json;
+    if (!res.ok) throw new ToolError("RPC_ERROR", `RPC ${url}: HTTP ${res.status}`);
+    let body: Json;
+    try {
+      body = await res.json();
+    } catch {
+      throw new ToolError("RPC_ERROR", `RPC ${url}: reply is not JSON`);
+    }
     if (body.error || body.result?.error) {
       throw new ToolError("RPC_ERROR", `RPC ${url}: ${JSON.stringify(body.error ?? body.result.error)}`);
     }
@@ -325,6 +361,31 @@ export class TestnetBackend implements Backend {
 
   async list(): Promise<{ listing: Json; recorded: boolean }> {
     throw new ToolError("NOT_BUILT", "not built yet: testnet list_for_sale through MCP; nothing was sent");
+  }
+
+  /** On a real node an allowance failure surfaces only as InvalidTransaction({}),
+   * so read the key first and refuse with a reason. */
+  async assertAllowance(account: string, publicKey: string, min: bigint): Promise<void> {
+    this.known(account);
+    let r: Json;
+    try {
+      r = await this.rpc(this.cfg.rpc[0], { request_type: "view_access_key", finality: "final", account_id: account, public_key: publicKey });
+    } catch (e) {
+      throw new ToolError("ALLOWANCE_LOW", `cannot read the key ${publicKey} on ${account}: ${(e as Error).message}`);
+    }
+    const p = r.permission;
+    if (p === "FullAccess") return;
+    const allowance = p?.FunctionCall?.allowance;
+    if (allowance === null) return; // unlimited
+    if (typeof allowance !== "string" || !/^[0-9]+$/.test(allowance)) {
+      throw new ToolError("ALLOWANCE_LOW", `unreadable allowance on ${publicKey}`);
+    }
+    if (BigInt(allowance) < min) {
+      throw new ToolError("ALLOWANCE_LOW", `key ${publicKey} on ${account} has allowance ${allowance} < ${min} yoctoNEAR: top it up before sending (the node would only say InvalidTransaction)`, {
+        allowance,
+        needed: min.toString(),
+      });
+    }
   }
 
   async probes(): Promise<Record<string, string> | null> {

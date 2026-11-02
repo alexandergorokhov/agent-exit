@@ -43,7 +43,8 @@
             "OFFLINE_NO_RECORDING",
             "NOT_BUILT",
             "NETWORK_REFUSED",
-            "RPC_ERROR"
+            "RPC_ERROR",
+            "ALLOWANCE_LOW"
           ]
         },
         "message": {

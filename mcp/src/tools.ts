@@ -87,6 +87,9 @@ export const UNTRUSTED_NOTICE =
 
 const MAX_UNTRUSTED = 200;
 
+/** Error codes whose message can carry text from an RPC node or the scanner's stderr: made safe like any chain text. */
+const CHAIN_TEXT_ERRORS = ["RPC_ERROR", "ALLOWANCE_LOW", "SCAN_UNAVAILABLE"];
+
 /** Chain-sourced text made safe to show a model: control, format (bidi,
  * zero-width) and unassigned characters become spaces, runs of space
  * collapse, and the text is cut to 200 characters. */
@@ -103,6 +106,11 @@ export function untrusted(s: string): string {
  * code and severity come from the scanner's fixed rule set. */
 function findings(r: Json): Json[] {
   return (r.findings as Json[]).map((f) => ({ code: f.code, severity: f.severity, untrusted_detail: untrusted(f.detail) }));
+}
+
+/** The environment of the scan child process: PATH only, never a key (L3). */
+export function scanEnv(): NodeJS.ProcessEnv {
+  return { PATH: process.env.PATH ?? "" };
 }
 
 // ------------------------------------------------------------------ money
@@ -154,7 +162,7 @@ export class Tools {
     } catch (e) {
       const err =
         e instanceof ToolError
-          ? { code: e.code, message: e.message, ...(e.details === undefined ? {} : { details: e.details }) }
+          ? { code: e.code, message: CHAIN_TEXT_ERRORS.includes(e.code) ? untrusted(e.message) : e.message, ...(e.details === undefined ? {} : { details: e.details }) }
           : { code: "BAD_INPUT", message: (e as Error).message };
       return { ok: false, body: { schema_version: "agent-exit.mcp.error.v1", ok: false, error: err, sent: false } };
     }
@@ -233,7 +241,8 @@ export class Tools {
     if (!this.cfg.scanBin) {
       throw new ToolError("SCAN_UNAVAILABLE", "scan binary not found: run `cargo build -p scan` (or set AGENT_EXIT_SCAN_BIN); buying is refused without a scan");
     }
-    const r = spawnSync(this.cfg.scanBin, ["-"], { input: JSON.stringify(input), encoding: "utf8" });
+    // L3: the scanner needs no secrets; give it PATH and nothing else.
+    const r = spawnSync(this.cfg.scanBin, ["-"], { input: JSON.stringify(input), encoding: "utf8", env: scanEnv() });
     if (r.status === null || ![0, 2, 3].includes(r.status)) {
       throw new ToolError("SCAN_UNAVAILABLE", `scan failed (exit ${r.status}): ${r.stderr}`);
     }
@@ -314,6 +323,7 @@ export class Tools {
     try {
       return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
     } catch (e) {
+      // buyReserved only throws before the transaction is sent; after it, it returns.
       this.spent -= price;
       throw e;
     }
@@ -329,8 +339,33 @@ export class Tools {
     }
     const { known_keys_hash } = r.buy_args;
     const listing_version: number = quoted.listing_version;
+    // On a real node an allowance failure shows only as InvalidTransaction({}):
+    // read the signing key first, and send nothing if it cannot pay for the call.
+    if (this.cfg.signerPk) await this.backend.assertAllowance(buyer, this.cfg.signerPk, this.cfg.minAllowance);
     const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash);
-    const after = await this.backend.agent(agent);
+    // From here the buy was SENT (L2): never release the reservation and never
+    // report sent: false. A failed read or check becomes post_read_error.
+    try {
+      const after = await this.backend.agent(agent);
+      const body = this.buyBody(agent, buyer, out, listing_version, known_keys_hash, t, after.status.owner);
+      if (!this.schemas.validateOutput.buy_agent(body)) throw new Error("buy_agent output does not match its schema");
+      return body;
+    } catch (e) {
+      return {
+        ...this.base("buy_agent"),
+        agent,
+        buyer,
+        price: usd(price),
+        owner_after: null,
+        session_spent: usd(this.spent),
+        recorded: Boolean(out.recorded),
+        sent: true,
+        post_read_error: untrusted(`the buy was sent, then: ${(e as Error).message}. Check the chain before retrying`),
+      };
+    }
+  }
+
+  private buyBody(agent: string, buyer: string, out: Json, listing_version: number, known_keys_hash: string, t: Json, owner_after: string): Json {
     const s = out.sale;
     return {
       ...this.base("buy_agent"),
@@ -353,7 +388,7 @@ export class Tools {
       terms_config: this.cfg.termsConfig,
       scan_verdict: "clean",
       key_batch: out.key_batch,
-      owner_after: after.status.owner,
+      owner_after,
       session_spent: usd(this.spent),
       recorded: out.recorded,
     };
@@ -387,11 +422,34 @@ export class Tools {
         checks.push({ id: `refused_${method}`, pass: result === "NotOwner", untrusted_detail: untrusted(`${method} by ${account}: ${result}`) });
       }
     }
+    // L4: on a real chain there are no recorded probes and no key owners, so
+    // the key list itself must prove the lockout, or the answer is inconclusive.
+    let inconclusive = false;
+    if (this.backend.network === "testnet" && !probes) {
+      const mine = this.cfg.runnerPk;
+      const pending = [...(v.status.incoming_keys ?? []), ...(v.status.retiring_keys ?? [])];
+      const knownList = [...known];
+      checks.push({
+        id: "onchain_keys_all_known",
+        pass: onChain.size > 0 && [...onChain].every((k) => known.has(k)),
+        untrusted_detail: untrusted(`${onChain.size} key(s) on the account, ${known.size} known to the contract`),
+      });
+      checks.push({
+        id: "known_keys_are_buyer_runner",
+        pass: mine !== null && knownList.length === 1 && knownList[0] === mine,
+        untrusted_detail: mine ? "the contract knows exactly the buyer's runner key" : "the buyer's runner key (AGENT_EXIT_RUNNER_PK) is not set: nothing to compare",
+      });
+      checks.push({ id: "no_pending_key_batch", pass: pending.length === 0, untrusted_detail: untrusted(`${pending.length} key(s) incoming or retiring`) });
+      // Cannot prove it: no buyer key to compare, or a key change is still in flight.
+      inconclusive = mine === null || pending.length > 0;
+    }
+    const locked = !inconclusive && checks.every((c) => c.pass);
     return {
       ...this.base("verify_lockout"),
       agent,
       account,
-      locked_out: checks.every((c) => c.pass),
+      locked_out: locked,
+      ...(inconclusive ? { inconclusive: true } : {}),
       checks,
       untrusted_notice: UNTRUSTED_NOTICE,
     };

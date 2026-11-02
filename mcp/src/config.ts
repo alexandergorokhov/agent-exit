@@ -26,6 +26,12 @@ export interface Config {
   expectedAdmin: string | null;
   expectedToken: string | null;
   scanBin: string | null;
+  /** Per-request RPC timeout in ms (L5). */
+  rpcTimeoutMs: number;
+  /** Public key of the key that signs the server's writes; when set, its allowance is checked before a send. */
+  signerPk: string | null;
+  /** Least function-call allowance (yoctoNEAR) the signer key needs before a send. */
+  minAllowance: bigint;
   /** Least earn-out terms buy_agent accepts (A32); a buy_agent call may only tighten them. */
   minTerms: { min_earnout_bps: number; max_floor_bps: number; min_window_secs: number };
   /** "prod" (published 30-day window) or "demo" (AGENT_EXIT_MIN_WINDOW_SECS shortened it). */
@@ -44,8 +50,8 @@ function repoRoot(): string {
   return resolve(here, "..", "..", "..");
 }
 
-function findScan(repo: string): string | null {
-  const env = process.env.AGENT_EXIT_SCAN_BIN;
+function findScan(repo: string, e: NodeJS.ProcessEnv): string | null {
+  const env = e.AGENT_EXIT_SCAN_BIN;
   if (env) return existsSync(env) ? env : null;
   for (const p of ["target/debug/scan", "target/release/scan"]) {
     const full = join(repo, p);
@@ -97,6 +103,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   for (const a of agents) {
     if (!a.endsWith(".testnet")) throw new ConfigError(`agent ${a} is not a .testnet account`);
   }
+  const accountId = env.AGENT_EXIT_ACCOUNT_ID?.trim() || null;
+  if (accountId && !accountId.endsWith(".testnet")) throw new ConfigError(`AGENT_EXIT_ACCOUNT_ID ${accountId} is not a .testnet account`);
+  const pkRe = /^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  const signerPk = env.AGENT_EXIT_SIGNER_PK?.trim() || null;
+  if (signerPk && !pkRe.test(signerPk)) throw new ConfigError("AGENT_EXIT_SIGNER_PK must be an ed25519 public key (ed25519:<base58>)");
+  const rpcTimeoutMs = Number(env.AGENT_EXIT_RPC_TIMEOUT_MS ?? "10000");
+  if (!Number.isInteger(rpcTimeoutMs) || rpcTimeoutMs < 1) throw new ConfigError("AGENT_EXIT_RPC_TIMEOUT_MS must be a whole number >= 1");
+  const minAllowanceRaw = env.AGENT_EXIT_MIN_ALLOWANCE ?? "10000000000000000000000"; // 0.01 NEAR
+  if (!/^[0-9]{1,30}$/.test(minAllowanceRaw)) throw new ConfigError("AGENT_EXIT_MIN_ALLOWANCE must be yoctoNEAR digits");
   const runnerPk = env.AGENT_EXIT_RUNNER_PK?.trim() || null;
   if (runnerPk && !/^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(runnerPk)) {
     throw new ConfigError("AGENT_EXIT_RUNNER_PK must be an ed25519 public key (ed25519:<base58>)");
@@ -110,7 +125,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     repo,
     worldPath: env.AGENT_EXIT_WORLD ?? join(repo, "fixtures", "mcp", "world.json"),
     allowWrite: env.AGENT_EXIT_ALLOW_WRITE === "1",
-    accountId: env.AGENT_EXIT_ACCOUNT_ID?.trim() || null,
+    accountId,
     hasPrivateKey: Boolean(env.AGENT_EXIT_PRIVATE_KEY),
     runnerPk,
     sessionCap: cap,
@@ -119,7 +134,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     expectedCodeHash: env.AGENT_EXIT_CODE_HASH ?? null,
     expectedAdmin: env.AGENT_EXIT_ADMIN ?? null,
     expectedToken: env.AGENT_EXIT_TOKEN ?? null,
-    scanBin: findScan(repo),
+    scanBin: findScan(repo, env),
+    rpcTimeoutMs,
+    signerPk,
+    minAllowance: BigInt(minAllowanceRaw),
     minTerms: { ...PUBLISHED_MIN_TERMS, min_window_secs: minWindow },
     termsConfig: minWindow >= PUBLISHED_MIN_TERMS.min_window_secs ? "prod" : "demo",
   };

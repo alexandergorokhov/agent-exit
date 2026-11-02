@@ -42,7 +42,7 @@ test("wasm export parser reads function exports", () => {
     0, 0x61, 0x73, 0x6d, 1, 0, 0, 0,
     1, 4, 1, 0x60, 0, 0,
     3, 2, 1, 0,
-    7, 0x13, 2, 10, ...Buffer.from("get_status"), 0, 0, 3, ...Buffer.from("pay"), 0, 0,
+    7, 0x14, 2, 10, ...Buffer.from("get_status"), 0, 0, 3, ...Buffer.from("pay"), 0, 0,
     10, 4, 1, 2, 0, 0x0b,
   ]);
   assert.deepEqual(wasmExports(m), ["get_status", "pay"]);

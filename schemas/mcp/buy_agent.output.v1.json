@@ -91,10 +91,12 @@
       }
     },
     "owner_after": {
-      "type": "string",
-      "minLength": 2,
-      "maxLength": 64,
-      "pattern": "^[a-z0-9._-]+$"
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "null only when post_read_error is set",
+      "maxLength": 64
     },
     "session_spent": {
       "type": "string",
@@ -137,6 +139,16 @@
         "demo"
       ],
       "description": "demo = the server accepts an earn-out window shorter than 30 days"
+    },
+    "sent": {
+      "type": "boolean",
+      "const": true,
+      "description": "present (true) only when the buy was sent but something after it failed (L2); the spend stays counted"
+    },
+    "post_read_error": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "the read or check that failed after a sent buy; check the chain before retrying"
     }
   },
   "required": [
@@ -144,19 +156,7 @@
     "network",
     "agent",
     "buyer",
-    "seller",
-    "sale_id",
     "price",
-    "paid_now",
-    "escrow",
-    "overpay_refund",
-    "listing_version",
-    "known_keys_hash",
-    "terms",
-    "terms_config",
-    "scan_verdict",
-    "key_batch",
-    "owner_after",
     "session_spent",
     "recorded"
   ],
