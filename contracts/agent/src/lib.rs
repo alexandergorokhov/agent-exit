@@ -45,6 +45,8 @@ use std::collections::{BTreeSet, HashMap};
 #[cfg(test)]
 mod base_tests;
 #[cfg(test)]
+mod fuzz_tests;
+#[cfg(test)]
 mod review2_regressions;
 #[cfg(test)]
 mod review3_regressions;

@@ -22,5 +22,6 @@ serde_json.workspace = true
 base-wallet = { path = "../../tools/base-wallet", optional = true }
 
 [dev-dependencies]
+proptest = "1"
 base-wallet = { path = "../../tools/base-wallet" }
 near-sdk = { workspace = true, features = ["unit-testing", "unstable"] }
