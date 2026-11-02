@@ -52,6 +52,8 @@ mod review2_regressions;
 #[cfg(test)]
 mod review3_regressions;
 #[cfg(test)]
+mod review4_regressions;
+#[cfg(test)]
 mod review_regressions;
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;
@@ -141,10 +143,25 @@ pub const NEAR_RESERVE: NearToken = NearToken::from_near(1);
 pub const SIG_ENTRY_BYTES: u128 = 200;
 /// Upper bound of one payer row: key (2 + 64) + value (75) + 40 (A47).
 pub const PAYER_ENTRY_BYTES: u128 = 200;
+/// Upper bound of a row's deposit record (who paid, when, how much):
+/// key (2 + 64) + value (4 + 64 + 8 + 16) + 40 (A50).
+pub const PAYER_RECORD_BYTES: u128 = 200;
+/// Upper bound of one of a payer's own signature slots: the slot (key
+/// 2 + 64 + 1, value 40) and its `expires` entry (key 34, value 8), each
+/// with the 40-byte overhead (A54).
+pub const PAYER_SIG_SLOT_BYTES: u128 = 250;
+/// Storage a registered payer may take: row, record and signature slots.
+pub const PAYER_BYTES: u128 =
+    PAYER_ENTRY_BYTES + PAYER_RECORD_BYTES + verified::PAYER_SIGS as u128 * PAYER_SIG_SLOT_BYTES;
 /// NEAR a payer row costs (`storage_deposit`, A49): its storage at 1e19
-/// yoctoNEAR per byte. Not refundable: the row stays for good.
+/// yoctoNEAR per byte. Refunded when an empty row is removed (A50).
 pub const PAYER_ROW_DEPOSIT: NearToken =
-    NearToken::from_yoctonear(PAYER_ENTRY_BYTES * 10_000_000_000_000_000_000);
+    NearToken::from_yoctonear(PAYER_BYTES * 10_000_000_000_000_000_000);
+/// A row with no payment this long after its deposit may be reclaimed by
+/// anyone; the deposit goes back to whoever paid it (A50).
+pub const EMPTY_ROW_TTL_NS: u64 = 30 * core::DAY_NS;
+/// Storage prefix of the deposit records.
+const DEPOSIT_PREFIX: &[u8] = b"rd";
 /// Upper bound of one day row and its list slot (A47).
 pub const DAY_ENTRY_BYTES: u128 = 200;
 /// Longest `ft_transfer_call` msg accepted (E10).
@@ -214,13 +231,14 @@ pub struct LimitsArgs {
     /// The only accounts the runner may pay.
     pub allowed_payees: Vec<AccountId>,
     pub split: Split,
-    /// Base Sepolia limits (feature 5); absent = the Base wallet pays nobody.
+    /// Base Sepolia limits (feature 5); absent = keep the current ones
+    /// (A52). `{"daily_cap": "0", "payees": []}` clears them.
     #[serde(default)]
     pub base: Option<BaseLimitsArgs>,
 }
 
 /// Base Sepolia limits inside `set_limits` (feature 5). Leaving `base` out
-/// sets the Base cap to 0 and the payees to none.
+/// keeps the current Base limits (A52); a 0 cap and no payees clears them.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, NearSchema)]
 #[serde(crate = "near_sdk::serde", deny_unknown_fields)]
 #[abi(json)]
@@ -281,7 +299,11 @@ pub struct AgentExit {
     /// sha256(r || s) of every signature that already verified a payment.
     /// One storage entry per signature, outside the state blob that every
     /// call reads and writes (A33).
-    used_sigs: verified::UsedSigs,
+    pub used_sigs: verified::UsedSigs,
+    /// NEAR held for payer rows: the sum of their deposits, refundable when
+    /// an empty row is removed and prepaying the payers' signature slots.
+    /// The owner cannot withdraw it (A50).
+    pub payer_deposits: u128,
 }
 
 fn emit(event: &str, data: Value) {
@@ -325,9 +347,12 @@ impl AgentExit {
     ///
     /// `base_address`: the agent's Chain Signatures Base address (derived
     /// from this account and path `wallet-1`; `tools/base-wallet derive`).
-    /// It cannot change later. Every MPC signature is checked against it, so
-    /// a wrong one only makes `pay_base` fail; the buyer's scan compares it
-    /// with its own derivation.
+    /// It cannot change later. The contract cannot derive it (the MPC public
+    /// key is not available on chain at init), so this is a free argument:
+    /// every MPC signature is checked against it, which makes `pay_base`
+    /// fail with a wrong one, and the buyer's scan derives the address from
+    /// the MPC public key and blocks a mismatch (`base_address_mismatch`,
+    /// A51). Nothing else ties it to the derivation.
     #[init]
     #[private]
     pub fn new(owner_id: AccountId, base_address: Option<String>) -> Self {
@@ -343,6 +368,7 @@ impl AgentExit {
             admin: REGISTRY_ADMIN.parse().expect("valid admin"),
             signers: BTreeSet::new(),
             used_sigs: verified::UsedSigs::new(b'u'),
+            payer_deposits: 0,
         }
     }
 
@@ -582,6 +608,8 @@ impl AgentExit {
         let now = env::block_timestamp();
         match parsed {
             Msg::Pay { job_id, nearai } => {
+                // A54: a registered payer's proofs use its own slots first.
+                let registered = !self.m.store_payer_missing(sender_id.as_str());
                 let check = nearai.as_ref().map(|p| {
                     verified::check(
                         p,
@@ -591,6 +619,7 @@ impl AgentExit {
                         job_id.as_deref(),
                         &self.signers,
                         &self.used_sigs,
+                        registered,
                         now / core::NANOS_PER_SEC,
                     )
                 });
@@ -617,8 +646,12 @@ impl AgentExit {
                             }),
                         ) = (verified, &check)
                         {
-                            self.used_sigs
-                                .insert(*sig_id, *expires, now / core::NANOS_PER_SEC);
+                            self.used_sigs.insert_for(
+                                registered.then_some(sender_id.as_str()),
+                                *sig_id,
+                                *expires,
+                                now / core::NANOS_PER_SEC,
+                            );
                         }
                         emit(
                             "payment",
@@ -867,13 +900,17 @@ impl AgentExit {
     pub fn set_limits(&mut self, limits: LimitsArgs) -> Value {
         near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
-        let base = limits.base.clone().map(Into::into).unwrap_or_default();
+        // A52: no `base` keeps the current Base limits; clearing them takes
+        // an explicit `{"daily_cap": "0", "payees": []}`.
+        let base: Option<core::base::BaseLimits> = limits.base.clone().map(Into::into);
         self.m
             .set_limits(caller.as_str(), limits.into())
             .unwrap_or_else(|e| fail(e));
-        self.m
-            .set_base_limits(caller.as_str(), base)
-            .unwrap_or_else(|e| fail(e));
+        if let Some(base) = base {
+            self.m
+                .set_base_limits(caller.as_str(), base)
+                .unwrap_or_else(|e| fail(e));
+        }
         let v = self.get_limits();
         emit("limits_set", v.clone());
         v
@@ -1148,8 +1185,9 @@ impl AgentExit {
     /// payer with its own row, for `PAYER_ROW_DEPOSIT` NEAR (A49). The row
     /// is what lets the agent's earnings count it as a distinct payer;
     /// payments without a row are pooled. Excess is refunded; an account
-    /// already registered gets the whole deposit back. Refused (deposit
-    /// refunded) when the table holds `MAX_PAYERS` rows.
+    /// already registered gets the whole deposit back. There is no cap on
+    /// rows (A50): each pays for its own storage. The deposit also pays for
+    /// the payer's own `PAYER_SIGS` verified-signature slots (A54).
     #[payable]
     pub fn storage_deposit(
         &mut self,
@@ -1165,8 +1203,17 @@ impl AgentExit {
                 env::panic_str("StorageDepositTooSmall");
             }
             if !self.m.register_payer(who.as_str()) {
-                env::panic_str("PayersFull");
+                env::panic_str("AlreadyRegistered");
             }
+            write_deposit(
+                &who,
+                &DepositRecord {
+                    depositor: env::predecessor_account_id().to_string(),
+                    at: env::block_timestamp(),
+                    amount: PAYER_ROW_DEPOSIT.as_yoctonear(),
+                },
+            );
+            self.payer_deposits += PAYER_ROW_DEPOSIT.as_yoctonear();
             emit(
                 "payer_registered",
                 json!({"account": who, "by": env::predecessor_account_id()}),
@@ -1185,6 +1232,76 @@ impl AgentExit {
 
     pub fn storage_balance_of(&self, account_id: AccountId) -> Option<Value> {
         (!self.m.store_payer_missing(account_id.as_str())).then(|| self.storage_balance())
+    }
+
+    /// NEP-145: remove the caller's own row, if it never had a payment, and
+    /// refund its deposit to the caller (A50). `false` if the caller has no
+    /// row. A row with payments is part of the earnings record and stays
+    /// (`PayerHasPayments`, also with `force`). Needs 1 yoctoNEAR.
+    #[payable]
+    pub fn storage_unregister(&mut self, force: Option<bool>) -> bool {
+        near_sdk::assert_one_yocto();
+        let _ = force;
+        let who = env::predecessor_account_id();
+        if self.m.store_payer_missing(who.as_str()) {
+            return false;
+        }
+        self.m
+            .unregister_payer(who.as_str())
+            .unwrap_or_else(|e| env::panic_str(e));
+        let rec = take_deposit(&who);
+        let held = rec.map_or(0, |r| r.amount);
+        self.payer_deposits -= held;
+        let amount = held + 1;
+        Promise::new(who.clone())
+            .transfer(NearToken::from_yoctonear(amount))
+            .detach();
+        emit(
+            "payer_unregistered",
+            json!({"account": who, "refund_to": who, "amount": amount.to_string()}),
+        );
+        true
+    }
+
+    /// NEP-145: nothing above the row's price is ever held, so there is
+    /// nothing to withdraw; returns the caller's balance. Needs 1 yoctoNEAR.
+    #[payable]
+    pub fn storage_withdraw(&mut self, amount: Option<NearToken>) -> Value {
+        near_sdk::assert_one_yocto();
+        let who = env::predecessor_account_id();
+        if self.m.store_payer_missing(who.as_str()) {
+            env::panic_str("NotRegistered");
+        }
+        if amount.is_some_and(|a| !a.is_zero()) {
+            env::panic_str("NothingToWithdraw");
+        }
+        self.storage_balance()
+    }
+
+    /// Anyone may remove a row that has had no payment for
+    /// `EMPTY_ROW_TTL_NS` after its deposit; the deposit goes back to whoever
+    /// paid it (A50). So rows registered for accounts that never pay do not
+    /// stay in the payer count for good.
+    pub fn reclaim_payer_row(&mut self, account_id: AccountId) -> Value {
+        let Some(rec) = read_deposit(&account_id) else {
+            env::panic_str("NotRegistered");
+        };
+        if env::block_timestamp() < rec.at.saturating_add(EMPTY_ROW_TTL_NS) {
+            env::panic_str("RowTooYoung");
+        }
+        self.m
+            .unregister_payer(account_id.as_str())
+            .unwrap_or_else(|e| env::panic_str(e));
+        take_deposit(&account_id);
+        self.payer_deposits -= rec.amount;
+        let to: AccountId = rec.depositor.parse().expect("stored account id");
+        Promise::new(to.clone())
+            .transfer(NearToken::from_yoctonear(rec.amount))
+            .detach();
+        let ev = json!({"account": account_id, "refund_to": to,
+                        "amount": rec.amount.to_string(), "reclaimed": true});
+        emit("payer_unregistered", ev.clone());
+        ev
     }
 
     pub fn storage_balance_bounds(&self) -> Value {
@@ -1247,6 +1364,8 @@ impl AgentExit {
             "open_sales": self.m.sales.len(),
             "closed_sales": self.m.closed_sales,
             "claimable_accounts": self.m.claimable_accounts,
+            "tracked_payers": self.m.meter.tracked_payers,
+            "empty_payer_rows": self.m.meter.empty_payers,
             "past_owners": self.m.past_owners,
             "paid_to_owner": self.m.paid_to_this_owner(),
             "incoming_keys": self.m.incoming,
@@ -1281,7 +1400,8 @@ impl AgentExit {
             "sig_entries": self.used_sigs.len(),
             "max_sig_entries": verified::MAX_SIGS,
             "payer_entries": self.m.meter.tracked_payers,
-            "max_payer_entries": core::meter::MAX_PAYERS,
+            "empty_payer_entries": self.m.meter.empty_payers,
+            "payer_deposits": self.payer_deposits.to_string(),
             "day_entries": self.m.meter.days_total(),
             "max_day_entries": core::meter::MAX_DAYS,
             "growth_reserve": growth.as_yoctonear().to_string(),
@@ -1304,10 +1424,14 @@ impl AgentExit {
 
     pub fn near_withdrawable(&self) -> NearToken {
         let storage = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
+        // Payer deposits are subtracted whole, although part of them is
+        // already in `storage`: conservative, so a refund or a payer's
+        // signature slots are always covered (A50).
         env::account_balance()
             .saturating_sub(storage)
             .saturating_sub(self.sig_growth())
             .saturating_sub(NEAR_RESERVE)
+            .saturating_sub(NearToken::from_yoctonear(self.payer_deposits))
     }
 
     // --------------------------------------------------------- NEP-171 deed
@@ -1795,4 +1919,37 @@ impl AgentExit {
             "window_end": U64(s.window_end), "finalized": s.finalized, "cut": s.cut,
         })
     }
+}
+
+// ------------------------------------------------ payer deposits (A50)
+
+/// Who paid for a payer row, when, and how much (refunded on removal).
+#[derive(near_sdk::borsh::BorshSerialize, near_sdk::borsh::BorshDeserialize)]
+#[borsh(crate = "near_sdk::borsh")]
+struct DepositRecord {
+    depositor: String,
+    at: u64,
+    amount: u128,
+}
+
+fn deposit_key(who: &AccountId) -> Vec<u8> {
+    [DEPOSIT_PREFIX, who.as_bytes()].concat()
+}
+
+fn write_deposit(who: &AccountId, r: &DepositRecord) {
+    env::storage_write(
+        &deposit_key(who),
+        &near_sdk::borsh::to_vec(r).expect("borsh"),
+    );
+}
+
+fn read_deposit(who: &AccountId) -> Option<DepositRecord> {
+    env::storage_read(&deposit_key(who))
+        .map(|b| near_sdk::borsh::from_slice(&b).expect("deposit record"))
+}
+
+fn take_deposit(who: &AccountId) -> Option<DepositRecord> {
+    let r = read_deposit(who);
+    env::storage_remove(&deposit_key(who));
+    r
 }

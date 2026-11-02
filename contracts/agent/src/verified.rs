@@ -21,6 +21,9 @@
 //!   most `MAX_SIGS` at a time, so the agent's storage for outsiders' proofs
 //!   is bounded (A46). A full window means NotVerified (`SigWindowFull`);
 //!   the payment still counts.
+//! - a payer with its own row (registered with a NEAR deposit) has its own
+//!   `PAYER_SIGS` slots, paid for by that deposit, used before the shared
+//!   window; filling the shared window cannot deny their badge (A54).
 //!
 //! A payment whose proof fails still counts (if not flagged); it is only not
 //! verified, with a reason (E11-E13, A13).
@@ -34,8 +37,10 @@ pub const MAX_REQUEST_LEN: usize = 3_072;
 pub const SIG_WINDOW_SECS: u64 = 7 * 86_400;
 /// How far ahead of the block a proof's `signed_at` may be.
 pub const SIG_SKEW_SECS: u64 = 3_600;
-/// Most signature ids kept at a time (A46).
+/// Most signature ids kept at a time in the shared window (A46).
 pub const MAX_SIGS: u32 = 512;
+/// A registered payer's own signature slots (A54).
+pub const PAYER_SIGS: u8 = 8;
 
 /// Used signature ids, each until its proof expires, in arrival order.
 /// Bounded: at most `MAX_SIGS` entries (A46).
@@ -49,6 +54,8 @@ pub struct UsedSigs {
     ring: near_sdk::store::LookupMap<u32, [u8; 32]>,
     head: u32,
     len: u32,
+    /// Registered payers' own slots: payer ++ slot -> (id, expires) (A54).
+    slots: near_sdk::store::LookupMap<Vec<u8>, ([u8; 32], u64)>,
 }
 
 impl UsedSigs {
@@ -58,7 +65,51 @@ impl UsedSigs {
             ring: near_sdk::store::LookupMap::new(vec![prefix, b'r']),
             head: 0,
             len: 0,
+            slots: near_sdk::store::LookupMap::new(vec![prefix, b's']),
         }
+    }
+
+    fn slot_key(payer: &str, i: u8) -> Vec<u8> {
+        let mut k = payer.as_bytes().to_vec();
+        k.push(i);
+        k
+    }
+
+    /// A free or expired slot of `payer`'s own (A54).
+    fn payer_slot(&self, payer: &str, now_s: u64) -> Option<u8> {
+        (0..PAYER_SIGS).find(|i| {
+            self.slots
+                .get(&Self::slot_key(payer, *i))
+                .is_none_or(|(_, e)| *e < now_s)
+        })
+    }
+
+    /// Room for one more id: in `payer`'s own slots (registered payers
+    /// only) or in the shared window.
+    pub fn has_room(&self, payer: Option<&str>, now_s: u64) -> bool {
+        payer.is_some_and(|p| self.payer_slot(p, now_s).is_some()) || !self.full(now_s)
+    }
+
+    /// Record `id` in `payer`'s own slots if it has a free one, else in the
+    /// shared window (call only after `check` said Verified).
+    pub fn insert_for(&mut self, payer: Option<&str>, id: [u8; 32], expires: u64, now_s: u64) {
+        if let Some((p, i)) = payer.and_then(|p| self.payer_slot(p, now_s).map(|i| (p, i))) {
+            let k = Self::slot_key(p, i);
+            if let Some((old, _)) = self.slots.get(&k).copied() {
+                // Expired: it can never verify again (A46).
+                self.expires.remove(&old);
+            }
+            self.slots.insert(k, (id, expires));
+            self.expires.insert(id, expires);
+            return;
+        }
+        self.insert(id, expires, now_s);
+    }
+
+    pub fn flush(&mut self) {
+        self.expires.flush();
+        self.ring.flush();
+        self.slots.flush();
     }
 
     pub fn len(&self) -> u32 {
@@ -196,6 +247,7 @@ pub fn check(
     job_id: Option<&str>,
     signers: &BTreeSet<String>,
     used: &UsedSigs,
+    payer_lane: bool,
     now_s: u64,
 ) -> Outcome {
     use Outcome::NotVerified as No;
@@ -255,7 +307,7 @@ pub fn check(
     if signed_at.saturating_add(SIG_WINDOW_SECS) < now_s {
         return No("SignatureExpired");
     }
-    if used.full(now_s) {
+    if !used.has_room(payer_lane.then_some(payer), now_s) {
         return No("SigWindowFull");
     }
     Outcome::Verified {

@@ -327,7 +327,12 @@ fn a46_near_storage_solvency_is_shown_and_kept() {
     let max = s.by(MALLORY).near_withdrawable();
     assert_eq!(
         max.as_yoctonear(),
-        s.balance.as_yoctonear() - staked - growth - NEAR_RESERVE.as_yoctonear()
+        s.balance.as_yoctonear()
+            - staked
+            - growth
+            - NEAR_RESERVE.as_yoctonear()
+            - s.c.payer_deposits,
+        "payer deposits stay too (A50)"
     );
     s.balance = NearToken::from_millinear(1_500);
     assert_eq!(s.by(MALLORY).get_status()["near_storage"]["solvent"], false);
@@ -354,9 +359,7 @@ fn a47_state_blob_is_flat_in_the_number_of_payers() {
     let rows_before = s.m().meter.tracked_payers;
     let pooled_before = s.m().meter.other.totals.payments;
     for i in 0..1_200 {
-        if s.m().meter.tracked_payers < 1_000 {
-            s.register(&long_payer(i));
-        }
+        s.register(&long_payer(i));
         assert_eq!(
             s.pay(&long_payer(i), 5 * USD),
             Some(0),
@@ -365,27 +368,25 @@ fn a47_state_blob_is_flat_in_the_number_of_payers() {
         );
     }
     let m = s.m();
-    assert_eq!(m.meter.tracked_payers, agent_core::meter::MAX_PAYERS as u64);
-    assert_eq!(
-        m.meter.other.totals.payments,
-        pooled_before + 1_200 - (1_000 - rows_before)
-    );
+    // No cap on rows (A50): every registered payer has its own row.
+    assert_eq!(m.meter.tracked_payers, rows_before + 1_200);
+    assert_eq!(m.meter.other.totals.payments, pooled_before);
     let after = s.c.state_bytes();
     // The aggregates are fixed width: same size (give or take an Option).
     assert!(after <= before + 16, "state blob {before} -> {after} bytes");
     assert!(after < 8_000, "{after}");
     // Every view and call still works and reads one blob plus a few rows.
     let st = s.by(MALLORY).get_status();
-    assert_eq!(st["near_storage"]["payer_entries"], 1_000);
+    assert_eq!(st["near_storage"]["payer_entries"], rows_before + 1_200);
     let e = s.c.get_earnings();
-    assert_eq!(e.tracked_payers, 1_000);
+    assert_eq!(e.tracked_payers, rows_before + 1_200);
     assert!(e.days.len() as u64 <= agent_core::meter::EARNINGS_DAYS);
     let row = s.c.get_payer(acc(&long_payer(7))).expect("own row");
     assert_eq!(row.totals.gross, 5 * USD);
-    assert!(
-        s.c.get_payer(acc(&long_payer(1_100))).is_none(),
-        "pooled into other"
-    );
+    let row =
+        s.c.get_payer(acc(&long_payer(1_100)))
+            .expect("own row, no cap (A50)");
+    assert_eq!(row.totals.gross, 5 * USD);
     assert_eq!(s.runner(key(BOB_RUNNER)).heartbeat()["ok"], true);
     let v = s.runner(key(BOB_RUNNER)).pay(acc(SUMMARIZER), U128(USD));
     assert_eq!(v["ok"], true);
@@ -422,8 +423,9 @@ fn a47_view_cost_is_flat() {
 
 /// A49: payments alone never add a payer row (test tokens are free); a
 /// row costs `PAYER_ROW_DEPOSIT` NEAR through `storage_deposit`. Too small a
-/// deposit and a full table are refused (the deposit goes back with the
-/// failed call); a second registration refunds the whole deposit.
+/// deposit is refused (the deposit goes back with the failed call); a
+/// second registration refunds the whole deposit. (There is no table cap
+/// any more, A50.)
 #[test]
 fn a49_payer_rows_cost_near() {
     let mut s = translator_world();
@@ -467,23 +469,10 @@ fn a49_payer_rows_cost_near() {
     s.pay(&long, 100 * USD);
     let grew = near_sdk::env::storage_usage() as u128 - before as u128;
     assert!(
-        grew > 0 && grew <= PAYER_ENTRY_BYTES,
-        "row grew {grew} bytes"
+        grew > 0 && grew <= PAYER_ENTRY_BYTES + PAYER_RECORD_BYTES,
+        "row and deposit record grew {grew} bytes"
     );
-    // Full table.
-    let rows = rows + 1;
-    for i in 0..(agent_core::meter::MAX_PAYERS as u64 - rows - 1) {
-        s.register(&format!("row-{i}.testnet"));
-    }
-    let mut c = s.call("late.testnet");
-    c.deposit = PAYER_ROW_DEPOSIT;
-    s.env(&c);
-    assert_eq!(
-        panic_text(|| {
-            s.c.storage_deposit(None, None);
-        }),
-        "PayersFull"
-    );
+    let _ = rows;
 }
 
 /// A47: day rows are capped at `MAX_DAYS`; the oldest are dropped and the

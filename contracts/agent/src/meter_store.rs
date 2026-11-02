@@ -58,6 +58,9 @@ impl Store for NearStore {
     fn put_payer(&mut self, account: &str, stats: &PayerStats) {
         write(&key(PAYER, account.as_bytes()), stats)
     }
+    fn remove_payer(&mut self, account: &str) {
+        env::storage_remove(&key(PAYER, account.as_bytes()));
+    }
     fn day(&self, day: u64) -> Option<DayStats> {
         read(&key(DAY, &day.to_be_bytes()))
     }

@@ -101,7 +101,12 @@
     "admin": "admin.testnet",
     "token": "xusd.testnet",
     "paid_to_total": 0,
-    "near_storage_solvent": true
+    "near_storage_solvent": true,
+    "base_wallet": {
+      "address": "0x55b2ec96f576ade978fd52371c5ca09778f206e5",
+      "path": "wallet-1",
+      "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
+    }
   },
   "_note": "Example: the backdoored `cheat` agent of the fixed world, with one extra full-access key.",
   "listing": {

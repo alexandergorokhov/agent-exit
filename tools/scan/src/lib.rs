@@ -26,58 +26,61 @@ pub const RUNNER_METHODS: [&str; 4] = ["heartbeat", "accept_job", "pay", "pay_ba
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
-pub const PUBLISHED_METHODS: [&str; 51] = [
-    "new",
+pub const PUBLISHED_METHODS: [&str; 54] = [
     "add_signer",
-    "remove_signer",
-    "get_signers",
-    "set_runner_key",
-    "on_runner_key",
-    "on_keys_deleted",
-    "recover_keys",
-    "recover_sale",
-    "list_for_sale",
     "cancel_listing",
-    "ft_on_transfer",
-    "on_handover",
-    "on_transfer_out",
     "claim",
-    "withdraw",
-    "withdraw_near",
     "finalize_earnout",
-    "set_limits",
-    "pay",
-    "pay_base",
-    "on_base_signed",
-    "heartbeat",
+    "ft_on_transfer",
     "get_base_wallet",
-    "get_limits",
+    "get_claimable",
     "get_earnings",
     "get_earnings_days",
+    "get_limits",
+    "get_listing",
     "get_payer",
-    "storage_deposit",
-    "storage_balance_of",
-    "storage_balance_bounds",
+    "get_sales",
+    "get_signers",
+    "get_status",
+    "heartbeat",
     "known_keys",
     "known_keys_hash",
-    "get_listing",
-    "get_sales",
-    "get_claimable",
-    "get_status",
+    "list_for_sale",
     "near_withdrawable",
-    "nft_metadata",
-    "nft_token",
-    "nft_total_supply",
-    "nft_tokens",
-    "nft_supply_for_owner",
-    "nft_tokens_for_owner",
-    "nft_transfer",
-    "nft_transfer_call",
-    "nft_resolve_transfer",
+    "new",
     "nft_approve",
+    "nft_is_approved",
+    "nft_metadata",
+    "nft_resolve_transfer",
     "nft_revoke",
     "nft_revoke_all",
-    "nft_is_approved",
+    "nft_supply_for_owner",
+    "nft_token",
+    "nft_tokens",
+    "nft_tokens_for_owner",
+    "nft_total_supply",
+    "nft_transfer",
+    "nft_transfer_call",
+    "on_base_signed",
+    "on_handover",
+    "on_keys_deleted",
+    "on_runner_key",
+    "on_transfer_out",
+    "pay",
+    "pay_base",
+    "reclaim_payer_row",
+    "recover_keys",
+    "recover_sale",
+    "remove_signer",
+    "set_limits",
+    "set_runner_key",
+    "storage_balance_bounds",
+    "storage_balance_of",
+    "storage_deposit",
+    "storage_unregister",
+    "storage_withdraw",
+    "withdraw",
+    "withdraw_near",
 ];
 
 /// Registry admin and payment token of the published release (A26). The
@@ -234,6 +237,37 @@ pub struct ContractView {
     /// cannot check = block (A46).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub near_storage_solvent: Option<bool>,
+    /// `get_base_wallet` plus the MPC signer's root key, read by the buyer
+    /// (A51). Missing = cannot check = block.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_wallet: Option<BaseWalletView>,
+}
+
+/// The agent's Base wallet as the contract reports it, and the MPC root key
+/// the buyer read from the signer contract (`v1.signer-prod.testnet`
+/// `public_key`), not from the agent (A51).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BaseWalletView {
+    /// `get_base_wallet.address`; `None` = the agent has no Base wallet.
+    pub address: Option<String>,
+    /// `get_base_wallet.path`.
+    pub path: String,
+    /// `secp256k1:<base58>`; read by the scanner from the MPC contract.
+    pub mpc_public_key: Option<String>,
+}
+
+/// The derivation path of the agent's Base wallet (feature 5).
+pub const BASE_PATH: &str = agent_core::base::BASE_PATH;
+
+/// The Base address the MPC signer controls for (`agent`, `path`) under
+/// `mpc_public_key`, or why it cannot be derived.
+pub fn derive_base_address(
+    mpc_public_key: &str,
+    agent: &str,
+    path: &str,
+) -> Result<String, String> {
+    let root = base_wallet::parse_near_secp_pk(mpc_public_key)?;
+    Ok(base_wallet::derive_address(&root, agent, path))
 }
 
 /// Payout destinations the agent tracks across all owners, and the quota
@@ -461,6 +495,45 @@ pub fn scan(i: &ScanInput) -> Report {
                 None => "near_storage.solvent not shown".into(),
             },
         ));
+    }
+
+    // A51: the Base address is an init argument, so the code hash does not
+    // cover it. Derive it from the MPC root key and compare: a seller could
+    // deploy the published wasm with an address they control.
+    match &i.contract.base_wallet {
+        None => f.push(block(
+            "base_wallet_unchecked",
+            "get_base_wallet not read".into(),
+        )),
+        Some(BaseWalletView { address: None, .. }) => {}
+        Some(BaseWalletView {
+            address: Some(addr),
+            path,
+            mpc_public_key,
+        }) => {
+            if path != BASE_PATH {
+                f.push(block(
+                    "base_address_mismatch",
+                    format!("Base wallet path {path}, expected {BASE_PATH}"),
+                ));
+            } else {
+                match mpc_public_key
+                    .as_deref()
+                    .ok_or_else(|| "MPC public key not read".to_string())
+                    .and_then(|pk| derive_base_address(pk, &i.agent, path))
+                {
+                    Err(e) => f.push(block("base_wallet_unchecked", e)),
+                    Ok(want) if want.eq_ignore_ascii_case(addr) => {}
+                    Ok(want) => f.push(block(
+                        "base_address_mismatch",
+                        format!(
+                            "get_base_wallet.address {addr} is not the MPC address {want} of ({}, {path})",
+                            i.agent
+                        ),
+                    )),
+                }
+            }
+        }
     }
 
     // Contract state.

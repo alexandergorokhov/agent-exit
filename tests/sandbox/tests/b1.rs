@@ -373,7 +373,7 @@ async fn one_payer(
     assert_eq!(id.as_str().len(), 64, "{id}");
     let sk = generate_secret_key().unwrap();
     Account::create_account(id.clone())
-        .fund_myself(batcher, NearToken::from_millinear(50))
+        .fund_myself(batcher, NearToken::from_millinear(80))
         .with_public_key(sk.public_key())
         .with_signer(batcher_signer)
         .send_to(&net)
@@ -381,12 +381,13 @@ async fn one_payer(
         .map_err(|e| format!("create {id}: {e:?}"))?
         .assert_success();
     let signer = Signer::from_secret_key(sk).unwrap();
-    // A49: a payer row costs NEAR (0.002, `PAYER_ROW_DEPOSIT`).
+    // A49/A54: a payer row costs NEAR (0.024, `PAYER_ROW_DEPOSIT`: the row,
+    // its deposit record and the payer's own signature slots).
     Contract(agent.clone())
         .call_function("storage_deposit", json!({}))
         .transaction()
         .gas(NearGas::from_tgas(30))
-        .deposit(NearToken::from_millinear(2))
+        .deposit(NearToken::from_millinear(24))
         .with_signer(id.clone(), signer.clone())
         .send_to(&net)
         .await

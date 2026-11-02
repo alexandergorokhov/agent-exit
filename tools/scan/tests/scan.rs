@@ -144,6 +144,26 @@ fn each_rule_blocks_alone() {
         ("listing_version_mismatch", |i| {
             i.listing.as_mut().unwrap().listing_version = 2
         }),
+        // A51: the Base address is not the MPC derivation of the agent.
+        ("base_address_mismatch", |i| {
+            i.contract.base_wallet.as_mut().unwrap().address =
+                Some("0x00000000000000000000000000000000000000ee".into())
+        }),
+        ("base_address_mismatch", |i| {
+            i.contract.base_wallet.as_mut().unwrap().path = "wallet-2".into()
+        }),
+        ("base_address_mismatch", |i| {
+            // Right address for another agent.
+            let other = test_mpc().derive_address("other.testnet", BASE_PATH);
+            i.contract.base_wallet.as_mut().unwrap().address = Some(other)
+        }),
+        ("base_wallet_unchecked", |i| i.contract.base_wallet = None),
+        ("base_wallet_unchecked", |i| {
+            i.contract.base_wallet.as_mut().unwrap().mpc_public_key = None
+        }),
+        ("base_wallet_unchecked", |i| {
+            i.contract.base_wallet.as_mut().unwrap().mpc_public_key = Some("secp256k1:xyz".into())
+        }),
     ];
     for (code, m) in cases {
         let mut i = judge();
@@ -276,4 +296,23 @@ fn a26_published_admin_and_token_match_the_contract() {
     let src = std::fs::read_to_string(root().join("contracts/agent/src/lib.rs")).unwrap();
     assert!(src.contains(&format!("None => \"{PUBLISHED_ADMIN}\"")));
     assert!(src.contains(&format!("None => \"{PUBLISHED_TOKEN}\"")));
+}
+
+/// A51: the judge fixture's Base address is the MPC derivation (checksum
+/// case does not matter); an agent without a Base wallet is not blocked.
+#[test]
+fn a51_base_address_is_derived_from_the_mpc_key() {
+    let i = judge();
+    let w = i.contract.base_wallet.clone().unwrap();
+    assert_eq!(
+        derive_base_address(w.mpc_public_key.as_deref().unwrap(), &i.agent, BASE_PATH).unwrap(),
+        w.address.clone().unwrap()
+    );
+    let mut up = judge();
+    up.contract.base_wallet.as_mut().unwrap().address =
+        Some(w.address.unwrap().to_uppercase().replacen("0X", "0x", 1));
+    assert_eq!(scan(&up).verdict, "clean");
+    let mut none = judge();
+    none.contract.base_wallet.as_mut().unwrap().address = None;
+    assert_eq!(scan(&none).verdict, "clean");
 }

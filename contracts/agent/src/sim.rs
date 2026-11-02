@@ -310,6 +310,7 @@ fn unsafe_placeholder() -> AgentExit {
         admin: acc(TOKEN),
         signers: Default::default(),
         used_sigs: crate::verified::UsedSigs::new(b'p'),
+        payer_deposits: 0,
     }
 }
 

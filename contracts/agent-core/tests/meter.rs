@@ -21,20 +21,37 @@ fn fresh_payers_are_reported_but_still_counted() {
 }
 
 #[test]
-fn e16_payer_cap_pools_into_other() {
+fn e16_unregistered_payers_pool_into_other() {
+    // A50: no cap on rows; payers without a row are pooled.
     let mut m = Machine::new("translator", "alice");
-    for i in 0..meter::MAX_PAYERS {
+    for i in 0..1_200 {
         assert!(m.register_payer(&format!("payer{i}.testnet")));
         m.pay(&format!("payer{i}.testnet"), USD, false, T0);
     }
-    assert!(!m.register_payer("payer-1001.testnet"), "table full");
+    assert!(!m.register_payer("payer0.testnet"), "already registered");
     let before = m.store.payers.len();
-    m.pay("payer-1001.testnet", USD, false, T0);
+    m.pay("payer-x.testnet", USD, false, T0);
     assert_eq!(m.store.payers.len(), before);
     assert_eq!(m.meter.other.totals.gross, USD);
-    // Known payers still get their own row.
     m.pay("payer0.testnet", USD, false, T0);
     assert_eq!(m.store.payers["payer0.testnet"].totals.payments, 2);
+    assert_eq!(m.meter.tracked_payers, 1_200);
+    assert_eq!(m.meter.empty_payers, 0);
+}
+
+#[test]
+fn a50_only_empty_rows_unregister() {
+    let mut m = Machine::new("translator", "alice");
+    assert!(m.register_payer("a.testnet"));
+    assert!(m.register_payer("b.testnet"));
+    assert_eq!(m.meter.empty_payers, 2);
+    m.pay("b.testnet", USD, false, T0);
+    assert_eq!(m.meter.empty_payers, 1);
+    assert_eq!(m.unregister_payer("b.testnet"), Err("PayerHasPayments"));
+    assert_eq!(m.unregister_payer("c.testnet"), Err("NotRegistered"));
+    assert_eq!(m.unregister_payer("a.testnet"), Ok(()));
+    assert_eq!((m.meter.tracked_payers, m.meter.empty_payers), (1, 0));
+    assert!(!m.store.payers.contains_key("a.testnet"));
 }
 
 #[test]

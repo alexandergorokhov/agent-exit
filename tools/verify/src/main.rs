@@ -962,11 +962,10 @@ fn run() -> Value {
     // A47: outsiders cannot grow the state blob.
     let mut s = translator_world();
     let before = s.c.state_bytes();
+    let rows_before = s.m().meter.tracked_payers;
     for i in 0..1_000 {
         let p = format!("{i:0>56}.testnet");
-        if s.m().meter.tracked_payers < 1_000 {
-            s.register(&p);
-        }
+        s.register(&p);
         s.pay(&p, USD);
     }
     let after = s.c.state_bytes();
@@ -974,7 +973,7 @@ fn run() -> Value {
     r.check(
         "A47",
         "1,000 distinct 64-character payers do not grow the state blob (payer, day, payout-destination, claimable, past-owner and sale-history rows are separate storage entries), so loading the contract costs the same; every view still answers",
-        after <= before + 16 && st["near_storage"]["payer_entries"] == 1_000,
+        after <= before + 16 && st["near_storage"]["payer_entries"] == rows_before + 1_000,
         json!({"state_blob_bytes_before": before, "state_blob_bytes_after": after, "payer_entries": st["near_storage"]["payer_entries"]}),
     );
 
@@ -1048,6 +1047,100 @@ fn run() -> Value {
             && st["near_storage"]["solvent"] == true
             && st["near_storage"]["max_sig_entries"] == 512,
         json!({"old_or_future_proof": notes, "near_storage_solvent": st["near_storage"]["solvent"]}),
+    );
+
+    // Review 4 (A50, A52-A54; A51 is a scan rule, in `make attack`).
+    let mut s = translator_world();
+    let rows = s.m().meter.tracked_payers;
+    for i in 0..1_000 {
+        let mut cl = s.call(MALLORY);
+        cl.deposit = agent_exit::PAYER_ROW_DEPOSIT;
+        s.env(&cl);
+        s.c.storage_deposit(Some(acc(&format!("g{i}.testnet"))), None);
+    }
+    s.register("real-customer.testnet");
+    let counted = s.m().meter.counted_payers;
+    s.pay("real-customer.testnet", 50 * USD);
+    let real_counted = s.m().meter.counted_payers == counted + 1;
+    let mut cl = s.call("g0.testnet");
+    cl.deposit = NearToken::from_yoctonear(1);
+    s.env(&cl);
+    let unregistered = s.c.storage_unregister(None);
+    s.advance(agent_exit::EMPTY_ROW_TTL_NS);
+    s.env(&s.call(CAROL));
+    let reclaimed = s.c.reclaim_payer_row(acc("g1.testnet"))["refund_to"] == MALLORY;
+    let empty = s.by(MALLORY).get_status()["empty_payer_rows"].clone();
+    r.check(
+        "A50",
+        "an outsider registering 1,000 third-party payer rows does not stop a real customer getting a row and being counted (no cap: each row is paid by its depositor); an empty row can be removed by its account (storage_unregister) or, after 30 days, by anyone, refunding its depositor",
+        real_counted
+            && unregistered
+            && reclaimed
+            && s.m().meter.tracked_payers == rows + 1_001 - 2,
+        json!({"third_party_rows": 1_000, "real_customer_counted": real_counted, "empty_payer_rows": empty}),
+    );
+
+    let mut s = sold_translator();
+    let mut l = demo_limits();
+    l.base = Some(agent_exit::BaseLimitsArgs {
+        daily_cap: U128(5_000_000),
+        payees: vec!["0x00000000000000000000000000000000000000a1".into()],
+    });
+    s.by_1y(BOB).set_limits(l);
+    s.by_1y(BOB).set_limits(demo_limits());
+    let kept = s.m().base.limits.payees.len() == 1 && s.m().base.limits.daily_cap == 5_000_000;
+    r.check(
+        "A52",
+        "set_limits without base keeps the Base limits; clearing them takes an explicit empty value",
+        kept,
+        json!({"base_kept": kept}),
+    );
+
+    let mut s = sold_translator();
+    let b0 = s.c.state_bytes();
+    let mut owner = BOB.to_string();
+    for i in 0..300 {
+        let next = format!("alt{i}.testnet");
+        s.pay(&format!("cust{i}.testnet"), USD);
+        let free = s.m().owner_free;
+        if free > 0 {
+            s.by_1y(&owner)
+                .withdraw(U128(free), Some(acc(&format!("dest{i}.testnet"))))
+                .detach();
+        }
+        s.by_1y(&owner)
+            .nft_transfer(acc(&next), DEED_ID.into(), None, None);
+        let keys: Vec<String> = s.m().retiring.iter().cloned().collect();
+        s.callback(true).on_keys_deleted(keys);
+        owner = next;
+    }
+    let b1 = s.c.state_bytes();
+    r.check(
+        "A53",
+        "300 deed moves, each with a payout to a new destination, leave the state blob the same size (payout destinations are counters plus a pruned-prefix watermark)",
+        b1 <= b0 + 16 && s.m().paid_to_total() >= 300,
+        json!({"state_blob_bytes_before": b0, "state_blob_bytes_after": b1}),
+    );
+
+    let mut s = Sim::new(AGENT, ALICE);
+    s.now = T0 + hour;
+    let now_s = s.now / agent_core::NANOS_PER_SEC;
+    s.env(&s.call(AGENT));
+    for i in 0..agent_exit::verified::MAX_SIGS {
+        let mut id = [0xffu8; 32];
+        id[..4].copy_from_slice(&i.to_le_bytes());
+        s.c.used_sigs.insert(id, now_s + 60, now_s);
+    }
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+    let shared = events("payment")[0]["verify"].clone();
+    s.register(PAYERS[0]);
+    s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
+    let own = events("payment")[0]["verify"].clone();
+    r.check(
+        "A54",
+        "outsiders filling the shared 512-signature window do not deny a registered payer's NEAR Verified badge: it has 8 slots of its own, paid by its row deposit",
+        shared == "SigWindowFull" && own.as_str().is_some_and(|v| v.starts_with("ok:")),
+        json!({"unregistered": shared, "registered": own}),
     );
 
     let mut s = listed_translator();

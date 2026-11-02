@@ -863,6 +863,8 @@
           "open_sales": 1,
           "closed_sales": 0,
           "claimable_accounts": 1,
+          "tracked_payers": 6,
+          "empty_payer_rows": 0,
           "past_owners": 1,
           "paid_to_owner": 0,
           "incoming_keys": [],
@@ -879,16 +881,17 @@
           "claimable_total": "500000000",
           "solvent": true,
           "near_storage": {
-            "usage_bytes": 2016,
-            "staked": "20160000000000000000000",
+            "usage_bytes": 2556,
+            "staked": "25560000000000000000000",
             "balance": "10000000000000000000000000",
-            "sig_entries": 10,
+            "sig_entries": 0,
             "max_sig_entries": 512,
             "payer_entries": 6,
-            "max_payer_entries": 1000,
+            "empty_payer_entries": 0,
+            "payer_deposits": "144000000000000000000000",
             "day_entries": 6,
             "max_day_entries": 400,
-            "growth_reserve": "1792000000000000000000000",
+            "growth_reserve": "1812000000000000000000000",
             "solvent": true
           }
         }

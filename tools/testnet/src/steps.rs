@@ -429,8 +429,9 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         .view(&c.id("translator"), "get_earnings", json!({}))
         .await?;
     if e["gross"].as_u64().unwrap_or(0) < (500 * USD) as u64 {
-        // A49: each customer pays 0.002 NEAR for its own payer row, so the
-        // earnings count it as a distinct payer.
+        // A49: each customer pays 0.024 NEAR for its own payer row (row,
+        // deposit record, own signature slots), so the earnings count it as
+        // a distinct payer.
         for p in ["p1", "p2", "p3", "p4", "p5", "p6"] {
             let who = c.acct(p)?;
             let t = c
@@ -440,7 +441,7 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
                     c.id("translator").as_str(),
                     "storage_deposit",
                     json!({}),
-                    2_000_000_000_000_000_000_000,
+                    24_000_000_000_000_000_000_000,
                     30,
                 )
                 .await;
@@ -988,6 +989,8 @@ async fn scan_agent(
     let keys2 = c.keys_on(&c.net2, id).await?;
     let st = c.view(id, "get_status", json!({})).await?;
     let w = c.view(id, "get_base_wallet", json!({})).await?;
+    // A51: the MPC root key from the signer itself, not from the agent.
+    let mpc_pk = c.view(MPC_SIGNER, "public_key", json!({})).await?;
     let listing = c.view(id, "get_listing", json!({})).await?;
     let expected_hash = sha256_b58(&wasm("AGENT_WASM", "agent_exit.wasm")?);
     let version = quoted_version.unwrap_or(st["listing_version"].as_u64().unwrap_or(0));
@@ -1007,6 +1010,7 @@ async fn scan_agent(
             "frozen": st["frozen"], "admin": st["admin"], "token": st["token"],
             "paid_to_total": st["paid_to_total"],
             "near_storage_solvent": st["near_storage"]["solvent"],
+            "base_wallet": {"address": w["address"], "path": w["path"], "mpc_public_key": mpc_pk},
         },
         "listing": if listing.is_null() { Value::Null } else {
             json!({"listing_version": listing["listing_version"], "price": listing["price"], "terms": listing["terms"]})

@@ -58,6 +58,7 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
     let agent = s.agent.clone();
     let st = s.by(MALLORY).get_status();
     let l = s.by(MALLORY).get_listing();
+    let bw = s.by(MALLORY).get_base_wallet();
     let mut keys: Vec<Value> = s.c.known_keys().iter().map(|k| fc_key(&agent, k)).collect();
     if let Some(k) = hidden_full {
         keys.push(json!({"public_key": k, "permission": "FullAccess"}));
@@ -83,6 +84,12 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
             "admin": st["admin"], "token": st["token"],
             "paid_to_total": st["paid_to_total"],
             "near_storage_solvent": st["near_storage"]["solvent"],
+            // A51: the wallet as the agent reports it, and the TEST MPC
+            // signer's root key (the buyer reads it from the signer).
+            "base_wallet": {
+                "address": bw["address"], "path": bw["path"],
+                "mpc_public_key": base_wallet::near_secp_pk(&base_wallet::MockMpc::default().public_key()),
+            },
         },
         "listing": l.map(|l| json!({
             "listing_version": l["listing_version"], "price": l["price"], "terms": l["terms"],

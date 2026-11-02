@@ -2108,6 +2108,7 @@ name = "scan"
 version = "0.1.0"
 dependencies = [
  "agent-core",
+ "base-wallet",
  "bs58 0.5.1",
  "serde",
  "serde_json",

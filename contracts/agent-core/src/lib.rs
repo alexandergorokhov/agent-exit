@@ -249,6 +249,11 @@ pub struct Sale {
     pub finalized: bool,
     /// Set when a backdoor was proven (A23): the rest went back to the buyer.
     pub cut: bool,
+    /// Payout destinations ever recorded up to the end of `seller_epoch`
+    /// (`Machine::paid_to_ever` at the sale). Pruning up to this sale's
+    /// era drops exactly that many (A53).
+    #[serde(default)]
+    pub paid_to_cum: u64,
 }
 
 impl Sale {
@@ -363,6 +368,8 @@ pub struct Machine<S = MemStore> {
     pub closed_sales: u64,
     /// Highest seller epoch of a finalized sale (paid_to pruning, A45).
     pub closed_max_epoch: Option<u64>,
+    /// `paid_to_cum` of that sale (A53).
+    pub closed_max_cum: u64,
     pub next_sale_id: u64,
     /// Sum of the claimable balances (each in `store`).
     pub claimable_sum: Amount,
@@ -373,12 +380,15 @@ pub struct Machine<S = MemStore> {
     /// Tokens the contract believes it holds (excludes transfers in flight).
     pub held: Amount,
     /// Accounts the agent sent tokens to (for the `round_trip` flag), with
-    /// the owner epoch of the first send. Bounded (A30).
-    /// Entries live in `store`; here only their count per owner epoch.
-    pub paid_to_by_epoch: BTreeMap<u64, u64>,
-    /// Epochs whose entries were pruned (A45); a stored entry with one of
-    /// these epochs counts as absent.
-    pub paid_to_dead: BTreeSet<u64>,
+    /// the owner epoch of the first send. Bounded (A30). Entries live in
+    /// `store`; here only counters, so the blob does not grow with owner
+    /// epochs (A53): entries ever recorded, entries of the current epoch,
+    /// and the pruned prefix (epochs `<= paid_to_dead_upto`, A45) with its
+    /// entry count. A stored entry of a pruned epoch counts as absent.
+    pub paid_to_ever: u64,
+    pub paid_to_this_epoch: u64,
+    pub paid_to_dead_upto: u64,
+    pub paid_to_dead_count: u64,
     /// Latest `valid_before` of any Base authorization the agent signed or
     /// asked the MPC signer to sign (feature 5); list and buy are refused
     /// until it passes (A9).
@@ -471,13 +481,16 @@ impl<S: Store + Default> Machine<S> {
             sales: Vec::new(),
             closed_sales: 0,
             closed_max_epoch: None,
+            closed_max_cum: 0,
             next_sale_id: 1,
             claimable_sum: 0,
             claimable_accounts: 0,
             owner_free: 0,
             held: 0,
-            paid_to_by_epoch: BTreeMap::new(),
-            paid_to_dead: BTreeSet::new(),
+            paid_to_ever: 0,
+            paid_to_this_epoch: 0,
+            paid_to_dead_upto: 0,
+            paid_to_dead_count: 0,
             open_auth_until: 0,
             base: base::BaseWallet::default(),
             limits: Limits::default(),
@@ -535,9 +548,14 @@ impl<S: Store + Default> Machine<S> {
     }
 
     /// Give `payer` its own payer row (A49): the contract takes a NEAR
-    /// storage deposit for it first. `false` if already registered or full.
+    /// storage deposit for it first. `false` if already registered.
     pub fn register_payer(&mut self, payer: &str) -> bool {
         self.meter.register(&mut self.store, payer)
+    }
+
+    /// Remove `payer`'s row if it never had a payment (A50).
+    pub fn unregister_payer(&mut self, payer: &str) -> Result<(), &'static str> {
+        self.meter.unregister(&mut self.store, payer)
     }
 
     /// `who`'s claimable balance.
@@ -573,10 +591,10 @@ impl<S: Store + Default> Machine<S> {
         self.sales = open;
         for s in done {
             self.closed_sales += 1;
-            self.closed_max_epoch = Some(
-                self.closed_max_epoch
-                    .map_or(s.seller_epoch, |m| m.max(s.seller_epoch)),
-            );
+            if self.closed_max_epoch.is_none_or(|m| s.seller_epoch > m) {
+                self.closed_max_epoch = Some(s.seller_epoch);
+                self.closed_max_cum = s.paid_to_cum;
+            }
             self.store.put_sale(&s);
         }
     }
@@ -596,12 +614,12 @@ impl<S: Store + Default> Machine<S> {
     pub fn paid_to_epoch(&self, to: &str) -> Option<u64> {
         self.store
             .paid_to(to)
-            .filter(|e| !self.paid_to_dead.contains(e))
+            .filter(|e| *e > self.paid_to_dead_upto)
     }
 
     /// Payout destinations tracked (all owners, pruned ones excluded).
     pub fn paid_to_total(&self) -> u64 {
-        self.paid_to_by_epoch.values().sum()
+        self.paid_to_ever - self.paid_to_dead_count
     }
 
     // ----- keys -------------------------------------------------------------
@@ -982,6 +1000,7 @@ impl<S: Store + Default> Machine<S> {
         self.add_past_owner(&seller);
         self.owner = p.buyer.clone();
         self.owner_epoch += 1;
+        self.paid_to_this_epoch = 0;
         self.approvals.clear();
         self.listing = None;
         self.listing_version += 1;
@@ -1005,6 +1024,7 @@ impl<S: Store + Default> Machine<S> {
             window_end: now + l.terms.window_secs * NANOS_PER_SEC,
             finalized: false,
             cut: false,
+            paid_to_cum: self.paid_to_ever,
         };
         self.sales.push(sale.clone());
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
@@ -1095,16 +1115,14 @@ impl<S: Store + Default> Machine<S> {
         }
         // A stored entry of a pruned epoch is overwritten.
         self.store.put_paid_to(to, self.owner_epoch);
-        *self.paid_to_by_epoch.entry(self.owner_epoch).or_default() += 1;
+        self.paid_to_ever += 1;
+        self.paid_to_this_epoch += 1;
         Ok(())
     }
 
     /// Payout destinations the current owner added (A36).
     pub fn paid_to_this_owner(&self) -> usize {
-        self.paid_to_by_epoch
-            .get(&self.owner_epoch)
-            .copied()
-            .unwrap_or(0) as usize
+        self.paid_to_this_epoch as usize
     }
 
     /// Does a payment by `payer` release from `sale`'s earn-out? Not if it is
@@ -1268,30 +1286,24 @@ impl<S: Store + Default> Machine<S> {
 
     /// Drop payout destinations no earn-out can still ask about (A45). An
     /// entry of epoch `e` matters only to an open sale whose seller epoch is
-    /// `>= e` (`releases_for`). It is dropped once a finalized sale closed
-    /// its era (`seller_epoch >= e`) and no open sale reaches back to it.
-    /// Entries of owners not yet separated by a real sale stay, so moving
-    /// the deed between one's own accounts never clears the table.
+    /// `>= e` (`releases_for`). Once no sale is open, every entry up to the
+    /// newest finalized sale's era is dropped. Entries of owners not yet
+    /// separated by a real sale stay, so moving the deed between one's own
+    /// accounts never clears the table. Pruning always drops a prefix of
+    /// epochs, so it is a watermark plus a count, O(1) in the blob (A53).
+    /// While any sale is open nothing is dropped (every older epoch may be
+    /// asked about), which keeps more entries than strictly needed when
+    /// sales finalize out of order: that only flags more payments as round
+    /// trips, never fewer.
     pub fn prune_paid_to(&mut self) {
         let Some(sold) = self.closed_max_epoch else {
             return;
         };
-        let open = self
-            .sales
-            .iter()
-            .filter(|s| !s.finalized)
-            .map(|s| s.seller_epoch)
-            .max();
-        let dead: Vec<u64> = self
-            .paid_to_by_epoch
-            .keys()
-            .copied()
-            .filter(|e| *e <= sold && open.is_none_or(|o| *e > o))
-            .collect();
-        for e in dead {
-            self.paid_to_by_epoch.remove(&e);
-            self.paid_to_dead.insert(e);
+        if self.sales.iter().any(|s| !s.finalized) || sold <= self.paid_to_dead_upto {
+            return;
         }
+        self.paid_to_dead_upto = sold;
+        self.paid_to_dead_count = self.closed_max_cum;
     }
 
     // ----- deed transfer outside buy() ---------------------------------------
@@ -1334,6 +1346,7 @@ impl<S: Store + Default> Machine<S> {
         self.add_past_owner(&old);
         self.owner = receiver.to_string();
         self.owner_epoch += 1;
+        self.paid_to_this_epoch = 0;
         // The keys stay `retiring` until `keys_deleted` confirms (A25).
         let keys: Vec<Key> = self.known_keys.iter().cloned().collect();
         self.retiring.append(&mut self.known_keys);

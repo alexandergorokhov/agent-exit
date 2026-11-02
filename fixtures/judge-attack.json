@@ -105,7 +105,12 @@
     "admin": "admin.testnet",
     "token": "xusd.testnet",
     "paid_to_total": 0,
-    "near_storage_solvent": true
+    "near_storage_solvent": true,
+    "base_wallet": {
+      "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+      "path": "wallet-1",
+      "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
+    }
   },
   "listing": {
     "listing_version": 1,

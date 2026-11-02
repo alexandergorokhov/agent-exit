@@ -138,6 +138,11 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             token: Some(PUBLISHED_TOKEN.into()),
             paid_to_total: Some(rng.below(1_500)),
             near_storage_solvent: Some(true),
+            base_wallet: Some(BaseWalletView {
+                address: Some(test_mpc().derive_address(&agent, BASE_PATH)),
+                path: BASE_PATH.into(),
+                mpc_public_key: Some(test_mpc_public_key()),
+            }),
         },
         listing: Some(ListingView {
             listing_version: version,
@@ -184,6 +189,16 @@ pub const NOT_COUNTED: [(&str, &str); 1] = [(
 
 fn not_counted_why(id: &str) -> Option<&'static str> {
     NOT_COUNTED.iter().find(|(i, _)| *i == id).map(|(_, w)| *w)
+}
+
+/// The TEST MPC signer of the offline corpus (`base-wallet`'s mock root).
+pub fn test_mpc() -> base_wallet::MockMpc {
+    base_wallet::MockMpc::default()
+}
+
+/// Its root key in the signer's `public_key` view form.
+pub fn test_mpc_public_key() -> String {
+    base_wallet::near_secp_pk(&test_mpc().public_key())
 }
 
 pub const FAMILIES: [Family; 19] = [

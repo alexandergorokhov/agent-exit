@@ -9,6 +9,7 @@ default-run = "scan"
 
 [dependencies]
 agent-core = { path = "../../contracts/agent-core" }
+base-wallet = { path = "../base-wallet" }
 serde.workspace = true
 serde_json.workspace = true
 bs58 = "0.5"

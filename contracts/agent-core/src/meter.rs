@@ -1,7 +1,8 @@
 //! Earnings meter: every payment counted by payer and UTC day, with flags.
 //!
-//! Storage per payment is bounded (I11): at most one new payer entry (until
-//! `MAX_PAYERS`, then the `other` bucket) and at most one new day entry.
+//! Storage per payment is bounded (I11): a payment never adds a payer entry
+//! (rows are bought with a NEAR storage deposit, A49/A50) and adds at most
+//! one day entry.
 
 use crate::{Account, Amount, Ts, DAY_NS, USD};
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -10,8 +11,6 @@ use std::collections::BTreeMap;
 
 /// Smallest payment the meter records (0.10). Smaller ones are refunded (E15).
 pub const MIN_PAYMENT: Amount = USD / 10;
-/// Distinct payers tracked one by one; the rest are pooled as `other` (E16).
-pub const MAX_PAYERS: usize = 1_000;
 /// A counted payer whose first payment is newer than this is reported as
 /// "fresh". Informational only: it does not change `counted` (see N3).
 pub const FRESH_WINDOW_NS: u64 = 7 * DAY_NS;
@@ -112,6 +111,7 @@ pub struct DayStats {
 pub trait Store {
     fn payer(&self, account: &str) -> Option<PayerStats>;
     fn put_payer(&mut self, account: &str, stats: &PayerStats);
+    fn remove_payer(&mut self, account: &str);
     fn day(&self, day: u64) -> Option<DayStats>;
     fn put_day(&mut self, day: u64, stats: &DayStats);
     fn remove_day(&mut self, day: u64);
@@ -153,6 +153,9 @@ impl Store for MemStore {
     }
     fn put_payer(&mut self, account: &str, stats: &PayerStats) {
         self.payers.insert(account.to_string(), stats.clone());
+    }
+    fn remove_payer(&mut self, account: &str) {
+        self.payers.remove(account);
     }
     fn day(&self, day: u64) -> Option<DayStats> {
         self.days.get(&day).cloned()
@@ -210,7 +213,9 @@ pub const EARNINGS_DAYS: u64 = 31;
 // A payer gets its own row only by registering (`storage_deposit` on the
 // contract, which takes NEAR for the row's storage). Payments alone never
 // add a row: they are pooled in `other`. Test tokens are free, NEAR is
-// not, so filling the table costs real NEAR (A49).
+// not, so rows cost real NEAR (A49). There is no cap on rows: each is paid
+// for by its depositor and nothing iterates over them, so no outsider can
+// fill the table (A50). A row with no payments can be removed again.
 
 /// Aggregates only: everything here is O(1) in the number of payers and
 /// days. Per-payer and per-day rows live in the `Store` (A47).
@@ -224,8 +229,10 @@ pub struct Meter {
     pub flagged_seller_subaccount: Amount,
     pub flagged_round_trip: Amount,
     pub other: PayerStats,
-    /// Payers with their own entry (at most `MAX_PAYERS`).
+    /// Payers with their own entry.
     pub tracked_payers: u64,
+    /// Of those, rows with no payment yet (registered, never paid; A50).
+    pub empty_payers: u64,
     /// Tracked payers with a counted payment.
     pub counted_payers: u64,
     /// Day list positions `[days_first, days_next)` are kept.
@@ -334,6 +341,7 @@ impl Meter {
         if stats.totals.payments == 0 {
             // First payment of a registered payer.
             stats.first_ts = now;
+            self.empty_payers = self.empty_payers.saturating_sub(1);
         }
         let first_day = stats.first_ts / DAY_NS;
         if counted {
@@ -361,15 +369,30 @@ impl Meter {
         st.put_day(today, &row);
     }
 
-    /// Give `payer` its own row (A49). `false` if it has one already or the
-    /// table is full (`MAX_PAYERS`).
+    /// Give `payer` its own row (A49). `false` if it has one already.
     pub fn register(&mut self, st: &mut impl Store, payer: &str) -> bool {
-        if (self.tracked_payers as usize) >= MAX_PAYERS || st.payer(payer).is_some() {
+        if st.payer(payer).is_some() {
             return false;
         }
         st.put_payer(payer, &PayerStats::default());
         self.tracked_payers += 1;
+        self.empty_payers += 1;
         true
+    }
+
+    /// Remove `payer`'s row if it never had a payment (A50). A row with
+    /// payments stays: its history is part of the agent's earnings.
+    pub fn unregister(&mut self, st: &mut impl Store, payer: &str) -> Result<(), &'static str> {
+        match st.payer(payer) {
+            None => Err("NotRegistered"),
+            Some(p) if p.totals.payments > 0 => Err("PayerHasPayments"),
+            Some(_) => {
+                st.remove_payer(payer);
+                self.tracked_payers -= 1;
+                self.empty_payers = self.empty_payers.saturating_sub(1);
+                Ok(())
+            }
+        }
     }
 
     /// Append `day` to the day list; drop the oldest row past `MAX_DAYS`.

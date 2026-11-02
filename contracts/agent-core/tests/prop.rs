@@ -169,8 +169,26 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     // I9: verified <= counted <= gross.
     let e = m.earnings(w.now);
     prop_assert!(e.verified <= e.counted && e.counted <= e.gross);
-    // I11: payer map bounded.
-    prop_assert!(m.store.payers.len() <= meter::MAX_PAYERS);
+    // I11: payer rows only by registration (A49/A50), counters agree.
+    prop_assert_eq!(m.store.payers.len() as u64, m.meter.tracked_payers);
+    prop_assert!(m.meter.empty_payers <= m.meter.tracked_payers);
+    prop_assert_eq!(
+        m.store
+            .payers
+            .values()
+            .filter(|p| p.totals.payments == 0)
+            .count() as u64,
+        m.meter.empty_payers
+    );
+    // A53: the paid_to counters agree with the stored entries.
+    prop_assert_eq!(
+        m.store
+            .paid_to
+            .values()
+            .filter(|e| **e > m.paid_to_dead_upto)
+            .count() as u64,
+        m.paid_to_total()
+    );
     prop_assert!((m.paid_to_total() as usize) <= MAX_PAID_TO_TOTAL);
     prop_assert!(m.paid_to_this_owner() <= MAX_PAID_TO);
     // A25: incoming / retiring / known never overlap.
@@ -356,8 +374,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.held = w.m.held;
                     expect.owner_free = w.m.owner_free;
                     expect.treasury = w.m.treasury;
-                    expect.paid_to_by_epoch = w.m.paid_to_by_epoch.clone();
-                    expect.paid_to_dead = w.m.paid_to_dead.clone();
+                    expect.paid_to_ever = w.m.paid_to_ever;
+                    expect.paid_to_this_epoch = w.m.paid_to_this_epoch;
+                    expect.paid_to_dead_upto = w.m.paid_to_dead_upto;
+                    expect.paid_to_dead_count = w.m.paid_to_dead_count;
                     // Only payments while settling may have changed these;
                     // the rolled-back sale left no record (A34).
                     expect.claimable_sum = w.m.claimable_sum;
@@ -832,19 +852,18 @@ fn prop_release_le_half() {
 
 #[test]
 fn prop_storage_bounded() {
-    // E16 / I11: after MAX_PAYERS distinct payers, new ones pool into `other`.
+    // E16 / I11: payments never add rows; only registered payers have one.
     let mut m = Machine::new("translator", "alice");
-    for i in 0..(meter::MAX_PAYERS + 5) {
-        assert_eq!(
-            m.register_payer(&format!("payer{i}")),
-            i < meter::MAX_PAYERS
-        );
+    for i in 0..1_005 {
+        if i < 1_000 {
+            assert!(m.register_payer(&format!("payer{i}")));
+        }
         m.pay(&format!("payer{i}"), USD, false, T0);
     }
-    assert_eq!(m.store.payers.len(), meter::MAX_PAYERS);
+    assert_eq!(m.store.payers.len(), 1_000);
     assert_eq!(m.meter.other.totals.payments, 5);
     let e = m.earnings(T0);
-    assert_eq!(e.gross, (meter::MAX_PAYERS as Amount + 5) * USD);
+    assert_eq!(e.gross, 1_005 * USD);
     assert_eq!(e.other_payers_gross, 5 * USD);
 }
 
