@@ -226,6 +226,9 @@ export function wasmExports(code: Uint8Array): string[] {
   return names;
 }
 
+/** The Chain Signatures contract the published agent wasm is built for. */
+export const MPC_SIGNER = "v1.signer-prod.testnet";
+
 export class TestnetBackend implements Backend {
   network: Network = "testnet";
   constructor(
@@ -306,15 +309,51 @@ export class TestnetBackend implements Backend {
     return { status, earnings, listing, limits, sales, access_keys: keys, key_owners: {} };
   }
 
+  /** A51: the agent's Base wallet as it reports it, plus the MPC root key read
+   * from the published signer contract on both RPC providers. The key is
+   * never taken from the agent, and the agent cannot name a different signer.
+   * Anything that cannot be read leaves the field out or null, and the scan
+   * blocks it as base_wallet_unchecked. */
+  private async baseWallet(id: string): Promise<Json | undefined> {
+    let w: Json;
+    try {
+      w = await this.view(id, "get_base_wallet");
+    } catch {
+      return undefined;
+    }
+    let mpc: string | null = null;
+    if (w.mpc === MPC_SIGNER) {
+      const read = async (url: string): Promise<string | null> => {
+        try {
+          const r = await this.rpc(url, {
+            request_type: "call_function",
+            finality: "final",
+            account_id: MPC_SIGNER,
+            method_name: "public_key",
+            args_base64: Buffer.from("{}").toString("base64"),
+          });
+          const pk = JSON.parse(Buffer.from(r.result).toString("utf8"));
+          return typeof pk === "string" && /^secp256k1:[1-9A-HJ-NP-Za-km-z]{80,100}$/.test(pk) ? pk : null;
+        } catch {
+          return null;
+        }
+      };
+      const [a, b] = await Promise.all([read(this.cfg.rpc[0]), read(this.cfg.rpc[1])]);
+      mpc = a !== null && a === b ? a : null; // two providers must agree
+    }
+    return { address: typeof w.address === "string" ? w.address : null, path: String(w.path ?? ""), mpc_public_key: mpc };
+  }
+
   async scanInput(id: string, expect: ScanExpect): Promise<Json> {
     this.known(id);
-    const [status, listing, keys1, keys2, account, code] = await Promise.all([
+    const [status, listing, keys1, keys2, account, code, baseWallet] = await Promise.all([
       this.view(id, "get_status"),
       this.view(id, "get_listing"),
       this.keys(this.cfg.rpc[0], id),
       this.keys(this.cfg.rpc[1], id),
       this.rpc(this.cfg.rpc[0], { request_type: "view_account", finality: "final", account_id: id }),
       this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id }),
+      this.baseWallet(id),
     ]);
     return applyExpect({
       schema: "scan-input.v1",
@@ -350,6 +389,7 @@ export class TestnetBackend implements Backend {
         token: status.token,
         paid_to_total: status.paid_to_total,
         near_storage_solvent: status.near_storage?.solvent,
+        ...(baseWallet ? { base_wallet: baseWallet } : {}),
       },
       ...(listing ? { listing: listingView(listing) } : {}),
     }, expect);
