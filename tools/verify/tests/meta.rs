@@ -313,10 +313,22 @@ fn s22_docs_do_not_overclaim() {
         );
     }
     let r = read("README.md");
-    assert!(
-        r.contains("A9") && r.contains("placeholder hash"),
-        "README: A9 excluded, A5 placeholder"
-    );
+    assert!(r.contains("A9"), "README: A9 excluded");
+    // A5 is honest about its hash: the reproducible-build hash once
+    // contracts/res/SHA256SUMS is committed, a placeholder until then.
+    if std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../contracts/res/SHA256SUMS"
+    ))
+    .exists()
+    {
+        assert!(
+            r.contains("SHA256SUMS") && !r.contains("placeholder hash"),
+            "README: A5 checks the reproducible-build hash (contracts/res/SHA256SUMS)"
+        );
+    } else {
+        assert!(r.contains("placeholder hash"), "README: A5 placeholder");
+    }
 }
 
 #[test]
