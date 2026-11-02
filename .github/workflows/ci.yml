@@ -1,9 +1,10 @@
 name: ci
 
+# Manual only (owner's decision, 2026-11-02): no runs on push or PR, to save
+# Actions minutes. Every job has a local equivalent (make lint, make verify,
+# make build, cargo audit, make test-sandbox). Start it from the Actions tab.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
