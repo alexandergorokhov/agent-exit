@@ -22,6 +22,10 @@ jobs:
         run: cargo fmt --all -- --check
       - name: clippy (-D warnings)
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # tools/testnet is its own workspace (run only on the owner's PC); a
+      # stale Cargo.lock there stops `make deploy-testnet` before it starts.
+      - name: tools/testnet Cargo.lock is current
+        run: cd tools/testnet && cargo metadata --locked --format-version 1 > /dev/null
 
   verify:
     runs-on: ubuntu-latest
