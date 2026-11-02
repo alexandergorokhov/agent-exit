@@ -241,7 +241,9 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         ("bob", 2_000),
         ("carol", 2_000),
         ("summarizer", 2_000),
-        ("alice", 300),
+        // alice: 2 x 50.00 to translator + 3 x 100.00 to cheat (+100 spare);
+        // x.alice: 40.00 + 2 x 100.00 (+60 spare).
+        ("alice", 500),
         ("x.alice", 300),
         ("p1", 200),
         ("p2", 200),
@@ -476,14 +478,11 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         }
     }
     let e = c.view(&c.id("cheat"), "get_earnings", json!({})).await?;
-    if e["gross"].as_u64().unwrap_or(0) < (500 * USD) as u64 {
-        for (who, a) in [
-            ("alice", 100),
-            ("alice", 100),
-            ("alice", 100),
-            ("x.alice", 100),
-            ("x.alice", 100),
-        ] {
+    let cheat_gross = e["gross"].as_u64().unwrap_or(0) as u128;
+    {
+        // A re-run pays only what is still missing (the gross so far covers
+        // the first payments of the list, in order).
+        for (who, a) in remaining_payments(&CHEAT_SEED, cheat_gross) {
             let t = pay(
                 format!("{who} pays cheat {a}.00"),
                 who,
@@ -505,6 +504,59 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
     );
     out.set("pass", json!(true));
     out.write()
+}
+
+/// The cheat's seed: its seller (alice) and her sub-account pay it 500.00.
+const CHEAT_SEED: [(&str, u128); 5] = [
+    ("alice", 100),
+    ("alice", 100),
+    ("alice", 100),
+    ("x.alice", 100),
+    ("x.alice", 100),
+];
+
+/// Payments of `seed` (whole dollars) not yet covered by `gross` (6-decimal
+/// units), in order: a re-run after a partial seed never pays twice.
+fn remaining_payments(seed: &[(&'static str, u128)], gross: u128) -> Vec<(&'static str, u128)> {
+    let mut done = gross;
+    let mut left = Vec::new();
+    for &(who, a) in seed {
+        if done >= a * USD {
+            done -= a * USD;
+        } else {
+            left.push((who, a));
+        }
+    }
+    left
+}
+
+#[cfg(test)]
+mod seed_tests {
+    use super::*;
+
+    #[test]
+    fn rerun_pays_only_what_is_missing() {
+        assert_eq!(remaining_payments(&CHEAT_SEED, 0).len(), 5);
+        assert_eq!(
+            remaining_payments(&CHEAT_SEED, 200 * USD),
+            vec![("alice", 100), ("x.alice", 100), ("x.alice", 100)]
+        );
+        assert!(remaining_payments(&CHEAT_SEED, 500 * USD).is_empty());
+    }
+
+    #[test]
+    fn mints_cover_the_seed() {
+        // alice: 2 x 50 to translator + her cheat payments; x.alice: 40 + hers.
+        let cheat = |w: &str| -> u128 {
+            CHEAT_SEED
+                .iter()
+                .filter(|(n, _)| *n == w)
+                .map(|(_, a)| a)
+                .sum()
+        };
+        assert!(100 + cheat("alice") <= 500);
+        assert!(40 + cheat("x.alice") <= 300);
+    }
 }
 
 // ------------------------------------------------------------------ G1

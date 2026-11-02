@@ -293,7 +293,7 @@ pub fn info(step: Step) -> StepInfo {
         CheckRoot => ("check-root", "read ROOT's balance and keys on testnet (both RPCs); refuse below the NEAR the plan needs", &["AGENT_EXIT_ROOT_KEY"], ""),
         CreateAccounts => ("create-accounts", "create sub-accounts of ROOT: xusd, translator, cheat, summarizer, alice, bob, carol, p1-p6, x.alice (each skipped if it exists); new keys go to ~/.agent-exit/keys (0600)", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/accounts.json"),
         DeployXusd => ("deploy-xusd", "deploy the FAKE test dollar to xusd.ROOT, new(admin_id = ROOT)", &[], "out/testnet/deploy.json"),
-        MintXusd => ("mint-xusd", "mint xUSD-FAKE: bob, carol, summarizer 2,000.00; p1-p6 200.00; alice, x.alice 300.00; register both agents", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/deploy.json"),
+        MintXusd => ("mint-xusd", "mint xUSD-FAKE: bob, carol, summarizer 2,000.00; p1-p6 200.00; alice 500.00, x.alice 300.00; register both agents", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/deploy.json"),
         DeriveBaseAddresses => ("derive-base", "read v1.signer-prod.testnet public_key; derive each agent's Base Sepolia address for path wallet-1 (tools/base-wallet)", &[], "out/testnet/deploy.json"),
         DeployAgents => ("deploy-agents", "deploy agent_exit.wasm (contracts/res reproducible build when present, else target/near-testnet) to translator.ROOT and cheat.ROOT, new(owner_id = alice, base_address); check get_status token/admin/mpc and the code hash", &[], "out/testnet/deploy.json"),
         RunnerKeys => ("runner-keys", "alice sets a runner key on both agents (set_runner_key, 1 yocto); wait for runner_key_confirmed", &[], "out/testnet/deploy.json"),
