@@ -35,6 +35,7 @@ sequenceDiagram
 - **Proven on a real node:** the `tests/sandbox` tests (key list before and after the buy, the old runner key and the deleted setup key failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node (near-sandbox) at commits `609b135` and `63d597c`. Rerun: `make test-sandbox`.
 - **Offline, every time:** 60 scenarios replayed through the real contract code against checked-in goldens (`make verify`), property tests, 51 MCP tests and 6 script tests. All offline results use a mocked runtime or JSON fixtures.
 - **Attack suite:** 19 attack families, each blocked by the rule written for it; 0/50 false positives on clean agents — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) uses a placeholder hash until the reproducible build exists. The suite was written by the same author as the rules.
+- **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.002 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
 - **Testnet: coming.** Contract ids, a real `buy()` transaction and the old seller's rejected transaction will be linked here as explorer links. None exists yet.
 - **No AI model in the loop yet.** The agent-buys-agent run is a scripted replay; `make llm-buyer` runs a real model through the MCP tools and writes `out/llm-buyer.json`; the real model run is pending on testnet day, and until then the page has an empty slot for the real AI buyer transcript.
 
@@ -144,6 +145,20 @@ mode (only the wallet login exists), its deploy (`make web-deploy`) and a
 Playwright run against the deployed page (`make e2e`). Their
 `make` targets say `not built yet`.
 
+## How to pay an agent (customers)
+
+1. **Once per customer account, register a payer row:** call
+   `storage_deposit` on the agent with 0.002 NEAR attached (A49). Without it
+   your payments still arrive and count in the totals, but they are pooled as
+   `other`: you do not appear as a distinct payer in `get_earnings`.
+   `storage_balance_of(you)` shows whether you are registered.
+2. **Pay:** `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or
+   `{"kind":"pay","job_id":"..."}`; add a `nearai` proof to get the payment
+   marked verified. Payments under 0.10 are refunded.
+
+On testnet the plan registers the six demo customers (`p1`..`p6`) this way
+before they pay translator.
+
 ## How the handover works (prototype A, "locked account")
 
 - The agent account has **no full-access key** after setup. The owner is
@@ -174,6 +189,13 @@ them, and the runner refuses to write a file in `out/` that would contain
 one. Anything but testnet is refused. The runner is `tools/testnet` (Rust,
 near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
 `make verify`).
+
+Funding: the root account (`agentexit.testnet`, from the testnet faucet)
+needs about 53 NEAR for the whole plan (`near_needed` in the dry run is
+authoritative). The two agent accounts, `translator` and `cheat`, get 11 NEAR
+each (they pay their own storage and the growth reserve),
+the token 4, the people 2 to 3 each, each demo customer 1, and a G1 agent
+7 per run. Run `make deploy-testnet DRY_RUN=1` to see the plan.
 
 | Step | Command | Writes |
 |---|---|---|
@@ -213,14 +235,16 @@ near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
   refused the transfer, the credit-back is lost from the books: the contract
   then holds more tokens than it accounts for (never fewer). Callbacks get
   gas for their own work plus the whole state, which makes this unlikely.
-- Payer rows (at most 1,000; a new payer gets a row only with a payment of
-  at least 1.00, smaller ones are pooled), day rows (at most 400) and used
-  NEAR AI signature ids (at most 512, each kept 7 days) live under their own
-  storage keys, never in the state blob, so loading the contract costs the
-  same with 1 payer or 1,000 (A47; a local-node run at 12d1ab7 bricked an
-  agent with about 584 distinct 64-character payers when they were in the
-  blob). The agent pays this storage from its NEAR balance (no NEP-145
-  deposits); every table is capped and the room left is reserved
+- Payer rows (at most 1,000), day rows (at most 400) and used NEAR AI
+  signature ids (at most 512, each kept 7 days) live under their own storage
+  keys, never in the state blob, so loading the contract costs the same with
+  1 payer or 1,000 (A47). A payer gets its own row only after calling
+  `storage_deposit` and attaching 0.002 NEAR (A49, NEP-145 style: excess is
+  refunded, a second registration is refunded in full, a full table is
+  refused). Payments from an account without a row still count in the
+  totals but are pooled into `other`, so free test tokens cannot make the
+  agent pay for storage. Day rows and signature ids are still paid from the
+  agent's NEAR balance; every table is capped and the room left is reserved
   (`get_status.near_storage.growth_reserve`), which the owner cannot
   withdraw, so outsiders can never make it insolvent.
 - A failed supplier payment returns to the treasury but still counts toward

@@ -9,6 +9,11 @@
 - [Makefile](Makefile): every target; unbuilt ones print "not built yet" and exit 1
 - [skills/agent-exit/SKILL.md](skills/agent-exit/SKILL.md): Agent Skill: read earnings, scan, buy, verify lockout
 
+## Paying an agent
+
+- A customer calls `storage_deposit` on the agent once with 0.002 NEAR attached (a payer row, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with an empty `msg` or `{"kind":"pay"}`. Without the deposit the payment counts but is pooled as `other`. See "How to pay an agent" in README.md.
+- Testnet funding: the root account needs about 53 NEAR; `translator` and `cheat` get 11 NEAR each.
+
 ## Code
 
 - [contracts/agent-core/src/lib.rs](contracts/agent-core/src/lib.rs): state machine (listing, buy, handover, earn-out, runner guard)

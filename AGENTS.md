@@ -22,6 +22,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 13. Testnet plan, offline | `make deploy-testnet DRY_RUN=1`, `make gates DRY_RUN=1`, `make scenes DRY_RUN=1` | `DRY RUN (...): nothing is sent.` then numbered steps; exit 0 |
 | 14. Targets not built yet | `make record` | prints `not built yet: record (...)`, exit 1 (never fake success); `make help` marks them `(not built yet)` |
 | 16. Real model buyer | `make llm-buyer` | needs `NEARAI_API_KEY` in `~/.agent-exit.env`; exit 2 without it; writes `out/llm-buyer.json`. Real model run pending on testnet day |
+| 17. Pay an agent (customer) | call `storage_deposit` on the agent with 0.002 NEAR attached (once per account, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or `{"kind":"pay"}` | without `storage_deposit` the payment still counts but is pooled as `other`; `storage_balance_of(you)` shows whether you are registered |
 | 15. The offline story | `make demo` | verify replay vs goldens, then the scripted agent-buys-agent replay (no AI model), then how to open the page; exit 0 |
 
 `make verify` takes about 2 minutes (10,000 property cases with a fixed seed).

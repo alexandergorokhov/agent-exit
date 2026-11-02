@@ -373,3 +373,29 @@ fn s24_page_has_csp_and_vendored_connector() {
         "vendored hash list"
     );
 }
+
+/// S25: the docs say how to pay an agent (storage_deposit first, A49), tell
+/// the A47 real-node finding honestly, and list A43-A49 in the scenarios.
+#[test]
+fn s25_docs_explain_paying_and_the_found_bug() {
+    let readme = read("README.md");
+    for f in ["README.md", "AGENTS.md", "llms.txt"] {
+        let t = read(f);
+        assert!(t.contains("storage_deposit"), "{f}: how to pay");
+        assert!(t.contains("0.002 NEAR"), "{f}: the payer row price");
+    }
+    assert!(
+        !readme.contains("no NEP-145"),
+        "the old no-deposit claim is gone"
+    );
+    assert!(readme.contains("Found and fixed on a real node"));
+    assert!(readme.contains("a47_thousand_long_payers_then_buy_and_views"));
+    assert!(
+        readme.contains("unconfirmed"),
+        "the cause is not overclaimed"
+    );
+    let sc = read("docs/SCENARIOS.md");
+    for id in ["A43", "A44", "A45", "A46", "A47", "A48", "A49"] {
+        assert!(sc.contains(&format!("| {id} |")), "{id} is listed");
+    }
+}

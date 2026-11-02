@@ -16,7 +16,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | cheat history | 500.00 gross, all from `alice` and `*.alice`: counted 0.00, verified 0.00. Plus one extra full-access key |
 | Listing | price 1,000.00; earn-out 30% = 300.00; release share 50% of each counted post-sale payment; floor 20% of escrow = 60.00; window 30 days (sandbox: time travel; testnet demo: `window_secs = 600`) |
 | Policy (feature 12) | price floor 5.00 per job; daily cap 50.00; allowed payees [`summarizer`]; split owner 80% / treasury 20%; Base daily cap 5.00 USDC; auth validity ≤ 1 h |
-| Storage guards | min counted payment 0.10; max 1,000 tracked payers, the rest pooled as `other` |
+| Storage guards | min counted payment 0.10; max 1,000 tracked payers, the rest pooled as `other`; a payer row needs `storage_deposit` with 0.002 NEAR (A49), so payments alone are pooled |
 
 ## S: user and machine scenarios
 
@@ -124,6 +124,18 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | A22 | `nft_transfer` the deed back | `NotOwner` (no approval left) |
 | A23 | A hidden key that slipped past a skipped scan calls the contract as the agent itself | contract refuses any self-call whose signer key it didn't add: agent frozen, `backdoor_proven` event, remaining earn-out returned to the buyer |
 | A24 | Seller drains the treasury while the agent is listed | `pay` refuses while listed ("Listed: spending paused"); `buy()` refuses if the treasury is below the listing snapshot |
+
+### Review 3 and later (A43-A49)
+
+| id | Attack or finding | Expected | Test |
+|---|---|---|---|
+| A43 | A large agent account (big state) buys or pays | Callback gas counts the state blob, not the account's code or per-entry storage, so it can still pay and sell | `review3_regressions.rs` |
+| A44 | A key-batch callback lands after `recover_keys` / `recover_sale` | Stale (batch nonce): changes no key set; the late `on_handover` refunds | `review3_regressions.rs` (L1) |
+| A45 | Payout destinations of an era a finalized sale closed | Pruned, so the table does not last the agent's whole life | `review3_regressions.rs` (L7) |
+| A46 | A NEAR AI proof older than the window, ahead of the block, or without `signed_at` | Not verified (the payment still counts) | `review3_regressions.rs` (M2) |
+| A47 | **Outsiders brick an agent by paying it.** Found by a stress run on a local NEAR node at 12d1ab7: about 585 distinct payers made every call trap while loading state. Offline tests did not show it. | Payer and day rows live under their own storage keys; the state blob is the same size at 1,200 64-character payers; views cost the same at 10 and 1,000 payers; after 1,000 payers of 64 characters the agent can still be bought and every view works | offline blob and gas tests; sandbox `a47_thousand_long_payers_then_buy_and_views` |
+| A48 | A deed move (`nft_transfer`) | The old owner's unwithdrawn revenue stays theirs | `a48_deed_move_keeps_old_owners_revenue_theirs` |
+| A49 | **Payer rows cost NEAR.** Payments from an account with no row are pooled into `other` and add no row. `storage_deposit` with 0.002 NEAR registers a row. | Less than 0.002 NEAR: `StorageDepositTooSmall` (deposit refunded); excess refunded; a second registration refunded in full; a full table: `PayersFull`; a 64-character account fits the deposit. How to pay: `storage_deposit` first, then `ft_transfer_call` | `a49_payer_rows_cost_near` in `review3_regressions.rs` |
 
 ### Not caught by design (printed as rows N1-N6 in every `make attack` run)
 
