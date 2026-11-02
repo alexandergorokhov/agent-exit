@@ -103,6 +103,21 @@ try {
     assert.ok(csp, "S24: CSP meta tag present");
     for (const want of ["default-src 'none'", "script-src 'self'", "style-src 'self'", "connect-src 'self'", "base-uri 'none'", "form-action 'none'"]) assert.ok(csp[1].includes(want), `S24: CSP lacks ${want}`);
     assert.ok(!/unsafe-|https?:|\*/.test(csp[1]), "S24: CSP has no unsafe-*, remote host or wildcard");
+    // L6: the server and the static-host files send the meta CSP plus frame-ancestors, nosniff and a referrer policy.
+    const want = `${csp[1]}; frame-ancestors 'none'`;
+    for (const path of ["", "style.css", "missing-file"]) {
+      const r = await fetch(base + path);
+      assert.equal(r.headers.get("content-security-policy"), want, `L6: CSP header on /${path}`);
+      assert.equal(r.headers.get("x-content-type-options"), "nosniff", `L6: nosniff on /${path}`);
+      assert.equal(r.headers.get("referrer-policy"), "no-referrer", `L6: referrer policy on /${path}`);
+    }
+    const hdrs = readFileSync(new URL("../_headers", import.meta.url), "utf8");
+    assert.ok(hdrs.includes(`Content-Security-Policy: ${want}`) && hdrs.includes("X-Content-Type-Options: nosniff") && hdrs.includes("Referrer-Policy: no-referrer"), "L6: _headers matches");
+    const vj = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8")).headers[0].headers;
+    const val = (k) => vj.find((h) => h.key === k)?.value;
+    assert.equal(val("Content-Security-Policy"), want, "L6: vercel.json CSP matches");
+    assert.equal(val("X-Content-Type-Options"), "nosniff");
+    assert.equal(val("Referrer-Policy"), "no-referrer");
     const [sum, file] = readFileSync(new URL("../vendor/SHA256SUMS", import.meta.url), "utf8").trim().split(/\s+/);
     assert.equal(createHash("sha256").update(readFileSync(new URL(`../vendor/${file}`, import.meta.url))).digest("hex"), sum, "S24: vendored connector matches its pinned SHA-256");
     assert.ok(readFileSync(new URL("../app.js", import.meta.url), "utf8").includes(`./vendor/${file}`), "S24: app.js loads the vendored file");

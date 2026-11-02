@@ -166,6 +166,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | LB11 | A key pasted several times in the env file is detected (warning) without printing it | ts | `llm_buyer_nearai.test.ts` |
 | LB12 | `make llm-buyer-check`: one tiny authenticated chat call; 401/402 and no key get clear errors | ts | `llm_buyer_nearai.test.ts` |
 | S-PG | `get_sales(from_index, limit)` is paginated, so the sale history never has to be read whole | unit | `contracts/agent` |
+| L6 | **The page is served with security headers.** `web/serve.mjs`, `web/_headers` and `web/vercel.json` send the CSP (the page's own plus `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`, also on 404s. The vendored connector's remote wallet manifests stay blocked until their hosts are reviewed (`web/vendor/README.md`) | node | `web/test/smoke.mjs` |
 | M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
 | M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
 | M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |
