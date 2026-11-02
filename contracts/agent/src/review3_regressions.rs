@@ -491,6 +491,7 @@ fn a47_every_growable_table_stays_out_of_the_blob() {
     assert_eq!(s.m().paid_to_total(), 3_000);
     check(&s, "paid_to");
     // Claimable balances: FAULT INJECTION, 700 failed claim payouts.
+    let claimers = s.m().claimable_accounts;
     for i in 0..700 {
         s.callback(false).on_transfer_out(
             OutKind::Claim,
@@ -499,7 +500,7 @@ fn a47_every_growable_table_stays_out_of_the_blob() {
             None,
         );
     }
-    assert_eq!(s.m().claimable_accounts, 700);
+    assert_eq!(s.m().claimable_accounts, claimers + 700);
     assert_eq!(s.c.get_claimable(acc("claimer-699.testnet")).0, 1);
     check(&s, "claimable");
     // Past owners: 600 more deed moves.
@@ -546,4 +547,29 @@ fn a47_every_growable_table_stays_out_of_the_blob() {
     assert_eq!(st["closed_sales"], 40);
     let _ = s.c.get_earnings();
     let _ = s.c.nft_token(DEED_ID.into());
+}
+
+/// A48 (real-node review): a deed move outside `buy` (here by an approved
+/// account) leaves the old owner's unwithdrawn revenue claimable by the old
+/// owner, as a sale does (A29). The receiver cannot withdraw it.
+#[test]
+fn a48_deed_move_keeps_old_owners_revenue_theirs() {
+    let mut s = translator_world();
+    let free = s.m().owner_free;
+    assert!(free > 0);
+    let _ = s
+        .by_1y(ALICE)
+        .nft_approve(DEED_ID.into(), acc(MALLORY), None);
+    s.by_1y(MALLORY)
+        .nft_transfer(acc(MALLORY), DEED_ID.into(), Some(0), None);
+    assert_eq!(s.m().owner, MALLORY);
+    assert_eq!(s.m().owner_free, 0, "the receiver gets no revenue");
+    assert_eq!(s.c.get_claimable(acc(ALICE)).0, free);
+    assert!(s.m().solvent());
+    assert_eq!(
+        panic_text(|| {
+            s.by_1y(MALLORY).withdraw(U128(1), None).detach();
+        }),
+        "InsufficientFunds"
+    );
 }

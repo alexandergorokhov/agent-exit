@@ -1316,6 +1316,10 @@ impl<S: Store + Default> Machine<S> {
         }
         self.listing_version += 1;
         let old = self.owner.clone();
+        // A48: as in a sale (A29), the old owner's unwithdrawn revenue stays
+        // theirs; whoever moved the deed cannot withdraw it.
+        let revenue = std::mem::take(&mut self.owner_free);
+        self.credit(&old, revenue);
         self.add_past_owner(&old);
         self.owner = receiver.to_string();
         self.owner_epoch += 1;
