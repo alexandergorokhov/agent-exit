@@ -124,3 +124,6 @@ pre {
 }
 
 .slot { margin-top: 16px; padding: 12px 16px; border: 1px dashed currentColor; border-radius: 8px; }
+
+/* Testnet run: refusals are the expected result here, so rows stay neutral. */
+.testnet .find li, .testnet .find li.warn { background: var(--code-bg); border-left-color: var(--line); color: inherit; }

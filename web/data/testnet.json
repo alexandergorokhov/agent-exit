@@ -1,0 +1,159 @@
+{
+  "schema": "web-testnet.v1",
+  "network": "testnet",
+  "money": "xUSD-FAKE",
+  "steps": {
+    "break-in": {
+      "scene": 1,
+      "pass": true,
+      "what": "break-in: alice calls withdraw, set_runner_key, list_for_sale, set_limits, nft_transfer, pay_base (each refused); her old runner key and the deleted setup key fail at the node; key list before/after",
+      "txs": [
+        {
+          "label": "alice: withdraw 1.00",
+          "ok": false,
+          "error": "NotOwner",
+          "explorer": "https://testnet.nearblocks.io/txns/FHQnYPs7GhGtob53pNE3zFRQzEvv2HyVNWCHvT8csGHo"
+        },
+        {
+          "label": "alice: set_runner_key (her own key)",
+          "ok": false,
+          "error": "NotOwner",
+          "explorer": "https://testnet.nearblocks.io/txns/DrujnnU9LcSon7hzes1JJEYU39LUzhog99iZDQapTuZy"
+        },
+        {
+          "label": "alice: list_for_sale 1.00",
+          "ok": false,
+          "error": "NotOwner",
+          "explorer": "https://testnet.nearblocks.io/txns/3rmdH6NLw6BzX7GYo7CbW42JCsYYMdcyBiBMfXkpqHkn"
+        },
+        {
+          "label": "alice: set_limits",
+          "ok": false,
+          "error": "NotOwner",
+          "explorer": "https://testnet.nearblocks.io/txns/A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB"
+        },
+        {
+          "label": "alice: nft_transfer the deed to herself",
+          "ok": false,
+          "error": "NotOwner",
+          "explorer": "https://testnet.nearblocks.io/txns/7F1XbdUNqJrvUWpFC9TYbc3zM43H9vgopaMi4szTxq6x"
+        },
+        {
+          "label": "alice: pay_base (the Base wallet)",
+          "ok": false,
+          "error": "NotRunner",
+          "explorer": "https://testnet.nearblocks.io/txns/2EHZJxkD7j2BYuN7u8k9XgtcJsaGfaxEnHjDAKiiKKb3"
+        },
+        {
+          "label": "alice's old runner key: heartbeat",
+          "ok": false,
+          "error": "rejected by the node: the access key does not exist (no transaction possible)",
+          "explorer": null
+        },
+        {
+          "label": "translator's deleted setup key: heartbeat",
+          "ok": false,
+          "error": "rejected by the node: the access key does not exist (no transaction possible)",
+          "explorer": null
+        },
+        {
+          "label": "bob's runner key: heartbeat",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/CR8LjSDNrCjmA8AsERzUZDr3AhnayJvGk3om8JgvMqrC"
+        }
+      ]
+    },
+    "business": {
+      "scene": 2,
+      "pass": true,
+      "what": "business: bob sets limits; p1, p2 pay 25.00 (split 20/5); bob's runner pays summarizer 8.00; 45.00 fails PolicyViolation:DailyCap",
+      "txs": [
+        {
+          "label": "bob: set_limits (cap 50.00, payee summarizer, split 80/20)",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/Fegf5pF9sHbQdDaE1wJHN8xV3CkwzY9a744c1ovJsYuh"
+        },
+        {
+          "label": "p1 pays 25.00 for a job",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/9c2sULcamX4iF57GsBZWJrpiPj4zp4Xmnbr9ve1MR2aJ"
+        },
+        {
+          "label": "p2 pays 25.00 for a job",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/HtsHzA4MXfvmZKRibqtsHVe8WSnAyNVyrri6XA8cMf5J"
+        },
+        {
+          "label": "runner pays summarizer 8.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/2aVnZtzNxk7LWYSRtTEuEJQTB3u1i4AocVvp74wVi46m"
+        },
+        {
+          "label": "runner pays summarizer 45.00",
+          "ok": false,
+          "error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00",
+          "explorer": "https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci"
+        }
+      ]
+    },
+    "verified": {
+      "scene": 3,
+      "pass": true,
+      "what": "verified vs unverified: get_earnings of translator and cheat side by side",
+      "txs": []
+    },
+    "cheat": {
+      "scene": 4,
+      "pass": true,
+      "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent",
+      "txs": [
+        {
+          "label": "alice lists cheat at 500.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/21YqQXdFy5aeMRZs2ZDF5qAex1RKZyQbziUtYEY6oLgj"
+        }
+      ]
+    },
+    "honest-sale": {
+      "scene": 5,
+      "pass": true,
+      "what": "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00",
+      "txs": [
+        {
+          "label": "bob buys translator (one ft_transfer_call)",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF"
+        }
+      ]
+    },
+    "agent-buys-agent": {
+      "scene": 6,
+      "pass": true,
+      "what": "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client; MCP testnet writes are not wired yet)",
+      "txs": [
+        {
+          "label": "bob lists translator at 1200.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/4JxCY4bBrYUA1PxRRgCrrKm4om7M79Qqm2vijX4XnU3s"
+        },
+        {
+          "label": "summarizer buys translator (one ft_transfer_call)",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL"
+        }
+      ]
+    }
+  },
+  "run": "2026-11-02",
+  "root": "agentexit.testnet",
+  "agent_code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa"
+}

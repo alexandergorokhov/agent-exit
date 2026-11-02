@@ -71,6 +71,8 @@ try {
     assert.equal(await planted.count(), 1, "S23: the planted-key heartbeat is one FROZEN card");
     assert.match(await planted.textContent(), /FROZEN/);
     assert.equal(await q.locator('#step .call[data-outcome="ok"]').count(), 0, "S23: no green OK on the break-in step");
+    const tn = await q.locator('#step .testnet a[href^="https://testnet.nearblocks.io/txns/"]').count();
+    assert.ok(tn >= 6, `the break-in step links the testnet run (${tn} links)`);
     await q.goto(`${base}#verified`);
     await q.waitForSelector('#step[data-step="verified"]');
     const reused = q.locator('#step .call[data-outcome="unverified"]');
@@ -151,7 +153,7 @@ try {
   // Testnet flag: labelled, offers login, never loaded unless asked.
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
-  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: coming after deploy");
+  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: run of 2026-11-02 (recorded; live reads not wired)");
   assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;

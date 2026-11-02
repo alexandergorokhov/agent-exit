@@ -185,7 +185,23 @@ fn web_demo_data_is_recorded_from_the_contract() {
         ]
     );
     let page = std::fs::read_to_string(root().join("web/app.js")).unwrap();
-    assert!(page.contains("testnet: coming after deploy"));
+    assert!(
+        !page.contains("coming after deploy"),
+        "the testnet run happened; the page must not say it is coming"
+    );
+    // Every NearBlocks link the page shows comes from the recorded testnet run.
+    let data = std::fs::read_to_string(root().join("web/data/testnet.json")).unwrap();
+    let mut recorded = String::new();
+    for e in std::fs::read_dir(root().join("out/scenes")).unwrap() {
+        recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
+    }
+    let mut n = 0;
+    for part in data.split("testnet.nearblocks.io/txns/").skip(1) {
+        let h: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        assert!(recorded.contains(&h), "page links {h}, not in out/scenes");
+        n += 1;
+    }
+    assert!(n >= 10, "page should link the testnet run per step ({n})");
     assert!(
         !page.contains("mainnet"),
         "the page never names a mainnet network"

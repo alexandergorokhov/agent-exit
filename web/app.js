@@ -1,7 +1,7 @@
 // Agent Exit demo page. Offline by default: every result shown is read from
 // data/demo.json, which tools/verify/src/bin/gen-web-demo.rs records from the
 // contract in near-sdk's mocked runtime. `?network=testnet` shows the testnet
-// mode, which only offers a wallet login for now (not wired: coming after deploy).
+// mode: the recorded testnet run of 2026-11-02 with explorer links (live reads not wired).
 
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
@@ -70,7 +70,23 @@ function scanBlock(scan) {
 }
 
 let demo;
+let testnet = null;
 let current = 0;
+
+const TESTNET_LABEL = "testnet: run of 2026-11-02 (recorded; live reads not wired)";
+
+function testnetBlock(id) {
+  const t = testnet && testnet.steps[id];
+  if (!t) return null;
+  const items = t.txs.map((x) => el("li", { class: x.ok ? "" : "warn" },
+    el("span", { class: `badge ${x.ok ? "ok" : "error"}`, text: x.ok ? "ok" : "refused" }), " ", x.label,
+    x.error ? el("code", { text: ` ${x.error}` }) : "",
+    x.explorer ? el("span", {}, " · ", el("a", { href: x.explorer, target: "_blank", rel: "noopener noreferrer", text: "NearBlocks" })) : ""));
+  const kids = [el("h3", { text: `On NEAR testnet (scene ${t.scene}, ${t.pass ? "passed" : "failed"})` })];
+  if (items.length) kids.push(el("ul", { class: "find" }, items));
+  else kids.push(el("p", { class: "muted", text: "Read-only step: the recorded views are in out/scenes." }));
+  return el("div", { class: "testnet" }, ...kids);
+}
 
 function renderNav() {
   const ol = document.getElementById("steps");
@@ -99,6 +115,8 @@ function render() {
   if (s.mcp_steps) kids.push(el("h3", { text: "MCP tool calls by the summarizer agent" }), el("ol", { class: "calls" }, s.mcp_steps.map(mcpCard)));
   if (s.slot) kids.push(el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted", text: s.slot.text })));
   if (s.view) kids.push(el("h3", { text: "View" }), jsonBlock(s.view.name, s.view.value));
+  const tn = testnetBlock(s.id);
+  if (tn) kids.push(tn);
   sec.replaceChildren(...kids);
   document.getElementById("prev").disabled = current === 0;
   document.getElementById("next").disabled = current === demo.steps.length - 1;
@@ -127,7 +145,7 @@ function renderMode() {
   const who = el("span", { class: "muted", id: "wallet" });
   if (!TESTNET_LIVE) {
     box.replaceChildren(
-      el("span", { class: "pill warn", id: "testnet-label", text: "testnet: coming after deploy" }),
+      el("span", { class: "pill warn", id: "testnet-label", text: TESTNET_LABEL }),
       el("a", { href: "./", text: "back to offline" }));
     return;
   }
@@ -147,7 +165,7 @@ function renderMode() {
     }
   });
   box.replaceChildren(
-    el("span", { class: "pill warn", id: "testnet-label", text: "testnet: coming after deploy" }),
+    el("span", { class: "pill warn", id: "testnet-label", text: TESTNET_LABEL }),
     login, who,
     el("a", { href: "./", text: "back to offline" }));
 }
@@ -161,7 +179,11 @@ async function main() {
   if (!res.ok) throw new Error(`data/demo.json: HTTP ${res.status}`);
   demo = await res.json();
   if (demo.schema !== "web-demo.v1") throw new Error(`unknown schema ${demo.schema}`);
-  document.getElementById("source").textContent = `Data: ${demo.source}. Shown results are ${network === "offline" ? "recorded" : "recorded (testnet reads are not wired yet)"}.`;
+  try {
+    const t = await fetch("data/testnet.json");
+    if (t.ok) { const j = await t.json(); if (j.schema === "web-testnet.v1") testnet = j; }
+  } catch { /* the testnet run is optional on the page */ }
+  document.getElementById("source").textContent = `Data: ${demo.source}${testnet ? `, plus the NEAR testnet run of ${testnet.run} (${testnet.root}, agent code hash ${testnet.agent_code_hash})` : ""}. All results are recorded; nothing is read live.`;
   document.getElementById("prev").addEventListener("click", () => go(current - 1));
   document.getElementById("next").addEventListener("click", () => go(current + 1));
   addEventListener("hashchange", () => go(fromHash(), false));

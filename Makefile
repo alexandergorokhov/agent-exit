@@ -60,7 +60,10 @@ mcp-golden: mcp-build ## Rewrite fixtures/mcp/world.json, tests/golden/agent-buy
 WEB_PORT ?= 8080
 NODE_GLOBAL := $(shell npm root -g 2>/dev/null)
 
-.PHONY: web-data
+.PHONY: web-data web-testnet-data
+web-testnet-data: ## Rewrite web/data/testnet.json from the recorded testnet run in out/scenes
+	node scripts/testnet-page-data.mjs
+
 web-data: ## Rewrite web/data/demo.json from the contract (review the diff!)
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo
 
@@ -265,12 +268,12 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null
 	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
 	@echo "== 2/3 scripted replay: a fixed script (no AI model) plays the summarizer agent buying translator through the MCP tools"
-	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json 2>&1 | grep -v "^agent-buys-agent: {" || true
+	@node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json > $(OUT)/agent-buys-agent.log 2>&1; s=$$?; grep -v "^agent-buys-agent: {" $(OUT)/agent-buys-agent.log; exit $$s
 	@echo "== summary (full JSON in $(OUT)/)"
 	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
-	@echo "Not shown here: a real AI buyer and real testnet transactions (Testnet: coming)."
+	@echo "Real testnet transactions (2026-11-02): README section 'Live on NEAR testnet' and the page's per-step testnet links. Not shown: a real AI model buying."
 demo-setup: ## (not built yet) [testnet] Reset demo agents
 	$(call not_built,demo-setup,M2 B3)
 record: ## (not built yet) [testnet] Save receipts to fixtures/recorded

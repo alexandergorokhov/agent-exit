@@ -49,7 +49,7 @@ sequenceDiagram
 - **Attack suite:** 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) checks against the reproducible-build hash in `contracts/res/SHA256SUMS` (agent_exit.wasm `be4b898d…`, built in the pinned cargo-near Docker image; `make build` reproduces it). The suite was written by the same author as the rules.
 - **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.024 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
 - **Live on NEAR testnet** (links below): the six demo scenes and the key-handover gate ran on testnet on 2026-11-02 with the reproducible build; outputs in `out/scenes/`, `out/gates/`, `out/testnet/`.
-- **No AI model in the loop yet.** The agent-buys-agent run is a scripted replay; `make llm-buyer` runs a real model through the MCP tools and writes `out/llm-buyer.json`; the real model run is pending on testnet day, and until then the page has an empty slot for the real AI buyer transcript.
+- **No AI model in the loop yet.** The agent-buys-agent run is a scripted replay; `make llm-buyer` runs a real model through the MCP tools and writes `out/llm-buyer.json`; no real model transcript is committed yet (it needs an AI API key), so the page shows an empty slot for it. On testnet, scene 6 is an agent account buying through the same scripted client.
 
 ### Live on NEAR testnet
 
@@ -120,7 +120,7 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make mcp-test` | The MCP server's tests offline (74 tests, then 10 script tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
 | `make llm-buyer-check` | One tiny authenticated chat call to NEAR AI Cloud: is `NEARAI_API_KEY` accepted and does the account have credit. Exit 2 on a missing key, 401 or 402, each with a clear message. Starts no MCP server. |
 | `make translator-serve` | A translator worker on `127.0.0.1:8787` (`PORT=`, `MAX_JOBS=`): translates through NEAR AI Cloud and returns NEAR AI's signature to pay with. Offline it serves a recorded fixture, labelled as such; real mode needs `AGENT_EXIT_NETWORK=testnet`, `NEARAI_API_KEY` and the agent account. **Loopback only: do not tunnel or expose it without adding authentication.** |
-| `make llm-buyer` | A real model (NEAR AI Cloud, else Anthropic) reads the Skill and buys through the MCP tools against the offline fixtures -> `out/llm-buyer.json`. Needs an API key in `~/.agent-exit.env`; exits 2 without one. The server, not the model, enforces `max_price`, `confirm` and the spend cap. **Real model run pending on testnet day**: no transcript is committed. |
+| `make llm-buyer` | A real model (NEAR AI Cloud, else Anthropic) reads the Skill and buys through the MCP tools against the offline fixtures -> `out/llm-buyer.json`. Needs an API key in `~/.agent-exit.env`; exits 2 without one. The server, not the model, enforces `max_price`, `confirm` and the spend cap. **No real model transcript committed yet** (needs an API key). |
 | `make agent-buys-agent` | A scripted replay (no AI model decides anything): the `summarizer` agent, as an MCP client, lists agents, sees `cheat`'s earnings are fake, gets its buy refused (`SCAN_BLOCKED`), scans `translator` clean, buys it (`max_price` 1000, `confirm`), checks `alice` is locked out and lists the agent again. `out/agent-buys-agent.json` (`agent-buys-agent.v1`). |
 | `make mcp` | Start the MCP server on stdio. Offline by default; write tools need `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID` (`buy_agent` also `AGENT_EXIT_RUNNER_PK`). Config for Claude Code and Codex: [`AGENTS.md`](AGENTS.md). |
 | `make web` | The demo page at http://127.0.0.1:8080: the six demo steps (break-in fails, the business inside its limits, verified vs unverified earnings, a cheat caught, an honest sale, a scripted replay of an agent buying an agent, with a slot for the real AI buyer transcript), each with the contract's real error text or event JSON. Offline by default: it shows `web/data/demo.json`, **recorded from the contract code** by `make web-data` (reproducible). `?network=testnet` shows the testnet mode: a NEAR wallet login (NEAR Connect) and the label `testnet: coming after deploy`; nothing is read from or sent to the chain yet. |
@@ -233,8 +233,9 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
   caught by the buyer's scan before the sale, not by the contract; if a
   hidden key ever calls the contract, the contract freezes (A23). The full
   "not caught by design" list is [`docs/NOT-CAUGHT.md`](docs/NOT-CAUGHT.md).
-- The scan's published code hash is a fixture value until the reproducible
-  build hash exists (`contracts/res/SHA256SUMS`, needs Docker).
+- The scan's published code hash is the reproducible build's
+  (`contracts/res/SHA256SUMS`, built in the pinned cargo-near Docker image);
+  the testnet agents run exactly that code.
 - NEAR Verified signatures in this repo are made with local test keys. The
   NEAR AI Cloud signer address is set by the registry admin (not by the
   seller, who could otherwise allowlist their own key) and is checked
@@ -277,8 +278,9 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 - NEAR Intents is mainnet-only and is not used.
 - Mocked-runtime tests do not execute promises: they check the actions the
   contract schedules and drive callbacks by hand. The sandbox tests cover the
-  real `AccessKeyNotFound` errors and token refunds on a local node; testnet
-  has not been run.
+  real `AccessKeyNotFound` errors and token refunds on a local node; the
+  testnet run of 2026-11-02 covers the same on the public network (see
+  "Live on NEAR testnet").
 - The agent wasm is about 440 KB and not size-optimised yet.
 
 ## Repository map
