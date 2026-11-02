@@ -15,12 +15,13 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 6. Attack corpus | `make attack` | stderr `in scope: 200/200 blocked; clean agents blocked (false positives): 0/50` (the tool's own summary wording; read it as 19 attack families, each blocked by the rule written for it, 0/50 false positives on clean agents — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 uses a placeholder hash until the reproducible build), every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
 | 7. Plant your own backdoor | edit `fixtures/judge-attack.json` (e.g. add a `"FullAccess"` key), then `make attack FIXTURE=fixtures/judge-attack.json` | stderr `judge fixture ...: blocked ["full_access_key_present"]`; the `judge` section of `out/attack.json` |
 | 8. Scan one agent | `make scan FILE=fixtures/scan/cheat.json` | `scan-report.v1` JSON on stdout, `"verdict": "blocked"`; exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input |
-| 9. MCP tests | `make mcp-test` | `# pass 26`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
+| 9. MCP tests | `make mcp-test` | `# pass 51`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
 | 10. Agent buys agent | `make agent-buys-agent` | a scripted replay, not an AI model; stderr one line per MCP call; `out/agent-buys-agent.json` with `"schema": "agent-buys-agent.v1"`, `"pass": true`, `summary.seller_locked_out_after: true` |
 | 11. Demo page | `make web-test` (needs the `playwright` package with Chromium) | `web-test: N checks passed (desktop + 375px, offline + testnet flag)`; exit 0. `make web` serves it on port 8080 |
 | 12. Fuzz | `make fuzz` (`FUZZ_CASES=3000`) | `test result: ok. 4 passed`; exit 0 |
 | 13. Testnet plan, offline | `make deploy-testnet DRY_RUN=1`, `make gates DRY_RUN=1`, `make scenes DRY_RUN=1` | `DRY RUN (...): nothing is sent.` then numbered steps; exit 0 |
 | 14. Targets not built yet | `make record` | prints `not built yet: record (...)`, exit 1 (never fake success); `make help` marks them `(not built yet)` |
+| 16. Real model buyer | `make llm-buyer` | needs `NEARAI_API_KEY` in `~/.agent-exit.env`; exit 2 without it; writes `out/llm-buyer.json`. Real model run pending on testnet day |
 | 15. The offline story | `make demo` | verify replay vs goldens, then the scripted agent-buys-agent replay (no AI model), then how to open the page; exit 0 |
 
 `make verify` takes about 2 minutes (10,000 property cases with a fixed seed).

@@ -42,7 +42,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | S18 | **Judge on the hosted page.** A judge with no wallet gets an in-browser testnet key funded by the relayer, pays `translator` 1.00, gets a fresh demo agent with a planted backdoor (scan blocks the buy), buys a clean one, runs the break-in panel: every attempt fails | e2e (mocked RPC in CI), net | `web/test/s18.spec.ts` |
 | S19 | **Listing card + dynamic deed.** `nft_token` metadata `extra` holds meter totals, last scan result and policy summary, updated on each payment and sale; the card at `/cards/translator.json` validates | unit, ts | `s19_dynamic_metadata` |
 | S20 | **Recorded claims replay.** Every testnet claim in the README has a recorded receipt in `fixtures/recorded/` that `make verify` checks offline (hashes, signer, method, outcome) | rec | `tests/recorded/*.rs` |
-| S21 | **`make demo` is real.** Offline, in one command: a quick `make verify` subset (the 60 scenario table with `PROP_CASES=200`, both goldens), then the scripted agent-buys-agent replay, then it prints how to open the page. It never claims a model decided anything | ci | `tools/verify/tests/meta.rs::s21_demo_target_runs_the_offline_story` |
+| S21 | **`make demo` is real.** Offline, in one command: a quick `make verify` subset (the 60-scenario replay and the attack report, each compared with its golden; no cargo test run), then the scripted agent-buys-agent replay, then it prints how to open the page. It never claims a model decided anything | ci | `tools/verify/tests/meta.rs::s21_demo_target_runs_the_offline_story` |
 | S22 | **README hero reads in 60 seconds.** One-sentence pitch, a 3-command "try it", one sale-flow diagram, a "proven on a real node" line (sandbox tests passed on a local NEAR node at 609b135 and 63d597c) and a "Testnet: coming" placeholder come before the claims table. The attack numbers are worded as a regression suite: "19 attack families, each blocked by the rule written for it; 0/50 false positives on clean agents", A9 (Base) excluded until Base is live, A5 marked as a placeholder hash | ci | `meta.rs::s22_docs_do_not_overclaim`, `meta.rs::s22_readme_hero_comes_first` |
 | S23 | **Page copy matches the evidence.** Offline mode never says "two RPC providers"; the planted-key heartbeat is labelled FROZEN, not a green OK; a reused NEAR AI signature is labelled counted-not-verified; step 6 is a "scripted replay" with a slot for the real AI buyer transcript; counts (19 families, 26 MCP tests) are current | e2e, ci | `web/test/smoke.mjs` (`S23`), `meta.rs::s23_page_copy_is_honest` |
 | S24 | **Page supply chain.** The page ships a strict CSP meta tag (`default-src 'none'`, scripts and styles `'self'`, no inline, no remote script); `@hot-labs/near-connect` is vendored under `web/vendor/` with its SHA-256 pinned and checked, not loaded from a CDN | e2e, ci | `web/test/smoke.mjs` (`S24`), `meta.rs::s24_page_has_csp_and_vendored_connector` |
@@ -136,3 +136,25 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | N5 | Customers moving off-platform after the sale | Business risk, not a key |
 | N6 | A compromised MPC network, NEAR AI signer or both RPC providers | Trust assumptions, listed in the threat model |
 | N7 | That `make attack` is independent evidence of detection | The corpus (`tools/scan/src/corpus.rs`) is written by the same author as the rules: each family's expected finding is the code of the rule written for it. It is a regression suite. A9 (open Base authorization) is excluded from the headline count until Base is live (the testnet scan fixes `open_auth_until` at 0); A5 compares against a placeholder hash until the reproducible build exists |
+
+## Added during the build (MCP, llm-buyer, testnet relay)
+
+| id | Scenario | Layer | Test |
+|---|---|---|---|
+| LB1 | **A real model buys through MCP (llm-buyer).** A model reads the Skill, scans, refuses `cheat`, buys `translator` and verifies the lockout (tested with a mocked model client against the real MCP server, offline) | ts | `mcp/test/llm_buyer.test.ts` |
+| LB2 | The server, not the model, enforces `max_price`, `confirm` and the session spend cap | ts | `llm_buyer.test.ts` |
+| LB3 | Unknown tools and bad arguments from the model are dropped | ts | `llm_buyer.test.ts` |
+| LB4 | The API key appears only in the auth header: never in tool results, transcript or output | ts | `llm_buyer.test.ts` |
+| LB5 | No API key: exit 2 | ts | `llm_buyer.test.ts` |
+| LB6 | The env file is read for model variables only; base URL guards | ts | `llm_buyer.test.ts` |
+| LB7 | An endless or erroring model fails the run (step limit, model errors) | ts | `llm_buyer.test.ts` |
+| M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
+| M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
+| M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |
+| M-L5a-e | RPC timeout and no redirects; wasm parser bounds; `.testnet`-only accounts; sanitised error text | ts | `review3_lows.test.ts` |
+| M-AL | Allowance pre-check: `ALLOWANCE_LOW` before a buy is sent | ts | `mcp/test` |
+| T-S1 | G2 relay dry run prints the plan, reads no secret, writes nothing | node | `scripts/testnet/test/g2.test.mjs` |
+| T-S2 | G2 relay: testnet only | node | `g2.test.mjs` |
+| T-S3 | G2 relay: Base RPC allowlist; no URL leak | node | `g2.test.mjs` |
+| T-S4 | G2 relay: the relayer key is checked without being echoed | node | `g2.test.mjs` |
+| T-S5 | G2 relay: only `transferWithAuthorization` calldata is relayed | node | `g2.test.mjs` |

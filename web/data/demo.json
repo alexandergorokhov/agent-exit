@@ -1316,7 +1316,7 @@
       "slot": {
         "title": "Real AI buyer transcript",
         "status": "coming",
-        "text": "The real AI buyer transcript goes here: a model (Claude through the MCP server) deciding, refusing the cheat and buying on testnet. Not recorded yet; what is above is a scripted replay."
+        "text": "The real AI buyer transcript goes here: a model deciding, refusing the cheat and buying through the MCP server. `make llm-buyer` writes it to out/llm-buyer.json; the real model run is pending on testnet day, so nothing is recorded yet and what is above is a scripted replay."
       }
     }
   ]
