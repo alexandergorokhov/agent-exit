@@ -152,7 +152,7 @@ test("LB7 the step limit and model errors end the run", async () => {
   assert.equal((summarize(e) as { pass: boolean }).pass, false);
 });
 
-test("LB12 a token budget ends the run before the next model call (owner's API credit is capped)", async () => {
+test("LB13 a token budget ends the run before the next model call (owner's API credit is capped)", async () => {
   const mcp: McpLike = { tools: async () => [{ name: "list_agents", description: "", inputSchema: {} }], call: async () => ({ ok: true, body: {} }) };
   let calls = 0;
   const heavy: ModelClient = {
