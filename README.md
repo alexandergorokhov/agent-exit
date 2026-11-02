@@ -160,6 +160,17 @@ Playwright run against the deployed page (`make e2e`). Their
 On testnet the plan registers the six demo customers (`p1`..`p6`) this way
 before they pay translator.
 
+**A real translator to pay.** `make translator-serve` starts a worker on
+`127.0.0.1:8787`. `POST /job` with `{"payer":"p1.testnet","amount":"1000000","text":"Hello"}`
+returns the translation and a `pay_msg`: the exact `msg` for step 2, carrying
+NEAR AI's response signature. The worker puts the agent, job, payer and amount
+into the request NEAR AI signs, so the signature pays for that job only. Real
+mode needs `AGENT_EXIT_NETWORK=testnet`, `NEARAI_API_KEY` and
+`AGENT_EXIT_TRANSLATOR_ACCOUNT` (the `.testnet` translator agent). Without
+them it serves a recorded fixture signed with local test keys, labelled as
+such in every answer (not a NEAR AI signature). There is no on-chain
+`accept_job`; the contract needs nothing new for this.
+
 ## How the handover works (prototype A, "locked account")
 
 - The agent account has **no full-access key** after setup. The owner is

@@ -110,6 +110,10 @@ llm-buyer: mcp-build ## A real model (NEAR AI Cloud, else Anthropic) reads the S
 	@mkdir -p $(OUT)
 	node mcp/dist/scripts/llm-buyer.js --out $(OUT)/llm-buyer.json
 
+.PHONY: translator-serve
+translator-serve: mcp-build ## Translator worker on 127.0.0.1:8787: translates via NEAR AI Cloud and returns NEAR AI's signature to pay with (offline: recorded fixture, labelled; real: AGENT_EXIT_NETWORK=testnet + NEARAI_API_KEY + AGENT_EXIT_TRANSLATOR_ACCOUNT) [PORT=8787 MAX_JOBS=20]
+	node mcp/dist/scripts/translator-serve.js --port $(or $(PORT),8787) --max-jobs $(or $(MAX_JOBS),20)
+
 .PHONY: llm-buyer-check
 llm-buyer-check: mcp-build ## One tiny authenticated chat call: is the NEARAI_API_KEY accepted and does the account have credit (exit 2 on 401/402 or no key)
 	node mcp/dist/scripts/llm-buyer.js --check
