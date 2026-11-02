@@ -60,6 +60,13 @@ function findScan(repo: string, e: NodeJS.ProcessEnv): string | null {
     const full = join(repo, p);
     if (existsSync(full)) return full;
   }
+  // A shared cargo target dir (CARGO_TARGET_DIR) keeps the binary elsewhere.
+  if (e.CARGO_TARGET_DIR) {
+    for (const p of ["debug/scan", "release/scan"]) {
+      const full = join(e.CARGO_TARGET_DIR, p);
+      if (existsSync(full)) return full;
+    }
+  }
   return null;
 }
 

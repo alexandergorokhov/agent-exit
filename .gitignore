@@ -1,4 +1,5 @@
 /target
+.claude/
 **/target
 node_modules/
 # Run outputs; the testnet records and sandbox logs are kept (no secrets:

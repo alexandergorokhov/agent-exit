@@ -323,8 +323,8 @@ fn s22_docs_do_not_overclaim() {
 fn s22_readme_hero_comes_first() {
     let r = read("README.md");
     let at = |s: &str| r.find(s).unwrap_or_else(|| panic!("README lacks {s}"));
-    let fold = at("## What is proven, and where");
-    assert!(at("## Try it") < fold);
+    let fold = at("## The problem, and what the contract does");
+    assert!(at("make demo") < fold);
     assert!(at("```mermaid") < fold);
     assert!(at("609b135") < fold && at("63d597c") < fold);
     assert!(at("Testnet: coming") < fold);
@@ -334,7 +334,7 @@ fn s22_readme_hero_comes_first() {
     );
     let hero = &r[..at("## The problem, and what the contract does")];
     assert!(
-        hero.lines().count() < 60,
+        hero.lines().count() < 80,
         "hero too long: {}",
         hero.lines().count()
     );
@@ -455,7 +455,58 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 56, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, 60, "{f}: the MCP test count differs from make mcp-test");
         }
     }
+}
+
+/// S25-S28: the README first screen, the wording fixes and the demo summary.
+#[test]
+fn s25_readme_first_screen() {
+    let r = read("README.md");
+    let first_screen = &r[..r.find("## One sale").unwrap()];
+    for want in [
+        "docs/img/demo.png",
+        "Why only on NEAR",
+        "make demo",
+        "docs/PROOF.md",
+    ] {
+        assert!(
+            first_screen.contains(want),
+            "README first screen lacks {want}"
+        );
+    }
+    assert!(
+        !r.contains("## What is proven, and where"),
+        "the proof table moved out of the README"
+    );
+    assert!(read("docs/PROOF.md").contains("| Claim |"));
+    assert!(std::path::Path::new(&format!(
+        "{}/../../docs/img/demo.png",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .exists());
+    for f in [
+        "README.md",
+        "AGENTS.md",
+        "llms.txt",
+        "web/index.html",
+        "web/data/demo.json",
+        "web/app.js",
+    ] {
+        let t = read(f).to_lowercase();
+        assert!(
+            !t.contains("all or nothing") && !t.contains("all-or-nothing"),
+            "{f}: all-or-nothing wording"
+        );
+        assert!(
+            !t.contains("ai agent marketplace"),
+            "{f}: marketplace label"
+        );
+    }
+    assert!(read("web/index.html").contains("Agent Exit · sell an AI agent safely"));
+    assert!(read("web/index.html").contains("Why only on NEAR"));
+    assert!(read(".gitignore").lines().any(|l| l == ".claude/"));
+    let mk = read("Makefile");
+    assert!(mk.contains("scripts/demo-summary.mjs") && mk.contains("-p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null"));
 }

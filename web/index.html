@@ -12,7 +12,7 @@
 <body>
   <header class="top">
     <div class="wrap">
-      <p class="eyebrow">NEAR · AI agent marketplace</p>
+      <p class="eyebrow">Agent Exit · sell an AI agent safely</p>
       <h1>Agent Exit</h1>
       <p class="lede">Buy an AI agent with its real earnings history, and be sure the seller is locked out. Six steps, each showing what the contract answered in a recorded run of its code (not a live chain).</p>
       <div id="mode" class="mode" role="status"></div>
@@ -20,6 +20,15 @@
   </header>
 
   <main class="wrap">
+    <aside id="why-near" class="step">
+      <h2>Why only on NEAR?</h2>
+      <ul>
+        <li>The agent is its own account. A full-access key can be <strong>deleted</strong> from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain.</li>
+        <li>Function-call keys are <strong>scoped</strong> to one contract and its methods: the runner key can run the agent and nothing else.</li>
+        <li>The agent's Base wallet is derived from its account name with Chain Signatures, so it stays the same across a sale.</li>
+        <li>NEAR AI Cloud signatures on payments are <strong>checked on-chain</strong> (ecrecover) to mark earnings as verified.</li>
+      </ul>
+    </aside>
     <nav aria-label="Demo steps">
       <ol id="steps" class="steps"></ol>
     </nav>
@@ -34,7 +43,7 @@
 
   <footer class="wrap foot">
     <p id="source" class="muted"></p>
-    <p id="evidence" class="muted">Evidence level: a regression suite, not independent evidence. 19 attack families, 18 counted, each blocked by its rule (A9, Base, is not counted until Base is live; A5 uses a placeholder hash until the reproducible build), 0/50 false positives on clean agents; 56 MCP tests.</p>
+    <p id="evidence" class="muted">Evidence level: a regression suite, not independent evidence. 19 attack families, 18 counted, each blocked by its rule (A9, Base, is not counted until Base is live; A5 uses a placeholder hash until the reproducible build), 0/50 false positives on clean agents; 60 MCP tests.</p>
     <p class="muted">All money is xUSD-FAKE, a fake test dollar with no value. No mainnet, ever. MIT licensed.</p>
   </footer>
 </body>

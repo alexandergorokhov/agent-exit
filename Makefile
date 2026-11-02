@@ -254,10 +254,12 @@ attack-testnet: ## (not built yet) [testnet] A1 A5 A17-A21 live
 demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-buys-agent replay, then how to open the page
 	@mkdir -p $(OUT)
 	@echo "== 1/3 verify subset: 60 scenarios replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
-	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json
+	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null
 	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
 	@echo "== 2/3 scripted replay: a fixed script (no AI model) plays the summarizer agent buying translator through the MCP tools"
-	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json
+	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json 2>&1 | grep -v "^agent-buys-agent: {" || true
+	@echo "== summary (full JSON in $(OUT)/)"
+	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
 	@echo "Not shown here: a real AI buyer and real testnet transactions (Testnet: coming)."

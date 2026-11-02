@@ -125,6 +125,12 @@ function renderMode() {
     return;
   }
   const who = el("span", { class: "muted", id: "wallet" });
+  if (!TESTNET_LIVE) {
+    box.replaceChildren(
+      el("span", { class: "pill warn", id: "testnet-label", text: "testnet: coming after deploy" }),
+      el("a", { href: "./", text: "back to offline" }));
+    return;
+  }
   const login = el("button", { type: "button", id: "login", text: "Log in with NEAR wallet" });
   login.addEventListener("click", async () => {
     login.disabled = true;
@@ -145,6 +151,9 @@ function renderMode() {
     login, who,
     el("a", { href: "./", text: "back to offline" }));
 }
+
+// Flip when the testnet deploy is live and the wallet hosts are allow-listed (CSP).
+const TESTNET_LIVE = false;
 
 async function main() {
   renderMode();

@@ -167,6 +167,17 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | LB12 | `make llm-buyer-check`: one tiny authenticated chat call; 401/402 and no key get clear errors | ts | `llm_buyer_nearai.test.ts` |
 | S-PG | `get_sales(from_index, limit)` is paginated, so the sale history never has to be read whole | unit | `contracts/agent` |
 | L6 | **The page is served with security headers.** `web/serve.mjs`, `web/_headers` and `web/vercel.json` send the CSP (the page's own plus `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`, also on 404s. The vendored connector's remote wallet manifests stay blocked until their hosts are reviewed (`web/vendor/README.md`) | node | `web/test/smoke.mjs` |
+| M4-L4a | On testnet, `buy_agent` only buys agents listed in `AGENT_EXIT_AGENTS`, checked before any read | ts | `mcp/test/review4.test.ts` |
+| M4-L4b | The per-day spend cap persists per account in `out/mcp-spend.json` (testnet); a restart does not reset it; offline stays in memory | ts | `review4.test.ts` |
+| M4-L5 | The model env file is refused unless it is mode 600 | ts | `review4.test.ts` |
+| T-S6 | G2 relay: the value, from, to and nonce inside the calldata must equal the authorization | node | `scripts/testnet/test/g2.test.mjs` |
+| T-S7 | G2 relay: `AGENT_EXIT_NETWORK` must be set, and be testnet | node | `g2.test.mjs` |
+| T-S8 | G2 relay: a chainsig.js address that differs, or cannot be derived, stops the relay | node | `g2.test.mjs` |
+| T-S9 | Secret files must be mode 600; the env file is refused when group- or world-readable | node | `g2.test.mjs` |
+| S25 | **README first screen.** A screenshot (`docs/img/demo.png`, `web/test/screenshot.mjs`), three headline numbers, the 3-command try-it and a "Why only on NEAR" box come first; the proof table lives in `docs/PROOF.md` | ci | `meta.rs::s25_readme_first_screen` |
+| S26 | **No overclaims in wording.** The page says "Agent Exit · sell an AI agent safely", not "marketplace"; the handover is "one transaction" and payouts are claimable afterwards, never "all or nothing" for the whole sale | ci | `meta.rs::s25_readme_first_screen`, `smoke.mjs` |
+| S27 | **No wallet login button** until testnet mode is live (`TESTNET_LIVE` in `web/app.js`); the "Why only on NEAR" box is on the page | node | `web/test/smoke.mjs` |
+| S28 | **`make demo` prints a short summary**; the JSON goes to `out/` | ci | `meta.rs::s25_readme_first_screen` |
 | M-L2 | `sent: true` after a buy that was sent but whose follow-up read failed; the spend is kept | ts | `mcp/test/review3_lows.test.ts` |
 | M-L3 | The scan child process gets PATH only | ts | `review3_lows.test.ts` |
 | M-L4 | Testnet `verify_lockout` can be inconclusive | ts | `review3_lows.test.ts` |

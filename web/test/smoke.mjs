@@ -90,7 +90,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("56 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("60 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
@@ -152,7 +152,7 @@ try {
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
   assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: coming after deploy");
-  assert.ok(await p.isVisible("#login"));
+  assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;
   await p.close();
