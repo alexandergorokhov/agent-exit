@@ -59,12 +59,10 @@ test("STR-16c 20 parallel buy_agent calls over one stdio session (no spend file)
   }
 });
 
-// BUG (found by this scenario): SpendLedger (src/tools.ts) reads and writes the
-// spend file without a lock. It is atomic inside one process (A40) but two
-// server processes with the same account and file both read 0 and both buy:
-// 8 processes, cap 1500, price 1000 -> up to 4 bought, the file lost updates.
-// Run it anyway with STR_RUN_BUGS=1.
-test("STR-17 8 server processes share one spend file and buy at once: at most one 1000 under a 1500 cap", { skip: process.env.STR_RUN_BUGS ? false : "BUG: SpendLedger has no cross-process lock; STR_RUN_BUGS=1 to run" }, async () => {
+// Found by this scenario (fixed): SpendLedger read and wrote the spend file
+// without a lock; 8 processes, cap 1500, price 1000 -> up to 4 bought. Now
+// the cap check and the add run as one step under a lock file.
+test("STR-17 8 server processes share one spend file and buy at once: at most one 1000 under a 1500 cap", async () => {
   const file = join(tmp(), "spend.json");
   const rounds = 5;
   let worst = 0;

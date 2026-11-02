@@ -7,7 +7,7 @@
 // needs max_price, stays inside the session spend cap, and scans first:
 // any finding refuses the buy before anything is sent.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, type MinTerms, type ScanExpect, ToolError } from "./backend.js";
@@ -170,7 +170,51 @@ export class SpendLedger {
     }
   }
 
+  /** Check the cap and add the price as one step, under a lock file, so
+   * several server processes sharing the spend file cannot all pass the cap
+   * (STR-17). Throws SESSION_CAP when it would go over. */
+  reserve(price: bigint, cap: bigint): void {
+    this.locked(() => {
+      const spent = this.total();
+      if (spent + price > cap) {
+        throw new ToolError("SESSION_CAP", `session spend would be ${usd(spent + price)} > cap ${usd(cap)} (AGENT_EXIT_SESSION_CAP)`);
+      }
+      this.write(price);
+    });
+  }
+
   add(delta: bigint): void {
+    this.locked(() => this.write(delta));
+  }
+
+  private locked(f: () => void): void {
+    if (!this.file) return f();
+    mkdirSync(dirname(this.file), { recursive: true });
+    const lock = `${this.file}.lock`;
+    const deadline = Date.now() + 10_000;
+    let fd: number | null = null;
+    while (fd === null) {
+      try {
+        fd = openSync(lock, "wx", 0o600);
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+        try {
+          // A lock left by a crashed process is dropped after 30 s.
+          if (Date.now() - statSync(lock).mtimeMs > 30_000) unlinkSync(lock);
+        } catch { /* gone already */ }
+        if (Date.now() > deadline) throw new ToolError("SESSION_CAP", `the spend file ${this.file} is locked by another process; refusing to buy without a known spend`);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+      }
+    }
+    try {
+      f();
+    } finally {
+      closeSync(fd);
+      try { unlinkSync(lock); } catch { /* ignore */ }
+    }
+  }
+
+  private write(delta: bigint): void {
     if (!this.file) {
       this.mem += delta;
       return;
@@ -380,10 +424,7 @@ export class Tools {
     // A40: reserve the price before any await, so concurrent buy_agent calls
     // cannot each pass the cap. Released again if the buy does not happen.
     const cap = BigInt(units(this.cfg.sessionCap));
-    if (this.spent + price > cap) {
-      throw new ToolError("SESSION_CAP", `session spend would be ${usd(this.spent + price)} > cap ${usd(cap)} (AGENT_EXIT_SESSION_CAP)`);
-    }
-    this.ledger.add(price);
+    this.ledger.reserve(price, cap);
     try {
       return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
     } catch (e) {
