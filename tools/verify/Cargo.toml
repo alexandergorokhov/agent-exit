@@ -7,6 +7,11 @@ license.workspace = true
 publish = false
 default-run = "verify"
 
+[features]
+# The stress scenarios (tests/stress.rs, `make stress`) take minutes; off by default
+# so `make verify` stays quick.
+stress = []
+
 [dependencies]
 agent-exit = { path = "../../contracts/agent", features = ["sim"] }
 agent-core = { path = "../../contracts/agent-core" }

@@ -194,6 +194,25 @@ test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21 on a real loca
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
+# Stress scenarios (docs/SCENARIOS.md "Stress (STR-*)"): scale and hostile load.
+# Offline part always runs; the MCP part needs Node; the sandbox part needs
+# cargo-near and the near-sandbox binary (and an fd limit of 65535 for neard).
+# STR_BUGS=1 also runs the scenarios marked BUG (they fail until fixed).
+.PHONY: stress stress-offline stress-mcp stress-sandbox
+stress: stress-offline stress-mcp stress-sandbox ## Stress scenarios STR-*: offline + MCP + sandbox [STR_BUGS=1 runs the BUG-marked ones too]
+
+stress-offline: ## STR-01..15 in the mocked runtime (no network, ~4 min)
+	cargo test -p verify --features stress --test stress --locked --offline -- --nocapture --test-threads=1 $(if $(STR_BUGS),--include-ignored)
+
+stress-mcp: mcp-build ## STR-16/17 daily spend cap under parallel buy_agent calls
+	cd mcp && STR_RUN_BUGS=$(STR_BUGS) AGENT_EXIT_SCAN_BIN=$(abspath $(or $(CARGO_TARGET_DIR),target))/debug/scan node --test dist/test/stress.stress.js
+
+stress-sandbox: ## STR-S1..S5 on a real local node (needs cargo-near; skipped with a message when missing)
+	@if ! command -v cargo-near >/dev/null; then echo "stress-sandbox: skipped, cargo-near not installed" >&2; exit 0; fi
+	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd tests/sandbox && AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked --test stress -- --test-threads=1 --nocapture
+
 # ------------------------------------------------------------- testnet day
 # Runs on the owner's machine (NEAR RPC, Base Sepolia and NEAR AI Cloud are
 # reachable there). Reads ~/.agent-exit.env (see .env.example); refuses
