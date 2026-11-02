@@ -4,9 +4,17 @@ description = "FAKE test USD (NEP-141) for the Agent Exit demo. Has no value. Ca
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+# Reproducible build (NEP-330): `make build` runs this image by digest.
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.22.0-rust-1.97.0"
+image_digest = "sha256:b193c8640a27172f83136a0f0aab2a9bf9d09f6ba0e6afd187addfaa9b92bae0"
+passed_env = []
+container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked"]
 
 [dependencies]
 near-sdk.workspace = true

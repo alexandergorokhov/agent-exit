@@ -162,9 +162,12 @@ audit: ## cargo audit (needs cargo-audit + advisory DB) and check ignored adviso
 ci: lint verify mcp-test ## What CI runs offline (audit runs as its own CI job)
 
 .PHONY: build
-build: ## Reproducible wasm build with cargo-near (Docker) -> contracts/res
+# The agent wasm compiles in the testnet token, admin and MPC accounts (the
+# same values as build-testnet), so the published hash is the deployed one.
+# Needs Docker and a clean, committed tree (cargo-near builds a fresh clone).
+build: ## Reproducible wasm build with cargo-near (Docker), testnet accounts compiled in -> contracts/res + SHA256SUMS
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/agent && cargo near build reproducible-wasm --out-dir ../res
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/xusd && cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/res && sha256sum *.wasm > SHA256SUMS
 
@@ -211,8 +214,13 @@ deploy-testnet: ## [testnet] Create accounts, deploy xusd + translator + cheat, 
 ifdef DRY_RUN
 	@$(PLAN) deploy
 else
-	$(MAKE) build-testnet
-	$(TESTNET_RUN) deploy
+	@if [ -f contracts/res/SHA256SUMS ]; then \
+	  echo "deploying the reproducible wasm in contracts/res (make build)"; \
+	  (cd contracts/res && sha256sum -c SHA256SUMS) && \
+	  export AGENT_WASM=$(CURDIR)/contracts/res/agent_exit.wasm XUSD_WASM=$(CURDIR)/contracts/res/xusd.wasm && $(TESTNET_RUN) deploy; \
+	else \
+	  $(MAKE) build-testnet && $(TESTNET_RUN) deploy; \
+	fi
 endif
 
 seed-testnet: deploy-testnet ## [testnet] Same as deploy-testnet (every step skips what is done)
