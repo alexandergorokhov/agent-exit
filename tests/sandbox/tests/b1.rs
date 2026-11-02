@@ -397,8 +397,25 @@ async fn call_retry(
     tgas: u64,
     deposit: NearToken,
 ) -> Result<(), String> {
+    call_tries(net, who, sk, contract, method, args, tgas, deposit, 5).await
+}
+
+/// `call_retry` with `tries` attempts. Use 1 for a call that must not run
+/// twice; the caller then checks the chain before trying again.
+#[allow(clippy::too_many_arguments)]
+async fn call_tries(
+    net: &NetworkConfig,
+    who: &AccountId,
+    sk: &SecretKey,
+    contract: &AccountId,
+    method: &str,
+    args: Value,
+    tgas: u64,
+    deposit: NearToken,
+    tries: u32,
+) -> Result<(), String> {
     let mut last = String::new();
-    for attempt in 0..5u32 {
+    for attempt in 0..tries {
         if attempt > 0 {
             tokio::time::sleep(std::time::Duration::from_millis(500 << attempt)).await;
         }
@@ -422,9 +439,39 @@ async fn call_retry(
         }
     }
     Err(format!(
-        "{method} by {who}: refused 5 times, last: {last}; {who} holds {}",
+        "{method} by {who}: refused {tries} times, last: {last}; {who} holds {}",
         near_of(net, who).await
     ))
+}
+
+/// `who`'s xUSD balance (0 if unknown).
+async fn ft_balance(net: &NetworkConfig, xusd: &AccountId, who: &AccountId) -> u128 {
+    Contract(xusd.clone())
+        .call_function("ft_balance_of", json!({"account_id": who}))
+        .read_only::<Value>()
+        .fetch_from(net)
+        .await
+        .ok()
+        .and_then(|v| v.data.as_str().and_then(|s| s.parse().ok()))
+        .unwrap_or(0)
+}
+
+/// Poll until `who` holds at least `min` xUSD (or `secs` pass).
+async fn wait_ft(
+    net: &NetworkConfig,
+    xusd: &AccountId,
+    who: &AccountId,
+    min: u128,
+    secs: u64,
+) -> u128 {
+    let end = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+    loop {
+        let b = ft_balance(net, xusd, who).await;
+        if b >= min || std::time::Instant::now() >= end {
+            return b;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
 }
 
 /// One payer: created by `batcher`, registers a payer row (0.024 NEAR),
@@ -490,29 +537,64 @@ async fn one_payer(
         NearToken::from_millinear(ROW_DEPOSIT_MILLI),
     )
     .await?;
-    call_retry(
-        &net,
-        &id,
-        &sk,
-        &xusd,
-        "faucet",
-        json!({"amount": USD.to_string()}),
-        30,
-        NearToken::from_yoctonear(0),
-    )
-    .await?;
-    call_retry(
-        &net,
-        &id,
-        &sk,
-        &xusd,
-        "ft_transfer_call",
-        json!({"receiver_id": agent, "amount": USD.to_string(), "msg": ""}),
-        100,
-        NearToken::from_yoctonear(1),
-    )
-    .await?;
-    Ok(())
+    // Faucet until the payer holds 1.00: the faucet registers the payer on
+    // xUSD itself (storage paid by xusd) and allows 10,000.00 per account,
+    // so a repeat is harmless. Check the balance, never assume it.
+    let mut have = 0;
+    for _ in 0..5 {
+        call_retry(
+            &net,
+            &id,
+            &sk,
+            &xusd,
+            "faucet",
+            json!({"amount": USD.to_string()}),
+            30,
+            NearToken::from_yoctonear(0),
+        )
+        .await?;
+        have = wait_ft(&net, &xusd, &id, USD, 20).await;
+        if have >= USD {
+            break;
+        }
+    }
+    if have < USD {
+        return Err(format!(
+            "faucet {id}: holds {have} xUSD units after 5 faucet calls, needs {USD}"
+        ));
+    }
+    // Pay once. A transaction refused by the node may still have landed
+    // (a lost answer): before trying again, check whether the 1.00 left.
+    let mut last = String::new();
+    for attempt in 0..5u32 {
+        if attempt > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(500 << attempt)).await;
+            // Let a transfer that landed settle, then look.
+            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+            if ft_balance(&net, &xusd, &id).await < have {
+                return Ok(());
+            }
+        }
+        match call_tries(
+            &net,
+            &id,
+            &sk,
+            &xusd,
+            "ft_transfer_call",
+            json!({"receiver_id": agent, "amount": USD.to_string(), "msg": ""}),
+            100,
+            NearToken::from_yoctonear(1),
+            1,
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            // Executed and failed: a real error, do not pay again.
+            Err(e) if e.contains("executed and failed") => return Err(e),
+            Err(e) => last = e,
+        }
+    }
+    Err(format!("ft_transfer_call {id}: {last}"))
 }
 
 /// A47 (local-node finding at 12d1ab7: about 584 distinct 64-character
@@ -578,6 +660,12 @@ async fn a47_thousand_long_payers_then_buy_and_views() {
     // p1 paid without a payer row (pooled); all 1,050 registered: no cap
     // (A50), and none of their rows is empty.
     assert_eq!(e["tracked_payers"], PAYERS as u64);
+    // Every one of them paid (their payment landed and counted).
+    assert!(
+        e["counted_payers"].as_u64().unwrap() >= PAYERS as u64,
+        "counted_payers {}",
+        e["counted_payers"]
+    );
     let st = w.view(&agent.id, "get_status", json!({})).await;
     println!("A47 near_storage: {}", st["near_storage"]);
     assert_eq!(st["near_storage"]["solvent"], true);
