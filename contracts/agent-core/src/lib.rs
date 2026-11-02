@@ -1087,6 +1087,12 @@ impl<S: Store + Default> Machine<S> {
     pub fn withdraw(&mut self, caller: &str, amount: Amount, to: &str) -> Res<Amount> {
         self.only_owner(caller)?;
         self.not_settling()?;
+        // STR-12: while Listed the buyer has scanned the books and the NEAR
+        // storage; a payout to a fresh address adds a row the scan did not
+        // reserve. Owner withdrawals wait until the listing ends.
+        if self.status == Status::Listed {
+            return Err(Error::SpendingPaused);
+        }
         let treasury = if self.frozen { self.treasury } else { 0 };
         if amount == 0 || amount > self.owner_free + treasury {
             return Err(Error::InsufficientFunds);

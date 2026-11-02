@@ -52,6 +52,12 @@ First run: agent_exit.wasm `be4b898dd821a6a5ff555a26f472768b19de97d113b2f37624c7
 `make build-testnet` gives different hashes (local toolchain); deploy and
 scenes use contracts/res whenever SHA256SUMS exists.
 
+**Stale since 2026-11-02 (STR-12 fix):** `withdraw` is now refused while Listed.
+The committed contracts/res wasm and the hashes above are the pre-fix build, and so
+are the agents on testnet. Before the final redeploy: run `make build`, commit the new
+contracts/res + SHA256SUMS, update the hash in README/VIDEO/this file, re-run STR-S5
+on the sandbox, then redeploy.
+
 ## 4. Deploy and seed
 
     make deploy-testnet DRY_RUN=1   # the plan, offline; nothing is sent

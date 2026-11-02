@@ -1027,18 +1027,15 @@ fn sell(s: &mut Sim, buyer: &str, pk: u8, price: u128) -> u64 {
 
 // ----------------------------------------------------------------- STR-12
 
-/// STR-12 (BUG, review claim #2): a seller can add payout-destination rows
-/// while the agent is LISTED (`withdraw` has no Listed check), at most 1,000
-/// of them, and the NEAR solvency figure the buyer scanned does not count
-/// them (`near_storage` reserves only signature ids and day rows). With the
-/// 1 NEAR reserve as the only slack the agent turns insolvent after the
-/// scan. Expected: `near_storage.solvent` still true after the rows (or the
-/// withdraw refused while listed).
+/// STR-12 (found by this suite, fixed): a listed seller could pay 1 unit to
+/// up to 1,000 fresh addresses through `withdraw`, adding payout-destination
+/// rows that `near_storage` did not reserve, so the agent the buyer scanned
+/// as solvent turned insolvent before the sale. Now `withdraw` is refused
+/// while Listed (`Listed: spending paused`), like `withdraw_near` (A39), and
+/// the storage does not move.
 #[test]
-#[ignore = "BUG: withdraw to fresh addresses while Listed adds up to 1,000 paid_to rows (about 1.2 NEAR) that near_storage does not reserve; see docs/SCENARIOS.md STR-12"]
-fn str12_bug_paid_to_rows_while_listed_break_solvency() {
+fn str12_withdraw_while_listed_is_refused_and_storage_stays() {
     let mut s = listed_translator();
-    // Give the agent exactly the scanned minimum plus 0.2 NEAR.
     let mut c = s.call(MALLORY);
     c.storage = 450_000;
     s.env(&c);
@@ -1053,26 +1050,34 @@ fn str12_bug_paid_to_rows_while_listed_break_solvency() {
         "the buyer's scan sees a solvent agent"
     );
     let usage0 = before["usage_bytes"].as_u64().unwrap();
-    // The seller, still listed, pays 1 unit to 1,000 fresh 64-char addresses.
+    let mut refused = 0;
     for i in 0..agent_core::MAX_PAID_TO {
-        s.by_1y(ALICE)
-            .withdraw(U128(1), Some(acc(&long_payer(70_000 + i))))
-            .detach();
+        let msg = panic_text(|| {
+            s.by_1y(ALICE)
+                .withdraw(U128(1), Some(acc(&long_payer(70_000 + i))))
+                .detach();
+        });
+        if msg.contains("Listed: spending paused") {
+            refused += 1;
+        }
     }
     s.env(&c);
     let after = s.c.get_status()["near_storage"].clone();
-    let grew = after["usage_bytes"].as_u64().unwrap() - usage0;
     println!(
-        "STR-12 {} rows added while Listed: +{grew} bytes (+{:.2} NEAR staked), solvent {} -> {}",
-        s.c.get_status()["paid_to_total"],
-        grew as f64 / 100_000.0,
-        before["solvent"],
-        after["solvent"]
+        "STR-12 {refused} withdraws refused while Listed; usage {} -> {}, solvent {} -> {}",
+        usage0, after["usage_bytes"], before["solvent"], after["solvent"]
     );
     assert_eq!(
-        after["solvent"], true,
-        "rows added after the scan made the agent insolvent"
+        refused,
+        agent_core::MAX_PAID_TO,
+        "every withdraw while Listed is refused"
     );
+    assert_eq!(
+        after["usage_bytes"].as_u64().unwrap(),
+        usage0,
+        "no rows added"
+    );
+    assert_eq!(after["solvent"], true);
 }
 
 // ----------------------------------------------------------------- STR-13

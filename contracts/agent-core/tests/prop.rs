@@ -196,10 +196,15 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     prop_assert!(m.retiring.is_disjoint(&m.known_keys));
     // Settling <=> pending.
     prop_assert_eq!(m.status == Status::Settling, m.pending.is_some());
-    // I10: the owner can always take out all revenue unless a buy is settling.
+    // I10: the owner can always take out all revenue unless a buy is settling
+    // (while Listed, after cancelling the listing: STR-12).
     if m.status != Status::Settling && m.owner_free > 0 {
         let mut c = m.clone();
         let owner = c.owner.clone();
+        if c.status == Status::Listed {
+            prop_assert!(c.withdraw(&owner, c.owner_free, &owner).is_err());
+            prop_assert!(c.cancel_listing(&owner).is_ok());
+        }
         prop_assert!(c.withdraw(&owner, c.owner_free, &owner).is_ok());
     }
     Ok(())
