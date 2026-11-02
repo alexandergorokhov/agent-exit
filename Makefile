@@ -110,6 +110,10 @@ llm-buyer: mcp-build ## A real model (NEAR AI Cloud, else Anthropic) reads the S
 	@mkdir -p $(OUT)
 	node mcp/dist/scripts/llm-buyer.js --out $(OUT)/llm-buyer.json
 
+.PHONY: llm-buyer-check
+llm-buyer-check: mcp-build ## One tiny authenticated chat call: is the NEARAI_API_KEY accepted and does the account have credit (exit 2 on 401/402 or no key)
+	node mcp/dist/scripts/llm-buyer.js --check
+
 .PHONY: attack
 attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/attack.json [N=200 SEED=42 CLEAN=50 FIXTURE=fixtures/judge-attack.json]
 	@mkdir -p $(OUT)

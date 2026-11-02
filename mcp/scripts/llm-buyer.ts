@@ -11,7 +11,21 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { connect, REPO } from "../src/client.js";
-import { loadModelEnv, OpenAICompatClient, pickClient, runBuyer, summarize, systemPrompt, type McpLike, type ToolDef } from "../src/llm.js";
+import {
+  loadModelEnv,
+  ModelApiError,
+  OpenAICompatClient,
+  pickClient,
+  repeatedKey,
+  runBuyer,
+  selectModel,
+  summarize,
+  systemPrompt,
+  totalUsage,
+  type McpLike,
+  type ModelClient,
+  type ToolDef,
+} from "../src/llm.js";
 
 const arg = (f: string): string | undefined => {
   const i = process.argv.indexOf(f);
@@ -19,8 +33,15 @@ const arg = (f: string): string | undefined => {
 };
 const GOAL = "You are summarizer. Buy a translation agent under 1,000 xUSD that is safe.";
 
+const say = (l: string) => process.stderr.write(`llm-buyer: ${l}\n`);
+
 async function main(): Promise<number> {
   const env = loadModelEnv();
+  // A key pasted several times over is a common mistake. Say so, never print it.
+  for (const k of ["NEARAI_API_KEY", "ANTHROPIC_API_KEY"] as const) {
+    const n = env[k] ? repeatedKey(env[k]) : null;
+    if (n) say(`warning: ${k} is one string of ${env[k].length / n} characters repeated ${n} times; it was probably pasted more than once`);
+  }
   let model;
   try {
     model = pickClient(env, arg("--provider"));
@@ -35,6 +56,8 @@ async function main(): Promise<number> {
     );
     return 2;
   }
+  if (model instanceof OpenAICompatClient) await selectModel(model, env, say);
+  if (process.argv.includes("--check")) return check(model);
   const world = JSON.parse(readFileSync(join(REPO, "fixtures", "mcp", "world.json"), "utf8"));
   const skill = readFileSync(join(REPO, "skills", "agent-exit", "SKILL.md"), "utf8");
   // The server gets exactly this env (plus PATH): no model key, no chain key.
@@ -78,6 +101,7 @@ async function main(): Promise<number> {
     model_requested: model.model,
     models_reported: [...new Set(t.steps.map((x) => x.model_id))],
     buyer: "summarizer.testnet",
+    usage: totalUsage(t.steps),
     transcript: t,
     near_ai_signatures: signatures,
     summary,
@@ -85,8 +109,28 @@ async function main(): Promise<number> {
   const outPath = arg("--out") ?? "out/llm-buyer.json";
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");
-  process.stderr.write(`llm-buyer: wrote ${outPath}\nllm-buyer: ${JSON.stringify(summary)}\n`);
+  process.stderr.write(`llm-buyer: wrote ${outPath}\nllm-buyer: ${JSON.stringify(summary)}\nllm-buyer: usage ${JSON.stringify(out.usage)}\n`);
+  if (t.error_status === 401 || t.error_status === 402) {
+    say(t.error ?? "");
+    return 2;
+  }
   return summary.pass === true ? 0 : 1;
+}
+
+/** `make llm-buyer-check`: one tiny authenticated chat call. Starts no MCP server. */
+async function check(model: ModelClient): Promise<number> {
+  if (!model.ping) {
+    say("this provider has no check call");
+    return 1;
+  }
+  try {
+    const r = await model.ping();
+    say(`ok: key accepted and the account can run ${model.provider} model ${r.model}; usage ${JSON.stringify(r.usage ?? null)}`);
+    return 0;
+  } catch (e) {
+    say(`check failed: ${(e as Error).message}`);
+    return e instanceof ModelApiError && (e.status === 401 || e.status === 402) ? 2 : 1;
+  }
 }
 
 main().then(

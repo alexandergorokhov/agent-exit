@@ -40,10 +40,18 @@ export interface ModelReply {
   response_id: string | null;
   /** Response headers worth keeping (signature, attestation, request ids). */
   headers: Record<string, string>;
+  /** Token counts the provider reported for this reply, when it did. */
+  usage?: Usage;
+}
+export interface Usage {
+  prompt_tokens: number;
+  completion_tokens: number;
 }
 export interface ModelClient {
   provider: string;
   model: string;
+  /** One tiny authenticated chat call: proves the key works and has credit. */
+  ping?(): Promise<ModelReply>;
   complete(req: { system: string; messages: Message[]; tools: ToolDef[] }): Promise<ModelReply>;
 }
 export interface McpLike {
@@ -58,6 +66,7 @@ export interface Step {
   model_id: string;
   response_id: string | null;
   response_headers: Record<string, string>;
+  usage: Usage | null;
   assistant_text: string;
   tool_calls: {
     id: string;
@@ -76,6 +85,32 @@ export interface Transcript {
   steps: Step[];
   status: "done" | "max_steps" | "model_error";
   error?: string;
+  /** HTTP status of a model API error, when that is what ended the run. */
+  error_status?: number;
+}
+
+/** A model API answer that is not a success. Nothing here is retried. */
+export class ModelApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+
+export function totalUsage(steps: { usage: Usage | null }[]): Record<string, number> {
+  let p = 0;
+  let c = 0;
+  let n = 0;
+  for (const s of steps) {
+    if (s.usage) {
+      p += s.usage.prompt_tokens;
+      c += s.usage.completion_tokens;
+      n++;
+    }
+  }
+  return { replies_with_usage: n, prompt_tokens: p, completion_tokens: c, total_tokens: p + c };
 }
 
 const MAX_RESULT_CHARS = 30_000;
@@ -109,6 +144,7 @@ export async function runBuyer(opts: {
     } catch (e) {
       t.status = "model_error";
       t.error = (e as Error).message;
+      if (e instanceof ModelApiError) t.error_status = e.status;
       return t;
     }
     messages.push({ role: "assistant", content: reply.content, tool_calls: reply.tool_calls });
@@ -117,6 +153,7 @@ export async function runBuyer(opts: {
       model_id: reply.model,
       response_id: reply.response_id,
       response_headers: reply.headers,
+      usage: reply.usage ?? null,
       assistant_text: reply.content,
       tool_calls: [],
     };
@@ -210,7 +247,7 @@ export function loadModelEnv(env: NodeJS.ProcessEnv = process.env): Record<strin
 // ------------------------------------------------------------------ providers
 
 export const NEARAI_BASE_URL = "https://cloud-api.near.ai/v1";
-export const NEARAI_DEFAULT_MODEL = "deepseek-ai/DeepSeek-V3.1";
+export const NEARAI_DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017";
 export const ANTHROPIC_DEFAULT_MODEL = "claude-haiku-4-5";
 
 /** The key is sent only to https hosts under near.ai (NEAR AI) or api.anthropic.com. */
@@ -244,6 +281,12 @@ export function scrub(text: string, secrets: string[]): string {
   return t;
 }
 
+function usageOf(p: unknown, c: unknown): Usage | undefined {
+  return typeof p === "number" && typeof c === "number" ? { prompt_tokens: p, completion_tokens: c } : undefined;
+}
+
+const PING_SYSTEM = "Reply with the single word OK.";
+
 function parseArgs(raw: unknown): { arguments: Record<string, unknown> | null; raw?: string } {
   if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) return { arguments: raw as Record<string, unknown> };
   if (typeof raw === "string") {
@@ -258,7 +301,7 @@ function parseArgs(raw: unknown): { arguments: Record<string, unknown> | null; r
   return { arguments: null };
 }
 
-async function post(fetchImpl: typeof fetch, url: string, headers: Record<string, string>, body: unknown, secrets: string[]): Promise<Response> {
+async function post(fetchImpl: typeof fetch, url: string, headers: Record<string, string>, body: unknown, secrets: string[], who = "model API"): Promise<Response> {
   let res: Response;
   try {
     res = await fetchImpl(url, {
@@ -271,9 +314,11 @@ async function post(fetchImpl: typeof fetch, url: string, headers: Record<string
   } catch (e) {
     throw new Error(scrub(`model request failed: ${(e as Error).message}`, secrets));
   }
+  if (res.status === 401) throw new ModelApiError(`${who}: key rejected (HTTP 401); check the API key`, 401);
+  if (res.status === 402) throw new ModelApiError(`${who}: account has no credits/spending limit (HTTP 402)`, 402);
   if (!res.ok) {
     const text = scrub(await res.text().catch(() => ""), secrets).slice(0, 500);
-    throw new Error(`model API HTTP ${res.status}: ${text}`);
+    throw new ModelApiError(`model API HTTP ${res.status}: ${text}`, res.status);
   }
   return res;
 }
@@ -316,9 +361,10 @@ export class OpenAICompatClient implements ModelClient {
   }
 
   async complete(req: { system: string; messages: Message[]; tools: ToolDef[] }): Promise<ModelReply> {
-    const res = await post(this.fetchImpl, `${this.baseUrl}/chat/completions`, { authorization: `Bearer ${this.apiKey}` }, this.body(req), [this.apiKey]);
+    const res = await post(this.fetchImpl, `${this.baseUrl}/chat/completions`, { authorization: `Bearer ${this.apiKey}` }, this.body(req), [this.apiKey], "NEAR AI");
     const j = (await res.json()) as {
       id?: string;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
       model?: string;
       choices?: { message?: { content?: string | null; tool_calls?: { id?: string; function?: { name?: string; arguments?: unknown } }[] } }[];
     };
@@ -328,7 +374,52 @@ export class OpenAICompatClient implements ModelClient {
       const p = parseArgs(c.function?.arguments);
       return { id: c.id || `call_${i}`, name: String(c.function?.name ?? ""), arguments: p.arguments, ...(p.raw ? { raw_arguments: p.raw } : {}) };
     });
-    return { content: msg.content ?? "", tool_calls, model: j.model ?? this.model, response_id: j.id ?? null, headers: keepHeaders(res.headers) };
+    return {
+      content: msg.content ?? "",
+      tool_calls,
+      model: j.model ?? this.model,
+      response_id: j.id ?? null,
+      headers: keepHeaders(res.headers),
+      usage: usageOf(j.usage?.prompt_tokens, j.usage?.completion_tokens),
+    };
+  }
+
+  /** One tiny authenticated chat call (8 tokens at most, no tools). */
+  async ping(): Promise<ModelReply> {
+    const res = await post(
+      this.fetchImpl,
+      `${this.baseUrl}/chat/completions`,
+      { authorization: `Bearer ${this.apiKey}` },
+      { model: this.model, messages: [{ role: "system", content: PING_SYSTEM }, { role: "user", content: "ping" }], max_tokens: 8, temperature: 0 },
+      [this.apiKey],
+      "NEAR AI",
+    );
+    const j = (await res.json()) as {
+      id?: string;
+      model?: string;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+      choices?: { message?: { content?: string | null } }[];
+    };
+    return {
+      content: j.choices?.[0]?.message?.content ?? "",
+      tool_calls: [],
+      model: j.model ?? this.model,
+      response_id: j.id ?? null,
+      headers: {},
+      usage: usageOf(j.usage?.prompt_tokens, j.usage?.completion_tokens),
+    };
+  }
+
+  /** The models list. It answers 200 without auth, so no key is sent. */
+  async listModels(): Promise<unknown> {
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${this.baseUrl}/models`, { redirect: "error", signal: AbortSignal.timeout(30_000) });
+    } catch (e) {
+      throw new Error(`models list failed: ${(e as Error).message}`);
+    }
+    if (!res.ok) throw new Error(`models list HTTP ${res.status}`);
+    return res.json();
   }
 
   /** NEAR AI signs each completion; the signature is keyed by the chat id
@@ -357,6 +448,19 @@ export class AnthropicClient implements ModelClient {
     public model: string,
     private fetchImpl: typeof fetch = fetch,
   ) {}
+
+  async ping(): Promise<ModelReply> {
+    const res = await post(
+      this.fetchImpl,
+      "https://api.anthropic.com/v1/messages",
+      { "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" },
+      { model: this.model, max_tokens: 8, system: PING_SYSTEM, messages: [{ role: "user", content: "ping" }] },
+      [this.apiKey],
+      "Anthropic",
+    );
+    const j = (await res.json()) as { id?: string; model?: string; usage?: { input_tokens?: number; output_tokens?: number } };
+    return { content: "", tool_calls: [], model: j.model ?? this.model, response_id: j.id ?? null, headers: {}, usage: usageOf(j.usage?.input_tokens, j.usage?.output_tokens) };
+  }
 
   body(req: { system: string; messages: Message[]; tools: ToolDef[] }): Record<string, unknown> {
     const messages: { role: string; content: unknown[] }[] = [];
@@ -390,8 +494,13 @@ export class AnthropicClient implements ModelClient {
       { "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" },
       this.body(req),
       [this.apiKey],
+      "Anthropic",
     );
-    const j = (await res.json()) as { id?: string; model?: string; content?: { type: string; text?: string; id?: string; name?: string; input?: unknown }[] };
+    const j = (await res.json()) as {
+      id?: string;
+      model?: string;
+      usage?: { input_tokens?: number; output_tokens?: number };
+      content?: { type: string; text?: string; id?: string; name?: string; input?: unknown }[] };
     const blocks = j.content ?? [];
     const text = blocks.filter((b) => b.type === "text").map((b) => b.text ?? "").join("\n");
     const tool_calls: ToolCall[] = blocks
@@ -400,8 +509,97 @@ export class AnthropicClient implements ModelClient {
         const p = parseArgs(b.input);
         return { id: b.id || `call_${i}`, name: String(b.name ?? ""), arguments: p.arguments };
       });
-    return { content: text, tool_calls, model: j.model ?? this.model, response_id: j.id ?? null, headers: keepHeaders(res.headers) };
+    return {
+      content: text,
+      tool_calls,
+      model: j.model ?? this.model,
+      response_id: j.id ?? null,
+      headers: keepHeaders(res.headers),
+      usage: usageOf(j.usage?.input_tokens, j.usage?.output_tokens),
+    };
   }
+}
+
+// ---------------------------------------------------------------- model choice
+
+function num(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) return Number(v);
+  if (v && typeof v === "object") {
+    const o = v as { amount?: unknown; scale?: unknown };
+    const a = num(o.amount);
+    if (a !== null) return a / 10 ** (num(o.scale) ?? 0);
+  }
+  return null;
+}
+function firstNum(o: Record<string, unknown>, keys: string[]): number | null {
+  for (const k of keys) {
+    const n = num(o[k]);
+    if (n !== null) return n;
+  }
+  return null;
+}
+function supportsTools(m: Record<string, unknown>): boolean {
+  const named = (v: unknown) => Array.isArray(v) && v.some((x) => /^(tools?|tool_choice|function_calling|tool_calling|tool_use)$/i.test(String(x)));
+  if (named(m.supported_parameters) || named(m.capabilities) || named(m.features)) return true;
+  const caps = m.capabilities;
+  if (caps && typeof caps === "object" && !Array.isArray(caps)) {
+    const c = caps as Record<string, unknown>;
+    if (c.tools === true || c.function_calling === true || c.tool_calling === true || c.tool_use === true) return true;
+  }
+  return m.supports_tools === true || m.supports_function_calling === true || m.supports_tool_calling === true;
+}
+
+/** From a /v1/models answer, the cheapest chat model that says it supports
+ * tools (input plus output price per token). A model with no price or no tool
+ * flag is never chosen; null means none qualifies. */
+export function chooseModel(list: unknown): { id: string; price: number } | null {
+  const arr = Array.isArray(list) ? list : (list as { data?: unknown } | null)?.data;
+  if (!Array.isArray(arr)) return null;
+  let best: { id: string; price: number } | null = null;
+  for (const e of arr) {
+    if (!e || typeof e !== "object") continue;
+    const m = e as Record<string, unknown>;
+    const id = typeof m.id === "string" ? m.id : "";
+    if (!id || /embed|rerank|whisper|image|flux|tts|moderat/i.test(id) || !supportsTools(m)) continue;
+    const p = (m.pricing && typeof m.pricing === "object" ? m.pricing : m) as Record<string, unknown>;
+    const inp = firstNum(p, ["prompt", "input", "input_cost_per_token", "inputCostPerToken"]);
+    const out = firstNum(p, ["completion", "output", "output_cost_per_token", "outputCostPerToken"]);
+    if (inp === null || out === null) continue;
+    const price = inp + out;
+    if (!best || price < best.price || (price === best.price && id < best.id)) best = { id, price };
+  }
+  return best;
+}
+
+/** Choose the NEAR AI model at startup: NEARAI_MODEL if set, else the cheapest
+ * tool-capable model from GET /v1/models, else the default. Logged either way. */
+export async function selectModel(client: OpenAICompatClient, env: Record<string, string>, log: (l: string) => void): Promise<void> {
+  if (env.NEARAI_MODEL) {
+    log(`model ${client.model} (set by NEARAI_MODEL)`);
+    return;
+  }
+  try {
+    const c = chooseModel(await client.listModels());
+    if (c) {
+      client.model = c.id;
+      log(`model ${c.id} (cheapest with tool support, ${c.price} per token in plus out)`);
+      return;
+    }
+    log(`no model in the list reports tool support and a price; using ${client.model}`);
+  } catch (e) {
+    log(`could not read the models list (${(e as Error).message}); using ${client.model}`);
+  }
+}
+
+/** If the key is one shorter string pasted two or more times, how many times;
+ * else null. The key itself is never returned or printed. */
+export function repeatedKey(key: string): number | null {
+  const n = key.length;
+  for (let u = 4; u <= n / 2; u++) {
+    if (n % u === 0 && key === key.slice(0, u).repeat(n / u)) return n / u;
+  }
+  return null;
 }
 
 /** Pick the provider from the model env: NEAR AI first, Anthropic as fallback. */
