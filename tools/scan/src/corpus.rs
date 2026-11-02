@@ -5,9 +5,51 @@
 use crate::*;
 use serde_json::{json, Value};
 
-/// The published code hash used by the corpus and fixtures. The real value is
-/// the reproducible-build hash in contracts/res/SHA256SUMS (batch B3).
+/// The placeholder code hash used while no reproducible build exists. Once
+/// `contracts/res/SHA256SUMS` is committed, [`release_code_hash`] returns the
+/// real hash and the corpus (A5 included) uses it.
 pub const FIXTURE_CODE_HASH: &str = "fixture-release-hash-v1";
+
+/// Path of the reproducible-build checksums, relative to the repo root.
+pub const SHA256SUMS: &str = "contracts/res/SHA256SUMS";
+
+/// The published agent code hash as NEAR reports it (`view_account.code_hash`,
+/// base58 of the wasm's SHA-256), read from `contracts/res/SHA256SUMS`
+/// (`agent_exit.wasm` line). `None` while that file does not exist or has no
+/// such line.
+pub fn release_code_hash() -> Option<String> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(SHA256SUMS);
+    code_hash_from_sums(&std::fs::read_to_string(path).ok()?)
+}
+
+/// Parse `sha256sum` output and return base58 of the `agent_exit.wasm` hash.
+pub fn code_hash_from_sums(sums: &str) -> Option<String> {
+    sums.lines().find_map(|l| {
+        let mut it = l.split_whitespace();
+        let hex = it.next()?;
+        let file = it.next()?.trim_start_matches('*');
+        if file != "agent_exit.wasm" || hex.len() != 64 {
+            return None;
+        }
+        let bytes = (0..32)
+            .map(|i| u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).ok())
+            .collect::<Option<Vec<u8>>>()?;
+        Some(bs58::encode(bytes).into_string())
+    })
+}
+
+/// The code hash the corpus expects, and its source (`release` or
+/// `placeholder`): the real one when it exists. Read once per process.
+pub fn corpus_code_hash() -> (String, &'static str) {
+    static H: std::sync::OnceLock<(String, &'static str)> = std::sync::OnceLock::new();
+    H.get_or_init(|| match release_code_hash() {
+        Some(h) => (h, "release"),
+        None => (FIXTURE_CODE_HASH.to_string(), "placeholder"),
+    })
+    .clone()
+}
 pub const NOW_NS: u64 = 1_767_225_600_000_000_000 + 10 * 86_400_000_000_000;
 pub const TOKEN: &str = "xusd.testnet";
 
@@ -55,6 +97,7 @@ pub fn runner_key(agent: &str, pk: &str) -> AccessKey {
 /// key, published code, no approvals.
 pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
     let agent = format!("agent{idx}.testnet");
+    let code_hash = corpus_code_hash().0;
     let pk = rng.key();
     let version = 1 + rng.below(5);
     let known = vec![pk.clone()];
@@ -68,7 +111,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
         agent: agent.clone(),
         now_ns: NOW_NS,
         expected: Expected {
-            code_hash: FIXTURE_CODE_HASH.into(),
+            code_hash: code_hash.clone(),
             listing_version: version,
             admin: None,
             token: None,
@@ -76,7 +119,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             min_terms: None,
         },
         chain: Chain {
-            code_hash: FIXTURE_CODE_HASH.into(),
+            code_hash,
             methods: PUBLISHED_METHODS.iter().map(|s| s.to_string()).collect(),
             keys: vec![runner_key(&agent, &pk)],
             keys_second_provider: Some(vec![runner_key(&agent, &pk)]),
@@ -131,6 +174,17 @@ const OWNER_LIKE: [&str; 5] = [
     "claim",
     "list_for_sale",
 ];
+
+/// Families still generated and checked (each must be blocked) but left out
+/// of the headline count, with the reason.
+pub const NOT_COUNTED: [(&str, &str); 1] = [(
+    "A9",
+    "not counted until Base is live: the testnet scan fixes open_auth_until at 0",
+)];
+
+fn not_counted_why(id: &str) -> Option<&'static str> {
+    NOT_COUNTED.iter().find(|(i, _)| *i == id).map(|(_, w)| *w)
+}
 
 pub const FAMILIES: [Family; 19] = [
     Family {
@@ -415,7 +469,11 @@ pub fn generate(seed: u64, n: usize, clean_n: usize) -> (Vec<Case>, Vec<ScanInpu
 pub fn run(seed: u64, n: usize, clean_n: usize) -> Value {
     let (cases, clean) = generate(seed, n, clean_n);
     let mut fams = Vec::new();
+    let mut total_cases = 0;
     let mut total_caught = 0;
+    let mut counted_families = 0;
+    let mut blocked_families = 0;
+    let mut not_counted = Vec::new();
     let mut missed_examples = Vec::new();
     for fam in FAMILIES.iter() {
         let mine: Vec<&Case> = cases.iter().filter(|c| c.family == fam.id).collect();
@@ -429,10 +487,22 @@ pub fn run(seed: u64, n: usize, clean_n: usize) -> Value {
                     .push(json!({"family": c.family, "agent": c.input.agent, "report": r}));
             }
         }
-        total_caught += caught;
+        let why = not_counted_why(fam.id);
+        if let Some(why) = why {
+            not_counted.push(json!({"id": fam.id, "why": why, "cases": mine.len(),
+                                    "caught": caught, "missed": mine.len() - caught}));
+        } else {
+            total_cases += mine.len();
+            total_caught += caught;
+            counted_families += 1;
+            if !mine.is_empty() && caught == mine.len() {
+                blocked_families += 1;
+            }
+        }
         fams.push(
             json!({"id": fam.id, "attack": fam.name, "expected_finding": fam.expect,
-                          "cases": mine.len(), "caught": caught, "missed": mine.len() - caught}),
+                   "counted": why.is_none(),
+                   "cases": mine.len(), "caught": caught, "missed": mine.len() - caught}),
         );
     }
     let mut fp = 0;
@@ -451,9 +521,25 @@ pub fn run(seed: u64, n: usize, clean_n: usize) -> Value {
     } else {
         fp as f64 / clean.len() as f64
     };
+    let headline = if blocked_families == counted_families {
+        format!("{counted_families} attack families, each blocked by its rule")
+    } else {
+        format!("{blocked_families}/{counted_families} attack families blocked by their rule")
+    };
+    let (code_hash, code_hash_source) = corpus_code_hash();
     json!({
         "seed": seed,
-        "in_scope": {"cases": cases.len(), "caught": total_caught, "missed": cases.len() - total_caught},
+        "summary": {
+            "text": format!("{headline}; {fp}/{} false positives (regression suite)", clean.len()),
+            "families": counted_families,
+            "families_blocked": blocked_families,
+            "false_positives": fp,
+            "clean_cases": clean.len(),
+            "code_hash": code_hash,
+            "code_hash_source": code_hash_source,
+        },
+        "in_scope": {"cases": total_cases, "caught": total_caught, "missed": total_cases - total_caught},
+        "not_counted": not_counted,
         "families": fams,
         "clean": {"cases": clean.len(), "false_positives": fp, "false_positive_rate": rate,
                   "with_warnings_only": warned},

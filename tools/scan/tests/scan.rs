@@ -189,13 +189,72 @@ fn corpus_is_seeded_and_complete() {
     assert_eq!(run(42, 200, 50), run(42, 200, 50));
     assert_ne!(run(42, 200, 50), run(7, 200, 50));
     let r = run(42, 200, 50);
-    assert_eq!(r["in_scope"]["caught"], 200);
+    // Every case of every family is blocked, counted or not.
+    let fams = r["families"].as_array().unwrap();
+    assert_eq!(fams.len(), FAMILIES.len());
+    let all: u64 = fams.iter().map(|f| f["cases"].as_u64().unwrap()).sum();
+    assert_eq!(all, 200);
+    assert!(fams
+        .iter()
+        .all(|f| f["missed"] == 0 && f["cases"] == f["caught"]));
+    // The headline counts only counted families; A9 waits for Base.
+    let a9 = fams.iter().find(|f| f["id"] == "A9").unwrap();
+    assert_eq!(a9["counted"], false);
+    assert_eq!(r["not_counted"][0]["id"], "A9");
+    assert_eq!(r["not_counted"][0]["missed"], 0);
+    let counted: Vec<_> = fams.iter().filter(|f| f["counted"] == true).collect();
+    assert_eq!(counted.len(), FAMILIES.len() - NOT_COUNTED.len());
+    let counted_cases: u64 = counted.iter().map(|f| f["cases"].as_u64().unwrap()).sum();
+    assert_eq!(r["in_scope"]["cases"], counted_cases);
+    assert_eq!(r["in_scope"]["caught"], counted_cases);
+    assert_eq!(r["in_scope"]["missed"], 0);
+    assert_eq!(r["summary"]["families"], counted.len());
+    assert_eq!(r["summary"]["families_blocked"], counted.len());
+    assert_eq!(
+        r["summary"]["text"],
+        format!(
+            "{} attack families, each blocked by its rule; 0/50 false positives (regression suite)",
+            counted.len()
+        )
+    );
     assert_eq!(r["clean"]["false_positives"], 0);
     assert!(FAMILIES.len() >= 16);
     // Every family gets cases; at least 20 in total even for small N.
     let small = run(1, 20, 5);
-    assert_eq!(small["in_scope"]["cases"], 20);
+    let small_all: u64 = small["families"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["cases"].as_u64().unwrap())
+        .sum();
+    assert_eq!(small_all, 20);
     assert_eq!(small["in_scope"]["missed"], 0);
+    assert_eq!(small["not_counted"][0]["missed"], 0);
+}
+
+#[test]
+fn a5_uses_the_release_hash_from_sha256sums() {
+    // `sha256sum` output -> NEAR's base58 code hash; other files ignored.
+    let hex = "00".repeat(31) + "01";
+    let sums = format!("{}  xusd.wasm\n{hex}  agent_exit.wasm\n", "ff".repeat(32));
+    assert_eq!(
+        code_hash_from_sums(&sums).as_deref(),
+        Some("11111111111111111111111111111112")
+    );
+    assert_eq!(code_hash_from_sums("abc  agent_exit.wasm"), None);
+    assert_eq!(
+        code_hash_from_sums(&format!("{}  xusd.wasm", "ff".repeat(32))),
+        None
+    );
+    // The corpus uses the release hash exactly when SHA256SUMS exists.
+    let r = run(42, 40, 5);
+    let exists = root().join(SHA256SUMS).exists();
+    let (hash, source) = corpus_code_hash();
+    assert_eq!(source, if exists { "release" } else { "placeholder" });
+    assert_eq!(r["summary"]["code_hash"], hash);
+    if !exists {
+        assert_eq!(hash, FIXTURE_CODE_HASH);
+    }
 }
 
 #[test]

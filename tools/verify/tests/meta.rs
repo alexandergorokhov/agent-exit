@@ -109,8 +109,22 @@ fn golden_attack_report_blocks_everything_in_scope() {
     .unwrap();
     assert_eq!(v["schema"], "attack-report.v1");
     assert_eq!(v["seed"], 42);
-    assert_eq!(v["in_scope"]["cases"], 200);
+    let fams = v["families"].as_array().unwrap();
+    let all: u64 = fams.iter().map(|f| f["cases"].as_u64().unwrap()).sum();
+    assert_eq!(all, 200);
+    assert!(fams.iter().all(|f| f["missed"] == 0));
+    let counted: u64 = fams
+        .iter()
+        .filter(|f| f["counted"] == true)
+        .map(|f| f["cases"].as_u64().unwrap())
+        .sum();
+    assert_eq!(v["in_scope"]["cases"], counted);
     assert_eq!(v["in_scope"]["missed"], 0);
+    assert_eq!(v["not_counted"][0]["id"], "A9");
+    assert!(v["summary"]["text"]
+        .as_str()
+        .unwrap()
+        .ends_with("each blocked by its rule; 0/50 false positives (regression suite)"));
     assert_eq!(v["clean"]["cases"], 50);
     assert_eq!(v["clean"]["false_positives"], 0);
     assert_eq!(v["not_caught_by_design"].as_array().unwrap().len(), 6);

@@ -168,12 +168,21 @@ fn main() {
             f["missed"]
         );
     }
-    let ins = &report["in_scope"];
-    let cl = &report["clean"];
-    eprintln!(
-        "in scope: {}/{} blocked; clean agents blocked (false positives): {}/{}",
-        ins["caught"], ins["cases"], cl["false_positives"], cl["cases"]
-    );
+    eprintln!("{}", report["summary"]["text"].as_str().unwrap());
+    for x in report["not_counted"].as_array().unwrap() {
+        eprintln!(
+            "not counted {}: {}/{} blocked ({})",
+            x["id"].as_str().unwrap(),
+            x["caught"],
+            x["cases"],
+            x["why"].as_str().unwrap()
+        );
+    }
+    if report["summary"]["code_hash_source"] == "placeholder" {
+        eprintln!(
+            "A5 compares against a placeholder code hash until contracts/res/SHA256SUMS exists"
+        );
+    }
     for r in report["contract_layer"].as_array().unwrap() {
         eprintln!(
             "contract {:6} {} {}",
@@ -215,9 +224,18 @@ fn main() {
         std::fs::write(&p, &text).expect("write --out");
         eprintln!("attack: wrote {p}");
     }
-    let mut ok = ins["missed"] == 0 && cl["false_positives"] == 0 && layer_ok;
+    // Families left out of the headline must still be blocked.
+    let side_ok = report["not_counted"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|x| x["missed"] == 0);
+    let mut ok = report["in_scope"]["missed"] == 0
+        && report["clean"]["false_positives"] == 0
+        && side_ok
+        && layer_ok;
     if !ok {
-        eprintln!("attack: something in scope was missed or a clean agent was blocked");
+        eprintln!("attack: an attack case was missed or a clean agent was blocked");
     }
     if let Some(g) = arg(&args, "--golden") {
         let golden: Value = serde_json::from_str(&std::fs::read_to_string(&g).expect("golden"))

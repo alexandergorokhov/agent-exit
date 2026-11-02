@@ -1,15 +1,34 @@
 {
   "seed": 42,
+  "summary": {
+    "text": "18 attack families, each blocked by its rule; 0/50 false positives (regression suite)",
+    "families": 18,
+    "families_blocked": 18,
+    "false_positives": 0,
+    "clean_cases": 50,
+    "code_hash": "fixture-release-hash-v1",
+    "code_hash_source": "placeholder"
+  },
   "in_scope": {
-    "cases": 200,
-    "caught": 200,
+    "cases": 189,
+    "caught": 189,
     "missed": 0
   },
+  "not_counted": [
+    {
+      "id": "A9",
+      "why": "not counted until Base is live: the testnet scan fixes open_auth_until at 0",
+      "cases": 11,
+      "caught": 11,
+      "missed": 0
+    }
+  ],
   "families": [
     {
       "id": "A1",
       "attack": "extra full-access key",
       "expected_finding": "full_access_key_present",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -18,6 +37,7 @@
       "id": "A2",
       "attack": "extra function-call key to the agent with owner-like methods",
       "expected_finding": "unknown_key",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -26,6 +46,7 @@
       "id": "A3",
       "attack": "extra function-call key to a foreign contract",
       "expected_finding": "unknown_key",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -34,6 +55,7 @@
       "id": "A4",
       "attack": "runner-looking key added with the setup key, not by the contract",
       "expected_finding": "unknown_key",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -42,6 +64,7 @@
       "id": "A5",
       "attack": "patched wasm (code hash differs)",
       "expected_finding": "code_hash_mismatch",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -50,6 +73,7 @@
       "id": "A6",
       "attack": "same interface plus an upgrade / self-deploy method",
       "expected_finding": "upgrade_method",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -58,6 +82,7 @@
       "id": "A6x",
       "attack": "extra method that is not in the published contract",
       "expected_finding": "unexpected_method",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -66,6 +91,7 @@
       "id": "A7",
       "attack": "seller changed terms after the buyer was quoted",
       "expected_finding": "listing_version_mismatch",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -74,6 +100,7 @@
       "id": "A8",
       "attack": "open approval on the deed",
       "expected_finding": "open_approval",
+      "counted": true,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -82,6 +109,7 @@
       "id": "A9",
       "attack": "pre-signed Base authorization still valid",
       "expected_finding": "open_base_auth",
+      "counted": false,
       "cases": 11,
       "caught": 11,
       "missed": 0
@@ -90,6 +118,7 @@
       "id": "A21",
       "attack": "setup full-access key never deleted",
       "expected_finding": "full_access_key_present",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -98,6 +127,7 @@
       "id": "E31",
       "attack": "one RPC provider hides a key",
       "expected_finding": "rpc_disagree",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -106,6 +136,7 @@
       "id": "K1",
       "attack": "runner key scope widened beyond runner methods",
       "expected_finding": "runner_key_scope",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -114,6 +145,7 @@
       "id": "K2",
       "attack": "contract lists a key the account does not have",
       "expected_finding": "known_key_missing",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -122,6 +154,7 @@
       "id": "K3",
       "attack": "known_keys_hash forged",
       "expected_finding": "known_keys_hash_mismatch",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -130,6 +163,7 @@
       "id": "A23",
       "attack": "agent already frozen (backdoor proven)",
       "expected_finding": "frozen",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -138,6 +172,7 @@
       "id": "A26",
       "attack": "deployed with the seller's own admin or payment token",
       "expected_finding": "registry_mismatch",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -146,6 +181,7 @@
       "id": "A32",
       "attack": "earn-out terms below the buyer's minimum (no escrow, seller floor, short window)",
       "expected_finding": "terms_below_minimum",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
@@ -154,6 +190,7 @@
       "id": "A36",
       "attack": "seller filled the round-trip table so the buyer inherits PaidToFull",
       "expected_finding": "paid_to_bloated",
+      "counted": true,
       "cases": 10,
       "caught": 10,
       "missed": 0
