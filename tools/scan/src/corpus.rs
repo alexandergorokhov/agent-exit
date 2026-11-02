@@ -201,7 +201,7 @@ pub fn test_mpc_public_key() -> String {
     base_wallet::near_secp_pk(&test_mpc().public_key())
 }
 
-pub const FAMILIES: [Family; 19] = [
+pub const FAMILIES: [Family; 20] = [
     Family {
         id: "A1",
         name: "extra full-access key",
@@ -325,6 +325,24 @@ pub const FAMILIES: [Family; 19] = [
         expect: "open_base_auth",
         mutate: |i, r| {
             i.contract.open_auth_until = i.now_ns + 1 + r.below(3_600_000_000_000);
+        },
+    },
+    Family {
+        id: "A51",
+        name: "Base wallet address set at init to an address the seller controls",
+        expect: "base_address_mismatch",
+        mutate: |i, r| {
+            let w = i
+                .contract
+                .base_wallet
+                .as_mut()
+                .expect("clean agents have one");
+            w.address = Some(format!(
+                "0x{:016x}{:016x}{:08x}",
+                r.next_u64(),
+                r.next_u64(),
+                r.next_u64() as u32
+            ));
         },
     },
     Family {

@@ -12,7 +12,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 3. Read the result | `cat out/verify.json` | JSON, `"schema": "verify-output.v1"`, `"summary": {"passed": 60, "failed": 0}` |
 | 4. One table per scenario id | `cargo run -q -p verify` | 60 `PASS` rows, ids from docs/SCENARIOS.md (S*, E*, A*) |
 | 5. Lint | `make lint` | exit 0 |
-| 6. Attack corpus | `make attack` | stderr summary `18 attack families, each blocked by its rule; 0/50 false positives (regression suite)` (it reads the counts from `tests/golden/attack.json`: 19 families, 18 counted, in_scope 189/189; read it as 19 attack families, 18 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives, 0/50 false positives on clean agents — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 uses a placeholder hash until the reproducible build), every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
+| 6. Attack corpus | `make attack` | stderr summary `19 attack families, each blocked by its rule; 0/50 false positives (regression suite)` (it reads the counts from `tests/golden/attack.json`: 20 families, 19 counted, in_scope 190/190; read it as 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives, 0/50 false positives on clean agents — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 uses a placeholder hash until the reproducible build), every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
 | 7. Plant your own backdoor | edit `fixtures/judge-attack.json` (e.g. add a `"FullAccess"` key), then `make attack FIXTURE=fixtures/judge-attack.json` | stderr `judge fixture ...: blocked ["full_access_key_present"]`; the `judge` section of `out/attack.json` |
 | 8. Scan one agent | `make scan FILE=fixtures/scan/cheat.json` | `scan-report.v1` JSON on stdout, `"verdict": "blocked"`; exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input |
 | 9. MCP tests | `make mcp-test` | `# pass 68`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
@@ -22,7 +22,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 13. Testnet plan, offline | `make deploy-testnet DRY_RUN=1`, `make gates DRY_RUN=1`, `make scenes DRY_RUN=1` | `DRY RUN (...): nothing is sent.` then numbered steps; exit 0 |
 | 14. Targets not built yet | `make record` | prints `not built yet: record (...)`, exit 1 (never fake success); `make help` marks them `(not built yet)` |
 | 16. Real model buyer | `make llm-buyer` | needs `NEARAI_API_KEY` in `~/.agent-exit.env`; exit 2 without it; writes `out/llm-buyer.json`; the model is the cheapest NEAR AI chat model that supports tools (else the default), logged with token usage. `make llm-buyer-check` first makes one tiny authenticated call (exit 2 on no key, 401, 402). Real model run pending on testnet day |
-| 17. Pay an agent (customer) | call `storage_deposit` on the agent with 0.002 NEAR attached (once per account, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or `{"kind":"pay"}` | without `storage_deposit` the payment still counts but is pooled as `other`; `storage_balance_of(you)` shows whether you are registered |
+| 17. Pay an agent (customer) | call `storage_deposit` on the agent with 0.024 NEAR attached (once per account, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or `{"kind":"pay"}` | without `storage_deposit` the payment still counts but is pooled as `other`; `storage_balance_of(you)` shows whether you are registered; `storage_unregister` (1 yoctoNEAR) removes your own row if it never had a payment; `storage_withdraw` has nothing to return; `reclaim_payer_row(account)` removes a payment-less row after 30 days, refunding its depositor |
 | 18. Translator worker | `make translator-serve` | listens on 127.0.0.1:8787 only (loopback; do not tunnel it without auth); offline serves a labelled fixture; real mode needs testnet + `NEARAI_API_KEY` + agent account, else exit 2 |
 | 15. The offline story | `make demo` | verify replay vs goldens, then the scripted agent-buys-agent replay (no AI model), then how to open the page; exit 0 |
 
@@ -48,7 +48,7 @@ Set `PROP_CASES=500 make verify` for a faster pass.
   local key (`cargo run -q -p verify --bin gen-test-signatures -- --check`
   proves they regenerate byte for byte). Not NEAR AI Cloud signatures.
 - `tools/scan/src/lib.rs`: the client backdoor scan rules;
-  `tools/scan/src/corpus.rs`: the seeded attack corpus (19 attack families + clean controls).
+  `tools/scan/src/corpus.rs`: the seeded attack corpus (20 attack families + clean controls).
 - `tools/attack/src/main.rs`: `make attack`; `tests/golden/attack.json` its expected output.
 - `web/`: the demo page (`make web`, `make web-test`); `web/data/demo.json` is recorded from the contract by `make web-data`.
 - `docs/NOT-CAUGHT.md`: what the scan does not catch, by design (N1-N6).

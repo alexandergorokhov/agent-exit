@@ -16,7 +16,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | cheat history | 500.00 gross, all from `alice` and `*.alice`: counted 0.00, verified 0.00. Plus one extra full-access key |
 | Listing | price 1,000.00; earn-out 30% = 300.00; release share 50% of each counted post-sale payment; floor 20% of escrow = 60.00; window 30 days (sandbox: time travel; testnet demo: `window_secs = 600`) |
 | Policy (feature 12) | price floor 5.00 per job; daily cap 50.00; allowed payees [`summarizer`]; split owner 80% / treasury 20%; Base daily cap 5.00 USDC; auth validity ≤ 1 h |
-| Storage guards | min counted payment 0.10; max 1,000 tracked payers, the rest pooled as `other`; a payer row needs `storage_deposit` with 0.002 NEAR (A49), so payments alone are pooled |
+| Storage guards | min counted payment 0.10; a payer row needs `storage_deposit` with 0.024 NEAR (A49, A54), uncapped (A50); payments alone are pooled as `other` |
 
 ## S: user and machine scenarios
 
@@ -66,7 +66,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | E13 | Forged signature, wrong signer, `v` in {0,1,27,28}, malformed length | Only the allowed signer verifies; others counted, not verified, no panic | unit, fuzz | `e13`, `fuzz_eip191` |
 | E14 | Admin adds a new signer, removes the old | Already-verified payments stay verified; new payments with the removed signer are not verified | unit | `e14` |
 | E15 | Dust payment 0.05 | Refunded; no payer entry created | unit | `e15` |
-| E16 | 1,001st distinct payer | Pooled into `other`; storage per payment bounded | unit, prop | `e16`, `prop_storage_bounded` |
+| E16 | A payer without a registered row | Pooled into `other`; storage per payment bounded | unit, prop | `e16_unregistered_payers_pool_into_other`, `prop_storage_bounded` |
 | E17 | Owner withdraws more than balance minus storage reserve | Refused `StorageReserve`; withdrawing everything above the reserve always works | unit, prop | `e17`, `prop_owner_can_withdraw` |
 | E18 | `alice` uses the whole daily cap just before the sale | `bob`'s epoch starts with the full 50.00 cap | unit | `e18_cap_resets_at_sale` |
 | E19 | Spend across the UTC day boundary | Cap resets by block timestamp day | unit | `e19` |
@@ -89,7 +89,7 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 
 ## A: attacks (`make attack`)
 
-`make attack` (offline) generates a seeded corpus: `N=200 SEED=42` mutated agents spread over A1-A16 plus 50 clean agents, runs the client scan and the contract checks, and prints one table plus `out/attack.json` (schema `attack-report.v1`). Expected fixed result: in-scope 200/200 blocked, false positives 0/50. `make attack FIXTURE=judge.json` runs a judge's own planted agent (format in `fixtures/judge.example.json`). `make attack-sandbox` runs the same families against near-sandbox; `make attack-testnet` (Alex's machine) runs A1, A5, A17-A21 live and records receipts.
+`make attack` (offline) generates a seeded corpus: `N=200 SEED=42` mutated agents spread over A1-A20 plus 50 clean agents, runs the client scan and the contract checks, and prints one table plus `out/attack.json` (schema `attack-report.v1`). Expected fixed result: in-scope 200/200 blocked, false positives 0/50. `make attack FIXTURE=judge.json` runs a judge's own planted agent (format in `fixtures/judge.example.json`). `make attack-sandbox` runs the same families against near-sandbox; `make attack-testnet` (Alex's machine) runs A1, A5, A17-A21 live and records receipts.
 
 ### Before the sale: the sale must be blocked
 
@@ -135,7 +135,12 @@ Token: `xusd`, our mock NEP-141 test dollar, 6 decimals (Circle NEAR-testnet USD
 | A46 | A NEAR AI proof older than the window, ahead of the block, or without `signed_at` | Not verified (the payment still counts) | `review3_regressions.rs` (M2) |
 | A47 | **Outsiders brick an agent by paying it.** Found by a stress run on a local NEAR node at 12d1ab7: about 585 distinct payers made every call trap while loading state. Offline tests did not show it. | Payer and day rows live under their own storage keys; the state blob is the same size at 1,200 64-character payers; views cost the same at 10 and 1,000 payers; after 1,000 payers of 64 characters the agent can still be bought and every view works | offline blob and gas tests; sandbox `a47_thousand_long_payers_then_buy_and_views` |
 | A48 | A deed move (`nft_transfer`) | The old owner's unwithdrawn revenue stays theirs | `a48_deed_move_keeps_old_owners_revenue_theirs` |
-| A49 | **Payer rows cost NEAR.** Payments from an account with no row are pooled into `other` and add no row. `storage_deposit` with 0.002 NEAR registers a row. | Less than 0.002 NEAR: `StorageDepositTooSmall` (deposit refunded); excess refunded; a second registration refunded in full; a full table: `PayersFull`; a 64-character account fits the deposit. How to pay: `storage_deposit` first, then `ft_transfer_call` | `a49_payer_rows_cost_near` in `review3_regressions.rs` |
+| A49 | **Payer rows cost NEAR.** Payments from an account with no row are pooled into `other` and add no row. `storage_deposit` with 0.024 NEAR (it was 0.002 before A54) registers a row. | Less than 0.002 NEAR: `StorageDepositTooSmall` (deposit refunded); excess refunded; a second registration refunded in full; a full table: `PayersFull`; a 64-character account fits the deposit. How to pay: `storage_deposit` first, then `ft_transfer_call` | `a49_payer_rows_cost_near` in `review3_regressions.rs` |
+| A50 | **No cap on payer rows; each is paid by its depositor** (review 4 M1): 2 NEAR could fill the old 1,000-row table | Nothing iterates over the rows, so no cap. `storage_unregister` removes the caller's own row if it never had a payment; `reclaim_payer_row` lets anyone remove a payment-less row 30 days after its deposit (refund to the depositor); deposits are held back from what the owner can withdraw | `review4_regressions.rs` (`a50_*`), `agent-core/tests/meter.rs` |
+| A51 | **The Base wallet address is checked by the scan** (review 4 M2) | The scan derives (agent, `wallet-1`) from the MPC root key and blocks `base_address_mismatch`, or `base_wallet_unchecked` when it cannot check | attack family A51 in `make attack`; `tools/scan/tests/scan.rs::a51_base_address_is_derived_from_the_mpc_key` |
+| A52 | `set_limits` without Base fields (review 4 L1) | Keeps the Base limits; an explicit zero cap and empty payees clears them | `a52_set_limits_without_base_keeps_base_limits` |
+| A53 | Owner epochs grow the state blob (review 4 L2) | Counters and a pruned-prefix watermark replace per-epoch maps; nothing is pruned while a sale is open | `a53_*` |
+| A54 | Filling the shared signature window denies a payer's verified badge (review 4 L3) | A registered payer has 8 signature slots of its own, prepaid by its row deposit (0.024 NEAR in all) | `a54_*` |
 
 ### Not caught by design (printed as rows N1-N6 in every `make attack` run)
 

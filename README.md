@@ -7,7 +7,7 @@
 
 ![The recorded demo page: break-in fails](docs/img/demo.png)
 
-| 60 scenarios | 18 of 19 attack families counted, all blocked | 1 transaction |
+| 60 scenarios | 19 of 20 attack families counted, all blocked | 1 transaction |
 |---|---|---|
 | replayed through the real contract code against checked-in goldens (`make verify`) | 0/50 false positives; a regression suite, not independent evidence | for the handover: old runner key deleted, buyer's added |
 
@@ -46,8 +46,8 @@ sequenceDiagram
 
 - **Proven on a real node:** the `tests/sandbox` tests (key list before and after the buy, the old runner key and the deleted setup key failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node (near-sandbox) at commits `609b135` and `63d597c`. Rerun: `make test-sandbox`.
 - **Offline, every time:** 60 scenarios replayed through the real contract code against checked-in goldens (`make verify`), property tests, 68 MCP tests and 10 script tests. All offline results use a mocked runtime or JSON fixtures.
-- **Attack suite:** 19 attack families, 18 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) uses a placeholder hash until the reproducible build exists. The suite was written by the same author as the rules.
-- **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.002 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
+- **Attack suite:** 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) uses a placeholder hash until the reproducible build exists. The suite was written by the same author as the rules.
+- **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.024 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
 - **Testnet: coming.** Contract ids, a real `buy()` transaction and the old seller's rejected transaction will be linked here as explorer links. None exists yet.
 - **No AI model in the loop yet.** The agent-buys-agent run is a scripted replay; `make llm-buyer` runs a real model through the MCP tools and writes `out/llm-buyer.json`; the real model run is pending on testnet day, and until then the page has an empty slot for the real AI buyer transcript.
 
@@ -95,7 +95,7 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make verify` | Unit + property tests pass, then the fixed world replays through the real contract code and `out/verify.json` equals `tests/golden/verify.json`, and the attack report equals `tests/golden/attack.json` (`... output equals ...` lines on stderr). About 1 min warm, longer on a cold build; offline. |
 | `cargo run -q -p verify` | A PASS/FAIL table, one row per scenario id (S*, E*, A*). |
 | `cargo run -q -p verify -- --json` | The same as JSON (`verify-output.v1`). |
-| `make attack` | A regression suite, not independent evidence: 200 seeded variants of 19 attack families (18 counted, 189 variants; A9 Base, 11 variants, is not counted until live; each counted family blocked by its rule) and 50 clean agents through the client scan, plus the contract's own refusals. Table on stderr, `out/attack.json` (`attack-report.v1`), with 0/50 false positives, and the "not caught by design" rows N1-N6. `N=`, `SEED=`, `CLEAN=` change the corpus. |
+| `make attack` | A regression suite, not independent evidence: 200 seeded variants of 20 attack families (19 counted, 190 variants; A9 Base, 10 variants, is not counted until live; each counted family blocked by its rule) and 50 clean agents through the client scan, plus the contract's own refusals. Table on stderr, `out/attack.json` (`attack-report.v1`), with 0/50 false positives, and the "not caught by design" rows N1-N6. `N=`, `SEED=`, `CLEAN=` change the corpus. |
 | `make attack FIXTURE=fixtures/judge-attack.json` | Scan **your own** planted agent: edit the fixture (instructions inside it), rerun, see its verdict and findings in the `judge` section. As committed it is clean. |
 | `make scan FILE=fixtures/scan/cheat.json` | One scan report (`scan-report.v1`); exit 0 clean, 2 blocked, 3 inconclusive. The cheat agent is blocked for `full_access_key_present`. |
 | `make mcp-test` | The MCP server's tests offline (68 tests, then 10 script tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
@@ -119,13 +119,20 @@ AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 ## How to pay an agent (customers)
 
 1. **Once per customer account, register a payer row:** call
-   `storage_deposit` on the agent with 0.002 NEAR attached (A49). Without it
+   `storage_deposit` on the agent with 0.024 NEAR attached (A49). Without it
    your payments still arrive and count in the totals, but they are pooled as
    `other`: you do not appear as a distinct payer in `get_earnings`.
    `storage_balance_of(you)` shows whether you are registered.
 2. **Pay:** `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or
    `{"kind":"pay","job_id":"..."}`; add a `nearai` proof to get the payment
    marked verified. Payments under 0.10 are refunded.
+3. **Leave (optional):** `storage_unregister` removes your own row and
+   refunds the deposit to you, but only if the row never had a payment.
+   `storage_withdraw` has nothing to give back (nothing above the row price
+   is ever held) and returns your balance. `reclaim_payer_row(account_id)`
+   lets anyone remove a row that has had no payment 30 days after its
+   deposit; the deposit goes back to whoever paid it (A50). `storage_unregister`
+   and `storage_withdraw` need 1 yoctoNEAR attached.
 
 On testnet the plan registers the six demo customers (`p1`..`p6`) this way
 before they pay translator.
@@ -217,18 +224,21 @@ the token 4, the people 2 to 3 each, each demo customer 1, and a G1 agent
   refused the transfer, the credit-back is lost from the books: the contract
   then holds more tokens than it accounts for (never fewer). Callbacks get
   gas for their own work plus the whole state, which makes this unlikely.
-- Payer rows (at most 1,000), day rows (at most 400) and used NEAR AI
-  signature ids (at most 512, each kept 7 days) live under their own storage
-  keys, never in the state blob, so loading the contract costs the same with
-  1 payer or 1,000 (A47). A payer gets its own row only after calling
-  `storage_deposit` and attaching 0.002 NEAR (A49, NEP-145 style: excess is
-  refunded, a second registration is refunded in full, a full table is
-  refused). Payments from an account without a row still count in the
-  totals but are pooled into `other`, so free test tokens cannot make the
-  agent pay for storage. Day rows and signature ids are still paid from the
-  agent's NEAR balance; every table is capped and the room left is reserved
+- Payer rows, day rows (at most 400) and used NEAR AI signature ids (at most
+  512 shared, each kept 7 days) live under their own storage keys, never in
+  the state blob, so loading the contract costs the same with 1 payer or
+  1,000 (A47). A payer gets its own row only after calling `storage_deposit`
+  and attaching 0.024 NEAR: the row, a deposit record and 8 signature slots
+  of its own (A49, A54; NEP-145 style: excess is refunded, a second
+  registration is refunded in full). Payer rows are not capped, because each
+  is paid by its depositor and nothing iterates over them (A50); empty rows
+  can be removed (`storage_unregister`, `reclaim_payer_row`) and deposits are
+  held back from what the owner can withdraw. Payments from an account
+  without a row still count in the totals but are pooled into `other`.
+  Day rows and shared signature ids are paid from the agent's NEAR balance;
+  every capped table's room is reserved
   (`get_status.near_storage.growth_reserve`), which the owner cannot
-  withdraw, so outsiders can never make it insolvent.
+  withdraw, so outsiders can never make the agent insolvent.
 - A failed supplier payment returns to the treasury but still counts toward
   that day's cap (conservative).
 - The MCP server's offline mode replays recorded contract results; a buy or

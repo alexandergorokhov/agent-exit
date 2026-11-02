@@ -1,25 +1,25 @@
 {
   "seed": 42,
   "summary": {
-    "text": "18 attack families, each blocked by its rule; 0/50 false positives (regression suite)",
-    "families": 18,
-    "families_blocked": 18,
+    "text": "19 attack families, each blocked by its rule; 0/50 false positives (regression suite)",
+    "families": 19,
+    "families_blocked": 19,
     "false_positives": 0,
     "clean_cases": 50,
     "code_hash": "fixture-release-hash-v1",
     "code_hash_source": "placeholder"
   },
   "in_scope": {
-    "cases": 189,
-    "caught": 189,
+    "cases": 190,
+    "caught": 190,
     "missed": 0
   },
   "not_counted": [
     {
       "id": "A9",
       "why": "not counted until Base is live: the testnet scan fixes open_auth_until at 0",
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     }
   ],
@@ -29,8 +29,8 @@
       "attack": "extra full-access key",
       "expected_finding": "full_access_key_present",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -38,8 +38,8 @@
       "attack": "extra function-call key to the agent with owner-like methods",
       "expected_finding": "unknown_key",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -47,8 +47,8 @@
       "attack": "extra function-call key to a foreign contract",
       "expected_finding": "unknown_key",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -56,8 +56,8 @@
       "attack": "runner-looking key added with the setup key, not by the contract",
       "expected_finding": "unknown_key",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -65,8 +65,8 @@
       "attack": "patched wasm (code hash differs)",
       "expected_finding": "code_hash_mismatch",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -74,8 +74,8 @@
       "attack": "same interface plus an upgrade / self-deploy method",
       "expected_finding": "upgrade_method",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -83,8 +83,8 @@
       "attack": "extra method that is not in the published contract",
       "expected_finding": "unexpected_method",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -92,8 +92,8 @@
       "attack": "seller changed terms after the buyer was quoted",
       "expected_finding": "listing_version_mismatch",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -101,8 +101,8 @@
       "attack": "open approval on the deed",
       "expected_finding": "open_approval",
       "counted": true,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {
@@ -110,8 +110,17 @@
       "attack": "pre-signed Base authorization still valid",
       "expected_finding": "open_base_auth",
       "counted": false,
-      "cases": 11,
-      "caught": 11,
+      "cases": 10,
+      "caught": 10,
+      "missed": 0
+    },
+    {
+      "id": "A51",
+      "attack": "Base wallet address set at init to an address the seller controls",
+      "expected_finding": "base_address_mismatch",
+      "counted": true,
+      "cases": 10,
+      "caught": 10,
       "missed": 0
     },
     {

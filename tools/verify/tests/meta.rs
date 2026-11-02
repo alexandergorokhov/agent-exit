@@ -403,7 +403,7 @@ fn s25_docs_explain_paying_and_the_found_bug() {
     for f in ["README.md", "AGENTS.md", "llms.txt"] {
         let t = read(f);
         assert!(t.contains("storage_deposit"), "{f}: how to pay");
-        assert!(t.contains("0.002 NEAR"), "{f}: the payer row price");
+        assert!(t.contains("0.024 NEAR"), "{f}: the payer row price");
     }
     assert!(
         !readme.contains("no NEP-145"),
