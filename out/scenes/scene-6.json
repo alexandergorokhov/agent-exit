@@ -1,0 +1,345 @@
+{
+  "note": "scripted client; MCP testnet writes are not wired yet",
+  "pass": true,
+  "scan": {
+    "agent": "translator.agentexit.testnet",
+    "buy_args": {
+      "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
+      "listing_version": 3,
+      "price": "1200000000"
+    },
+    "findings": [],
+    "schema": "scan-report.v1",
+    "verdict": "clean"
+  },
+  "scan_input": {
+    "agent": "translator.agentexit.testnet",
+    "chain": {
+      "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+      "keys": [
+        {
+          "permission": {
+            "allowance": "4998856122360414200000000",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "receiver_id": "translator.agentexit.testnet"
+          },
+          "public_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+        }
+      ],
+      "keys_second_provider": [
+        {
+          "permission": {
+            "allowance": "4998856122360414200000000",
+            "method_names": [
+              "heartbeat",
+              "accept_job",
+              "pay",
+              "pay_base"
+            ],
+            "receiver_id": "translator.agentexit.testnet"
+          },
+          "public_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+        }
+      ],
+      "methods": [
+        "__contract_abi",
+        "add_signer",
+        "cancel_listing",
+        "claim",
+        "contract_source_metadata",
+        "finalize_earnout",
+        "ft_on_transfer",
+        "get_base_wallet",
+        "get_claimable",
+        "get_earnings",
+        "get_earnings_days",
+        "get_limits",
+        "get_listing",
+        "get_payer",
+        "get_sales",
+        "get_signers",
+        "get_status",
+        "heartbeat",
+        "known_keys",
+        "known_keys_hash",
+        "list_for_sale",
+        "near_withdrawable",
+        "new",
+        "nft_approve",
+        "nft_is_approved",
+        "nft_metadata",
+        "nft_resolve_transfer",
+        "nft_revoke",
+        "nft_revoke_all",
+        "nft_supply_for_owner",
+        "nft_token",
+        "nft_tokens",
+        "nft_tokens_for_owner",
+        "nft_total_supply",
+        "nft_transfer",
+        "nft_transfer_call",
+        "on_base_signed",
+        "on_handover",
+        "on_keys_deleted",
+        "on_runner_key",
+        "on_transfer_out",
+        "pay",
+        "pay_base",
+        "reclaim_payer_row",
+        "recover_keys",
+        "recover_sale",
+        "remove_signer",
+        "set_limits",
+        "set_runner_key",
+        "storage_balance_bounds",
+        "storage_balance_of",
+        "storage_deposit",
+        "storage_unregister",
+        "storage_withdraw",
+        "withdraw",
+        "withdraw_near"
+      ],
+      "subaccounts": []
+    },
+    "contract": {
+      "admin": "agentexit.testnet",
+      "base_wallet": {
+        "address": "0x8cb2c5430c7d6065241997c470e729ffe850e625",
+        "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
+        "path": "wallet-1"
+      },
+      "frozen": false,
+      "known_keys": [
+        "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+      ],
+      "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
+      "listing_version": 3,
+      "near_storage_solvent": true,
+      "open_approvals": 0,
+      "open_auth_until": 0,
+      "owner": "bob.agentexit.testnet",
+      "paid_to_total": 1,
+      "status": "Listed",
+      "token": "xusd.agentexit.testnet"
+    },
+    "expected": {
+      "admin": "agentexit.testnet",
+      "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+      "listing_version": 3,
+      "price": "1200000000",
+      "token": "xusd.agentexit.testnet"
+    },
+    "listing": {
+      "listing_version": 3,
+      "price": "1200000000",
+      "terms": {
+        "earnout_bps": 3000,
+        "floor_bps": 2000,
+        "share_bps": 5000,
+        "window_secs": 2592000
+      }
+    },
+    "now_ns": 1793628624899462960,
+    "schema": "scan-input.v1"
+  },
+  "scene": 6,
+  "schema": "scene.v1",
+  "txs": [
+    {
+      "by": "bob.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "agent": "translator.agentexit.testnet",
+              "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+              "escrow": "360000000",
+              "known_keys": [
+                "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+              ],
+              "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
+              "listed_at": "1793628617117305205",
+              "listing_version": 3,
+              "paid_now": "840000000",
+              "price": "1200000000",
+              "schema": "listing.v1",
+              "seller": "bob.agentexit.testnet",
+              "terms": {
+                "earnout_bps": 3000,
+                "floor_bps": 2000,
+                "share_bps": 5000,
+                "window_secs": 2592000
+              },
+              "terms_config": "prod",
+              "terms_min": {
+                "max_floor_bps": 5000,
+                "min_earnout_bps": 3000,
+                "min_window_secs": 2592000
+              },
+              "token": "xusd.agentexit.testnet",
+              "treasury_snapshot": "2000000"
+            }
+          ],
+          "event": "listed",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/4JxCY4bBrYUA1PxRRgCrrKm4om7M79Qqm2vijX4XnU3s",
+      "label": "bob lists translator at 1200.00",
+      "method": "list_for_sale",
+      "ms": 4799,
+      "ok": true,
+      "receiver": "translator.agentexit.testnet",
+      "tx": "4JxCY4bBrYUA1PxRRgCrrKm4om7M79Qqm2vijX4XnU3s",
+      "value": {
+        "agent": "translator.agentexit.testnet",
+        "code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa",
+        "escrow": "360000000",
+        "known_keys": [
+          "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+        ],
+        "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
+        "listed_at": "1793628617117305205",
+        "listing_version": 3,
+        "paid_now": "840000000",
+        "price": "1200000000",
+        "schema": "listing.v1",
+        "seller": "bob.agentexit.testnet",
+        "terms": {
+          "earnout_bps": 3000,
+          "floor_bps": 2000,
+          "share_bps": 5000,
+          "window_secs": 2592000
+        },
+        "terms_config": "prod",
+        "terms_min": {
+          "max_floor_bps": 5000,
+          "min_earnout_bps": 3000,
+          "min_window_secs": 2592000
+        },
+        "token": "xusd.agentexit.testnet",
+        "treasury_snapshot": "2000000"
+      }
+    },
+    {
+      "by": "summarizer.agentexit.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "1200000000",
+              "new_owner_id": "translator.agentexit.testnet",
+              "old_owner_id": "summarizer.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "add_key": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb",
+              "amount": "1200000000",
+              "buyer": "summarizer.agentexit.testnet",
+              "delete_keys": [
+                "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
+              ],
+              "sale_id": 2
+            }
+          ],
+          "event": "settling",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "memo": "agent_exit:buy",
+              "new_owner_id": "summarizer.agentexit.testnet",
+              "old_owner_id": "bob.agentexit.testnet",
+              "token_ids": [
+                "deed"
+              ]
+            }
+          ],
+          "event": "nft_transfer",
+          "standard": "nep171",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "buyer": "summarizer.agentexit.testnet",
+              "escrow": "360000000",
+              "known_keys": [
+                "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
+              ],
+              "overpay_refund": "0",
+              "owner_epoch": 3,
+              "paid_now": "840000000",
+              "price": "1200000000",
+              "sale_id": 2,
+              "seller": "bob.agentexit.testnet",
+              "seller_revenue_claimable": "40000000",
+              "window_end": "1796220628831280090"
+            }
+          ],
+          "event": "sale",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "840000000",
+              "memo": "agent_exit:SellerPayout",
+              "new_owner_id": "bob.agentexit.testnet",
+              "old_owner_id": "translator.agentexit.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL",
+      "label": "summarizer buys translator (one ft_transfer_call)",
+      "method": "ft_transfer_call",
+      "ms": 7743,
+      "ok": true,
+      "receiver": "xusd.agentexit.testnet",
+      "tx": "26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL",
+      "value": "1200000000"
+    }
+  ],
+  "verify_lockout": {
+    "account": "bob.agentexit.testnet",
+    "keys": [
+      {
+        "permission": {
+          "allowance": "5000000000000000000000000",
+          "method_names": [
+            "heartbeat",
+            "accept_job",
+            "pay",
+            "pay_base"
+          ],
+          "receiver_id": "translator.agentexit.testnet"
+        },
+        "public_key": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
+      }
+    ],
+    "locked_out": true,
+    "owner": "summarizer.agentexit.testnet"
+  },
+  "what": "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client; MCP testnet writes are not wired yet)"
+}
