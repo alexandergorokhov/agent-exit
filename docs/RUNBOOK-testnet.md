@@ -163,7 +163,7 @@ shares run on a new agent account, `translator2.<root>`, with the new build.
 | Step | Command | Cost |
 |---|---|---|
 | 0 | Root holds at least 10 NEAR (translator2 9 + dave 0.5); faucet if not | test NEAR |
-| 1 | `git pull && make build-testnet` (the shares build) | |
+| 1 | `git pull && make build` (reproducible Docker build: rewrites `contracts/res/agent_exit.wasm` and `SHA256SUMS` with the shares code; scene 8 deploys that file, and its hash is what the scan expects). Commit `contracts/res` | |
 | 2 | Optional, for verified jobs: NEAR AI credit ($1 is enough) and a spend limit on the key; then `make llm-buyer-check` must pass | under $0.01 real |
 | 3 | `make scene-8 DRY_RUN=1`, then `make scene-8` | test NEAR + fake xUSD |
 | 4 | Commit `out/scenes/scene-8.json` | |

@@ -1604,7 +1604,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     out.set("code_hash", json!(agent_hash));
     let st = c.view(&t2, "get_status", json!({})).await?;
     if st.get("shares_bps").is_none() {
-        return Err("translator2 runs a build without shares: run make build-testnet first".into());
+        return Err("translator2 runs a build without shares: run make build (rewrites contracts/res) first".into());
     }
 
     println!("  runner key + lock");

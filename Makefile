@@ -294,7 +294,7 @@ else
 	$(TESTNET_RUN) scene-7
 endif
 
-scene-8: ## [testnet] Invest: new agent translator2 (shares code), dave buys 20% of its earnings, 5 customers pay for 5 real translations, dave gets exactly 20% -> out/scenes/scene-8.json [DRY_RUN=1] (needs make build-testnet first; NEAR AI-signed if NEARAI_API_KEY has credit)
+scene-8: ## [testnet] Invest: new agent translator2 (shares code), dave buys 20% of its earnings, 5 customers pay for 5 real translations, dave gets exactly 20% -> out/scenes/scene-8.json [DRY_RUN=1] (needs make build first; NEAR AI-signed if NEARAI_API_KEY has credit)
 ifdef DRY_RUN
 	@$(PLAN) scene-8
 else
