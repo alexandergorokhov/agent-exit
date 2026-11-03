@@ -139,7 +139,7 @@ To show the recorded run without a chain: `make demo` and `make web`.
 - Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (`withdraw` while Listed) and STR-19 (unbounded pending Base authorizations) are fixed in the contract code; they need `make build` and a fresh testnet deploy (`make demo-setup`). STR-17 (MCP spend cap across processes) is fixed.
 - Real AI buyer: waiting for the Anthropic key; one capped run (12 steps, 150k tokens).
 
-## 8. AI buyer on testnet (scene 7)
+## 10. AI buyer on testnet (scene 7)
 
 After `make scenes` (translator is owned by summarizer):
 
