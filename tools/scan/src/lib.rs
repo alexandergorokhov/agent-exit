@@ -353,6 +353,29 @@ fn key_set(keys: &[AccessKey]) -> BTreeSet<(String, String)> {
         .collect()
 }
 
+/// Codes about the sale listing only: an investor buying a share slice of
+/// an agent that is not for sale does not need them.
+pub const LISTING_ONLY: [&str; 5] = [
+    "not_listed",
+    "listing_missing",
+    "listing_version_mismatch",
+    "price_changed",
+    "terms_below_minimum",
+];
+
+/// The investor's scan before `buy_share`: every key, code and contract
+/// rule of the sale scan, without the listing rules (T8). No buy arguments.
+pub fn scan_investor(i: &ScanInput) -> Report {
+    let mut r = scan(i);
+    r.findings
+        .retain(|f| !LISTING_ONLY.contains(&f.code.as_str()));
+    r.buy_args = None;
+    if r.verdict == "blocked" && !r.findings.iter().any(|f| f.severity == "block") {
+        r.verdict = "clean".into();
+    }
+    r
+}
+
 /// Run every rule. Pure: same input, same report.
 pub fn scan(i: &ScanInput) -> Report {
     let mut f: Vec<Finding> = Vec::new();

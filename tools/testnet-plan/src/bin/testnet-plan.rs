@@ -8,7 +8,7 @@ use testnet_plan::*;
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let Some(cmd) = args.first().and_then(|a| Command::parse(a)) else {
-        eprintln!("usage: testnet-plan <deploy|gates|g1|g2|g6|scenes|scene-1..scene-7> [--json]");
+        eprintln!("usage: testnet-plan <deploy|gates|g1|g2|g6|scenes|scene-1..scene-8> [--json]");
         std::process::exit(2);
     };
     let path = env_path();

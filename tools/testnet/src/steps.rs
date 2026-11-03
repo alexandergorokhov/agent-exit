@@ -169,6 +169,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
             }
             Ok(())
         }
+        Command::Scene(8) => invest(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -1046,7 +1047,8 @@ async fn scan_agent(
             "base_wallet": {"address": w["address"], "path": w["path"], "mpc_public_key": mpc_pk},
         },
         "listing": if listing.is_null() { Value::Null } else {
-            json!({"listing_version": listing["listing_version"], "price": listing["price"], "terms": listing["terms"]})
+            json!({"listing_version": listing["listing_version"], "price": listing["price"], "terms": listing["terms"],
+                   "shares_bps": listing["shares_bps"].as_u64().unwrap_or(0), "shares": listing["shares"].as_array().cloned().unwrap_or_default()})
         },
     });
     let parsed: scan::ScanInput =
@@ -1453,5 +1455,372 @@ mod seed_tests {
         };
         assert!(100 + cheat("alice") <= 500);
         assert!(40 + cheat("x.alice") <= 300);
+    }
+}
+
+// ------------------------------------------------------------------ scene 8
+
+/// Texts the five customers send to translator2.
+const JOBS: [(&str, &str); 5] = [
+    ("p1", "The agent was sold in one transaction."),
+    ("p2", "Investors are paid inside every payment."),
+    ("p3", "Half of the price waits in escrow."),
+    ("p4", "The seller can no longer touch the agent."),
+    ("p5", "Every payment is counted on chain."),
+];
+const JOB_PRICE: u128 = 10 * USD;
+const FLAGGED_PRICE: u128 = 20 * USD;
+
+/// One real translation through NEAR AI Cloud and its signature, in the form
+/// the contract checks (as in G6). `Err` carries what went wrong, recorded.
+async fn nearai_job(
+    c: &Chain,
+    http: &reqwest::Client,
+    key: &str,
+    agent: &str,
+    payer: &str,
+    job: &str,
+    text: &str,
+) -> Result<(Value, String), Value> {
+    let model = c.cfg.nearai_model.clone();
+    let request = json!({
+        "model": model,
+        "messages": [{"role": "user", "content": format!("Translate to French. Reply with the translation only: {text}")}],
+        "max_tokens": 64,
+        "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": JOB_PRICE.to_string(),
+                     "signed_at": (now_ns() / 1_000_000_000).to_string()},
+    })
+    .to_string();
+    let r = http
+        .post(format!("{}/v1/chat/completions", c.cfg.nearai_base))
+        .bearer_auth(key)
+        .header("content-type", "application/json")
+        .body(request.clone())
+        .send()
+        .await
+        .map_err(|e| json!({"error": format!("completion: {e}")}))?;
+    let status = r.status().as_u16();
+    let body = r
+        .bytes()
+        .await
+        .map_err(|e| json!({"error": e.to_string()}))?;
+    let resp: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
+    if status != 200 {
+        return Err(json!({"status": status, "error": resp}));
+    }
+    let answer = resp["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    let chat_id = resp["id"].as_str().unwrap_or_default().to_string();
+    let sig: Value = http
+        .get(format!("{}/v1/signature/{chat_id}", c.cfg.nearai_base))
+        .query(&[("model", model.as_str()), ("signing_algo", "ecdsa")])
+        .bearer_auth(key)
+        .send()
+        .await
+        .map_err(|e| json!({"error": format!("signature: {e}")}))?
+        .json()
+        .await
+        .unwrap_or(Value::Null);
+    use sha2::Digest;
+    let resp_sha = hex::encode(sha2::Sha256::digest(&body));
+    Ok((
+        json!({"model": model, "request": request, "response_sha256": resp_sha,
+               "signature": sig["signature"].as_str().unwrap_or_default().trim_start_matches("0x"),
+               "signing_address": sig["signing_address"], "signed_text": sig["text"]}),
+        answer,
+    ))
+}
+
+async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    let mut out = Out::new("out/scenes/scene-8.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(8));
+    out.set("what", json!(info(Step::Scene8Invest).what));
+    println!("scene-8");
+    let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
+    let agent_hash = sha256_b58(&agent_wasm);
+    let t2 = c.id("translator2");
+
+    println!("  accounts");
+    for (name, milli) in [("translator2", 9_000u32), ("dave", 500)] {
+        let id = c.id(name);
+        if !c.exists(&id).await {
+            let t = c
+                .create(&format!("create {id}"), &c.root, &id, name, milli)
+                .await?;
+            out.tx(&t);
+            ok(&t)?;
+        }
+    }
+    for (name, want) in [("dave", 1_000 * USD), ("translator2", 0)] {
+        let id = c.id(name);
+        let registered = c
+            .view(
+                &c.id("xusd"),
+                "storage_balance_of",
+                json!({"account_id": id}),
+            )
+            .await
+            .map(|v| !v.is_null())
+            .unwrap_or(false);
+        let bal = balance(c, name).await;
+        if registered && bal >= want {
+            continue;
+        }
+        let t = c
+            .call(
+                &format!("mint {id}"),
+                &c.root,
+                &c.id("xusd"),
+                "mint",
+                json!({"account_id": id, "amount": want.saturating_sub(bal).to_string()}),
+                0,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+
+    println!("  deploy translator2");
+    if c.code(&t2).await.map(|(h, _)| h).ok().as_deref() != Some(agent_hash.as_str()) {
+        let mpc_pk = c.view(MPC_SIGNER, "public_key", json!({})).await?;
+        let root_pk = base_wallet::parse_near_secp_pk(mpc_pk.as_str().unwrap_or_default())?;
+        let base = base_wallet::derive_address(&root_pk, &t2, agent_core::base::BASE_PATH);
+        let t = c
+            .deploy(
+                "deploy translator2 (shares build)",
+                &c.acct("translator2")?,
+                agent_wasm.clone(),
+                json!({"owner_id": c.id("alice"), "base_address": base}),
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    out.set("code_hash", json!(agent_hash));
+    let st = c.view(&t2, "get_status", json!({})).await?;
+    if st.get("shares_bps").is_none() {
+        return Err("translator2 runs a build without shares: run make build-testnet first".into());
+    }
+
+    println!("  runner key + lock");
+    let alice = c.acct("alice")?;
+    let sk = c.keys.get_or_create("translator2-alice-runner")?;
+    let pk = sk.public_key().to_string();
+    if !st["known_keys"]
+        .as_array()
+        .is_some_and(|k| k.contains(&json!(pk)))
+    {
+        let t = c
+            .call(
+                "translator2: alice sets her runner key",
+                &alice,
+                &t2,
+                "set_runner_key",
+                json!({"public_key": pk}),
+                1,
+                100,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let tr = c.acct("translator2")?;
+    if c.keys(&t2).await?.iter().any(|k| k.public_key == tr.pk) {
+        let t = c
+            .delete_key("translator2: delete setup key", &tr, &tr.pk.clone())
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+
+    println!("  offer");
+    let mut offers = c.view(&t2, "get_shares", json!({})).await?;
+    if offers.as_array().is_none_or(|a| a.is_empty()) {
+        let end = now_ns() + 365 * agent_core::DAY_NS;
+        let t = c
+            .call(
+                "alice offers 20% of translator2's earnings for a year at 500.00",
+                &alice,
+                &t2,
+                "offer_share",
+                json!({"bps": 2000, "price": (500 * USD).to_string(), "end": end.to_string()}),
+                1,
+                50,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        offers = c.view(&t2, "get_shares", json!({})).await?;
+    }
+    let o = offers[0].clone();
+
+    println!("  dave scans and buys");
+    let (input, _) = scan_agent(c, &t2, None).await?;
+    let parsed: scan::ScanInput =
+        serde_json::from_value(input.clone()).map_err(|e| format!("scan input: {e}"))?;
+    let report = scan::scan_investor(&parsed);
+    out.set(
+        "investor_scan",
+        serde_json::to_value(&report).unwrap_or_default(),
+    );
+    if report.blocks() {
+        return Err(format!(
+            "dave's scan of translator2: {} {:?}",
+            report.verdict,
+            report.codes()
+        ));
+    }
+    let dave = c.acct("dave")?;
+    let held = c
+        .view(&t2, "get_holdings", json!({"account_id": c.id("dave")}))
+        .await?;
+    if held["holdings"].as_array().is_none_or(|a| a.is_empty()) {
+        let msg = json!({"kind": "buy_share", "offer_id": o["offer_id"], "bps": o["bps"],
+                         "price": o["price"], "end": o["end"], "part": o["bps"]});
+        let t = c
+            .call(
+                "dave buys the 20% slice (one ft_transfer_call)",
+                &dave,
+                &c.id("xusd"),
+                "ft_transfer_call",
+                json!({"receiver_id": t2, "amount": o["price"], "msg": msg.to_string()}),
+                1,
+                150,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        if t.events("share_bought").is_empty() {
+            return Err(format!("buy_share refused: {:?}", t.events("refused")));
+        }
+    }
+    let before = c
+        .view(&t2, "get_holdings", json!({"account_id": c.id("dave")}))
+        .await?;
+    out.set("holdings_before_jobs", before.clone());
+
+    println!("  5 jobs");
+    let key = env.get("NEARAI_API_KEY").filter(|k| !k.is_empty()).cloned();
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(60))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|e| e.to_string())?;
+    let mut signer_added = false;
+    let mut paid: u128 = 0;
+    let mut verified = 0;
+    for (i, (payer, text)) in JOBS.iter().enumerate() {
+        let job = format!("invest-{}-{i}", now_ns() / 1_000_000_000);
+        let mut msg = json!({"kind": "pay", "job_id": job});
+        let mut answer = Value::Null;
+        let mut ai = Value::Null;
+        if let Some(k) = &key {
+            match nearai_job(c, &http, k, &t2, &c.id(payer), &job, text).await {
+                Ok((p, a)) => {
+                    if !signer_added {
+                        let t = c
+                            .call(
+                                "registry admin: add_signer (NEAR AI Cloud signing address)",
+                                &c.root,
+                                &t2,
+                                "add_signer",
+                                json!({"address": p["signing_address"]}),
+                                0,
+                                30,
+                            )
+                            .await;
+                        out.tx(&t);
+                        signer_added = true;
+                    }
+                    answer = json!(a);
+                    msg["nearai"] = json!({"model": p["model"], "request": p["request"],
+                        "response_sha256": p["response_sha256"], "signature": p["signature"]});
+                    ai = json!({"model": p["model"], "signing_address": p["signing_address"], "signed_text": p["signed_text"]});
+                }
+                Err(e) => ai = json!({"error": e}),
+            }
+        }
+        let t = c
+            .call(
+                &format!("{payer} pays translator2 10.00 for a translation"),
+                &c.acct(payer)?,
+                &c.id("xusd"),
+                "ft_transfer_call",
+                json!({"receiver_id": t2, "amount": JOB_PRICE.to_string(), "msg": msg.to_string()}),
+                1,
+                150,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        let ev = t.events("payment").first().cloned().unwrap_or(Value::Null);
+        if ev["verified"] == true {
+            verified += 1;
+        }
+        paid += JOB_PRICE;
+        out.push("jobs", json!({"payer": c.id(payer), "text": text, "translation": answer, "nearai": ai,
+            "payment": ev, "split": t.events("split").first().cloned().unwrap_or(Value::Null), "tx": t.json()}));
+    }
+
+    println!("  flagged payment");
+    let t = c
+        .call(
+            "x.alice (the owner's sub-account) pays translator2 20.00",
+            &c.acct("x.alice")?,
+            &c.id("xusd"),
+            "ft_transfer_call",
+            json!({"receiver_id": t2, "amount": FLAGGED_PRICE.to_string(), "msg": ""}),
+            1,
+            150,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    paid += FLAGGED_PRICE;
+    out.set("flagged", json!({"payment": t.events("payment").first().cloned(), "split": t.events("split").first().cloned()}));
+
+    let after = c
+        .view(&t2, "get_holdings", json!({"account_id": c.id("dave")}))
+        .await?;
+    out.set("holdings_after_jobs", after.clone());
+    let earned = |v: &Value| -> u128 {
+        v["holdings"][0]["earned"]
+            .as_str()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
+    };
+    let gain = earned(&after) - earned(&before);
+    let exact = gain == paid / 5;
+    out.set(
+        "check",
+        json!({"paid": paid.to_string(), "dave_gained": gain.to_string(),
+                            "exactly_20_percent": exact, "verified_jobs": verified}),
+    );
+
+    println!("  dave claims");
+    let bal0 = balance(c, "dave").await;
+    let t = c
+        .call("dave claims", &dave, &t2, "claim", json!({}), 0, 100)
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    let bal1 = balance(c, "dave").await;
+    out.set(
+        "dave_xusd",
+        json!({"before_claim": bal0.to_string(), "after_claim": bal1.to_string()}),
+    );
+    out.set("status", c.view(&t2, "get_status", json!({})).await?);
+    let pass = exact && bal1 > bal0;
+    out.set("pass", json!(pass));
+    out.write()?;
+    if pass {
+        Ok(())
+    } else {
+        Err("dave did not get exactly 20% (see out/scenes/scene-8.json)".into())
     }
 }

@@ -50,6 +50,7 @@ fn dry_run_without_an_env_file_prints_the_plan() {
         ("g6", "g6-on-chain"),
         ("scene-1", "break-in"),
         ("scene-7", "AI buyer setup"),
+        ("scene-8", "invest"),
     ] {
         let (ok, out, _) = run("/nonexistent/agent-exit.env", &[cmd]);
         assert!(ok, "{cmd}");

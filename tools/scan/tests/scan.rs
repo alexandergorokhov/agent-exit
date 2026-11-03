@@ -354,3 +354,22 @@ fn sh7_shares_disclosed_not_blocked() {
         f.detail
     );
 }
+
+/// T8: the investor's scan drops the listing rules but keeps the key rules.
+#[test]
+fn t8_investor_scan_keeps_key_rules_without_a_listing() {
+    let mut i = judge();
+    i.listing = None;
+    assert_eq!(scan(&i).verdict, "blocked");
+    let r = scan_investor(&i);
+    assert_eq!(r.verdict, "clean", "{:?}", r.codes());
+    assert!(r.buy_args.is_none());
+    i.chain.keys.push(AccessKey {
+        public_key: "ed25519:hidden".into(),
+        permission: Permission::Full("FullAccess".into()),
+    });
+    i.chain.keys_second_provider = Some(i.chain.keys.clone());
+    let r = scan_investor(&i);
+    assert_eq!(r.verdict, "blocked");
+    assert!(r.codes().contains(&"full_access_key_present"));
+}

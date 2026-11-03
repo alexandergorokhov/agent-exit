@@ -236,7 +236,7 @@ PLAN = cargo run --quiet --locked --offline -p testnet-plan --
 # under `make -n`, which once sent a real deploy. Use DRY_RUN=1 to preview.
 SUBMAKE = $(MAKE)
 
-.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 testnet-plan-test
+.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 scene-8 testnet-plan-test
 build-testnet: ## [testnet] Build both wasm with the testnet token, admin and MPC signer compiled in -> target/near-testnet
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
@@ -292,6 +292,13 @@ ifdef DRY_RUN
 	@$(PLAN) scene-7
 else
 	$(TESTNET_RUN) scene-7
+endif
+
+scene-8: ## [testnet] Invest: new agent translator2 (shares code), dave buys 20% of its earnings, 5 customers pay for 5 real translations, dave gets exactly 20% -> out/scenes/scene-8.json [DRY_RUN=1] (needs make build-testnet first; NEAR AI-signed if NEARAI_API_KEY has credit)
+ifdef DRY_RUN
+	@$(PLAN) scene-8
+else
+	$(TESTNET_RUN) scene-8
 endif
 
 testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network)
