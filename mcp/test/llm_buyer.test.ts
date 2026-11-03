@@ -300,6 +300,16 @@ test("LB14 ANTHROPIC_API_KEY_FROM: the key is read from the owner's other env fi
   assert.equal(keyFromPointer(`${other}#MISSING`), undefined);
   assert.equal(keyFromPointer(`${d}/nope.env#CLAUDE_TOKEN`), undefined);
   assert.equal(keyFromPointer("no-hash"), undefined);
+  // ANTHROPIC_WORKSPACE_ID becomes the anthropic-workspace-id header.
+  let sent: Record<string, string> = {};
+  const f = (async (_u: string, init: RequestInit) => {
+    sent = init.headers as Record<string, string>;
+    return new Response(JSON.stringify({ id: "m", model: "claude-haiku-4-5", content: [], usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200 });
+  }) as unknown as typeof fetch;
+  await (pickClient({ ANTHROPIC_API_KEY: "kkkkkkkkkk", ANTHROPIC_WORKSPACE_ID: "wrkspc_1" }, "anthropic", f) as AnthropicClient).ping();
+  assert.equal(sent["anthropic-workspace-id"], "wrkspc_1");
+  await (pickClient({ ANTHROPIC_API_KEY: "kkkkkkkkkk" }, "anthropic", f) as AnthropicClient).ping();
+  assert.equal(sent["anthropic-workspace-id"], undefined);
   // An explicit ANTHROPIC_API_KEY wins over the pointer.
   assert.equal(loadModelEnv({ AGENT_EXIT_ENV: mine, ANTHROPIC_API_KEY: "direct" }).ANTHROPIC_API_KEY, "direct");
 });

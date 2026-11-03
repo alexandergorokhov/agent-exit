@@ -46,17 +46,16 @@ Clone into the Linux file system (`~/src/near-transparent-agent-market`), not
     make build                 # reproducible, in Docker; writes contracts/res + SHA256SUMS
     (cd contracts/res && sha256sum -c SHA256SUMS)
 
-First run: agent_exit.wasm `be4b898dd821a6a5ff555a26f472768b19de97d113b2f37624c7d6e33aa388ed`
-(on-chain code hash `DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa`), xusd.wasm
-`7001c8c8da1b50454da5b141a2023f6fd038105bad3fa320fbe4fe261c683b0b`.
+Current build (2026-11-03, root `agentexit3.testnet`, STR-12 and STR-19 fixes):
+agent_exit.wasm `5dc306a2c08322c2287eb2ae41d920e6ba0f0cf7c99950a2f202431fef9e371c`
+(on-chain code hash `7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq`), xusd.wasm
+`f744bec2c1b4d3ba486624783530d596915a78fcd4a6e9298c72bc3bd7b0dde1`. The root is
+compiled in, so another root gives other hashes. The first run (2026-11-02,
+`agentexit.testnet`) was `be4b898d…` / `DoqGZ6zx…`, before the fixes.
 `make build-testnet` gives different hashes (local toolchain); deploy and
 scenes use contracts/res whenever SHA256SUMS exists.
 
-**Stale since 2026-11-02 (STR-12 and STR-19 fixes):** `withdraw` is now refused while Listed and at most 16 Base authorizations can wait for the signer.
-The committed contracts/res wasm and the hashes above are the pre-fix build, and so
-are the agents on testnet. Before the final redeploy: run `make build`, commit the new
-contracts/res + SHA256SUMS, update the hash in README/VIDEO/this file, re-run STR-S5
-on the sandbox, then redeploy.
+The stale-build note of 2026-11-02 is resolved: the fixed build is deployed on `agentexit3.testnet`.
 
 ## 4. Deploy and seed
 

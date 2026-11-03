@@ -131,3 +131,4 @@ pre {
 #live:empty { display: none; }
 #live h3 { margin: 6px 0; font-size: 15px; }
 #live .find li { background: var(--code-bg); border-left-color: var(--line); color: inherit; overflow-wrap: anywhere; }
+.foot p { overflow-wrap: anywhere; }

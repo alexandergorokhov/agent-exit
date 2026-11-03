@@ -28,6 +28,6 @@ for (const [id, n] of Object.entries(STEP_SCENE)) {
 const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out/testnet/deploy.json", "utf8")) : {};
 out.root = dep.root || null;
 out.agent_code_hash = dep.agent_code_hash || null;
-out.run = "2026-11-02";
+out.run = "2026-11-03";
 writeFileSync("web/data/testnet.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`web/data/testnet.json: ${Object.keys(out.steps).length} steps, ${Object.values(out.steps).reduce((a, s) => a + s.txs.filter((t) => t.explorer).length, 0)} explorer links`);

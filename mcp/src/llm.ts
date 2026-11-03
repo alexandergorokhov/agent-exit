@@ -223,7 +223,7 @@ export function summarize(t: Transcript): Record<string, unknown> {
 
 /** Keys read from ~/.agent-exit.env: the model settings only. Chain keys and
  * relayer keys in the same file are never loaded into this process. */
-export const ENV_FILE_KEYS = ["NEARAI_API_KEY", "NEARAI_BASE_URL", "NEARAI_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_API_KEY_FROM"] as const;
+export const ENV_FILE_KEYS = ["NEARAI_API_KEY", "NEARAI_BASE_URL", "NEARAI_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_API_KEY_FROM", "ANTHROPIC_WORKSPACE_ID"] as const;
 
 /** `ANTHROPIC_API_KEY_FROM=/path/to/.env#VAR`: take the Anthropic key from
  * another env file (the owner keeps it in one place). Read at run time, never
@@ -497,13 +497,21 @@ export class AnthropicClient implements ModelClient {
     private apiKey: string,
     public model: string,
     private fetchImpl: typeof fetch = fetch,
+    private workspaceId?: string,
   ) {}
+
+  /** Request headers. Keys not scoped to a workspace need the workspace id. */
+  private headers(): Record<string, string> {
+    const h: Record<string, string> = { "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" };
+    if (this.workspaceId) h["anthropic-workspace-id"] = this.workspaceId;
+    return h;
+  }
 
   async ping(): Promise<ModelReply> {
     const res = await post(
       this.fetchImpl,
       "https://api.anthropic.com/v1/messages",
-      { "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" },
+      this.headers(),
       { model: this.model, max_tokens: 8, system: PING_SYSTEM, messages: [{ role: "user", content: "ping" }] },
       [this.apiKey],
       "Anthropic",
@@ -541,7 +549,7 @@ export class AnthropicClient implements ModelClient {
     const res = await post(
       this.fetchImpl,
       "https://api.anthropic.com/v1/messages",
-      { "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" },
+      this.headers(),
       this.body(req),
       [this.apiKey],
       "Anthropic",
@@ -663,7 +671,7 @@ export function pickClient(
     return new OpenAICompatClient(env.NEARAI_API_KEY, env.NEARAI_MODEL || NEARAI_DEFAULT_MODEL, env.NEARAI_BASE_URL || NEARAI_BASE_URL, fetchImpl);
   }
   if (env.ANTHROPIC_API_KEY && prefer !== "nearai") {
-    return new AnthropicClient(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL || ANTHROPIC_DEFAULT_MODEL, fetchImpl);
+    return new AnthropicClient(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL || ANTHROPIC_DEFAULT_MODEL, fetchImpl, env.ANTHROPIC_WORKSPACE_ID);
   }
   return null;
 }

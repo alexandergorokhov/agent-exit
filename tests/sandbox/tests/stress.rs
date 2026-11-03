@@ -668,22 +668,22 @@ async fn str_s4_runner_key_rotation() {
 // ------------------------------------------------------------------ STR-S5
 
 /// STR-S5 NEAR-stake knife edge (review claim #1, and the real-node half of
-/// #2). The agent is funded with a thin margin above its stake; the SELLER,
-/// while listed, adds payout-destination rows (`withdraw` to fresh accounts,
-/// no Listed check) until the margin is gone, to the byte. Then bob buys,
-/// and the margin is raised 20 bytes at a time until the sale goes through.
-/// Every attempt must end cleanly: refunded in full with nothing changed, or
-/// sold in full. Never stuck in Settling, never a buyer key on an unsold agent.
+/// #2). The agent is funded with a thin margin above its stake; the seller,
+/// BEFORE listing, adds payout-destination rows (`withdraw` to fresh
+/// accounts) until the margin is gone, to the byte, then lists (topping up
+/// 20 bytes at a time if the listing itself does not fit). While Listed,
+/// `withdraw` is refused (STR-12 fix), so the scanned storage cannot grow.
+/// Then bob buys, and the margin is raised 20 bytes at a time until the sale
+/// goes through. Every attempt must end cleanly: refunded in full with
+/// nothing changed, or sold in full. Never stuck in Settling, never a buyer
+/// key on an unsold agent.
 #[tokio::test]
 async fn str_s5_near_stake_knife_edge() {
     let s = setup(15 * NEAR / 100).await;
     let (w, agent, xusd) = (&s.w, &s.agent.id, &s.xusd.id);
-    println!("STR-S5 slack after setup: {} yocto", w.slack(agent).await);
-    list(&s, 1_000 * USD).await.unwrap();
-    let st = w.status(agent).await;
-    println!("STR-S5 near_storage at listing: {}", st["near_storage"]);
-    let slack_listed = w.slack(agent).await;
-    assert!(slack_listed > 0, "setup left no slack: raise the funding");
+    let slack0 = w.slack(agent).await;
+    println!("STR-S5 slack after setup: {slack0} yocto");
+    assert!(slack0 > 0, "setup left no slack: raise the funding");
     // Rows: long names first (114 bytes), then shorter ones for the remainder.
     let (_, use_before) = w.near_state(agent).await;
     let mut rows = 0u32;
@@ -713,15 +713,44 @@ async fn str_s5_near_stake_knife_edge() {
             }
         }
     }
-    let (_, use_after) = w.near_state(agent).await;
-    let slack_edge = w.slack(agent).await;
+    let (_, use_rows) = w.near_state(agent).await;
+    println!(
+        "STR-S5 {rows} rows added before listing: +{} bytes ({} B/row), slack {} -> {} yocto",
+        use_rows - use_before,
+        (use_rows - use_before) / rows.max(1) as u64,
+        slack0,
+        w.slack(agent).await
+    );
+    let mut topups = 0u32;
+    while let Err(e) = list(&s, 1_000 * USD).await {
+        assert!(e.contains("Lack"), "list failed for another reason: {e}");
+        assert!(topups < 200, "list never fit");
+        w.send_near(&s.p1, agent, 20 * BYTE_COST).await;
+        topups += 1;
+    }
     let st = w.status(agent).await;
     println!(
-        "STR-S5 {rows} rows added while Listed: +{} bytes ({} B/row), slack {} -> {} yocto, near_storage.solvent {}, paid_to_total {}",
-        use_after - use_before,
-        (use_after - use_before) / rows.max(1) as u64,
-        slack_listed, slack_edge, st["near_storage"]["solvent"], st["paid_to_total"]
+        "STR-S5 listed after {topups} top-ups of 20 bytes; near_storage {}",
+        st["near_storage"]
     );
+    // STR-12: while Listed the seller cannot add a row.
+    let (_, use_listed) = w.near_state(agent).await;
+    let (r, _) = w
+        .callg(
+            &s.alice,
+            agent,
+            "withdraw",
+            json!({"amount": "1", "to": "fresh-after-listing.sandbox"}),
+            1,
+            100,
+        )
+        .await;
+    let e = r.expect_err("withdraw while Listed must be refused");
+    assert!(e.contains("spending paused"), "withdraw while Listed: {e}");
+    let (_, use_after) = w.near_state(agent).await;
+    assert_eq!(use_after, use_listed, "a refused withdraw adds no storage");
+    let slack_edge = w.slack(agent).await;
+    println!("STR-S5 slack at the edge: {slack_edge} yocto");
     assert!(slack_edge >= 0 && slack_edge < 2_000 * BYTE_COST as i128);
     // The buyer's key; sweep the margin upward.
     let bob_pk = generate_secret_key().unwrap().public_key().to_string();

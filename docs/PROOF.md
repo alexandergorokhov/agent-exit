@@ -34,7 +34,7 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 | Agent buys agent through MCP (scripted replay, no AI model): six tools, JSON schemas `schemas/mcp/*.v1.json`, read-only by default, `buy_agent` needs `confirm`, `max_price`, a session spend cap and a clean scan | offline: the server replays results **recorded from the real contract code** (`fixtures/mcp/world.json`, reproducible); nothing is sent. Testnet mode (`AGENT_EXIT_NETWORK=testnet`) is read-only, written but not run here | S14, S15 (MCP part), E29, E30, S17 |
 | Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 
-Run on NEAR testnet on 2026-11-02 (outputs in `out/`, links in the README's
+Run on NEAR testnet on 2026-11-03 (root `agentexit3.testnet`) (outputs in `out/`, links in the README's
 "Live on NEAR testnet"): the deploy, gate G1 and the six scenes. Not run:
 gate G6 (needs NEAR AI credit) and G2 (needs a Base Sepolia key). Not built yet (later batches): testnet writes through MCP (they return `NOT_BUILT`),
 `accept_job`, the page's testnet
