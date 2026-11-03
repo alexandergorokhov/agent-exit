@@ -1,7 +1,7 @@
 // Read-only NEAR testnet RPC relay used by the demo page's "Read live" button.
 // The page's CSP allows only 'self', so the browser posts to /api/rpc and the
 // relay forwards a small allow-list of view queries. Nothing can be signed or
-// sent through it. Used by web/serve.mjs (local) and web/api/rpc.js (Vercel).
+// sent through it. Used by web/serve.mjs (local) and web/api/rpc.mjs (Vercel).
 
 export const UPSTREAMS = ["https://rpc.testnet.fastnear.com", "https://rpc.testnet.near.org"];
 export const VIEW_METHODS = ["get_status", "get_listing", "get_earnings"];

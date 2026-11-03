@@ -1,4 +1,5 @@
 // Vercel serverless function: POST /api/rpc, read-only testnet relay (see ../rpc-allow.mjs).
+// .mjs, not .js: web/ has no package.json, so a .js file would load as CommonJS and its import would crash.
 import { relay, MAX_BODY } from "../rpc-allow.mjs";
 
 export default async function handler(req, res) {

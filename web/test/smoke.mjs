@@ -171,7 +171,13 @@ try {
     assert.ok(refuse(q({ request_type: "view_state", account_id: "translator.agentexit.testnet", prefix_base64: "" })), "L7: view_state refused");
     const r = await fetch(`${base}api/rpc`, { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "send_tx", params: {} }) });
     assert.equal(r.status, 400, "L7: local relay refuses a send");
-    checks += 7;
+    // The Vercel function itself must load as ESM (a .js file there loaded as
+    // CommonJS and crashed on the hosted page) and refuse a send.
+    const { default: vercelRpc } = await import("../api/rpc.mjs");
+    const vr = { code: 0, setHeader() {}, status(c) { this.code = c; return this; }, json() {} };
+    await vercelRpc({ method: "POST", body: { jsonrpc: "2.0", id: 1, method: "broadcast_tx_commit", params: ["AAAA"] } }, vr);
+    assert.equal(vr.code, 400, "L7: Vercel function loads and refuses a send");
+    checks += 8;
 
     // Mocked chain: the browser renders what the relay returns.
     const ctx = await browser.newContext({ viewport: { width: 375, height: 740 } });

@@ -44,7 +44,7 @@ steps need his logins. Never trigger GitHub Actions. Testnet root:
 
 ## Hosted page on Vercel (about 20 min, 5 of them Alex)
 
-The page is static (`web/`) plus one function, `web/api/rpc.js` (the
+The page is static (`web/`) plus one function, `web/api/rpc.mjs` (the
 read-only testnet relay for "Read live"). `web/vercel.json` sets the CSP.
 
 1. Alex: sign in at vercel.com with GitHub (free Hobby plan).
