@@ -33,6 +33,7 @@ The core stays the same: the earnings meter, the scan and the one-transaction ha
 | SH8 | A self-payment, or one flagged as a round trip, still pays investors. Faking revenue then costs the cheater the investors' cut: wash trading loses money, the same idea as the earn-out (S10) |
 | SH9 | A share can be sold to another account (`transfer_share`). This is the "secondary market" in its simplest form |
 | SH10 | The owner can buy a slice back early at the price set in the offer (`buyback_bps`). Optional; cut first if time is short |
+| SH11 | Price escrow: 50% of the share price goes to the owner now; the rest is released as investors are paid, and refunded to them at the end date if earnings stop (see T2) |
 
 Known limit, to state honestly (it goes in NOT-CAUGHT): an owner can send customers to another account that has no meter. The earnings shown then fall, and investors see that drop on the meter. No contract can stop off-chain rerouting.
 
@@ -77,10 +78,46 @@ What exists: `make translator-serve` is a worker. It translates through NEAR AI 
 
 Target: 38 → about 42–43/60.
 
-## Security
+## Security, designed as if the money were real
 
-- Testnet only, fake xUSD. Nobody can lose real money.
-- Shares hold investors' money, so: SH2 and conservation are property tests, there's a regression test that the owner can't withdraw the investors' part, and the stress tests (`make stress`) are re-run.
-- Contract code changes, so: a reproducible build and a new code hash. The locked agents can't be upgraded (that's the point), so the new code goes to **new agent accounts under agentexit3** (e.g. `translator2`, `summarizer2`). The old scenes stay valid. This may need a faucet top-up from Alex.
-- Alex's own security review stays planned for later. This plan doesn't start it.
-- Legal: shares of earnings could be securities in many places. The README says: "testnet demo with fake money; not an offer".
+Alex (2026-11-03): "imagine the money is real and let's set up the security on it." Every row below gets a test before the code exists. The existing protections the contract already has are marked "have".
+
+### Who could steal, and how we stop it
+
+| # | Attacker | Attack | Defence | Test |
+|---|---|---|---|---|
+| T1 | Owner | Withdraws the investors' part | The investors' cut is credited to their `claimable` inside `pay()`. `withdraw` only reaches `owner_free` | unit + property |
+| T2 | Owner | Takes the investors' money, then sends customers elsewhere so the agent earns nothing | **Price escrow (SH11):** the owner gets 50% of the share price now. The rest is released only as investors get paid (like the earn-out). If earnings stop, investors get the escrow back at the end date | unit + scenario |
+| T3 | Owner | Raises the treasury cut so less is left for investors | Investors take their % of the **gross** payment, before the treasury split | property |
+| T4 | Owner | Raises the price floor so customers are refused | The price floor and the other refusing limits are frozen while any slice is open | unit |
+| T5 | Owner | Sells more slices to dilute old investors | Each slice is a fixed % of every payment. New slices take from the owner, never from old holders. Total capped at 49% (SH1) | unit |
+| T6 | Owner | Changes the terms just before an investor's purchase lands | `buy_share` carries the terms the investor saw (%, price, end, version). Any mismatch is refused, the same as `buy` | unit |
+| T7 | Owner | Changes the end date or closes early | Terms are immutable once any part is sold. Early exit is only the agreed buyback (SH10), paid to holders | unit |
+| T8 | Owner | Keeps a hidden full-access key, then redeploys the code or deletes the account | Same as a sale: the page and MCP run the scan before `buy_share` and refuse a non-clean agent. A contract can't see its own keys, so this is the scan's job (stated honestly) | scan + playground |
+| T9 | Owner | Sells the whole agent to dodge investors | Slices belong to the agent, not the owner, so the buyer inherits them. The buyer's scan shows them (SH7) | unit |
+| T10 | Outsider | Fills the 16 holder slots with dust to block real investors | Minimum purchase of 1% of a slice. The buyer pays the storage | unit |
+| T11 | Outsider | Pays with a fake token | `ft_on_transfer` accepts only the configured token (have) | have |
+| T12 | Outsider | Claims someone else's share | `claim` pays only the caller. `transfer_share` needs 1 yoctoNEAR (full-access key) | unit |
+| T13 | Anyone | Rounding: many tiny payments skim fractions | Minimum payment (have). Rounding always goes to the owner, never created from nothing | property |
+| T14 | Anyone | A failed transfer loses money mid-flight | The balance is debited before the send and credited back on failure (have, A-series) | have + sandbox |
+| T15 | Anyone | Makes `pay()` run out of gas with many holders | At most 16 holders. `pay()` only credits balances and never sends tokens | stress |
+| T16 | Runner key (the agent itself) | Spends investors' money | The runner spends only from `treasury`, never from `claimable` (have) | have + unit |
+| T17 | Admin | Adds a fake NEAR AI signer to fake "Verified" | Admin can't move money. Disclosed in the scan. Mainnet would use a DAO or no admin | doc |
+
+### The one rule that covers money
+
+**Conservation:** the tokens the agent holds = all claimables + `owner_free` + `treasury` + earn-out escrow + share escrow, after every call. It runs as a property test over random sequences of offer, buy, pay, claim, transfer, close, sell and withdraw. If any sequence breaks it, the build fails.
+
+### Process before anyone could call it "real money"
+
+| Step | Status |
+|---|---|
+| Property tests and fuzzing (`make fuzz`, `make stress`) cover share calls | in this plan |
+| near-sandbox test: buy a share, pay, claim, with a transfer failure in between | in this plan |
+| Alex's own security review | later, Alex (not started by Claude) |
+| External audit, a bug bounty, and a mainnet launch with low caps | out of scope for the hackathon; listed in the README as "before mainnet" |
+
+### Still honest limits
+
+- An owner can route customers to another account with no meter. The escrow (T2) limits the damage to the 50% paid upfront. The meter shows the drop.
+- Testnet demo, fake money, not an offer. Shares of earnings may be securities in many countries.
