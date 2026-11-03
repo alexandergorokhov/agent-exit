@@ -31,7 +31,7 @@ const expect = {
   verified: ["verified (NEAR AI signature)", "120.00", "360.00"],
   cheat: ["verdict blocked", "full_access_key_present", "0.00"],
   "honest-sale": ["700.00", "settling", "bob.testnet"],
-  "agent-buys-agent": ["scripted replay", "SCAN_BLOCKED", "buy_agent", "verify_lockout", "Real AI buyer transcript"],
+  "agent-buys-agent": ["scripted replay", "SCAN_BLOCKED", "buy_agent", "verify_lockout", "Real AI buyer transcript (recorded)", "claude-haiku-4-5", "verdict clean", "seller locked out: true"],
 };
 
 async function noHorizontalScroll(p, what) {

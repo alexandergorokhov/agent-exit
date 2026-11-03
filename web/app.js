@@ -165,7 +165,16 @@ function render() {
   if (s.scan) kids.push(scanBlock(s.scan));
   if (s.listing) kids.push(el("h3", { text: "The listing bob's scan saw" }), jsonBlock("get_listing()", s.listing));
   if (s.mcp_steps) kids.push(el("h3", { text: "MCP tool calls by the summarizer agent" }), el("ol", { class: "calls" }, s.mcp_steps.map(mcpCard)));
-  if (s.slot) kids.push(el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted", text: s.slot.text })));
+  if (s.slot) {
+    const slot = el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted", text: s.slot.text }));
+    if (s.slot.steps && s.slot.steps.length) {
+      slot.append(el("ol", { class: "calls ai" }, s.slot.steps.map((st) => el("li", { class: "call" },
+        el("p", { class: "said", text: st.said }),
+        el("ul", { class: "find" }, st.calls.map((c) => el("li", {},
+          el("code", { text: `${c.tool}(${JSON.stringify(c.args)})` }), ` → ${c.outcome}`)))))));
+    }
+    kids.push(slot);
+  }
   if (s.view) kids.push(el("h3", { text: "View" }), jsonBlock(s.view.name, s.view.value));
   const tn = testnetBlock(s.id);
   if (tn) kids.push(tn);

@@ -23,7 +23,7 @@ Edited in this order (not the recording order).
 | 1:40-2:00 | Verified vs unverified (scene 3) | Page step 3 | "Two agents both claim 500 in earnings. Ours counts every payment by payer and flags the seller paying himself. Work signed by NEAR AI Cloud gets a Verified badge. One agent: 500 gross, 360 counted. The other: 500 gross, nothing counted." |
 | 2:00-2:20 | Cheat caught (scene 4) | Page step 4 + `make attack` table | "This one is a cheat: the seller kept a hidden full-access key. The scan finds it and the sale is blocked before any money moves. The attack suite runs 20 attack families, with zero false positives on 50 honest agents." |
 | 2:20-2:40 | Honest sale (scene 5) | NearBlocks: the buy tx | "An honest sale is one transaction: deed, keys and wallet move together. The seller gets 70 percent now. 30 percent stays in escrow and is paid only from the agent's real future earnings." |
-| 2:40-3:00 | Agent buys agent (scene 6) + close | Terminal: `make llm-buyer` transcript, then README | "And the buyer can be an agent. Here a model on NEAR AI Cloud reads our skill, refuses the cheat, buys the honest agent and checks the seller is locked out. Everything is open source. Run make verify to check it yourself." |
+| 2:40-3:00 | Agent buys agent (scene 6) + close | Terminal: `make llm-buyer` transcript, then README | "And the buyer can be an agent. Here Claude Haiku reads only our skill and tools, rejects the fake-earnings cheat, scans and buys the honest agent and checks the seller is locked out, for three cents. Everything is open source. Run make verify to check it yourself." |
 
 If the real AI-buyer run (`out/llm-buyer.json`) does not exist, use page step 6 and say "a scripted replay" instead of "a model".
 

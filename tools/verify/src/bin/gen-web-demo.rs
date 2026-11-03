@@ -348,11 +348,81 @@ fn agent_buys_agent() -> Value {
             {"label": "old seller locked out", "value": g["summary"]["seller_locked_out_after"].to_string()},
         ],
         "mcp_steps": steps,
-        "slot": {
+        "slot": ai_buyer_slot(),
+    })
+}
+
+/// The real AI buyer run (`make llm-buyer`, out/llm-buyer.json) when one is
+/// committed; otherwise a placeholder. Only the model's own words, the tool
+/// names and arguments and a short outcome per call go on the page.
+fn ai_buyer_slot() -> Value {
+    let Ok(text) = std::fs::read_to_string(format!("{ROOT}/out/llm-buyer.json")) else {
+        return json!({
             "title": "Real AI buyer transcript",
             "status": "coming",
-            "text": "The real AI buyer transcript goes here: a model deciding, refusing the cheat and buying through the MCP server. `make llm-buyer` writes it to out/llm-buyer.json; the real model run is pending on testnet day, so nothing is recorded yet and what is above is a scripted replay."
-        },
+            "text": "The real AI buyer transcript goes here: `make llm-buyer` writes it to out/llm-buyer.json. Nothing is recorded yet; what is above is a scripted replay."
+        });
+    };
+    let r: Value = serde_json::from_str(&text).expect("out/llm-buyer.json");
+    let short = |s: &str, n: usize| -> String {
+        let t: String = s.chars().take(n).collect();
+        if s.chars().count() > n {
+            format!("{t}…")
+        } else {
+            t
+        }
+    };
+    let steps: Vec<Value> = r["transcript"]["steps"]
+        .as_array()
+        .map(|a| a.as_slice())
+        .unwrap_or(&[])
+        .iter()
+        .map(|st| {
+            let calls: Vec<Value> = st["tool_calls"]
+                .as_array()
+                .map(|a| a.as_slice())
+                .unwrap_or(&[])
+                .iter()
+                .map(|c| {
+                    let res = &c["result"];
+                    let outcome = if c["ok"] != true {
+                        format!("error: {}", short(&res["error"].to_string(), 120))
+                    } else if let Some(v) = res.get("verdict") {
+                        format!("verdict {}", v.as_str().unwrap_or("?"))
+                    } else if let Some(v) = res.get("seller_locked_out") {
+                        format!("seller locked out: {v}")
+                    } else if let Some(a) = res.get("agents").and_then(|a| a.as_array()) {
+                        format!("{} agents listed", a.len())
+                    } else if let Some(e) = res.get("earnings") {
+                        format!("counted {}, flagged {}", e["counted"].as_str().unwrap_or("?"), e["flagged"].as_str().unwrap_or("?"))
+                    } else if let Some(v) = res.get("status") {
+                        format!("status {}", v.as_str().unwrap_or("?"))
+                    } else {
+                        "ok".to_string()
+                    };
+                    json!({"tool": c["name"], "args": c["arguments"], "ok": c["ok"], "outcome": outcome})
+                })
+                .collect();
+            json!({
+                "step": st["step"],
+                "said": short(st["assistant_text"].as_str().unwrap_or(""), 600),
+                "calls": calls,
+            })
+        })
+        .collect();
+    let u = &r["usage"];
+    let sm = &r["summary"];
+    json!({
+        "title": "Real AI buyer transcript",
+        "status": if sm["pass"] == true { "recorded" } else { "recorded, failed" },
+        "text": format!(
+            "This is the real AI buyer transcript (the calls above are a scripted replay): a real model ({}) read the Agent Skill and shopped through the same MCP tools (offline fixtures), with the goal: \"{}\". {} steps, {} input and {} output tokens. Bought translator: {}; cheat bought: {}; seller locked out: {}. From out/llm-buyer.json (make llm-buyer).",
+            r["models_reported"][0].as_str().unwrap_or("?"),
+            r["transcript"]["goal"].as_str().unwrap_or(""),
+            sm["steps"], u["prompt_tokens"], u["completion_tokens"],
+            sm["translator_bought"], sm["cheat_bought"], sm["seller_locked_out"],
+        ),
+        "steps": steps,
     })
 }
 

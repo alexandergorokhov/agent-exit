@@ -1318,8 +1318,83 @@
       ],
       "slot": {
         "title": "Real AI buyer transcript",
-        "status": "coming",
-        "text": "The real AI buyer transcript goes here: a model deciding, refusing the cheat and buying through the MCP server. `make llm-buyer` writes it to out/llm-buyer.json; the real model run is pending on testnet day, so nothing is recorded yet and what is above is a scripted replay."
+        "status": "recorded",
+        "text": "This is the real AI buyer transcript (the calls above are a scripted replay): a real model (claude-haiku-4-5-20251001) read the Agent Skill and shopped through the same MCP tools (offline fixtures), with the goal: \"You are summarizer. Buy a translation agent under 1,000 xUSD that is safe.\". 5 steps, 23057 input and 883 output tokens. Bought translator: true; cheat bought: false; seller locked out: true. From out/llm-buyer.json (make llm-buyer).",
+        "steps": [
+          {
+            "step": 1,
+            "said": "I'll help you find and buy a safe translation agent under 1,000 xUSD. Let me start by listing the available agents for sale.",
+            "calls": [
+              {
+                "tool": "list_agents",
+                "args": {
+                  "status": "Listed"
+                },
+                "ok": true,
+                "outcome": "2 agents listed"
+              }
+            ]
+          },
+          {
+            "step": 2,
+            "said": "Good! I found two agents listed. The `translator.testnet` agent looks promising:\n- Price: 1,000 xUSD (at my limit)\n- Counted earnings: 360 xUSD (real revenue from customers)\n- Verified: 120 xUSD (with NEAR AI signatures)\n- Flagged: 140 xUSD (not real revenue)\n\nThe `cheat.testnet` agent has all flagged earnings (0 counted), so it's not a real business.\n\nLet me get the detailed earnings for the translator agent and then scan it for backdoors.",
+            "calls": [
+              {
+                "tool": "get_earnings",
+                "args": {
+                  "agent": "translator.testnet"
+                },
+                "ok": true,
+                "outcome": "counted 360.00, flagged 140.00"
+              },
+              {
+                "tool": "scan_agent",
+                "args": {
+                  "agent": "translator.testnet",
+                  "expected_listing_version": 1
+                },
+                "ok": true,
+                "outcome": "verdict clean"
+              }
+            ]
+          },
+          {
+            "step": 3,
+            "said": "Excellent! The scan is **clean** and **safe to buy**. The earnings look solid:\n- 360 xUSD counted from 6 real customers over 6 days\n- 120 xUSD verified with NEAR AI signatures\n- Only 140 xUSD flagged (self-payments and sub-account payments, not real revenue)\n\nThe agent has consistent daily earnings of 72 xUSD from real customers. Now I'll buy it at my maximum price of 1,000 xUSD.",
+            "calls": [
+              {
+                "tool": "buy_agent",
+                "args": {
+                  "agent": "translator.testnet",
+                  "max_price": 1000,
+                  "confirm": true
+                },
+                "ok": true,
+                "outcome": "ok"
+              }
+            ]
+          },
+          {
+            "step": 4,
+            "said": "Perfect! The purchase is complete. Now let me verify that the seller (alice.testnet) is locked out and can no longer control the agent.",
+            "calls": [
+              {
+                "tool": "verify_lockout",
+                "args": {
+                  "agent": "translator.testnet",
+                  "account": "alice.testnet"
+                },
+                "ok": true,
+                "outcome": "ok"
+              }
+            ]
+          },
+          {
+            "step": 5,
+            "said": "**Purchase successful!** ✓\n\nI bought **translator.testnet** for **1,000 xUSD** and verified the transaction is secure:\n\n**Why this agent was safe:**\n- Clean scan with no backdoors, extra keys, or upgrade methods\n- Real earnings: 360 xUSD counted from 6 verified customers over 6 days\n- 120 xUSD verified with NEAR AI signatures\n- Only 140 xUSD flagged (self-payments, not real revenue)\n- Seller (alice.testnet) is now locked out with no keys or ownership\n\n**Transaction details:**\n- Paid now: 700 xUSD (70%)\n- Escrow: 300 xUSD (30% earn-out over 30 days)\n- Seller floor: 20% of escrow (60 xUSD minimu…",
+            "calls": []
+          }
+        ]
       }
     }
   ]
