@@ -10,41 +10,47 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <header class="top">
+  <header class="hero">
     <div class="wrap">
-      <p class="eyebrow">Agent Exit · sell an AI agent safely</p>
+      <p class="tag">NEAR · AI agents · fake test money</p>
       <h1>Agent Exit</h1>
-      <p class="lede">Buy an AI agent with its real earnings history, and be sure the seller is locked out. Six steps, each showing what the contract answered in a recorded run of its code, and the same step on NEAR testnet with explorer links.</p>
+      <p class="lede">Buy an AI agent with real earnings.<br>The seller is locked out in one transaction.</p>
       <div id="mode" class="mode" role="status"></div>
     </div>
   </header>
 
   <main class="wrap">
-    <aside id="why-near" class="step">
-      <h2>Why only on NEAR?</h2>
-      <ul>
-        <li>The agent is its own account. A full-access key can be <strong>deleted</strong> from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain.</li>
-        <li>Function-call keys are <strong>scoped</strong> to one contract and its methods: the runner key can run the agent and nothing else.</li>
-        <li>The agent's Base wallet is derived from its account name with Chain Signatures, so it stays the same across a sale.</li>
-        <li>NEAR AI Cloud signatures on payments are <strong>checked on-chain</strong> (ecrecover) to mark earnings as verified.</li>
-      </ul>
-    </aside>
     <nav aria-label="Demo steps">
+      <div class="progress"><span id="bar"></span></div>
       <ol id="steps" class="steps"></ol>
     </nav>
-    <section id="step" class="step" aria-live="polite">
+    <section id="step" class="panel" aria-live="polite">
       <p class="muted">Loading the recorded demo…</p>
     </section>
     <div class="pager">
-      <button id="prev" type="button">← Previous</button>
+      <button id="prev" type="button">← Back</button>
+      <span id="count" class="muted"></span>
       <button id="next" type="button" class="primary">Next →</button>
     </div>
+
+    <aside id="why-near">
+      <h2>Why only on NEAR?</h2>
+      <div class="why">
+        <div><b>Keys can be deleted</b><span>The seller's key is removed on-chain, so "locked out" is a fact anyone can read.</span></div>
+        <div><b>Scoped keys</b><span>The runner key can run the agent and nothing else.</span></div>
+        <div><b>One wallet, any chain</b><span>Chain Signatures give the agent a Base wallet that moves with the sale.</span></div>
+        <div><b>Verified earnings</b><span>NEAR AI Cloud signatures are <strong>checked on-chain</strong>.</span></div>
+      </div>
+    </aside>
   </main>
 
   <footer class="wrap foot">
-    <p id="source" class="muted"></p>
-    <p id="evidence" class="muted">Evidence level: a regression suite, not independent evidence. 20 attack families, 19 counted, each blocked by its rule (A9, Base, is not counted until Base is live; A5 uses a placeholder hash until the reproducible build), 0/50 false positives on clean agents; 81 MCP tests.</p>
     <p class="muted">All money is xUSD-FAKE, a fake test dollar with no value. No mainnet, ever. MIT licensed.</p>
+    <details>
+      <summary>Data and evidence</summary>
+      <p id="source" class="muted"></p>
+      <p id="evidence" class="muted">Evidence level: a regression suite, not independent evidence. 20 attack families, 19 counted, each blocked by its rule (A9, Base, is not counted until Base is live; A5 uses a placeholder hash until the reproducible build), 0/50 false positives on clean agents; 81 MCP tests.</p>
+    </details>
   </footer>
 </body>
 </html>

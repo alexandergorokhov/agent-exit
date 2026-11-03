@@ -134,17 +134,47 @@ function testnetBlock(id) {
     el("span", { class: `badge ${x.ok ? "ok" : "error"}`, text: x.ok ? "ok" : "refused" }), " ", x.label,
     x.error ? el("code", { text: ` ${x.error}` }) : "",
     x.explorer ? el("span", {}, " · ", el("a", { href: x.explorer, target: "_blank", rel: "noopener noreferrer", text: "NearBlocks" })) : ""));
-  const kids = [el("h3", { text: `On NEAR testnet (scene ${t.scene}, ${t.pass ? "passed" : "failed"})` })];
-  if (items.length) kids.push(el("ul", { class: "find" }, items));
-  else kids.push(el("p", { class: "muted", text: "Read-only step: the recorded views are in out/scenes." }));
+  const head = el("div", { class: "tn-head" },
+    el("span", { class: `dot ${t.pass ? "ok" : "bad"}` }),
+    el("b", { text: `Same step on NEAR testnet: ${t.pass ? "passed" : "failed"}` }),
+    el("span", { class: "muted", text: items.length ? ` · ${items.length} transactions` : " · read-only" }));
+  const kids = [head];
+  if (items.length) kids.push(el("details", {}, el("summary", { text: `Show the ${items.length} NearBlocks links (scene ${t.scene})` }), el("ul", { class: "find" }, items)));
   return el("div", { class: "testnet" }, ...kids);
 }
+
+// One plain sentence per step; the full recorded story sits behind "Read more".
+const SHORT = {
+  "break-in": "The old seller tries every way back in. Every call is refused.",
+  business: "The agent pays for its work, but only inside the owner's daily limits.",
+  verified: "Only payments from real customers count. NEAR AI-signed work gets a Verified badge.",
+  cheat: "A seller hides a backdoor key. The buyer's scan finds it and blocks the sale.",
+  "honest-sale": "One transaction: buyer pays, keys swap, 30% stays in escrow as an earn-out.",
+  "agent-buys-agent": "An AI agent scans both agents, refuses the cheat and buys the good one.",
+};
+
+// The model's words, without markdown marks; long turns show their start and expand.
+function said(text) {
+  const t = String(text || "").replace(/\*\*|`/g, "").trim();
+  if (t.length <= 260) return el("p", { class: "said", text: t });
+  return el("details", { class: "said more" }, el("summary", { text: `${t.slice(0, 240).trimEnd()}… (more)` }), el("p", { text: t }));
+}
+
+const fold = (label, ...body) => el("details", { class: "fold" }, el("summary", { text: label }), ...body);
 
 function renderNav() {
   const ol = document.getElementById("steps");
   ol.replaceChildren(...demo.steps.map((s, i) =>
-    el("li", {}, el("a", { href: `#${s.id}`, "aria-current": i === current ? "step" : null },
-      el("span", { class: "n", text: String(i + 1) }), el("span", { text: s.title })))));
+    el("li", {}, el("a", { href: `#${s.id}`, class: i < current ? "done" : null, "aria-current": i === current ? "step" : null },
+      el("span", { class: "n", text: String(i + 1) }), el("span", { class: "t", text: s.title })))));
+  document.getElementById("bar").style.width = `${((current + 1) / demo.steps.length) * 100}%`;
+  document.getElementById("count").textContent = `${current + 1} / ${demo.steps.length}`;
+}
+
+function callSummary(calls) {
+  const n = (k) => calls.filter((c) => (c.display || c.outcome) === k).length;
+  const parts = [["refused", n("error")], ["frozen", n("frozen")], ["unverified", n("unverified")], ["ok", n("ok")]].filter(([, v]) => v).map(([k, v]) => `${v} ${k}`);
+  return `Contract calls: ${parts.join(", ")}`;
 }
 
 function render() {
@@ -152,32 +182,32 @@ function render() {
   const sec = document.getElementById("step");
   sec.dataset.step = s.id;
   const stats = el("div", { class: "stats" }, s.headline.map((h) =>
-    el("div", { class: "stat" }, el("div", { class: "v", text: h.value }), el("div", { class: "l", text: h.label }))));
+    el("div", { class: "stat" }, el("div", { class: "v", text: h.value === "true" ? "Yes" : h.value === "false" ? "No" : h.value }), el("div", { class: "l", text: h.label }))));
   const kids = [
-    el("h2", { text: `${current + 1}. ${s.title}` }),
-    el("p", { class: "ids", text: `Tests behind this step: ${s.scenarios.join(", ")}` }),
-    el("p", { class: "story", text: s.story }),
+    el("div", { class: "panel-head" }, el("span", { class: "big-n", text: String(current + 1) }), el("h2", { text: s.title })),
+    el("p", { class: "short", text: SHORT[s.id] || "" }),
     stats,
   ];
-  if (s.calls && s.calls.length) {
-    kids.push(el("h3", { text: "Contract calls, as recorded" }), el("ol", { class: "calls" }, s.calls.map(callCard)));
-  }
-  if (s.scan) kids.push(scanBlock(s.scan));
-  if (s.listing) kids.push(el("h3", { text: "The listing bob's scan saw" }), jsonBlock("get_listing()", s.listing));
-  if (s.mcp_steps) kids.push(el("h3", { text: "MCP tool calls by the summarizer agent" }), el("ol", { class: "calls" }, s.mcp_steps.map(mcpCard)));
   if (s.slot) {
-    const slot = el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted", text: s.slot.text }));
+    const slot = el("div", { class: "slot", "data-slot": "ai-buyer-transcript" }, el("h3", { text: `${s.slot.title} (${s.slot.status})` }), el("p", { class: "muted small", text: s.slot.text }));
     if (s.slot.steps && s.slot.steps.length) {
-      slot.append(el("ol", { class: "calls ai" }, s.slot.steps.map((st) => el("li", { class: "call" },
-        el("p", { class: "said", text: st.said }),
-        el("ul", { class: "find" }, st.calls.map((c) => el("li", {},
+      slot.append(el("ol", { class: "chat" }, s.slot.steps.map((st) => el("li", {},
+        said(st.said),
+        el("div", { class: "tools" }, st.calls.map((c) => el("span", { class: "tool" },
           el("code", { text: `${c.tool}(${JSON.stringify(c.args)})` }), ` → ${c.outcome}`)))))));
     }
     kids.push(slot);
   }
-  if (s.view) kids.push(el("h3", { text: "View" }), jsonBlock(s.view.name, s.view.value));
   const tn = testnetBlock(s.id);
   if (tn) kids.push(tn);
+  const proof = [];
+  proof.push(fold("Read the full story", el("p", { class: "story", text: s.story }), el("p", { class: "ids", text: `Tests behind this step: ${s.scenarios.join(", ")}` })));
+  if (s.calls && s.calls.length) proof.push(fold(callSummary(s.calls), el("ol", { class: "calls" }, s.calls.map(callCard))));
+  if (s.scan) proof.push(fold(`Buyer's scan: ${s.scan.verdict}, ${s.scan.findings.length} findings`, scanBlock(s.scan)));
+  if (s.listing) proof.push(fold("The listing bob's scan saw", jsonBlock("get_listing()", s.listing)));
+  if (s.mcp_steps) proof.push(fold(`MCP tool calls by the summarizer agent (${s.mcp_steps.length})`, el("ol", { class: "calls" }, s.mcp_steps.map(mcpCard))));
+  if (s.view) proof.push(fold(`View: ${s.view.name}`, jsonBlock(s.view.name, s.view.value)));
+  kids.push(el("div", { class: "proof" }, el("h3", { text: "Proof" }), ...proof));
   sec.replaceChildren(...kids);
   document.getElementById("prev").disabled = current === 0;
   document.getElementById("next").disabled = current === demo.steps.length - 1;
@@ -200,7 +230,7 @@ function renderMode() {
   if (network === "offline") {
     box.replaceChildren(
       el("span", { class: "pill", text: "offline: recorded results" }),
-      el("a", { href: "?network=testnet", text: "testnet mode" }));
+      el("a", { class: "pill link", href: "?network=testnet", text: "Check NEAR testnet →" }));
     return;
   }
   const who = el("span", { class: "muted", id: "wallet" });
@@ -250,6 +280,11 @@ async function main() {
   document.getElementById("prev").addEventListener("click", () => go(current - 1));
   document.getElementById("next").addEventListener("click", () => go(current + 1));
   addEventListener("hashchange", () => go(fromHash(), false));
+  addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("input, textarea, summary, button")) return;
+    if (e.key === "ArrowRight") go(current + 1);
+    if (e.key === "ArrowLeft") go(current - 1);
+  });
   go(fromHash(), false);
 }
 
