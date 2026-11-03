@@ -1,0 +1,22 @@
+[package]
+name = "playground"
+description = "Agent Exit browser playground: the real agent-core state machine and the real buyer scan, compiled to wasm for the demo page."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+agent-core = { path = "../../contracts/agent-core" }
+scan = { path = "../scan" }
+serde.workspace = true
+serde_json.workspace = true
+
+# k256 (Base wallet derivation in the scan) pulls in getrandom, which has no
+# wasm32-unknown-unknown backend. The playground never needs randomness, so a
+# custom backend that always fails is registered (src/lib.rs).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["custom"] }

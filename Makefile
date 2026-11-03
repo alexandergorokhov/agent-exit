@@ -117,6 +117,12 @@ llm-buyer: mcp-build ## A real model (NEAR AI Cloud, else Anthropic) reads the S
 translator-serve: mcp-build ## Translator worker on 127.0.0.1:8787: translates via NEAR AI Cloud and returns NEAR AI's signature to pay with (offline: recorded fixture, labelled; real: AGENT_EXIT_NETWORK=testnet + NEARAI_API_KEY + AGENT_EXIT_TRANSLATOR_ACCOUNT) [PORT=8787 MAX_JOBS=20]
 	node mcp/dist/scripts/translator-serve.js --port $(or $(PORT),8787) --max-jobs $(or $(MAX_JOBS),20)
 
+.PHONY: playground-wasm
+playground-wasm: ## Build the page's playground: the real agent-core state machine + buyer scan as wasm -> web/playground.wasm
+	cargo build --quiet --locked --offline --release --target wasm32-unknown-unknown -p playground
+	cp target/wasm32-unknown-unknown/release/playground.wasm web/playground.wasm
+	cd web && sha256sum playground.wasm > playground.wasm.sha256
+
 .PHONY: llm-buyer-testnet
 llm-buyer-testnet: mcp-build ## [testnet] After make scene-7: a real model, through carol's MCP server, scans both agents and buys on testnet (xUSD-FAKE) -> out/llm-buyer-testnet.json. ONE capped Anthropic run (~$0.05)
 	node mcp/dist/scripts/llm-buyer.js --network testnet --root $(TESTNET_ROOT) --provider anthropic --max-steps 12 --max-tokens 150000 --out $(OUT)/llm-buyer-testnet.json

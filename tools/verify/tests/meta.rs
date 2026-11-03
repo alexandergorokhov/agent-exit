@@ -62,7 +62,7 @@ fn unbuilt_make_targets_fail_loudly() {
         eprintln!("make not installed; skipped");
         return;
     }
-    for t in ["attack-sandbox", "web-deploy", "e2e", "gate-g0", "record"] {
+    for t in ["attack-sandbox", "e2e", "gate-g0", "record"] {
         let out = Command::new("make")
             .arg("-s")
             .arg(t)
@@ -249,13 +249,7 @@ fn make_out(args: &[&str]) -> (bool, String) {
 fn e35_help_marks_unbuilt_targets() {
     let (ok, help) = make_out(&["-s", "help"]);
     assert!(ok);
-    for t in [
-        "attack-sandbox",
-        "attack-testnet",
-        "record",
-        "web-deploy",
-        "e2e",
-    ] {
+    for t in ["attack-sandbox", "attack-testnet", "record", "e2e"] {
         let line = help
             .lines()
             .find(|l| l.starts_with(&format!("{t}\t")))
@@ -416,8 +410,11 @@ fn s24_page_has_csp_and_vendored_connector() {
         .to_string();
     assert!(csp.contains("default-src 'none'"), "{csp}");
     assert!(csp.contains("script-src 'self'"), "{csp}");
+    // 'wasm-unsafe-eval' lets the page compile its own playground.wasm (same
+    // origin); it does not allow JS eval. Nothing else "unsafe" is allowed.
+    let rest = csp.replace("'wasm-unsafe-eval'", "");
     for bad in ["unsafe-inline", "unsafe-eval", "cdn.", "*", "data:"] {
-        assert!(!csp.contains(bad), "CSP must not contain {bad}: {csp}");
+        assert!(!rest.contains(bad), "CSP must not contain {bad}: {csp}");
     }
     assert!(!h.contains("<script>"), "no inline scripts");
     let a = read("web/app.js");
@@ -492,7 +489,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 74, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, 81, "{f}: the MCP test count differs from make mcp-test");
         }
     }
 }
@@ -541,7 +538,8 @@ fn s25_readme_first_screen() {
             "{f}: marketplace label"
         );
     }
-    assert!(read("web/index.html").contains("Agent Exit · sell an AI agent safely"));
+    assert!(read("web/index.html").contains("Buy an AI agent with real earnings"));
+    assert!(read("web/index.html").contains("Try it yourself"));
     assert!(read("web/index.html").contains("Why only on NEAR"));
     assert!(read(".gitignore").lines().any(|l| l == ".claude/"));
     let mk = read("Makefile");

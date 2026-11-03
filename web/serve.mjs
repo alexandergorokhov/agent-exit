@@ -6,11 +6,11 @@ import { fileURLToPath } from "node:url";
 import { relay, MAX_BODY, UPSTREAMS } from "./rpc-allow.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml" };
+const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".wasm": "application/wasm" };
 
 // Same policy as the <meta> tag in index.html, plus frame-ancestors, which a
 // meta tag cannot set. web/_headers and web/vercel.json must say the same.
-export const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+export const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 export const SECURITY_HEADERS = { "content-security-policy": CSP, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" };
 
 // `upstreams`: testnet RPC URLs for the read-only relay at /api/rpc

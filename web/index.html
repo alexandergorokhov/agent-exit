@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Agent Exit demo</title>
   <meta name="description" content="Agent Exit: sell an AI agent with its earnings history, and lock the seller out in one step. A walkthrough of recorded contract results.">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="app.js"></script>
+  <script type="module" src="playground.js"></script>
 </head>
 <body>
   <header class="hero">
@@ -15,29 +16,81 @@
       <p class="tag">NEAR · AI agents · fake test money</p>
       <h1>Agent Exit</h1>
       <p class="lede">Buy an AI agent with real earnings.<br>The seller is locked out in one transaction.</p>
-      <div id="mode" class="mode" role="status"></div>
+      <div class="cta">
+        <a class="btn primary" href="#play">Try it yourself</a>
+        <a class="btn" href="#evidence-run">See it on NEAR testnet</a>
+      </div>
     </div>
   </header>
 
   <main class="wrap">
-    <nav aria-label="Demo steps">
-      <div class="progress"><span id="bar"></span></div>
-      <ol id="steps" class="steps"></ol>
-    </nav>
-    <section id="step" class="panel" aria-live="polite">
-      <p class="muted">Loading the recorded demo…</p>
+    <section id="concept" class="concept">
+      <div class="problem">
+        <h2>The problem</h2>
+        <p>AI agents now earn money: they sell translations, research, trades. Soon people will buy and sell them like small businesses. Today a buyer cannot trust two things:</p>
+        <ol>
+          <li><b>The revenue.</b> The seller can pay their own agent to fake it.</li>
+          <li><b>The handover.</b> The seller can keep a hidden key and take the agent back.</li>
+        </ol>
+      </div>
+      <div class="flow" aria-label="How it works">
+        <h2>How Agent Exit fixes it</h2>
+        <ol class="flow-steps">
+          <li><b>Earnings meter</b><span>The agent is its own NEAR account. Its contract counts each payment by who paid. Payments from the owner or the owner's sub-accounts are flagged, not counted.</span></li>
+          <li><b>Backdoor scan</b><span>Before buying, the buyer's tools compare the keys on the account with the keys the contract added. Any extra full-access key blocks the sale.</span></li>
+          <li><b>One-transaction handover</b><span>The buyer pays once. In that same transaction the seller's keys are deleted, the buyer's key is added and ownership moves.</span></li>
+          <li><b>Earn-out</b><span>The seller gets 70% now. The other 30% is released only from real customer payments after the sale.</span></li>
+        </ol>
+      </div>
     </section>
-    <div class="pager">
-      <button id="prev" type="button">← Back</button>
-      <span id="count" class="muted"></span>
-      <button id="next" type="button" class="primary">Next →</button>
-    </div>
+
+    <section id="play" class="play">
+      <div class="play-head">
+        <h2>Try it yourself</h2>
+        <p class="muted">This runs the <b>real contract logic and the real buyer scan</b>, compiled from the same Rust code into this page. Pick a mission and press the buttons in order. Under every result, "Behind the scenes" says what the contract checked.</p>
+      </div>
+      <div id="missions" class="missions" role="tablist"></div>
+      <div class="play-grid">
+        <div class="guide">
+          <p id="mission-intro" class="intro"></p>
+          <ol id="mission-steps" class="mission-steps"></ol>
+          <p id="mission-lesson" class="lesson" hidden></p>
+          <details class="free">
+            <summary>Free play: every action</summary>
+            <div id="free-actions" class="free-actions"></div>
+          </details>
+        </div>
+        <div class="state" aria-live="polite">
+          <div id="pg-state"><p class="muted">Loading the contract…</p></div>
+        </div>
+      </div>
+      <h3 class="feed-title">What happened</h3>
+      <ol id="pg-feed" class="feed"></ol>
+    </section>
+
+    <section id="evidence-run" class="evidence">
+      <h2>The same story on NEAR testnet</h2>
+      <p class="muted">Six recorded scenes: what the deployed contract answered, with NearBlocks links you can open.</p>
+      <div id="mode" class="mode" role="status"></div>
+      <nav aria-label="Demo steps">
+        <div class="progress"><span id="bar"></span></div>
+        <ol id="steps" class="steps"></ol>
+      </nav>
+      <section id="step" class="panel" aria-live="polite">
+        <p class="muted">Loading the recorded demo…</p>
+      </section>
+      <div class="pager">
+        <button id="prev" type="button">← Back</button>
+        <span id="count" class="muted"></span>
+        <button id="next" type="button" class="primary">Next →</button>
+      </div>
+    </section>
 
     <aside id="why-near">
       <h2>Why only on NEAR?</h2>
       <div class="why">
         <div><b>Keys can be deleted</b><span>The seller's key is removed on-chain, so "locked out" is a fact anyone can read.</span></div>
-        <div><b>Scoped keys</b><span>The runner key can run the agent and nothing else.</span></div>
+        <div><b>Named accounts</b><span>bot.alice.testnet is visibly alice's sub-account, so her fake payments are flagged.</span></div>
         <div><b>One wallet, any chain</b><span>Chain Signatures give the agent a Base wallet that moves with the sale.</span></div>
         <div><b>Verified earnings</b><span>NEAR AI Cloud signatures are <strong>checked on-chain</strong>.</span></div>
       </div>

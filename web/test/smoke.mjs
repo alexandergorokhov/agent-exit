@@ -62,6 +62,33 @@ try {
     await p.close();
   }
 
+  // P1-P3: the playground runs the real contract core (wasm) in the page; each mission ends in its lesson.
+  {
+    const [sum] = readFileSync(new URL("../playground.wasm.sha256", import.meta.url), "utf8").trim().split(/\s+/);
+    assert.equal(createHash("sha256").update(readFileSync(new URL("../playground.wasm", import.meta.url))).digest("hex"), sum, "P0: playground.wasm matches its pinned SHA-256 (make playground-wasm)");
+    const want = {
+      fake: ["FLAGGED: the owner paid their own agent", "FLAGGED: paid from the owner's sub-account", "Verified (NEAR AI signature)"],
+      backdoor: ["scan -> blocked (full_access_key_present)", "SCAN_BLOCKED", "FROZEN", "300.00 of escrow goes back to the buyer"],
+      honest: ["scan -> clean", "700.00 paid to alice now, 300.00 held as earn-out", "withdraw -> NotOwner", "AccessKeyNotFound", "earn-out closed"],
+    };
+    for (const vp of [{ width: 1280, height: 900 }, { width: 375, height: 740 }]) {
+      const q = await page(vp);
+      await q.goto(base);
+      await q.waitForSelector('#play[data-ready="1"]');
+      for (const [id, texts] of Object.entries(want)) {
+        await q.click(`[data-mission="${id}"]`);
+        while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
+        assert.ok(await q.isVisible("#mission-lesson"), `P: ${id} lesson shown`);
+        const feed = await q.textContent("#pg-feed");
+        for (const t of texts) { assert.ok(feed.includes(t), `P: ${id}: missing "${t}"`); checks++; }
+      }
+      assert.match(await q.textContent("#pg-state"), /Owner\s*bob\.testnet/, "P3: bob owns the agent after the honest sale");
+      await noHorizontalScroll(q, `playground at ${vp.width}px`);
+      await q.close();
+    }
+    checks += 1;
+  }
+
   // S23: copy matches the evidence.
   {
     const q = await page({ width: 1280, height: 900 });
@@ -104,7 +131,7 @@ try {
     const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
     assert.ok(csp, "S24: CSP meta tag present");
     for (const want of ["default-src 'none'", "script-src 'self'", "style-src 'self'", "connect-src 'self'", "base-uri 'none'", "form-action 'none'"]) assert.ok(csp[1].includes(want), `S24: CSP lacks ${want}`);
-    assert.ok(!/unsafe-|https?:|\*/.test(csp[1]), "S24: CSP has no unsafe-*, remote host or wildcard");
+    assert.ok(!/unsafe-|https?:|\*/.test(csp[1].replace("'wasm-unsafe-eval'", "")), "S24: CSP has no unsafe-* (except wasm compile), remote host or wildcard");
     // L6: the server and the static-host files send the meta CSP plus frame-ancestors, nosniff and a referrer policy.
     const want = `${csp[1]}; frame-ancestors 'none'`;
     for (const path of ["", "style.css", "missing-file"]) {
