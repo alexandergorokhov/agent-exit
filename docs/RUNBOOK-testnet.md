@@ -160,6 +160,10 @@ link in `testnet.txs`.
 The locked agents (translator, cheat) keep their old code by design, so
 shares run on a new agent account, `translator2.<root>`, with the new build.
 
+**Order matters:** run section 10 (scene 7 + the AI buyer) first. After
+`make build` the expected code hash is the shares build, so a scan of the
+old translator would report a code-hash mismatch.
+
 | Step | Command | Cost |
 |---|---|---|
 | 0 | Root holds at least 10 NEAR (translator2 9 + dave 0.5); faucet if not | test NEAR |
