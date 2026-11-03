@@ -31,7 +31,7 @@ const arg = (f: string): string | undefined => {
   const i = process.argv.indexOf(f);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
-const GOAL = "You are summarizer. Buy a translation agent under 1,000 xUSD that is safe.";
+const GOAL = "You are summarizer. Compare every listed agent and scan each one before you decide. Buy the best safe one under 1,000 xUSD.";
 
 const say = (l: string) => process.stderr.write(`llm-buyer: ${l}\n`);
 
