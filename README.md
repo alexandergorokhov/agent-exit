@@ -2,7 +2,23 @@
 
 **Sell an AI agent with earnings a buyer can check on-chain and a handover that locks the seller out.** The handover is one NEAR transaction (keys swapped, ownership deed moved); the seller's payout and escrow are claimable afterwards.
 
-**Live demo page:** https://near-transparent-agent-market-web.vercel.app/ (recorded run; add `?network=testnet` and press "Read live" to check NEAR testnet now)
+**Live demo page:** https://near-transparent-agent-market-web.vercel.app/ (no wallet, no setup)
+
+## Try it in 2 minutes (do X, see Y)
+
+The "Try it yourself" section runs the real contract state machine (`contracts/agent-core`) and the buyer's scan (`tools/scan`), compiled to wasm from this repo (`make playground-wasm`, `tools/playground`).
+
+| Do | See |
+|---|---|
+| Mission 1, "Pay your own agent 200" | `FLAGGED: the owner paid their own agent (not counted)`; counted revenue does not move |
+| Mission 1, "Pay from bot.alice.testnet 200" | flagged as the owner's sub-account |
+| Mission 2, hide a key, list, "Scan the agent" | `scan -> blocked (full_access_key_present)`; "Buy it" -> `SCAN_BLOCKED` |
+| Mission 2, "Buy without a clean scan", then "Use the hidden key" | `FROZEN`: the agent freezes and the 300.00 escrow goes back to the buyer |
+| Mission 3, list, scan, buy | `clean`, then one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out |
+| Mission 3, alice tries to withdraw, add a key, use her old key | `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
+| "The same story on NEAR testnet", then add `?network=testnet` and press "Read live" | each scene's NearBlocks links; the live owner and keys of `translator.agentexit3.testnet` |
+
+Offline check of the same missions: `cargo test -p playground` (5 tests).
 
 > **All money here is fake.** Payments use `xUSD-FAKE`, a test token with no
 > value that this repo deploys (`contracts/xusd`). Nothing runs on mainnet.
