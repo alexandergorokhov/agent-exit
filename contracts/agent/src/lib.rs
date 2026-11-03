@@ -55,6 +55,8 @@ mod review3_regressions;
 mod review4_regressions;
 #[cfg(test)]
 mod review_regressions;
+#[cfg(test)]
+mod shares_tests;
 #[cfg(any(test, feature = "sim"))]
 pub mod sim;
 #[cfg(test)]
@@ -196,6 +198,14 @@ pub enum Msg {
         listing_version: u64,
         known_keys_hash: String,
         buyer_runner_pk: PublicKey,
+    },
+    /// Buy `part` bps of a share slice, with the terms the investor saw (T6).
+    BuyShare {
+        offer_id: u64,
+        bps: u16,
+        price: U128,
+        end: U64,
+        part: u16,
     },
 }
 
@@ -638,6 +648,8 @@ impl AgentExit {
                         released,
                         to_owner,
                         to_treasury,
+                        to_investors,
+                        share_released,
                     } => {
                         if let (
                             true,
@@ -671,9 +683,19 @@ impl AgentExit {
                             json!({
                                 "amount": amt(amount.0), "to_owner": amt(to_owner),
                                 "to_treasury": amt(to_treasury),
+                                "to_investors": amt(to_investors),
                                 "seller_earnout_release": amt(earnout),
                             }),
                         );
+                        if to_investors > 0 {
+                            emit(
+                                "share_paid",
+                                json!({"amount": amt(to_investors),
+                                       "escrow_released": share_released.iter()
+                                           .map(|(s, r)| json!({"seller": s, "amount": amt(*r)}))
+                                           .collect::<Vec<_>>()}),
+                            );
+                        }
                         for (sale_id, seller, r) in released {
                             emit(
                                 "earnout_release",
@@ -682,6 +704,34 @@ impl AgentExit {
                         }
                         PromiseOrValue::Value(U128(0))
                     }
+                }
+            }
+            Msg::BuyShare {
+                offer_id,
+                bps,
+                price,
+                end,
+                part,
+            } => {
+                let seen = core::ShareTerms {
+                    offer_id,
+                    bps,
+                    price: price.0,
+                    end: end.0,
+                };
+                match self
+                    .m
+                    .buy_share(sender_id.as_str(), amount.0, seen, part, now)
+                {
+                    Ok(cost) => {
+                        emit(
+                            "share_bought",
+                            json!({"offer_id": offer_id, "investor": sender_id, "part_bps": part,
+                                   "cost": amt(cost)}),
+                        );
+                        PromiseOrValue::Value(U128(amount.0 - cost))
+                    }
+                    Err(e) => refuse(&e.to_string()),
                 }
             }
             Msg::Buy {
@@ -887,6 +937,83 @@ impl AgentExit {
             json!({"sale_id": s.id, "seller_total": amt(s.released), "buyer_refund": amt(s.returned)}),
         );
         self.sale_json(&s)
+    }
+
+    // --------------------------------- shares of future earnings (SH1-SH11)
+
+    /// Owner offers `bps` of every future payment until `end` (ns) for
+    /// `price`. Needs 1 yoctoNEAR (a full-access key of the owner).
+    #[payable]
+    pub fn offer_share(&mut self, bps: u16, price: U128, end: U64) -> Value {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        let id = self
+            .m
+            .offer_share(caller.as_str(), bps, price.0, end.0, env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        let v = self.offer_json(self.m.offer(id).expect("just added"));
+        emit("share_offered", v.clone());
+        v
+    }
+
+    /// Owner withdraws a slice nobody bought (T7).
+    #[payable]
+    pub fn cancel_offer(&mut self, offer_id: u64) {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        self.m
+            .cancel_offer(caller.as_str(), offer_id)
+            .unwrap_or_else(|e| fail(e));
+        emit("share_cancelled", json!({"offer_id": offer_id}));
+    }
+
+    /// Anyone, after the end: investors get their price escrow back as
+    /// claimable balances (SH4, SH11).
+    pub fn close_share(&mut self, offer_id: u64) -> Value {
+        let refunds = self
+            .m
+            .close_share(offer_id, env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        let v = json!({"offer_id": offer_id, "refunds": refunds.iter()
+            .map(|(a, r)| json!({"investor": a, "amount": amt(*r)})).collect::<Vec<_>>()});
+        emit("share_closed", v.clone());
+        v
+    }
+
+    /// Open slices with their holders (the scan discloses them, SH7).
+    pub fn get_shares(&self) -> Vec<Value> {
+        self.m.offers.iter().map(|o| self.offer_json(o)).collect()
+    }
+
+    /// One investor's holdings in this agent.
+    pub fn get_holdings(&self, account_id: AccountId) -> Value {
+        let mut parts = Vec::new();
+        for o in &self.m.offers {
+            for h in o
+                .holders
+                .iter()
+                .filter(|h| h.account == account_id.as_str())
+            {
+                parts.push(
+                    json!({"offer_id": o.id, "bps": h.bps, "paid_in": amt(h.paid_in),
+                    "escrow": amt(h.escrow), "earned": amt(h.earned), "end": U64(o.end)}),
+                );
+            }
+        }
+        json!({"agent": self.m.agent, "investor": account_id, "holdings": parts,
+               "claimable": amt(self.m.claimable_of(account_id.as_str()))})
+    }
+
+    fn offer_json(&self, o: &core::ShareOffer) -> Value {
+        json!({
+            "offer_id": o.id, "seller": o.seller, "bps": o.bps, "price": amt(o.price),
+            "created": U64(o.created), "end": U64(o.end), "sold_bps": o.sold_bps,
+            "min_part": if o.sold_bps < o.bps { o.min_part() } else { 0 },
+            "escrow": amt(o.escrow()),
+            "holders": o.holders.iter().map(|h| json!({"account": h.account, "bps": h.bps,
+                "paid_in": amt(h.paid_in), "escrow": amt(h.escrow), "earned": amt(h.earned)}))
+                .collect::<Vec<_>>(),
+        })
     }
 
     // ------------------------------------------- owner: limits (feature 12)
@@ -1382,6 +1509,8 @@ impl AgentExit {
             "treasury": amt(self.m.treasury),
             "escrow_left": amt(self.m.escrow_left()),
             "claimable_total": amt(self.m.claimable_total()),
+            "shares_bps": self.m.shares_bps(),
+            "share_escrow": amt(self.m.share_escrow),
             "solvent": self.m.solvent(),
             "near_storage": self.near_storage(),
         })
@@ -1908,6 +2037,9 @@ impl AgentExit {
             "token": self.token,
             "listed_at": U64(l.listed_at),
             "treasury_snapshot": amt(l.treasury_snapshot),
+            // SH7: the buyer inherits these; the scan discloses them.
+            "shares_bps": self.m.shares_bps(),
+            "shares": self.get_shares(),
         })
     }
 

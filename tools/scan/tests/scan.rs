@@ -329,3 +329,28 @@ fn build_exports_are_not_unexpected_methods() {
     i.chain.methods.push("migrate_state".into());
     assert_ne!(scan(&i).verdict, "clean");
 }
+
+/// SH7: open share slices are disclosed to the buyer, not blocked.
+#[test]
+fn sh7_shares_disclosed_not_blocked() {
+    let mut i = judge();
+    let l = i.listing.as_mut().expect("listing");
+    l.shares_bps = 2_000;
+    l.shares = vec![
+        serde_json::json!({"offer_id": 1, "bps": 2000, "holders": [{"account": "dave.testnet", "bps": 2000}]}),
+    ];
+    let r = scan(&i);
+    assert_eq!(r.verdict, "clean");
+    let f = r
+        .findings
+        .iter()
+        .find(|f| f.code == "shares_disclosed")
+        .expect("disclosed");
+    assert_eq!(f.severity, "warn");
+    assert!(
+        f.detail
+            .starts_with("20% of every future payment goes to investors (1 slice(s), 1 holder(s))"),
+        "{}",
+        f.detail
+    );
+}

@@ -153,6 +153,8 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
                 floor_bps: 2_000,
                 window_secs: 30 * 86_400 * (1 + rng.below(3)),
             },
+            shares_bps: 0,
+            shares: vec![],
         }),
     }
 }

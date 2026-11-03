@@ -30,20 +30,24 @@ pub const BUILD_EXPORTS: [&str; 2] = ["__contract_abi", "contract_source_metadat
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
-pub const PUBLISHED_METHODS: [&str; 54] = [
+pub const PUBLISHED_METHODS: [&str; 59] = [
     "add_signer",
     "cancel_listing",
+    "cancel_offer",
     "claim",
+    "close_share",
     "finalize_earnout",
     "ft_on_transfer",
     "get_base_wallet",
     "get_claimable",
     "get_earnings",
     "get_earnings_days",
+    "get_holdings",
     "get_limits",
     "get_listing",
     "get_payer",
     "get_sales",
+    "get_shares",
     "get_signers",
     "get_status",
     "heartbeat",
@@ -65,6 +69,7 @@ pub const PUBLISHED_METHODS: [&str; 54] = [
     "nft_total_supply",
     "nft_transfer",
     "nft_transfer_call",
+    "offer_share",
     "on_base_signed",
     "on_handover",
     "on_keys_deleted",
@@ -125,6 +130,13 @@ pub struct ListingView {
     /// Base units, as a string.
     pub price: String,
     pub terms: TermsView,
+    /// Share of every future payment owed to investors (SH7); the buyer
+    /// inherits it.
+    #[serde(default)]
+    pub shares_bps: u16,
+    /// The open share slices as `get_listing` shows them.
+    #[serde(default)]
+    pub shares: Vec<serde_json::Value>,
 }
 
 /// Method names that let someone change the code or the keys: an upgrade
@@ -636,6 +648,23 @@ pub fn scan(i: &ScanInput) -> Report {
     }
 
     // Warnings (do not block).
+    if let Some(l) = i.listing.as_ref().filter(|l| l.shares_bps > 0) {
+        let holders: usize = l
+            .shares
+            .iter()
+            .map(|o| o["holders"].as_array().map_or(0, Vec::len))
+            .sum();
+        f.push(Finding {
+            code: "shares_disclosed".into(),
+            severity: "warn".into(),
+            detail: format!(
+                "{}% of every future payment goes to investors ({} slice(s), {} holder(s)); the buyer inherits this until each slice ends",
+                l.shares_bps as f64 / 100.0,
+                l.shares.len(),
+                holders
+            ),
+        });
+    }
     for s in &i.chain.subaccounts {
         f.push(Finding {
             code: "subaccount_does_not_move".into(),

@@ -201,6 +201,11 @@ impl World {
                 floor_bps: l.terms.floor_bps,
                 window_secs: l.terms.window_secs,
             },
+            shares_bps: self.m.shares_bps(),
+            shares: self.m.offers.iter().map(|o| serde_json::json!({
+                "offer_id": o.id, "bps": o.bps,
+                "holders": o.holders.iter().map(|h| serde_json::json!({"account": h.account, "bps": h.bps})).collect::<Vec<_>>(),
+            })).collect(),
         });
         i
     }

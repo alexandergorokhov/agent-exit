@@ -11,6 +11,7 @@ pub mod base;
 pub mod meter;
 pub mod money;
 pub mod policy;
+pub mod shares;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -21,6 +22,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub use meter::Store as MeterStore;
 pub use meter::{DayStats, Earnings, Flags, MemStore, Meter, Store};
 pub use policy::{Limits, Policy, Spent};
+pub use shares::{Holding, ShareOffer, ShareTerms};
 
 pub type Amount = u128;
 /// Nanoseconds since the Unix epoch (NEAR block timestamp).
@@ -85,6 +87,23 @@ pub enum Error {
     /// `MAX_PENDING_AUTHS` Base authorizations are waiting for the MPC
     /// signer; wait for a callback before asking again (STR-19).
     TooManyPendingAuths,
+    /// Open share slices would exceed `shares::MAX_SHARES_BPS` (SH1).
+    SharesTooHigh,
+    /// Share slice terms out of bounds (bps, price or end).
+    BadShareTerms,
+    UnknownOffer,
+    /// The slice is not what the investor saw (T6).
+    ShareChanged,
+    /// The slice ended or is sold out.
+    OfferClosed,
+    /// `shares::MAX_HOLDERS` investors already hold shares (SH5).
+    TooManyHolders,
+    /// Below the smallest part (T10).
+    ShareTooSmall,
+    /// Investors hold shares: this change would cut their earnings (T4, T7).
+    SharesOpen,
+    /// `shares::MAX_OPEN_OFFERS` slices are open: close one first.
+    TooManyOffers,
 }
 
 impl core::fmt::Display for Error {
@@ -322,6 +341,10 @@ pub enum PayResult {
         /// The automatic split of this payment (feature 12).
         to_owner: Amount,
         to_treasury: Amount,
+        /// Investors' part of this payment, credited to them (SH2, T1).
+        to_investors: Amount,
+        /// Price escrow released by this payment, per slice seller (SH11).
+        share_released: Vec<(Account, Amount)>,
     },
 }
 
@@ -417,6 +440,14 @@ pub struct Machine<S = MemStore> {
     /// stale: it refunds the buyer and deletes the buyer key its batch may
     /// still have added (A44).
     pub recovered_buy: Option<Pending>,
+    /// Shares of future earnings (PLAN-shares.md): open slices.
+    #[serde(default)]
+    pub offers: Vec<ShareOffer>,
+    #[serde(default)]
+    pub next_offer_id: u64,
+    /// Price escrow held for investors across all slices (SH11).
+    #[serde(default)]
+    pub share_escrow: Amount,
     /// Per-payer and per-day rows (A47). In the contract this is a handle to
     /// separate storage keys and adds nothing to the state blob.
     #[serde(skip)]
@@ -503,6 +534,9 @@ impl<S: Store + Default> Machine<S> {
             keys_since: 0,
             key_batch: 0,
             recovered_buy: None,
+            offers: Vec::new(),
+            next_offer_id: 1,
+            share_escrow: 0,
             store: S::default(),
         }
     }
@@ -1180,7 +1214,11 @@ impl<S: Store + Default> Machine<S> {
         self.meter
             .record(&mut self.store, payer, amount, flags, verified, now);
         self.held += amount;
-        let (to_owner, to_treasury) = money::split_revenue(amount, self.limits.treasury_bps);
+        // Investors first, from the gross payment, whoever paid (T3, SH8):
+        // a cheater's own payment pays them too.
+        let (to_investors, share_released) = self.pay_investors(amount, now);
+        let (to_owner, to_treasury) =
+            money::split_revenue(amount - to_investors, self.limits.treasury_bps);
         self.owner_free += to_owner;
         self.treasury += to_treasury;
         let mut released = Vec::new();
@@ -1210,6 +1248,8 @@ impl<S: Store + Default> Machine<S> {
             released,
             to_owner,
             to_treasury,
+            to_investors,
+            share_released,
         }
     }
 
@@ -1227,6 +1267,11 @@ impl<S: Store + Default> Machine<S> {
             return Err(Error::AlreadyListed);
         }
         limits.check(&self.agent)?;
+        // T4: while investors hold shares, the owner cannot turn customers
+        // away by raising the price floor.
+        if limits.price_floor > self.limits.price_floor && self.has_holders() {
+            return Err(Error::SharesOpen);
+        }
         self.limits = limits;
         Ok(())
     }
@@ -1395,6 +1440,9 @@ impl<S: Store + Default> Machine<S> {
                 self.credit(buyer, *r);
             }
             self.close_finalized_sales();
+            // A proven backdoor also ends every share slice: the investors
+            // get their price escrow back.
+            self.end_all_offers();
             return Ok(RunnerCheck::BackdoorProven { returned });
         }
         self.not_settling()?;
@@ -1406,10 +1454,250 @@ impl<S: Store + Default> Machine<S> {
 
     /// Solvency (I3): what the contract holds covers every bucket.
     pub fn solvent(&self) -> bool {
-        self.held >= self.escrow_left() + self.claimable_total() + self.owner_free + self.treasury
+        self.held
+            >= self.escrow_left()
+                + self.claimable_total()
+                + self.owner_free
+                + self.treasury
+                + self.share_escrow
     }
 
     pub fn earnings(&self, now: Ts) -> Earnings {
         self.meter.earnings(&self.store, now)
+    }
+
+    // ----- shares of future earnings (PLAN-shares.md) -------------------------
+
+    fn has_holders(&self) -> bool {
+        self.offers.iter().any(|o| !o.holders.is_empty())
+    }
+
+    fn holder_count(&self) -> usize {
+        self.offers.iter().map(|o| o.holders.len()).sum()
+    }
+
+    /// Share of every payment promised by the open slices (sold or not).
+    pub fn shares_bps(&self) -> u16 {
+        self.offers.iter().map(|o| o.bps).sum()
+    }
+
+    pub fn offer(&self, id: u64) -> Option<&ShareOffer> {
+        self.offers.iter().find(|o| o.id == id)
+    }
+
+    /// Pay the escrow of a slice to its seller: their revenue if they still
+    /// own the agent, their claimable balance if they sold it (T9).
+    fn pay_seller(&mut self, seller: &str, amount: Amount) {
+        if amount == 0 {
+            return;
+        }
+        if seller == self.owner {
+            self.owner_free += amount;
+        } else {
+            self.credit(seller, amount);
+        }
+    }
+
+    /// Credit each holder's part of a gross payment and release the matching
+    /// price escrow to the slice's seller (SH2, SH11). Only credits, never a
+    /// transfer, so `pay()` stays bounded (T15).
+    fn pay_investors(&mut self, amount: Amount, now: Ts) -> (Amount, Vec<(Account, Amount)>) {
+        let mut total = 0;
+        let mut credits: Vec<(Account, Amount)> = Vec::new();
+        let mut releases: Vec<(Account, Amount)> = Vec::new();
+        for o in self.offers.iter_mut().filter(|o| o.active(now)) {
+            let mut released = 0;
+            for h in o.holders.iter_mut() {
+                let cut = shares::holder_cut(amount, h.bps);
+                if cut == 0 {
+                    continue;
+                }
+                h.earned += cut;
+                total += cut;
+                credits.push((h.account.clone(), cut));
+                let r = cut.min(h.escrow);
+                h.escrow -= r;
+                released += r;
+            }
+            if released > 0 {
+                releases.push((o.seller.clone(), released));
+            }
+        }
+        for (who, cut) in &credits {
+            self.credit(who, *cut);
+        }
+        for (seller, r) in &releases {
+            self.share_escrow -= r;
+            self.pay_seller(seller, *r);
+        }
+        (total, releases)
+    }
+
+    /// Owner offers a slice: `bps` of every payment until `end`, for `price`
+    /// (SH1, SH6).
+    pub fn offer_share(
+        &mut self,
+        caller: &str,
+        bps: u16,
+        price: Amount,
+        end: Ts,
+        now: Ts,
+    ) -> Res<u64> {
+        self.only_owner(caller)?;
+        self.not_settling()?;
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
+        if self.status == Status::Listed {
+            return Err(Error::AlreadyListed);
+        }
+        if bps < shares::MIN_OFFER_BPS
+            || price == 0
+            || end < now.saturating_add(shares::MIN_TERM_NS)
+            || end > now.saturating_add(shares::MAX_TERM_NS)
+        {
+            return Err(Error::BadShareTerms);
+        }
+        // Ended slices stop counting once closed; until then they count.
+        if self.offers.len() >= shares::MAX_OPEN_OFFERS {
+            return Err(Error::TooManyOffers);
+        }
+        if self.shares_bps() as u32 + bps as u32 > shares::MAX_SHARES_BPS as u32 {
+            return Err(Error::SharesTooHigh);
+        }
+        let id = self.next_offer_id;
+        self.next_offer_id += 1;
+        self.offers.push(ShareOffer {
+            id,
+            seller: self.owner.clone(),
+            bps,
+            price,
+            created: now,
+            end,
+            sold_bps: 0,
+            holders: Vec::new(),
+        });
+        Ok(id)
+    }
+
+    /// Owner withdraws a slice nobody bought yet. Once any part is sold the
+    /// terms are fixed (T7).
+    pub fn cancel_offer(&mut self, caller: &str, id: u64) -> Res<()> {
+        self.only_owner(caller)?;
+        let i = self
+            .offers
+            .iter()
+            .position(|o| o.id == id)
+            .ok_or(Error::UnknownOffer)?;
+        if self.offers[i].sold_bps > 0 {
+            return Err(Error::SharesOpen);
+        }
+        self.offers.remove(i);
+        Ok(())
+    }
+
+    /// An investor's tokens arrive (`ft_on_transfer`, msg `buy_share`):
+    /// buy `part` bps of the slice the investor saw. Returns the part's cost;
+    /// the rest of `amount` goes back through `ft_resolve_transfer`.
+    pub fn buy_share(
+        &mut self,
+        buyer: &str,
+        amount: Amount,
+        seen: ShareTerms,
+        part: u16,
+        now: Ts,
+    ) -> Res<Amount> {
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
+        // The terms a sale buyer scanned include the open slices (SH6).
+        if matches!(self.status, Status::Listed | Status::Settling) {
+            return Err(Error::SaleInProgress);
+        }
+        let f = self.flags_for(buyer);
+        if f.self_pay || f.seller_subaccount {
+            return Err(Error::SelfBuy);
+        }
+        let holders = self.holder_count();
+        let o = self
+            .offers
+            .iter_mut()
+            .find(|o| o.id == seen.offer_id)
+            .ok_or(Error::UnknownOffer)?;
+        if o.terms() != seen {
+            return Err(Error::ShareChanged);
+        }
+        if !o.active(now) || o.sold_bps >= o.bps {
+            return Err(Error::OfferClosed);
+        }
+        if part == 0 || part > o.bps - o.sold_bps {
+            return Err(Error::BadShareTerms);
+        }
+        if part < o.min_part() {
+            return Err(Error::ShareTooSmall);
+        }
+        let cost = o.cost(part);
+        if amount < cost {
+            return Err(Error::Underpaid);
+        }
+        let (now_part, escrow) = shares::split_cost(cost);
+        match o.holders.iter_mut().find(|h| h.account == buyer) {
+            Some(h) => {
+                h.bps += part;
+                h.paid_in += cost;
+                h.escrow += escrow;
+            }
+            None => {
+                if holders >= shares::MAX_HOLDERS {
+                    return Err(Error::TooManyHolders);
+                }
+                o.holders.push(Holding {
+                    account: buyer.to_string(),
+                    bps: part,
+                    paid_in: cost,
+                    escrow,
+                    earned: 0,
+                });
+            }
+        }
+        o.sold_bps += part;
+        let seller = o.seller.clone();
+        self.held += cost;
+        self.share_escrow += escrow;
+        self.pay_seller(&seller, now_part);
+        Ok(cost)
+    }
+
+    /// After a slice's end anyone may close it: each investor gets the price
+    /// escrow still held back (SH4, SH11). Returns the refunds.
+    pub fn close_share(&mut self, id: u64, now: Ts) -> Res<Vec<(Account, Amount)>> {
+        let i = self
+            .offers
+            .iter()
+            .position(|o| o.id == id)
+            .ok_or(Error::UnknownOffer)?;
+        if self.offers[i].active(now) {
+            return Err(Error::WindowOpen);
+        }
+        let o = self.offers.remove(i);
+        Ok(self.refund_offer(o))
+    }
+
+    fn refund_offer(&mut self, o: ShareOffer) -> Vec<(Account, Amount)> {
+        let mut out = Vec::new();
+        for h in o.holders {
+            if h.escrow > 0 {
+                self.share_escrow -= h.escrow;
+                self.credit(&h.account, h.escrow);
+                out.push((h.account, h.escrow));
+            }
+        }
+        out
+    }
+
+    fn end_all_offers(&mut self) {
+        for o in std::mem::take(&mut self.offers) {
+            self.refund_offer(o);
+        }
     }
 }

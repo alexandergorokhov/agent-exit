@@ -547,8 +547,8 @@
       "what": "1,000 distinct 64-character payers do not grow the state blob (payer, day, payout-destination, claimable, past-owner and sale-history rows are separate storage entries), so loading the contract costs the same; every view still answers",
       "pass": true,
       "detail": {
-        "state_blob_bytes_before": 866,
-        "state_blob_bytes_after": 866,
+        "state_blob_bytes_before": 894,
+        "state_blob_bytes_after": 894,
         "payer_entries": 1006
       }
     },
@@ -605,8 +605,8 @@
       "what": "300 deed moves, each with a payout to a new destination, leave the state blob the same size (payout destinations are counters plus a pruned-prefix watermark)",
       "pass": true,
       "detail": {
-        "state_blob_bytes_before": 1022,
-        "state_blob_bytes_after": 970
+        "state_blob_bytes_before": 1050,
+        "state_blob_bytes_after": 998
       }
     },
     {

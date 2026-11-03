@@ -23,6 +23,9 @@ static LISTED_REFUSALS: AtomicUsize = AtomicUsize::new(0);
 static PENDING_CALLS: AtomicUsize = AtomicUsize::new(0);
 static RECOVERIES: AtomicUsize = AtomicUsize::new(0);
 static FROZEN_ROLLBACKS: AtomicUsize = AtomicUsize::new(0);
+static SHARE_BUYS: AtomicUsize = AtomicUsize::new(0);
+static SHARE_PAYS: AtomicUsize = AtomicUsize::new(0);
+static SHARE_CLOSES: AtomicUsize = AtomicUsize::new(0);
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -77,6 +80,14 @@ enum Act {
     Recover(usize, bool),
     /// A hidden key signs a self-call while a buy is settling (A34).
     HiddenWhileSettling,
+    /// ACTORS[caller] offers bps for price (USD) until now + days.
+    Offer(usize, u16, u64, u64),
+    /// ACTORS[buyer] buys part of slice i; `good` = the terms it saw match.
+    BuyShare(usize, usize, u16, u64, bool),
+    /// Anyone closes slice i.
+    CloseShare(usize),
+    /// ACTORS[caller] cancels slice i.
+    CancelOffer(usize, usize),
 }
 
 /// A key batch waiting for its callback.
@@ -118,6 +129,11 @@ fn act() -> impl Strategy<Value = Act> {
         1 => Just(Act::DropHandover),
         1 => Just(Act::HiddenWhileSettling),
         2 => (a.clone(), any::<bool>()).prop_map(|(c, sale)| Act::Recover(c, sale)),
+        2 => (a.clone(), 0u16..5_200, 0u64..2_000, 0u64..800).prop_map(|(c, b, p, d)| Act::Offer(c, b, p, d)),
+        3 => (a.clone(), 0usize..3, 0u16..3_000, 0u64..3_000_000_000, prop::bool::weighted(0.9))
+            .prop_map(|(b, i, part, extra, good)| Act::BuyShare(b, i, part, extra, good)),
+        1 => (0usize..3).prop_map(Act::CloseShare),
+        1 => (a.clone(), 0usize..3).prop_map(|(c, i)| Act::CancelOffer(c, i)),
     ]
 }
 
@@ -145,7 +161,24 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     // treasury + buy in flight.
     prop_assert_eq!(
         m.held,
-        m.escrow_left() + m.claimable_total() + m.owner_free + m.treasury + pending_amount(m)
+        m.escrow_left()
+            + m.claimable_total()
+            + m.owner_free
+            + m.treasury
+            + m.share_escrow
+            + pending_amount(m)
+    );
+    // SH1, SH5: open slices <= 49%, at most 16 investors; each slice's parts
+    // add up; share escrow is the sum of the holders' escrow.
+    prop_assert!(m.shares_bps() <= shares::MAX_SHARES_BPS);
+    prop_assert!(m.offers.iter().map(|o| o.holders.len()).sum::<usize>() <= shares::MAX_HOLDERS);
+    for o in &m.offers {
+        prop_assert_eq!(o.sold_bps, o.holders.iter().map(|h| h.bps).sum::<u16>());
+        prop_assert!(o.sold_bps <= o.bps);
+    }
+    prop_assert_eq!(
+        m.share_escrow,
+        m.offers.iter().map(|o| o.escrow()).sum::<Amount>()
     );
     // I7: the runner never spent more than the cap in this (owner epoch, day),
     // unless the owner lowered the cap after the spending.
@@ -236,16 +269,41 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     released,
                     to_owner,
                     to_treasury,
+                    to_investors,
+                    share_released,
                     ..
                 } => {
-                    // Feature 12: the split adds up exactly and lands in the buckets.
-                    prop_assert_eq!(to_owner + to_treasury, amount);
-                    prop_assert_eq!(w.m.owner_free, before.owner_free + to_owner);
+                    // Feature 12 + SH2: the split adds up exactly and lands
+                    // in the buckets; investors take from the gross (T3).
+                    prop_assert_eq!(to_owner + to_treasury + to_investors, amount);
+                    let to_seller_owner: Amount = share_released
+                        .iter()
+                        .filter(|(s, _)| *s == owner)
+                        .map(|(_, r)| *r)
+                        .sum();
+                    prop_assert_eq!(
+                        w.m.owner_free,
+                        before.owner_free + to_owner + to_seller_owner
+                    );
                     prop_assert_eq!(w.m.treasury, before.treasury + to_treasury);
                     prop_assert_eq!(
                         to_treasury,
-                        amount * before.limits.treasury_bps as Amount / 10_000
+                        (amount - to_investors) * before.limits.treasury_bps as Amount / 10_000
                     );
+                    let promised: u128 = before
+                        .offers
+                        .iter()
+                        .filter(|o| o.active(w.now))
+                        .map(|o| o.sold_bps as u128)
+                        .sum();
+                    prop_assert!(to_investors * 10_000 <= amount * promised);
+                    // Escrow released never exceeds what investors got (SH11).
+                    let rel: Amount = share_released.iter().map(|(_, r)| *r).sum();
+                    prop_assert!(rel <= to_investors);
+                    prop_assert_eq!(w.m.share_escrow, before.share_escrow - rel);
+                    if to_investors > 0 {
+                        SHARE_PAYS.fetch_add(1, Relaxed);
+                    }
                     // S10 property: release from one payment <= 50% of it.
                     let total: Amount = released.iter().map(|r| r.2).sum();
                     prop_assert!(total * 2 <= amount);
@@ -534,6 +592,68 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 w.key_batches.remove(i % w.key_batches.len());
             }
         }
+        Act::Offer(c, bps, price, days) => {
+            let r = w.m.offer_share(
+                ACTORS[c],
+                bps,
+                price as Amount * USD,
+                w.now + days * DAY_NS,
+                w.now,
+            );
+            check_owner_only(ACTORS[c], &owner, settling, r.is_ok(), &before, &w.m)?;
+            if r.is_ok() {
+                prop_assert!(bps >= shares::MIN_OFFER_BPS && w.m.status != Status::Listed);
+            }
+        }
+        Act::BuyShare(b, i, part, extra, good) => {
+            let buyer = ACTORS[b];
+            if let Some(o) = w.m.offers.get(i).cloned() {
+                let mut t = o.terms();
+                if !good {
+                    t.price += 1;
+                }
+                let cost = if part > 0 { o.cost(part) } else { 0 };
+                let amount = cost + extra as Amount;
+                let held = w.m.held;
+                match w.m.buy_share(buyer, amount, t, part, w.now) {
+                    Ok(c) => {
+                        SHARE_BUYS.fetch_add(1, Relaxed);
+                        prop_assert!(good && c == cost && c <= amount);
+                        prop_assert!(buyer != owner && !w.m.frozen);
+                        prop_assert!(matches!(w.m.status, Status::Active | Status::Sold));
+                        prop_assert_eq!(w.m.held, held + c);
+                        let (_, esc) = shares::split_cost(c);
+                        prop_assert_eq!(w.m.share_escrow, before.share_escrow + esc);
+                    }
+                    Err(_) => prop_assert_eq!(&w.m, &before),
+                }
+            }
+        }
+        Act::CloseShare(i) => {
+            if let Some(id) = w.m.offers.get(i).map(|o| o.id) {
+                let esc = w.m.offers[i].escrow();
+                let claim = w.m.claimable_total();
+                match w.m.close_share(id, w.now) {
+                    Ok(refunds) => {
+                        SHARE_CLOSES.fetch_add(1, Relaxed);
+                        let total: Amount = refunds.iter().map(|r| r.1).sum();
+                        prop_assert_eq!(total, esc);
+                        prop_assert_eq!(w.m.claimable_total(), claim + esc);
+                    }
+                    Err(_) => prop_assert_eq!(&w.m, &before),
+                }
+            }
+        }
+        Act::CancelOffer(c, i) => {
+            if let Some(o) = w.m.offers.get(i).cloned() {
+                let r = w.m.cancel_offer(ACTORS[c], o.id);
+                if r.is_ok() {
+                    prop_assert!(ACTORS[c] == owner && o.sold_bps == 0);
+                } else {
+                    prop_assert_eq!(&w.m, &before);
+                }
+            }
+        }
         Act::HiddenWhileSettling => {
             if settling {
                 return step(w, &Act::Runner(false));
@@ -784,6 +904,14 @@ fn prop_invariants_random_sequences() {
             step(&mut w, &Act::Finalize(0))?;
         }
         prop_assert!(w.m.sales.is_empty());
+        // Every slice ends within 800 days: close them all; the share escrow
+        // is then fully back with investors or sellers.
+        step(&mut w, &Act::Time(800 * 86_400))?;
+        for _ in 0..w.m.offers.len() {
+            step(&mut w, &Act::CloseShare(0))?;
+        }
+        prop_assert!(w.m.offers.is_empty());
+        prop_assert_eq!(w.m.share_escrow, 0);
         Ok(())
     })
     .unwrap();
@@ -801,6 +929,9 @@ fn prop_invariants_random_sequences() {
         ("pending-key calls", &PENDING_CALLS),
         ("recoveries", &RECOVERIES),
         ("frozen while settling", &FROZEN_ROLLBACKS),
+        ("share buys", &SHARE_BUYS),
+        ("payments to investors", &SHARE_PAYS),
+        ("share slices closed", &SHARE_CLOSES),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");
