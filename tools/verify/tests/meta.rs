@@ -365,7 +365,7 @@ fn s22_readme_hero_comes_first() {
     );
     let hero = &r[..at("## The problem, and what the contract does")];
     assert!(
-        hero.lines().count() < 80,
+        hero.lines().count() < 100, // includes the "try it in 2 minutes" table
         "hero too long: {}",
         hero.lines().count()
     );
