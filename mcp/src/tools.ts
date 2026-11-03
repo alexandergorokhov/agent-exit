@@ -428,8 +428,10 @@ export class Tools {
     try {
       return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
     } catch (e) {
-      // buyReserved only throws before the transaction is sent; after it, it returns.
-      this.ledger.add(-price);
+      // buyReserved throws before the transaction is sent, or when the chain
+      // refused it and the token refunded it (BUY_REFUSED). When the send
+      // cannot be confirmed either way, keep the reservation (L2).
+      if (!(e instanceof ToolError && e.code === "SENT_UNCONFIRMED")) this.ledger.add(-price);
       throw e;
     }
   }
@@ -496,6 +498,7 @@ export class Tools {
       owner_after,
       session_spent: usd(this.spent),
       recorded: out.recorded,
+      ...(out.tx_hash ? { tx_hash: out.tx_hash, explorer: out.explorer } : {}),
     };
   }
 

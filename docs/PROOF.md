@@ -36,7 +36,7 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 
 Run on NEAR testnet on 2026-11-03 (root `agentexit3.testnet`) (outputs in `out/`, links in the README's
 "Live on NEAR testnet"): the deploy, gate G1 and the six scenes. Not run:
-gate G6 (needs NEAR AI credit) and G2 (needs a Base Sepolia key). Not built yet (later batches): testnet writes through MCP (they return `NOT_BUILT`),
+gate G6 (needs NEAR AI credit) and G2 (needs a Base Sepolia key). Not built yet (later batches): MCP `list_agent` on testnet (it returns `NOT_BUILT`; MCP `buy_agent` on testnet is built: the server signs with its own key, see `make llm-buyer-testnet`),
 `accept_job`, the page's testnet
 mode (only the wallet login exists), its deploy (`make web-deploy`) and a
 Playwright run against the deployed page (`make e2e`). Their

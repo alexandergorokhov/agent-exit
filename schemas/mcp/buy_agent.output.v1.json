@@ -149,6 +149,16 @@
       "type": "string",
       "maxLength": 300,
       "description": "the read or check that failed after a sent buy; check the chain before retrying"
+    },
+    "tx_hash": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+      "description": "Testnet: the buy transaction hash."
+    },
+    "explorer": {
+      "type": "string",
+      "pattern": "^https://testnet\\.nearblocks\\.io/txns/[1-9A-HJ-NP-Za-km-z]{43,44}$",
+      "description": "Testnet: NearBlocks link of the buy."
     }
   },
   "required": [

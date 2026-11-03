@@ -5,9 +5,12 @@
 //   (`cargo run -q -p verify --bin gen-mcp-world`). Writes replay recorded
 //   contract results in memory; nothing is sent anywhere.
 // - TestnetBackend (AGENT_EXIT_NETWORK=testnet): read-only RPC views from two
-//   providers. Writes on testnet are not built yet and say so.
+//   providers. buy_agent signs and sends one ft_transfer_call with the
+//   server's own key (AGENT_EXIT_PRIVATE_KEY, never the model's input);
+//   list_for_sale on testnet is not built yet and says so.
 import { readFileSync } from "node:fs";
 import type { Config, Network } from "./config.js";
+import { NearKey, signTx } from "./nearsign.js";
 
 export type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -38,6 +41,26 @@ export interface BuyOutcome {
   key_batch: { action: string; key: string }[];
   overpay_refund: string;
   recorded: boolean;
+  /** Testnet: the transaction hash and its NearBlocks link. */
+  tx_hash?: string;
+  explorer?: string;
+}
+
+/** EVENT_JSON events named `name` in a final transaction outcome. */
+export function txEvents(result: Json, name: string): Json[] {
+  const out: Json[] = [];
+  for (const r of (result?.receipts_outcome as Json[]) ?? []) {
+    for (const l of (r?.outcome?.logs as string[]) ?? []) {
+      if (!l.startsWith("EVENT_JSON:")) continue;
+      try {
+        const e = JSON.parse(l.slice("EVENT_JSON:".length));
+        if (e.event === name) out.push(...((e.data as Json[]) ?? []));
+      } catch {
+        /* not ours */
+      }
+    }
+  }
+  return out;
 }
 
 /** What the buyer was quoted, from one `get_listing` read (A32). */
@@ -234,7 +257,24 @@ export class TestnetBackend implements Backend {
   constructor(
     private cfg: Config,
     private fetchImpl: typeof fetch = fetch,
+    /** AGENT_EXIT_PRIVATE_KEY: signs buy_agent; held here only, never logged. */
+    private secret: string | null = null,
   ) {}
+
+  /** A JSON-RPC call other than `query` (send_tx); errors keep the body short. */
+  private async rpcMethod(url: string, method: string, params: Json, timeoutMs: number): Promise<Json> {
+    const res = await this.fetchImpl(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method, params }),
+      redirect: "error",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.json();
+    if (body.error) throw new Error(JSON.stringify(body.error).slice(0, 400));
+    return body.result;
+  }
 
   private async rpc(url: string, params: Json): Promise<Json> {
     let res: Response;
@@ -395,8 +435,68 @@ export class TestnetBackend implements Backend {
     }, expect);
   }
 
-  async buy(): Promise<BuyOutcome> {
-    throw new ToolError("NOT_BUILT", "not built yet: testnet buy through MCP (planned with the owner's testnet run); nothing was sent");
+  /** One ft_transfer_call on the token, signed with the server's key. The
+   * price, listing version and key hash are the ones the scan saw; the
+   * contract refuses anything else and the token refunds it. */
+  async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome> {
+    this.known(id);
+    this.known(buyer);
+    if (!this.secret) throw new ToolError("WRITE_DISABLED", "testnet writes need AGENT_EXIT_PRIVATE_KEY in the server env; nothing was sent");
+    const token = this.cfg.expectedToken;
+    if (!token) throw new ToolError("WRITE_DISABLED", "testnet buy needs AGENT_EXIT_TOKEN (the published xUSD-FAKE token); nothing was sent");
+    let key: NearKey;
+    try {
+      key = new NearKey(this.secret);
+    } catch (e) {
+      throw new ToolError("WRITE_DISABLED", `AGENT_EXIT_PRIVATE_KEY: ${(e as Error).message}; nothing was sent`);
+    }
+    if (this.cfg.signerPk && this.cfg.signerPk !== key.publicKeyString) {
+      throw new ToolError("WRITE_DISABLED", "AGENT_EXIT_PRIVATE_KEY does not match AGENT_EXIT_SIGNER_PK; nothing was sent");
+    }
+    const ak = await this.rpc(this.cfg.rpc[0], {
+      request_type: "view_access_key",
+      finality: "final",
+      account_id: buyer,
+      public_key: key.publicKeyString,
+    });
+    const msg = JSON.stringify({ kind: "buy", listing_version: version, known_keys_hash: hash, buyer_runner_pk: pk });
+    const { signed, hash: txHash } = signTx(
+      {
+        signerId: buyer,
+        publicKey: key.publicKey,
+        nonce: BigInt(ak.nonce) + 1n,
+        receiverId: token,
+        blockHash: b58(ak.block_hash),
+        methodName: "ft_transfer_call",
+        args: Buffer.from(JSON.stringify({ receiver_id: id, amount, msg })),
+        gas: 300_000_000_000_000n,
+        deposit: 1n,
+      },
+      key,
+    );
+    const explorer = `https://testnet.nearblocks.io/txns/${txHash}`;
+    let result: Json;
+    try {
+      result = await this.rpcMethod(this.cfg.rpc[0], "send_tx", { signed_tx_base64: signed.toString("base64"), wait_until: "FINAL" }, 90_000);
+    } catch (e) {
+      // Sent or not, we cannot tell: never report it as not sent.
+      throw new ToolError("SENT_UNCONFIRMED", `the buy transaction ${txHash} may have been sent (${(e as Error).message}); check ${explorer} before retrying`, { tx_hash: txHash, explorer });
+    }
+    const sale = txEvents(result, "sale")[0];
+    if (!sale) {
+      const rolled = txEvents(result, "sale_rolled_back")[0];
+      const failure = result?.status?.Failure ? JSON.stringify(result.status.Failure).slice(0, 300) : null;
+      throw new ToolError("BUY_REFUSED", `no sale: ${rolled ? "the handover was rolled back and the payment refunded" : failure ?? "the contract refused the buy; the token refunded the payment"} (${explorer})`, {
+        tx_hash: txHash,
+        explorer,
+      });
+    }
+    const settling = txEvents(result, "settling")[0] ?? {};
+    const key_batch = [
+      ...((settling.delete_keys as string[]) ?? []).map((k) => ({ action: "delete", key: k })),
+      ...(settling.add_key ? [{ action: "add_fc", key: String(settling.add_key) }] : []),
+    ];
+    return { sale, key_batch, overpay_refund: String(sale.overpay_refund ?? "0"), recorded: false, tx_hash: txHash, explorer };
   }
 
   async list(): Promise<{ listing: Json; recorded: boolean }> {
@@ -433,6 +533,18 @@ export class TestnetBackend implements Backend {
   }
 }
 
-export function makeBackend(cfg: Config): Backend {
-  return cfg.network === "testnet" ? new TestnetBackend(cfg) : new OfflineBackend(cfg.worldPath);
+export function makeBackend(cfg: Config, env: NodeJS.ProcessEnv = process.env): Backend {
+  return cfg.network === "testnet" ? new TestnetBackend(cfg, fetch, env.AGENT_EXIT_PRIVATE_KEY?.trim() || null) : new OfflineBackend(cfg.worldPath);
+}
+
+function b58(s: string): Buffer {
+  const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  let n = 0n;
+  for (const c of s) n = n * 58n + BigInt(ALPHABET.indexOf(c));
+  const out = Buffer.alloc(32);
+  for (let i = 31; i >= 0; i--) {
+    out[i] = Number(n & 0xffn);
+    n >>= 8n;
+  }
+  return out;
 }

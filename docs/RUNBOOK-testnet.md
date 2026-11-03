@@ -138,3 +138,19 @@ To show the recorded run without a chain: `make demo` and `make web`.
 - Judge review 3 (2026-11-02): 41/60. Next, by points per effort: real AI buyer run (needs an API key, +2.5), page testnet links (+1.5), video (+1.5), G6 with NEAR AI credit (+1.5), scene 4 re-run on the fixed scan, hosted page.
 - Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (`withdraw` while Listed) and STR-19 (unbounded pending Base authorizations) are fixed in the contract code; they need `make build` and a fresh testnet deploy (`make demo-setup`). STR-17 (MCP spend cap across processes) is fixed.
 - Real AI buyer: waiting for the Anthropic key; one capped run (12 steps, 150k tokens).
+
+## 8. AI buyer on testnet (scene 7)
+
+After `make scenes` (translator is owned by summarizer):
+
+| Step | Command | Cost |
+|---|---|---|
+| 1 | `make scene-7` (summarizer lists translator at 1,000; cheat stays listed) | test NEAR only |
+| 2 | `make llm-buyer-testnet` (ONE run: Anthropic Haiku, 12 steps, 150k tokens max) | about $0.05 real (Anthropic) |
+| 3 | Commit `out/llm-buyer-testnet.json` and `out/scenes/scene-7.json` | |
+
+The MCP server signs as `carol.<root>` with `~/.agent-exit/keys/carol.key`
+(must be 0600). The key goes into the server env only; the model sees tool
+results, never a key. The session cap is 1,000 xUSD-FAKE. Pass: cheat
+scanned and not bought, translator bought, old owner locked out, buy tx
+link in `testnet.txs`.

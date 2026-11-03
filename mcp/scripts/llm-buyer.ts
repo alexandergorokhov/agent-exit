@@ -1,15 +1,20 @@
 // `make llm-buyer`: a real model, with skills/agent-exit/SKILL.md as its system
 // prompt and only the Agent Exit MCP tools, decides which agent to buy.
 //
-// The MCP server runs offline (recorded fixtures, nothing sent to any chain);
-// the only network use is the model call. Exit codes: 0 the model bought
-// translator, refused cheat and verified the lockout; 1 it did not; 2 no API
-// key. Writes the whole transcript to out/llm-buyer.json.
+// By default the MCP server runs offline (recorded fixtures, nothing sent to
+// any chain); the only network use is the model call. With --network testnet
+// it runs against the live testnet world (`make scene-7` first) as carol: the
+// buyer's key goes to the MCP server's env only, never to the model, and every
+// buy is a real testnet transaction in xUSD-FAKE. Exit codes: 0 the model
+// bought translator, refused cheat and verified the lockout; 1 it did not; 2
+// no API key (or no buyer key on testnet).
 //
 // Usage: node dist/scripts/llm-buyer.js [--out PATH] [--provider nearai|anthropic]
 //        [--max-steps N] [--goal TEXT] [--no-signatures]
+//        [--network testnet --root ROOT.testnet [--key-file PATH]]
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { testnetSetup, testnetTxs, type Setup } from "../src/llm-testnet.js";
 import { connect, REPO } from "../src/client.js";
 import {
   loadModelEnv,
@@ -64,17 +69,16 @@ async function main(): Promise<number> {
   }
   if (model instanceof OpenAICompatClient) await selectModel(model, env, say);
   if (process.argv.includes("--check")) return check(model);
-  const world = JSON.parse(readFileSync(join(REPO, "fixtures", "mcp", "world.json"), "utf8"));
   const skill = readFileSync(join(REPO, "skills", "agent-exit", "SKILL.md"), "utf8");
-  // The server gets exactly this env (plus PATH): no model key, no chain key.
+  const setup = arg("--network") === "testnet" ? testnetSetup(REPO) : offlineSetup();
+  if ("refused" in setup) {
+    say(`refused: ${setup.refused}`);
+    return 2;
+  }
+  // The server gets exactly this env (plus PATH): no model key. On testnet it
+  // also holds the buyer's chain key, which never reaches the model.
   // The session cap is the hard ceiling whatever max_price the model picks.
-  const s = await connect({
-    AGENT_EXIT_NETWORK: "offline",
-    AGENT_EXIT_ALLOW_WRITE: "1",
-    AGENT_EXIT_ACCOUNT_ID: "summarizer.testnet",
-    AGENT_EXIT_SESSION_CAP: "1000",
-    AGENT_EXIT_RUNNER_PK: world.recorded_buys[0].buyer_runner_pk,
-  });
+  const s = await connect(setup.serverEnv);
   const mcp: McpLike = {
     async tools() {
       const r = await s.client.listTools();
@@ -82,12 +86,12 @@ async function main(): Promise<number> {
     },
     call: (name, args) => s.call(name, args),
   };
-  process.stderr.write(`llm-buyer: ${model.provider} model ${model.model}; MCP server offline (recorded fixtures)\n`);
+  process.stderr.write(`llm-buyer: ${model.provider} model ${model.model}; ${setup.network}\n`);
   const t = await runBuyer({
     model,
     mcp,
-    system: systemPrompt(skill),
-    goal: arg("--goal") ?? GOAL,
+    system: systemPrompt(skill, setup.buyerName),
+    goal: arg("--goal") ?? setup.goal,
     maxSteps: Number(arg("--max-steps") ?? "12"),
     maxTotalTokens: Number(arg("--max-tokens") ?? process.env.LLM_MAX_TOTAL_TOKENS ?? "150000"),
     log: (l) => process.stderr.write(`  ${l}\n`),
@@ -99,16 +103,17 @@ async function main(): Promise<number> {
   if (model instanceof OpenAICompatClient && !process.argv.includes("--no-signatures")) {
     for (const st of t.steps) if (st.response_id) signatures[st.response_id] = await model.signature(st.response_id);
   }
-  const summary = summarize(t);
+  const summary = summarize(t, setup.names);
   const out = {
     schema: "llm-buyer.v1",
     money: "xUSD-FAKE, a fake test dollar with no value",
-    network: "MCP server offline (recorded fixtures); the only network use is the model call",
+    network: setup.network,
     provider: model.provider,
     model_requested: model.model,
     models_reported: [...new Set(t.steps.map((x) => x.model_id))],
-    buyer: "summarizer.testnet",
+    buyer: setup.buyer,
     usage: totalUsage(t.steps),
+    ...(setup.root ? { testnet: { root: setup.root, txs: testnetTxs(t) } } : {}),
     transcript: t,
     near_ai_signatures: signatures,
     summary,
@@ -122,6 +127,24 @@ async function main(): Promise<number> {
     return 2;
   }
   return summary.pass === true ? 0 : 1;
+}
+
+function offlineSetup(): Setup {
+  const world = JSON.parse(readFileSync(join(REPO, "fixtures", "mcp", "world.json"), "utf8"));
+  return {
+    serverEnv: {
+      AGENT_EXIT_NETWORK: "offline",
+      AGENT_EXIT_ALLOW_WRITE: "1",
+      AGENT_EXIT_ACCOUNT_ID: "summarizer.testnet",
+      AGENT_EXIT_SESSION_CAP: "1000",
+      AGENT_EXIT_RUNNER_PK: world.recorded_buys[0].buyer_runner_pk,
+    },
+    network: "MCP server offline (recorded fixtures); the only network use is the model call",
+    buyer: "summarizer.testnet",
+    buyerName: "summarizer",
+    goal: GOAL,
+    names: { cheat: "cheat.testnet", translator: "translator.testnet" },
+  };
 }
 
 /** `make llm-buyer-check`: one tiny authenticated chat call. Starts no MCP server. */

@@ -117,6 +117,10 @@ llm-buyer: mcp-build ## A real model (NEAR AI Cloud, else Anthropic) reads the S
 translator-serve: mcp-build ## Translator worker on 127.0.0.1:8787: translates via NEAR AI Cloud and returns NEAR AI's signature to pay with (offline: recorded fixture, labelled; real: AGENT_EXIT_NETWORK=testnet + NEARAI_API_KEY + AGENT_EXIT_TRANSLATOR_ACCOUNT) [PORT=8787 MAX_JOBS=20]
 	node mcp/dist/scripts/translator-serve.js --port $(or $(PORT),8787) --max-jobs $(or $(MAX_JOBS),20)
 
+.PHONY: llm-buyer-testnet
+llm-buyer-testnet: mcp-build ## [testnet] After make scene-7: a real model, through carol's MCP server, scans both agents and buys on testnet (xUSD-FAKE) -> out/llm-buyer-testnet.json. ONE capped Anthropic run (~$0.05)
+	node mcp/dist/scripts/llm-buyer.js --network testnet --root $(TESTNET_ROOT) --provider anthropic --max-steps 12 --max-tokens 150000 --out $(OUT)/llm-buyer-testnet.json
+
 .PHONY: llm-buyer-check
 llm-buyer-check: mcp-build ## One tiny authenticated chat call: is the NEARAI_API_KEY accepted and does the account have credit (exit 2 on 401/402 or no key)
 	node mcp/dist/scripts/llm-buyer.js --check
@@ -226,7 +230,7 @@ PLAN = cargo run --quiet --locked --offline -p testnet-plan --
 # under `make -n`, which once sent a real deploy. Use DRY_RUN=1 to preview.
 SUBMAKE = $(MAKE)
 
-.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes testnet-plan-test
+.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 testnet-plan-test
 build-testnet: ## [testnet] Build both wasm with the testnet token, admin and MPC signer compiled in -> target/near-testnet
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
@@ -275,6 +279,13 @@ ifdef DRY_RUN
 	@$(PLAN) scenes
 else
 	$(TESTNET_RUN) scenes
+endif
+
+scene-7: ## [testnet] After scenes: summarizer lists translator at 1,000 for the AI buyer (make llm-buyer-testnet) -> out/scenes/scene-7.json [DRY_RUN=1]
+ifdef DRY_RUN
+	@$(PLAN) scene-7
+else
+	$(TESTNET_RUN) scene-7
 endif
 
 testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network)

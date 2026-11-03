@@ -1371,6 +1371,29 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
                 Err("expected 8.00 ok and 45.00 refused DailyCap".into())
             }
         }
+        7 => {
+            // The stage for the AI buyer: translator listed by its owner after
+            // scene 6 (summarizer), cheat still listed by alice (scene 4).
+            let st = c.view(&tr, "get_status", json!({})).await?;
+            let owner = st["owner"].as_str().unwrap_or_default().to_string();
+            if owner != c.id("summarizer") && st["status"] != "Listed" {
+                return Err(format!(
+                    "scene 7 runs after scene 6: translator is owned by {owner}"
+                ));
+            }
+            list(c, &mut out, "summarizer", "translator", 1_000 * USD).await?;
+            let tr_st = c.view(&tr, "get_status", json!({})).await?;
+            let ch_st = c.view(&c.id("cheat"), "get_status", json!({})).await?;
+            out.set("translator_status", tr_st["status"].clone());
+            out.set("cheat_status", ch_st["status"].clone());
+            out.set("buyer", json!(c.id("carol")));
+            out.set("buyer_xusd", json!(balance(c, "carol").await.to_string()));
+            if tr_st["status"] == "Listed" && ch_st["status"] == "Listed" {
+                Ok(())
+            } else {
+                Err("expected translator and cheat both Listed".into())
+            }
+        }
         _ => {
             list(c, &mut out, "bob", "translator", 1_200 * USD).await?;
             let (_, key) = buy(c, &mut out, "summarizer", "translator", 1_200 * USD).await?;
@@ -1388,10 +1411,7 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
                 && st["incoming_keys"].as_array().is_some_and(|a| a.is_empty())
                 && st["retiring_keys"].as_array().is_some_and(|a| a.is_empty());
             out.set("verify_lockout", json!({"account": c.id("bob"), "locked_out": locked_out, "keys": keys, "owner": st["owner"]}));
-            out.set(
-                "note",
-                json!("scripted client; MCP testnet writes are not wired yet"),
-            );
+            out.set("note", json!("scripted client"));
             if locked_out {
                 Ok(())
             } else {

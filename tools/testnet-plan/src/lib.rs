@@ -275,6 +275,8 @@ pub enum Step {
     Scene4Cheat,
     Scene5Sale,
     Scene6AgentBuysAgent,
+    /// Not in `scenes`: sets the stage for `make llm-buyer-testnet`.
+    Scene7AiSetup,
 }
 
 pub struct StepInfo {
@@ -313,7 +315,8 @@ pub fn info(step: Step) -> StepInfo {
         Scene3Verified => ("scene-3", "verified vs unverified: get_earnings of translator and cheat side by side", &[], "out/scenes/scene-3.json"),
         Scene4Cheat => ("scene-4", "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent", &[], "out/scenes/scene-4.json"),
         Scene5Sale => ("scene-5", "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00", &[], "out/scenes/scene-5.json"),
-        Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client; MCP testnet writes are not wired yet)", &[], "out/scenes/scene-6.json"),
+        Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)", &[], "out/scenes/scene-6.json"),
+        Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
     };
     StepInfo {
         step,
@@ -348,7 +351,7 @@ impl Command {
                 s.strip_prefix("scene-")?
                     .parse()
                     .ok()
-                    .filter(|n| (1..=6).contains(n))?,
+                    .filter(|n| (1..=7).contains(n))?,
             ),
         })
     }
@@ -364,6 +367,7 @@ pub fn scene_step(n: u8) -> Step {
         3 => Step::Scene3Verified,
         4 => Step::Scene4Cheat,
         5 => Step::Scene5Sale,
+        7 => Step::Scene7AiSetup,
         _ => Step::Scene6AgentBuysAgent,
     }
 }
@@ -618,7 +622,8 @@ mod tests {
             ["scene-3", "scene-4", "scene-5", "scene-1", "scene-2", "scene-6"]
         );
         assert_eq!(Command::parse("scene-4"), Some(Command::Scene(4)));
-        assert_eq!(Command::parse("scene-7"), None);
+        assert_eq!(Command::parse("scene-7"), Some(Command::Scene(7)));
+        assert_eq!(Command::parse("scene-8"), None);
         let missing = &plan_json(Command::GateG6, &c, false)["steps"][0]["missing"];
         assert_eq!(missing, &json!(["NEARAI_API_KEY"]));
     }
