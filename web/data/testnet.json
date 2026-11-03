@@ -12,37 +12,37 @@
           "label": "alice: withdraw 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/FHQnYPs7GhGtob53pNE3zFRQzEvv2HyVNWCHvT8csGHo"
+          "explorer": "https://testnet.nearblocks.io/txns/5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx"
         },
         {
           "label": "alice: set_runner_key (her own key)",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/DrujnnU9LcSon7hzes1JJEYU39LUzhog99iZDQapTuZy"
+          "explorer": "https://testnet.nearblocks.io/txns/G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr"
         },
         {
           "label": "alice: list_for_sale 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/3rmdH6NLw6BzX7GYo7CbW42JCsYYMdcyBiBMfXkpqHkn"
+          "explorer": "https://testnet.nearblocks.io/txns/88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f"
         },
         {
           "label": "alice: set_limits",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB"
+          "explorer": "https://testnet.nearblocks.io/txns/BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk"
         },
         {
           "label": "alice: nft_transfer the deed to herself",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/7F1XbdUNqJrvUWpFC9TYbc3zM43H9vgopaMi4szTxq6x"
+          "explorer": "https://testnet.nearblocks.io/txns/3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK"
         },
         {
           "label": "alice: pay_base (the Base wallet)",
           "ok": false,
           "error": "NotRunner",
-          "explorer": "https://testnet.nearblocks.io/txns/2EHZJxkD7j2BYuN7u8k9XgtcJsaGfaxEnHjDAKiiKKb3"
+          "explorer": "https://testnet.nearblocks.io/txns/G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK"
         },
         {
           "label": "alice's old runner key: heartbeat",
@@ -60,7 +60,7 @@
           "label": "bob's runner key: heartbeat",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/CR8LjSDNrCjmA8AsERzUZDr3AhnayJvGk3om8JgvMqrC"
+          "explorer": "https://testnet.nearblocks.io/txns/9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ"
         }
       ]
     },
@@ -73,31 +73,31 @@
           "label": "bob: set_limits (cap 50.00, payee summarizer, split 80/20)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/Fegf5pF9sHbQdDaE1wJHN8xV3CkwzY9a744c1ovJsYuh"
+          "explorer": "https://testnet.nearblocks.io/txns/9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1"
         },
         {
           "label": "p1 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9c2sULcamX4iF57GsBZWJrpiPj4zp4Xmnbr9ve1MR2aJ"
+          "explorer": "https://testnet.nearblocks.io/txns/ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG"
         },
         {
           "label": "p2 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/HtsHzA4MXfvmZKRibqtsHVe8WSnAyNVyrri6XA8cMf5J"
+          "explorer": "https://testnet.nearblocks.io/txns/DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa"
         },
         {
           "label": "runner pays summarizer 8.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/2aVnZtzNxk7LWYSRtTEuEJQTB3u1i4AocVvp74wVi46m"
+          "explorer": "https://testnet.nearblocks.io/txns/3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo"
         },
         {
           "label": "runner pays summarizer 45.00",
           "ok": false,
           "error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00",
-          "explorer": "https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci"
+          "explorer": "https://testnet.nearblocks.io/txns/AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt"
         }
       ]
     },
@@ -111,7 +111,14 @@
       "scene": 4,
       "pass": true,
       "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent",
-      "txs": []
+      "txs": [
+        {
+          "label": "alice lists cheat at 500.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX"
+        }
+      ]
     },
     "honest-sale": {
       "scene": 5,
@@ -119,10 +126,16 @@
       "what": "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00",
       "txs": [
         {
+          "label": "alice lists translator at 1000.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH"
+        },
+        {
           "label": "bob buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF"
+          "explorer": "https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K"
         }
       ]
     },
@@ -135,18 +148,18 @@
           "label": "bob lists translator at 1200.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/4JxCY4bBrYUA1PxRRgCrrKm4om7M79Qqm2vijX4XnU3s"
+          "explorer": "https://testnet.nearblocks.io/txns/3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2"
         },
         {
           "label": "summarizer buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL"
+          "explorer": "https://testnet.nearblocks.io/txns/ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt"
         }
       ]
     }
   },
   "run": "2026-11-02",
-  "root": "agentexit.testnet",
-  "agent_code_hash": "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa"
+  "root": "agentexit3.testnet",
+  "agent_code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq"
 }
