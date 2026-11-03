@@ -2,6 +2,8 @@
 
 **Sell an AI agent with earnings a buyer can check on-chain and a handover that locks the seller out.** The handover is one NEAR transaction (keys swapped, ownership deed moved); the seller's payout and escrow are claimable afterwards.
 
+**Live demo page:** https://near-transparent-agent-market-web.vercel.app/ (recorded run; add `?network=testnet` and press "Read live" to check NEAR testnet now)
+
 > **All money here is fake.** Payments use `xUSD-FAKE`, a test token with no
 > value that this repo deploys (`contracts/xusd`). Nothing runs on mainnet.
 

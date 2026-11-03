@@ -327,8 +327,9 @@ else
 endif
 record: ## (not built yet) [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
-web-deploy: ## (not built yet) [testnet] Vercel deploy
-	$(call not_built,web-deploy,M3 B5)
+web-deploy: ## Hosted page: Vercel's Git integration deploys web/ on each push to main (no GitHub Actions)
+	@echo "web-deploy: Vercel deploys web/ on each push to main: https://near-transparent-agent-market-web.vercel.app/"
+	@echo "Settings: Root Directory web, Framework Other, no build command, Output Directory ."
 e2e: ## (not built yet) [testnet] Playwright against the deployed page with a real wallet
 	$(call not_built,e2e,M3 B5)
 
