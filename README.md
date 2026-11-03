@@ -16,7 +16,8 @@ The "Try it yourself" section runs the real contract state machine (`contracts/a
 | Mission 2, "Buy without a clean scan", then "Use the hidden key" | `FROZEN`: the agent freezes and the 300.00 escrow goes back to the buyer |
 | Mission 3, list, scan, buy | `clean`, then one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out |
 | Mission 3, alice tries to withdraw, add a key, use her old key | `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
-| "The same story on NEAR testnet", then add `?network=testnet` and press "Read live" | each scene's NearBlocks links; the live owner and keys of `translator.agentexit3.testnet` |
+| "The same story on NEAR testnet", open "Sell an agent, lock the seller out", press "Run and verify" | each stage opens in turn; the page fetches that transaction from NEAR testnet now (signer, method, outcome, the contract's `EVENT_JSON` logs) and marks it `confirmed on chain` or `differs from the recording` |
+| Add `?network=testnet` and press "Read live" | the live owner and keys of `translator.agentexit3.testnet` |
 
 Offline check of the same missions: `cargo test -p playground` (5 tests).
 

@@ -22,7 +22,13 @@ for (const [id, n] of Object.entries(STEP_SCENE)) {
     scene: n,
     pass: s.pass === true,
     what: s.what,
-    txs: (s.txs || []).map((t) => ({ label: t.label, ok: t.ok === true, error: short(t.error), explorer: t.explorer || null })),
+    scan: s.scan ? { agent: s.scan.agent, verdict: s.scan.verdict, findings: (s.scan.findings || []).map((f) => ({ code: f.code, detail: f.detail })) } : null,
+    // tx/by/receiver/method/events let the page re-check each stage against the chain ("Verify on chain").
+    txs: (s.txs || []).map((t) => ({
+      label: t.label, ok: t.ok === true, error: short(t.error), explorer: t.explorer || null,
+      tx: t.tx || null, by: t.by || null, receiver: t.receiver || null, method: t.method || null,
+      events: (t.events || []).map((e) => e.event),
+    })),
   };
 }
 const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out/testnet/deploy.json", "utf8")) : {};

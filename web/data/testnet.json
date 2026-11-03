@@ -7,60 +7,106 @@
       "scene": 1,
       "pass": true,
       "what": "break-in: alice calls withdraw, set_runner_key, list_for_sale, set_limits, nft_transfer, pay_base (each refused); her old runner key and the deleted setup key fail at the node; key list before/after",
+      "scan": null,
       "txs": [
         {
           "label": "alice: withdraw 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx"
+          "explorer": "https://testnet.nearblocks.io/txns/5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx",
+          "tx": "5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "withdraw",
+          "events": []
         },
         {
           "label": "alice: set_runner_key (her own key)",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr"
+          "explorer": "https://testnet.nearblocks.io/txns/G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr",
+          "tx": "G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "set_runner_key",
+          "events": []
         },
         {
           "label": "alice: list_for_sale 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f"
+          "explorer": "https://testnet.nearblocks.io/txns/88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f",
+          "tx": "88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "list_for_sale",
+          "events": []
         },
         {
           "label": "alice: set_limits",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk"
+          "explorer": "https://testnet.nearblocks.io/txns/BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk",
+          "tx": "BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "set_limits",
+          "events": []
         },
         {
           "label": "alice: nft_transfer the deed to herself",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK"
+          "explorer": "https://testnet.nearblocks.io/txns/3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK",
+          "tx": "3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "nft_transfer",
+          "events": []
         },
         {
           "label": "alice: pay_base (the Base wallet)",
           "ok": false,
           "error": "NotRunner",
-          "explorer": "https://testnet.nearblocks.io/txns/G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK"
+          "explorer": "https://testnet.nearblocks.io/txns/G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK",
+          "tx": "G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "pay_base",
+          "events": []
         },
         {
           "label": "alice's old runner key: heartbeat",
           "ok": false,
           "error": "rejected by the node: the access key does not exist (no transaction possible)",
-          "explorer": null
+          "explorer": null,
+          "tx": null,
+          "by": "translator.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "heartbeat",
+          "events": []
         },
         {
           "label": "translator's deleted setup key: heartbeat",
           "ok": false,
           "error": "rejected by the node: the access key does not exist (no transaction possible)",
-          "explorer": null
+          "explorer": null,
+          "tx": null,
+          "by": "translator.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "heartbeat",
+          "events": []
         },
         {
           "label": "bob's runner key: heartbeat",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ"
+          "explorer": "https://testnet.nearblocks.io/txns/9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ",
+          "tx": "9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ",
+          "by": "translator.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "heartbeat",
+          "events": []
         }
       ]
     },
@@ -68,36 +114,77 @@
       "scene": 2,
       "pass": true,
       "what": "business: bob sets limits; p1, p2 pay 25.00 (split 20/5); bob's runner pays summarizer 8.00; 45.00 fails PolicyViolation:DailyCap",
+      "scan": null,
       "txs": [
         {
           "label": "bob: set_limits (cap 50.00, payee summarizer, split 80/20)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1"
+          "explorer": "https://testnet.nearblocks.io/txns/9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1",
+          "tx": "9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1",
+          "by": "bob.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "set_limits",
+          "events": [
+            "limits_set"
+          ]
         },
         {
           "label": "p1 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG"
+          "explorer": "https://testnet.nearblocks.io/txns/ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG",
+          "tx": "ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG",
+          "by": "p1.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "payment",
+            "split",
+            "earnout_release"
+          ]
         },
         {
           "label": "p2 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa"
+          "explorer": "https://testnet.nearblocks.io/txns/DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa",
+          "tx": "DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa",
+          "by": "p2.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "payment",
+            "split",
+            "earnout_release"
+          ]
         },
         {
           "label": "runner pays summarizer 8.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo"
+          "explorer": "https://testnet.nearblocks.io/txns/3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo",
+          "tx": "3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo",
+          "by": "translator.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "pay",
+          "events": [
+            "treasury_pay",
+            "ft_transfer"
+          ]
         },
         {
           "label": "runner pays summarizer 45.00",
           "ok": false,
           "error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00",
-          "explorer": "https://testnet.nearblocks.io/txns/AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt"
+          "explorer": "https://testnet.nearblocks.io/txns/AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt",
+          "tx": "AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt",
+          "by": "translator.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "pay",
+          "events": []
         }
       ]
     },
@@ -105,18 +192,36 @@
       "scene": 3,
       "pass": true,
       "what": "verified vs unverified: get_earnings of translator and cheat side by side",
+      "scan": null,
       "txs": []
     },
     "cheat": {
       "scene": 4,
       "pass": true,
       "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent",
+      "scan": {
+        "agent": "cheat.agentexit3.testnet",
+        "verdict": "blocked",
+        "findings": [
+          {
+            "code": "full_access_key_present",
+            "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account"
+          }
+        ]
+      },
       "txs": [
         {
           "label": "alice lists cheat at 500.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX"
+          "explorer": "https://testnet.nearblocks.io/txns/3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX",
+          "tx": "3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "cheat.agentexit3.testnet",
+          "method": "list_for_sale",
+          "events": [
+            "listed"
+          ]
         }
       ]
     },
@@ -124,18 +229,41 @@
       "scene": 5,
       "pass": true,
       "what": "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00",
+      "scan": {
+        "agent": "translator.agentexit3.testnet",
+        "verdict": "clean",
+        "findings": []
+      },
       "txs": [
         {
           "label": "alice lists translator at 1000.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH"
+          "explorer": "https://testnet.nearblocks.io/txns/6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
+          "tx": "6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
+          "by": "alice.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "list_for_sale",
+          "events": [
+            "listed"
+          ]
         },
         {
           "label": "bob buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K"
+          "explorer": "https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
+          "tx": "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
+          "by": "bob.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "settling",
+            "nft_transfer",
+            "sale",
+            "ft_transfer"
+          ]
         }
       ]
     },
@@ -143,18 +271,41 @@
       "scene": 6,
       "pass": true,
       "what": "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client; MCP testnet writes are not wired yet)",
+      "scan": {
+        "agent": "translator.agentexit3.testnet",
+        "verdict": "clean",
+        "findings": []
+      },
       "txs": [
         {
           "label": "bob lists translator at 1200.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2"
+          "explorer": "https://testnet.nearblocks.io/txns/3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2",
+          "tx": "3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2",
+          "by": "bob.agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "list_for_sale",
+          "events": [
+            "listed"
+          ]
         },
         {
           "label": "summarizer buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt"
+          "explorer": "https://testnet.nearblocks.io/txns/ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt",
+          "tx": "ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt",
+          "by": "summarizer.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "settling",
+            "nft_transfer",
+            "sale",
+            "ft_transfer"
+          ]
         }
       ]
     }

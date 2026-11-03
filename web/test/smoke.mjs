@@ -255,6 +255,70 @@ try {
     await ctx.close();
   }
 
+  // V1-V3: "Run and verify" asks the chain for each recorded transaction and compares; a mismatch is shown, not hidden.
+  {
+    const rec = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    const byHash = new Map(Object.values(rec.steps).flatMap((s) => s.txs).filter((t) => t.tx).map((t) => [t.tx, t]));
+    const cheatKey = /(ed25519:\w+)/.exec(rec.steps.cheat.scan.findings[0].detail)[1];
+    for (const lie of [false, true]) {
+      const ctx = await browser.newContext({ viewport: { width: 375, height: 740 } });
+      const asked = [];
+      await ctx.route("**/*", async (route) => {
+        const u = route.request().url();
+        if (!u.startsWith(base)) return route.abort();
+        if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+        const b = JSON.parse(route.request().postData());
+        asked.push(b.method);
+        let result;
+        if (b.method === "tx") {
+          const t = byHash.get(b.params.tx_hash);
+          const logs = t.events.map((e) => `EVENT_JSON:${JSON.stringify({ standard: "agent_exit", event: e, data: [] })}`);
+          result = {
+            status: t.ok ? { SuccessValue: "" } : { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: "Smart contract panicked: NotOwner" } } } } },
+            transaction: { signer_id: lie ? "mallory.testnet" : t.by, receiver_id: t.receiver, actions: [{ FunctionCall: { method_name: t.method } }] },
+            transaction_outcome: { block_hash: "BLOCKhash111" },
+            receipts_outcome: [{ outcome: { logs, status: t.ok ? { SuccessValue: "" } : { Failure: {} } } }],
+          };
+        } else {
+          const fc = { public_key: "ed25519:runner", access_key: { permission: { FunctionCall: {} } } };
+          result = { keys: b.params.account_id.startsWith("cheat.") ? [{ public_key: cheatKey, access_key: { permission: "FullAccess" } }, fc] : [fc] };
+        }
+        return route.fulfill({ contentType: "application/json", body: JSON.stringify({ jsonrpc: "2.0", id: b.id, result }) });
+      });
+      const vp = await ctx.newPage();
+      vp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+      await vp.goto(base);
+      await vp.waitForSelector('#scenarios[data-ready="1"]');
+      for (const id of ["sale", "cheat"]) {
+        await vp.click(`[data-scenario="${id}"] > summary`);
+        await vp.click(`[data-run="${id}"]`);
+        await vp.waitForFunction((sid) => /Run again/.test(document.querySelector(`[data-run="${sid}"]`).textContent), id);
+      }
+      const pills = await vp.locator(".vpill").allTextContents();
+      const steps = ["honest-sale", "break-in", "cheat"].map((k) => rec.steps[k]);
+      const txStages = steps.flatMap((x) => x.txs).filter((t) => t.tx).length;
+      const scans = steps.filter((x) => x.scan).length;
+      const confirmed = pills.filter((p) => p.includes("confirmed")).length;
+      const differs = pills.filter((p) => p.includes("differs")).length;
+      if (!lie) {
+        assert.equal(confirmed, txStages + scans, `V1: every recorded tx and the scan confirmed (${pills.join(" | ")})`);
+        assert.ok(pills.filter((p) => p === "no transaction").length >= 2, "V2: node-refused keys say 'no transaction'");
+        assert.ok(asked.includes("tx") && asked.includes("query"), "V1: the page asked the chain");
+      } else {
+        assert.equal(differs, txStages, `V3: a different signer on chain shows as a mismatch (${differs}/${txStages}: ${pills.join(" | ")})`);
+      }
+      await noHorizontalScroll(vp, "scenario runner at 375px");
+      checks += 3;
+      await ctx.close();
+    }
+    const { refuse } = await import("../rpc-allow.mjs");
+    const tx = (p) => ({ jsonrpc: "2.0", id: 1, method: "tx", params: p });
+    assert.equal(refuse(tx({ tx_hash: "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K", sender_account_id: "bob.agentexit3.testnet", wait_until: "NONE" })), null);
+    assert.ok(refuse(tx({ signed_tx_base64: "AAAA", wait_until: "NONE" })), "V4: a signed tx is never relayed");
+    assert.ok(refuse(tx({ tx_hash: "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K", sender_account_id: "bob.near", wait_until: "NONE" })), "V4: mainnet sender refused");
+    checks += 3;
+  }
+
   assert.deepEqual(problems, [], "no console errors");
   console.log(`web-test: ${checks} checks passed (desktop + 375px, offline + testnet flag)`);
 } finally {
