@@ -318,3 +318,17 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .stage-chain .facts-grid { font-size: 13px; }
 .stage-chain .facts-grid dd { font-family: var(--mono); font-weight: 500; }
 .walk-title { margin: 8px 0 0; font-size: 18px; }
+
+/* ----- for judges ----- */
+.judges { margin: 28px 0 0; }
+.judges h2 { font-size: 20px; margin-bottom: 12px; }
+.crit { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.crit a { display: grid; gap: 4px; align-content: start; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; text-decoration: none; color: var(--text); border-top: 4px solid var(--accent); min-width: 0; }
+.crit a:hover { transform: translateY(-2px); }
+.crit b { font-size: 15px; }
+.crit span { font-size: 13px; color: var(--muted); }
+.crit code { font-family: var(--mono); font-size: 12px; }
+.tracks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0 0; }
+.track { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
+@media (max-width: 820px) { .crit { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .crit { grid-template-columns: 1fr; } }
