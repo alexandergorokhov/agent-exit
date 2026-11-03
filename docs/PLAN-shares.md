@@ -4,7 +4,7 @@ Saved 2026-11-03. Alex approved options 1 and 2 after cold judge 7 (38/60, Impac
 Goal: raise Impact by turning Agent Exit from "buy a whole agent" into "invest in agents",
 where every payout comes from earnings you can check on chain.
 
-New pitch: **"Invest in AI agents. Buy a share of an agent's future earnings, or the whole agent. Each payment is counted and split on chain."**
+Pitch (after cold judge 8): the headline **stays the handover** ("buy an AI agent with proven earnings; the seller is locked out in one NEAR transaction"). Shares are the second line: **"the same checked meter also pays investors: buy a share of an agent's future earnings; fake revenue pays them too."** Leading with "invest in AI agents" would collide with Virtuals' tagline.
 
 The core stays the same: the earnings meter, the scan and the one-transaction handover. Shares are a second way to put money in, and they reuse the same meter.
 
@@ -31,8 +31,8 @@ The core stays the same: the earnings meter, the scan and the one-transaction ha
 | SH6 | No new slice may be offered while the agent is listed for sale, because the buyer already scanned the terms. Investors can still buy an existing slice |
 | SH7 | The scan reports open slices as a disclosure (not a block): percentage, end date, holders |
 | SH8 | A self-payment, or one flagged as a round trip, still pays investors. Faking revenue then costs the cheater the investors' cut: wash trading loses money, the same idea as the earn-out (S10) |
-| SH9 | A share can be sold to another account (`transfer_share`). This is the "secondary market" in its simplest form |
-| SH10 | The owner can buy a slice back early at the price set in the offer (`buyback_bps`). Optional; cut first if time is short |
+| SH9 | (CUT by judge 8: invites a losing comparison with liquid agent-token markets) A share can be sold to another account (`transfer_share`). This is the "secondary market" in its simplest form |
+| SH10 | (CUT by judge 8) The owner can buy a slice back early at the price set in the offer (`buyback_bps`). Optional; cut first if time is short |
 | SH11 | Price escrow: 50% of the share price goes to the owner now; the rest is released as investors are paid, and refunded to them at the end date if earnings stop (see T2) |
 
 Known limit, to state honestly (it goes in NOT-CAUGHT): an owner can send customers to another account that has no meter. The earnings shown then fall, and investors see that drop on the meter. No contract can stop off-chain rerouting.
@@ -125,3 +125,12 @@ Alex (2026-11-03): "imagine the money is real and let's set up the security on i
 ### Deploy
 
 Contract code changes, so the build is reproducible and the code hash is new. The locked agents can't be upgraded (that's the point), so the new code goes to **new agent accounts under agentexit3** (for example `translator2`, `summarizer2`). The old scenes stay valid. This may need a faucet top-up from Alex.
+
+## Cold judge 8 (on this plan): 41/60 if built (was 38)
+
+- Impact +2, Sustainability +1. Any prize ~50%, top-3 track ~35%. Review: agent-exit-plan/judge-cold-8-plan.md.
+- Applied: handover stays the headline; SH9 and SH10 cut; scene-8 and scene-9 merge into one scene.
+- **Merged scene:** dave holds 20% of `translator2`. 5 customers pay for 5 NEAR AI-signed translations. dave's claimable grows by exactly 20%. One payment from the owner's sub-account is flagged and still pays dave.
+- Summarizer shares dropped.
+- The $5 NEAR AI credit is worth it: about 1.5 points versus the Anthropic fallback.
+- Top rival: Virtuals Protocol, one token per agent with revenue buy-back. We differ in two ways: a share is a time-limited contract claim on checked earnings, and fake revenue costs the cheater.
