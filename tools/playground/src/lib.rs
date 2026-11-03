@@ -34,6 +34,8 @@ pub struct World {
     /// The account's access keys as the node reports them.
     pub keys: Vec<AccessKey>,
     pub upgrade_method: bool,
+    /// The seller redeployed through a hidden full-access key (the contract is gone).
+    pub taken_over: bool,
     pub now: Ts,
     payer_n: u32,
     pub scan: Option<Report>,
@@ -62,6 +64,7 @@ enum Action {
     SetKey,
     OldKey,
     HiddenKey,
+    HiddenRedeploy,
     Wait { days: Option<u64> },
 }
 
@@ -110,6 +113,7 @@ impl World {
             m,
             keys: vec![runner_key(SELLER_KEY)],
             upgrade_method: false,
+            taken_over: false,
             now: T0,
             payer_n: 0,
             scan: None,
@@ -146,7 +150,7 @@ impl World {
             } => {
                 let mut s = if counted {
                     if verified {
-                        "counted, Verified (NEAR AI signature)".to_string()
+                        "counted, Verified (NEAR AI signature; signed with a test key here, the live NEAR AI check is gate G6)".to_string()
                     } else {
                         "counted as real revenue".to_string()
                     }
@@ -312,6 +316,16 @@ impl World {
             }
             Action::OldKey => self.sign_with(SELLER_KEY, "her old runner key"),
             Action::HiddenKey => self.sign_with(HIDDEN_KEY, "the hidden key"),
+            Action::HiddenRedeploy => {
+                if !self.keys.iter().any(|k| k.public_key == HIDDEN_KEY) {
+                    return self.note(SELLER, false, "deploys new code with the hidden key -> AccessKeyNotFound: there is no hidden key".into());
+                }
+                // A full-access key acts on the account, not through the contract:
+                // DeployContract / DeleteKey actions never reach contract code.
+                self.taken_over = true;
+                self.keys.retain(|k| k.public_key == HIDDEN_KEY);
+                self.note(SELLER, true, "deploys her own code and deletes bob's key with the hidden key -> accepted by the node. The contract never runs, so it cannot stop this: bob paid and alice has the agent back. Only the scan protects the buyer.".into())
+            }
             Action::Wait { days } => {
                 self.now += days.unwrap_or(30) * DAY_NS;
                 let ids: Vec<u64> = self
@@ -446,6 +460,7 @@ impl World {
                 "known_to_contract": self.m.known_keys.contains(&k.public_key),
             })).collect::<Vec<_>>(),
             "upgrade_method": self.upgrade_method,
+            "taken_over": self.taken_over,
             "scan": self.scan,
             "sale": sale,
             "escrow_left": usd(self.m.escrow_left()),

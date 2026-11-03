@@ -32,7 +32,7 @@ fn p1_fake_revenue_is_flagged_not_counted() {
     );
     assert_eq!(v["view"]["earnings"]["flagged"], "400.00");
     let v = run(&mut w, r#"{"op":"pay_verified"}"#);
-    assert!(last(&v).contains("Verified (NEAR AI signature)"));
+    assert!(last(&v).contains("Verified (NEAR AI signature; signed with a test key here"));
 }
 
 #[test]
@@ -61,6 +61,26 @@ fn p2_hidden_key_blocks_the_scan_and_freezes_if_skipped() {
     assert_eq!(v["view"]["frozen"], true);
     assert_eq!(v["view"]["claimable"]["bob"], "300.00");
     assert_eq!(v["view"]["solvent"], true);
+}
+
+#[test]
+fn p2c_skipping_the_scan_lets_a_hidden_key_take_the_agent_back() {
+    let mut w = World::new();
+    run(&mut w, r#"{"op":"plant_key"}"#);
+    run(&mut w, r#"{"op":"list"}"#);
+    run(&mut w, r#"{"op":"buy","skip_scan":true}"#);
+    let v = run(&mut w, r#"{"op":"hidden_redeploy"}"#);
+    assert!(
+        last(&v).contains("Only the scan protects the buyer"),
+        "{}",
+        last(&v)
+    );
+    assert_eq!(v["view"]["taken_over"], true);
+    assert!(v["view"]["keys"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|k| k["label"] == "hidden backdoor key"));
 }
 
 #[test]

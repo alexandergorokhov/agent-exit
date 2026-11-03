@@ -25,7 +25,7 @@ const WHO = {
 // Every action: who does it, the button label, and what the contract does behind it.
 const ACTIONS = {
   pay_customer: { who: "customer", label: "A customer pays 25", why: "pay(): the payer is a stranger to the owner, so the meter counts it. After a sale, half of each counted payment is released from escrow to the old seller (the earn-out)." },
-  pay_verified: { who: "customer", label: "A customer pays 25 with a NEAR AI signature", why: "pay() with a NEAR AI Cloud signature on the work. The contract checks the signature on-chain, so the payment is counted and marked Verified." },
+  pay_verified: { who: "customer", label: "A customer pays 25 with a NEAR AI signature", why: "pay() with a NEAR AI Cloud signature on the work. The contract checks the signature on-chain, so the payment is counted and marked Verified. Here and in the offline tests the signature comes from a test key; the same check against NEAR AI Cloud's real key on testnet (gate G6) is pending." },
   pay_self: { who: "alice", label: "Pay your own agent 200", why: "pay(): the contract looks at who paid. The payer is the owner, so the payment is recorded but flagged and not counted. A buyer sees counted revenue only." },
   pay_sub: { who: "alice", label: "Pay from bot.alice.testnet 200", why: "NEAR account names are hierarchical: bot.alice.testnet can only be created by alice. The contract sees the parent and flags the payment." },
   plant_key: { who: "alice", label: "Hide a full-access key in the agent", why: "A NEAR account can hold many keys. alice adds one straight to the account, outside the contract. The contract only knows the keys it added itself." },
@@ -35,12 +35,13 @@ const ACTIONS = {
   cancel: { who: "alice", label: "Cancel the listing", why: "cancel_listing(): only the owner can." },
   scan: { who: "bob", label: "Scan the agent", why: "The buyer's scan reads the key list from the NEAR node (view_access_key_list) and compares it with the keys the contract added, plus the code hash, the methods and the listing terms. Anything extra blocks." },
   buy: { who: "bob", label: "Buy it", whyNo: "bob's tools (the Agent Exit MCP server and SDK) never send a buy without a clean scan of the same listing version, so nothing was paid.", why: "One NEAR transaction: bob pays, the contract checks the listing version and the key hash he scanned, then deletes alice's keys, adds bob's key and moves ownership. 70% goes to alice now, 30% is held in escrow." },
-  buy_skip: { op: "buy", args: { skip_scan: true }, who: "bob", label: "Buy without a clean scan", why: "The contract itself cannot list the account's keys, so a buyer who skips the scan can buy an agent with a hidden key. The next step shows what that key is worth to the seller." },
+  buy_skip: { op: "buy", args: { skip_scan: true }, who: "bob", label: "Buy without a clean scan", why: "A contract cannot list its own account's keys, so the contract accepts the buy. The hidden key is still on the account. The next step shows what that means." },
+  hidden_redeploy: { who: "alice", label: "Take the agent back with the hidden key", why: "A full-access key acts on the account itself (DeployContract, DeleteKey). Those actions never run contract code, so no contract on any chain could stop them. This is why Agent Exit puts the defence before the money moves: the buyer's scan, which the SDK and MCP server never skip." },
   withdraw: { who: "alice", label: "Withdraw the agent's money", why: "withdraw() checks that the caller is the owner. alice is not any more: NotOwner." },
   relist: { who: "alice", label: "List the agent again", why: "list_for_sale() is owner-only: NotOwner." },
   set_key: { who: "alice", label: "Add a new key for herself", why: "set_runner_key() is owner-only: NotOwner." },
   old_key: { who: "alice", label: "Use her old key", why: "The sale deleted that key from the account, so the NEAR node rejects any transaction signed with it before it reaches the contract." },
-  hidden_key: { who: "alice", label: "Use the hidden key", why: "The agent's runner methods check which key signed. A key the contract never added proves a backdoor: the agent freezes and the open escrow goes back to the buyer. The seller loses the 300." },
+  hidden_key: { who: "alice", label: "Run the agent with the hidden key", why: "A second line of defence, not the main one: if the hidden key is ever used on the agent's own methods, the contract sees a key it never added, freezes the agent and returns the open escrow to the buyer. A careful seller would not do this; they would redeploy instead (see mission 2)." },
   wait: { who: "clock", label: "31 days pass", args: { days: 31 }, why: "finalize_earnout(): the window closed. The seller keeps what real payments released (at least the 20% floor); the rest goes back to the buyer." },
 };
 
@@ -68,6 +69,7 @@ const CODE = {
   set_key: { code: [CORE, 634, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
   old_key: { code: null, near: "any transaction signed with the deleted key: the NEAR node refuses it (AccessKeyNotFound)", tx: "alice's old runner key: heartbeat" },
   hidden_key: { code: [CORE, 1372, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
+  hidden_redeploy: { code: null, near: "a transaction with DeployContract and DeleteKey actions signed by the hidden full-access key: plain NEAR protocol, no contract code runs", tx: null, note: "Listed in docs/NOT-CAUGHT.md as N4: the scan is the defence." },
   wait: { code: [CORE, 1275, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
 };
 
@@ -107,8 +109,8 @@ const MISSIONS = [
     id: "backdoor",
     title: "2. Hide a backdoor",
     intro: "You are alice again. This time you plan to sell the agent and keep a secret way back in.",
-    steps: ["plant_key", "list", "scan", "buy", "buy_skip", "hidden_key"],
-    lesson: "The scan blocks the sale. If a buyer skips it, using the hidden key freezes the agent and sends the 300 escrow back to the buyer, so the backdoor costs the seller money.",
+    steps: ["plant_key", "list", "scan", "buy", "buy_skip", "hidden_redeploy"],
+    lesson: "The scan is the defence: it read the account's real key list and blocked the sale before any money moved. Skip it, and a hidden full-access key gives the agent back to the seller; no contract can prevent that. The Agent Exit SDK and MCP server never buy without a clean scan.",
   },
   {
     id: "honest",
@@ -184,7 +186,7 @@ function renderState() {
   const v = view;
   const e = v.earnings;
   const gross = Number(e.gross.replace(/,/g, ""));
-  const status = v.frozen ? "Frozen" : v.status;
+  const status = v.taken_over ? "Taken back" : v.frozen ? "Frozen" : v.status;
   const keys = el("ul", { class: "keys" }, v.keys.map((k) => el("li", { class: k.known_to_contract ? "" : "danger" },
     el("span", { class: "key-name", text: k.label }),
     el("span", { class: `chip ${k.full_access ? "red" : ""}`, text: k.full_access ? "full access" : "runs the agent only" }),

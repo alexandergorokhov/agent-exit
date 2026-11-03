@@ -31,14 +31,14 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 | Only the owner sets limits; the old seller and the runner get `NotOwner`; limits are refused while listed and move to the buyer; split != 100%, absurd caps, the agent as its own payee or negative amounts are refused | offline | S13, E33 |
 | The cap counts per owner and UTC day: a seller burning the cap before the sale does not reduce the buyer's cap | offline | E18, E19, A15 |
 | While listed, the limits are frozen and the runner cannot spend (`Listed: spending paused`); the listing snapshots the treasury and `buy()` refuses with a full refund (`TreasuryChanged`) if the treasury is below it, the same way as a changed listing version | offline + property test (treasury never below the snapshot while listed) | A24 |
-| Agent buys agent through MCP (scripted replay, no AI model): six tools, JSON schemas `schemas/mcp/*.v1.json`, read-only by default, `buy_agent` needs `confirm`, `max_price`, a session spend cap and a clean scan | offline: the server replays results **recorded from the real contract code** (`fixtures/mcp/world.json`, reproducible); nothing is sent. Testnet mode (`AGENT_EXIT_NETWORK=testnet`) is read-only, written but not run here | S14, S15 (MCP part), E29, E30, S17 |
+| Agent buys agent through MCP (scripted replay, no AI model): six tools, JSON schemas `schemas/mcp/*.v1.json`, read-only by default, `buy_agent` needs `confirm`, `max_price`, a session spend cap and a clean scan | offline: the server replays results **recorded from the real contract code** (`fixtures/mcp/world.json`, reproducible); nothing is sent. Testnet mode (`AGENT_EXIT_NETWORK=testnet`): reads, and `buy_agent` signing with the server's own key (`make llm-buyer-testnet`); built and tested against a mocked RPC, not yet run on testnet | S14, S15 (MCP part), E29, E30, S17 |
 | Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 
 Run on NEAR testnet on 2026-11-03 (root `agentexit3.testnet`) (outputs in `out/`, links in the README's
 "Live on NEAR testnet"): the deploy, gate G1 and the six scenes. Not run:
-gate G6 (needs NEAR AI credit) and G2 (needs a Base Sepolia key). Not built yet (later batches): MCP `list_agent` on testnet (it returns `NOT_BUILT`; MCP `buy_agent` on testnet is built: the server signs with its own key, see `make llm-buyer-testnet`),
-`accept_job`, the page's testnet
-mode (only the wallet login exists), and a
-Playwright run against the deployed page (`make e2e`). Their
-`make` targets say `not built yet`.
+gate G6 (needs NEAR AI credit) and G2 (needs a Base Sepolia key). Built, not yet run on testnet: an AI model buying through MCP `buy_agent` (`make llm-buyer-testnet`).
+Not built yet: MCP `list_agent` on testnet (returns `NOT_BUILT`), `accept_job`, a wallet login on the page, and a
+Playwright run against the deployed page (`make e2e`); their `make` targets say `not built yet`.
+The hosted page (https://near-transparent-agent-market-web.vercel.app/) has the in-page playground (the real contract core as wasm),
+the recorded testnet scenes with "Run and verify" (each transaction re-fetched from the chain) and "Read live".
 

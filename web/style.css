@@ -221,7 +221,7 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .status { padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--code-bg); }
 .status.listed { background: #fff3d1; color: #7a5600; }
 .status.sold { background: var(--accent-soft); color: var(--accent-ink); }
-.status.frozen { background: var(--bad-bg); color: var(--bad); }
+.status.frozen, .status.taken { background: var(--bad-bg); color: var(--bad); }
 .state h4 { margin: 16px 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .facts-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 12px 0 0; font-size: 14px; }
 .facts-grid dt { color: var(--muted); }

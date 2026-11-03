@@ -1,48 +1,42 @@
 # Agent Exit
 
-**Sell an AI agent with earnings a buyer can check on-chain and a handover that locks the seller out.** The handover is one NEAR transaction (keys swapped, ownership deed moved); the seller's payout and escrow are claimable afterwards.
+**Buy an AI agent with real earnings. The seller is locked out in one NEAR transaction.**
 
-**Live demo page:** https://near-transparent-agent-market-web.vercel.app/ (no wallet, no setup)
+- **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
+- **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
+
+![The demo page](docs/img/demo.png)
 
 ## Try it in 2 minutes (do X, see Y)
 
-The "Try it yourself" section runs the real contract state machine (`contracts/agent-core`) and the buyer's scan (`tools/scan`), compiled to wasm from this repo (`make playground-wasm`, `tools/playground`).
+The page's "Try it yourself" runs the contract's real state machine (`contracts/agent-core`) and the buyer's scan (`tools/scan`), compiled to wasm from this repo (`tools/playground`).
 
 | Do | See |
 |---|---|
-| Mission 1, "Pay your own agent 200" | `FLAGGED: the owner paid their own agent (not counted)`; counted revenue does not move |
-| Mission 1, "Pay from bot.alice.testnet 200" | flagged as the owner's sub-account |
-| Mission 2, hide a key, list, "Scan the agent" | `scan -> blocked (full_access_key_present)`; "Buy it" -> `SCAN_BLOCKED` |
-| Mission 2, "Buy without a clean scan", then "Use the hidden key" | `FROZEN`: the agent freezes and the 300.00 escrow goes back to the buyer |
-| Mission 3, list, scan, buy | `clean`, then one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out |
-| Mission 3, alice tries to withdraw, add a key, use her old key | `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
-| "The same story on NEAR testnet", open "Sell an agent, lock the seller out", press "Run and verify" | each stage opens in turn; the page fetches that transaction from NEAR testnet now (signer, method, outcome, the contract's `EVENT_JSON` logs) and marks it `confirmed on chain` or `differs from the recording` |
-| Add `?network=testnet` and press "Read live" | the live owner and keys of `translator.agentexit3.testnet` |
+| Mission 1: "Pay your own agent 200" | `FLAGGED: the owner paid their own agent (not counted)`; counted revenue does not move |
+| Mission 2: hide a key, list, "Scan the agent", "Buy it" | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
+| Mission 2: "Buy without a clean scan", then "Take the agent back" | the hidden key redeploys and the seller has the agent back: the scan is the defence |
+| Mission 3: list, scan, buy, then alice tries to get back in | one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
+| "The same story on NEAR testnet": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
 
-Offline check of the same missions: `cargo test -p playground` (5 tests).
+Offline: `cargo test -p playground`. Everything else: `make setup` once, then `make demo` (offline story) and `make web` (the page at http://127.0.0.1:8080).
 
-> **All money here is fake.** Payments use `xUSD-FAKE`, a test token with no
-> value that this repo deploys (`contracts/xusd`). Nothing runs on mainnet.
+## What is real, and what is not yet
 
-![The recorded demo page: break-in fails](docs/img/demo.png)
-
-| 60 scenarios | 19 of 20 attack families counted, all blocked | 1 transaction |
-|---|---|---|
-| replayed through the real contract code against checked-in goldens (`make verify`) | 0/50 false positives; a regression suite, not independent evidence | for the handover: old runner key deleted, buyer's added |
-
-```
-make setup     # once: fetch crates and npm packages (the only networked step)
-make demo      # offline story: a short summary here, full JSON in out/
-make web       # open http://127.0.0.1:8080 : six recorded steps, break-in first
-```
+| Real | Not yet |
+|---|---|
+| The contract runs on NEAR testnet, rebuilt bit for bit by `make build` (code hash `7K1Q5DWY…`); every scene below has NearBlocks links | Gate G6: a real NEAR AI Cloud signature checked on-chain (needs NEAR AI credit). Until then "Verified" uses a test key |
+| A real AI model (Claude Haiku) bought an agent through the MCP tools, for about $0.03 (`out/llm-buyer.json`), on offline fixtures | The same AI buy on testnet: built (`make llm-buyer-testnet`), not yet run |
+| Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale, all on testnet | Gate G2: the agent's Base wallet paying on Base Sepolia |
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
 - function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
-- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale and only the current runner key can make it sign;
+- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
+- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
 - NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
 
-Proof table: [`docs/PROOF.md`](docs/PROOF.md). Edge cases and attacks: [`docs/SCENARIOS.md`](docs/SCENARIOS.md).
+Every claim and its test: [`docs/PROOF.md`](docs/PROOF.md). Edge cases and attacks: [`docs/SCENARIOS.md`](docs/SCENARIOS.md). For AI agents: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt).
 
 ## One sale
 
@@ -63,12 +57,11 @@ sequenceDiagram
 
 ## Evidence
 
-- **Proven on a real node:** the `tests/sandbox` tests (key list before and after the buy, the old runner key and the deleted setup key failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node (near-sandbox) at commits `609b135` and `63d597c`. Rerun: `make test-sandbox`.
-- **Offline, every time:** 60 scenarios replayed through the real contract code against checked-in goldens (`make verify`), property tests, 81 MCP tests and 10 script tests. All offline results use a mocked runtime or JSON fixtures.
-- **Attack suite:** 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence. A9 (open Base authorization) is excluded from what is claimed until Base is live, and A5 (wrong code hash) checks against the reproducible-build hash in `contracts/res/SHA256SUMS` (agent_exit.wasm `5dc306a2…`, built in the pinned cargo-near Docker image; `make build` reproduces it). The suite was written by the same author as the rules.
-- **Found and fixed on a real node (A47).** A stress run on a local NEAR node (12d1ab7) bricked an agent at about 585 distinct payers: every call then trapped (`unreachable`) while loading state. The offline tests had not seen it because they use a mock runtime with no limits of a real node. The exact cause is unconfirmed (likely one allocation over 64 KiB while decoding the payer map); the fix removes every growable map from the state blob (payer and day rows are separate storage entries, so the blob stays the same size) and covered by the sandbox test `a47_thousand_long_payers_then_buy_and_views` (1,000 payers of 64 characters, then a buy and every view) plus offline regressions. A49 then made a payer row cost 0.024 NEAR (`storage_deposit`) so outsiders cannot make the agent pay for storage with free test tokens. This was found by our own run, not by an independent audit.
-- **Live on NEAR testnet** (links below): the six demo scenes and the key-handover gate ran on testnet on 2026-11-03 with the reproducible build (fresh world on `agentexit3.testnet`, including the STR-12 and STR-19 fixes); outputs in `out/scenes/`, `out/gates/`, `out/testnet/`.
-- **A real AI model bought an agent** (2026-11-03, `out/llm-buyer.json`): Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), listed both agents, rejected the cheat on its flagged earnings, scanned translator (clean), bought it inside its 1,000 limit and checked the old seller is locked out. 5 steps, 23,057 input and 883 output tokens (about $0.03, capped at 12 steps / 150k tokens). It did not scan the cheat; the backdoor catch is scene 4. On testnet, scene 6 is an agent account buying through the scripted client.
+- **Real node:** the `tests/sandbox` tests (key list before and after a buy, the old keys failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`).
+- **Offline, every run:** 60 scenarios through the real contract code against checked-in goldens (`make verify`), property tests, 81 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
+- **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers (every call trapped while loading state); the cause is unconfirmed (likely one allocation over 64 KiB). The fix keeps payer and day rows out of the state blob; covered by `a47_thousand_long_payers_then_buy_and_views` (1,000 payers, then a buy and every view). A payer row now costs 0.024 NEAR (`storage_deposit`).
+- **Live on NEAR testnet:** the six scenes and the key-handover gate, 2026-11-03, on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
+- **A real AI buyer:** Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), rejected the cheat on its flagged earnings, scanned translator, bought it inside its 1,000 limit and checked the old seller is locked out: 5 steps, about $0.03.
 
 ### Live on NEAR testnet
 
@@ -137,10 +130,10 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make attack` | A regression suite, not independent evidence: 200 seeded variants of 20 attack families (19 counted, 190 variants; A9 Base, 10 variants, is not counted until live; each counted family blocked by its rule) and 50 clean agents through the client scan, plus the contract's own refusals. Table on stderr, `out/attack.json` (`attack-report.v1`), with 0/50 false positives, and the "not caught by design" rows N1-N6. `N=`, `SEED=`, `CLEAN=` change the corpus. |
 | `make attack FIXTURE=fixtures/judge-attack.json` | Scan **your own** planted agent: edit the fixture (instructions inside it), rerun, see its verdict and findings in the `judge` section. As committed it is clean. |
 | `make scan FILE=fixtures/scan/cheat.json` | One scan report (`scan-report.v1`); exit 0 clean, 2 blocked, 3 inconclusive. The cheat agent is blocked for `full_access_key_present`. |
-| `make mcp-test` | The MCP server's tests offline (74 tests, then 10 script tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
+| `make mcp-test` | The MCP server's tests offline (81 tests, then 10 script tests: S14 agent buys agent, S15 resale, E29 refusals, E30 read-only without keys, never-mainnet, schemas, Skill), then the scripted run equals `tests/golden/agent-buys-agent.json`. |
 | `make llm-buyer-check` | One tiny authenticated chat call to NEAR AI Cloud: is `NEARAI_API_KEY` accepted and does the account have credit. Exit 2 on a missing key, 401 or 402, each with a clear message. Starts no MCP server. |
 | `make translator-serve` | A translator worker on `127.0.0.1:8787` (`PORT=`, `MAX_JOBS=`): translates through NEAR AI Cloud and returns NEAR AI's signature to pay with. Offline it serves a recorded fixture, labelled as such; real mode needs `AGENT_EXIT_NETWORK=testnet`, `NEARAI_API_KEY` and the agent account. **Loopback only: do not tunnel or expose it without adding authentication.** |
-| `make llm-buyer` | A real model (NEAR AI Cloud, else Anthropic) reads the Skill and buys through the MCP tools against the offline fixtures -> `out/llm-buyer.json`. Needs an API key in `~/.agent-exit.env`; exits 2 without one. The server, not the model, enforces `max_price`, `confirm` and the spend cap. Cost is capped: at most 12 model calls and 150,000 tokens per run (`--max-tokens`), well under $1 on the default Haiku-class model; tokens used are written to the output. **No real model transcript committed yet** (needs an API key). |
+| `make llm-buyer` | A real model (NEAR AI Cloud, else Anthropic) reads the Skill and buys through the MCP tools against the offline fixtures -> `out/llm-buyer.json`. Needs an API key in `~/.agent-exit.env`; exits 2 without one. The server, not the model, enforces `max_price`, `confirm` and the spend cap. Cost is capped: at most 12 model calls and 150,000 tokens per run (`--max-tokens`), well under $1 on the default Haiku-class model; tokens used are written to the output. A real run is committed: `out/llm-buyer.json` (Claude Haiku 4.5, about $0.03). `make llm-buyer-testnet` runs the same loop against testnet (built, not yet run). |
 | `make agent-buys-agent` | A scripted replay (no AI model decides anything): the `summarizer` agent, as an MCP client, lists agents, sees `cheat`'s earnings are fake, gets its buy refused (`SCAN_BLOCKED`), scans `translator` clean, buys it (`max_price` 1000, `confirm`), checks `alice` is locked out and lists the agent again. `out/agent-buys-agent.json` (`agent-buys-agent.v1`). |
 | `make mcp` | Start the MCP server on stdio. Offline by default; write tools need `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID` (`buy_agent` also `AGENT_EXIT_RUNNER_PK`). Config for Claude Code and Codex: [`AGENTS.md`](AGENTS.md). |
 | `make web` | The demo page at http://127.0.0.1:8080: the six demo steps (break-in fails, the business inside its limits, verified vs unverified earnings, a cheat caught, an honest sale, a scripted replay of an agent buying an agent, with a slot for the real AI buyer transcript), each with the contract's real error text or event JSON. Offline by default: it shows `web/data/demo.json`, **recorded from the contract code** by `make web-data` (reproducible). Each step also lists the same step from the NEAR testnet run of 2026-11-03 with NearBlocks links (`web/data/testnet.json`, from `out/scenes` by `make web-testnet-data`). With `?network=testnet`, a **Read live** button reads the two agents' current owner, status, treasury, access keys and code hash from testnet through a same-origin, read-only relay (`web/rpc-allow.mjs`: view queries only, `.testnet` accounts only; `web/api/rpc.mjs` on Vercel). Nothing is ever sent to the chain from the page. |
