@@ -11,6 +11,8 @@ import { connect, REPO } from "../src/client.js";
 import {
   AnthropicClient,
   checkBaseUrl,
+  keyFromPointer,
+  loadModelEnv,
   OpenAICompatClient,
   parseEnvFile,
   pickClient,
@@ -281,6 +283,25 @@ test("LB6 env file: only model settings are read; the key goes only to near.ai",
   assert.equal(pickClient({ ANTHROPIC_API_KEY: "kkkkkkkkkk" })?.provider, "anthropic");
   assert.equal(pickClient({ NEARAI_API_KEY: "kkkkkkkkkk", ANTHROPIC_API_KEY: "aaaaaaaaaa" })?.provider, "nearai");
   assert.throws(() => pickClient({ NEARAI_API_KEY: "kkkkkkkkkk", NEARAI_BASE_URL: "https://evil.example/v1" }));
+});
+
+test("LB14 ANTHROPIC_API_KEY_FROM: the key is read from the owner's other env file, CR and quotes stripped", async () => {
+  const { mkdtempSync, writeFileSync, chmodSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const d = mkdtempSync(join(tmpdir(), "lb14-"));
+  const other = join(d, "radar.env");
+  writeFileSync(other, 'OTHER=x\r\nCLAUDE_TOKEN="sk-test-123"\r\n');
+  const mine = join(d, "agent-exit.env");
+  writeFileSync(mine, `ANTHROPIC_API_KEY_FROM=${other}#CLAUDE_TOKEN\nAGENT_EXIT_ROOT_KEY=ed25519:secret\n`);
+  chmodSync(mine, 0o600);
+  const env = loadModelEnv({ AGENT_EXIT_ENV: mine });
+  assert.equal(env.ANTHROPIC_API_KEY, "sk-test-123");
+  assert.equal(pickClient(env, "anthropic")?.provider, "anthropic");
+  assert.equal(keyFromPointer(`${other}#MISSING`), undefined);
+  assert.equal(keyFromPointer(`${d}/nope.env#CLAUDE_TOKEN`), undefined);
+  assert.equal(keyFromPointer("no-hash"), undefined);
+  // An explicit ANTHROPIC_API_KEY wins over the pointer.
+  assert.equal(loadModelEnv({ AGENT_EXIT_ENV: mine, ANTHROPIC_API_KEY: "direct" }).ANTHROPIC_API_KEY, "direct");
 });
 
 test("LB5 no key: exit 2, 'needs NEARAI_API_KEY', nothing started", () => {

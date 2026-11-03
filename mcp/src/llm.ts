@@ -223,7 +223,29 @@ export function summarize(t: Transcript): Record<string, unknown> {
 
 /** Keys read from ~/.agent-exit.env: the model settings only. Chain keys and
  * relayer keys in the same file are never loaded into this process. */
-export const ENV_FILE_KEYS = ["NEARAI_API_KEY", "NEARAI_BASE_URL", "NEARAI_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"] as const;
+export const ENV_FILE_KEYS = ["NEARAI_API_KEY", "NEARAI_BASE_URL", "NEARAI_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_API_KEY_FROM"] as const;
+
+/** `ANTHROPIC_API_KEY_FROM=/path/to/.env#VAR`: take the Anthropic key from
+ * another env file (the owner keeps it in one place). Read at run time, never
+ * printed. Returns undefined when the file or the variable is missing. */
+export function keyFromPointer(pointer: string, read: (p: string) => string = (p) => readFileSync(p, "utf8")): string | undefined {
+  const i = pointer.lastIndexOf("#");
+  if (i <= 0) return undefined;
+  const [path, name] = [pointer.slice(0, i), pointer.slice(i + 1)];
+  let text: string;
+  try {
+    text = read(path);
+  } catch {
+    return undefined;
+  }
+  let v: string | undefined;
+  for (const line of text.split(/\r?\n/)) {
+    const l = line.trim().replace(/^export /, "");
+    const j = l.indexOf("=");
+    if (j > 0 && l.slice(0, j).trim() === name) v = l.slice(j + 1).trim().replace(/^(["'])(.*)\1$/, "$2");
+  }
+  return v || undefined;
+}
 
 export function parseEnvFile(text: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -264,6 +286,10 @@ export function loadModelEnv(env: NodeJS.ProcessEnv = process.env): Record<strin
   for (const k of ENV_FILE_KEYS) {
     const v = env[k] || file[k];
     if (v) out[k] = v;
+  }
+  if (!out.ANTHROPIC_API_KEY && out.ANTHROPIC_API_KEY_FROM) {
+    const v = keyFromPointer(out.ANTHROPIC_API_KEY_FROM);
+    if (v) out.ANTHROPIC_API_KEY = v;
   }
   return out;
 }
