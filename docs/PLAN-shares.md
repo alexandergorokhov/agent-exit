@@ -121,3 +121,7 @@ Alex (2026-11-03): "imagine the money is real and let's set up the security on i
 
 - An owner can route customers to another account with no meter. The escrow (T2) limits the damage to the 50% paid upfront. The meter shows the drop.
 - Testnet demo, fake money, not an offer. Shares of earnings may be securities in many countries.
+
+### Deploy
+
+Contract code changes, so the build is reproducible and the code hash is new. The locked agents can't be upgraded (that's the point), so the new code goes to **new agent accounts under agentexit3** (for example `translator2`, `summarizer2`). The old scenes stay valid. This may need a faucet top-up from Alex.
