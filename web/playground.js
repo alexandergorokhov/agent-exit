@@ -20,6 +20,7 @@ const WHO = {
   bob: { name: "bob", role: "buyer", cls: "bob" },
   customer: { name: "a customer", role: "customer", cls: "cust" },
   clock: { name: "time", role: "", cls: "clock" },
+  dave: { name: "dave", role: "investor", cls: "dave" },
 };
 
 // Every action: who does it, the button label, and what the contract does behind it.
@@ -43,6 +44,12 @@ const ACTIONS = {
   old_key: { who: "alice", label: "Use her old key", why: "The sale deleted that key from the account, so the NEAR node rejects any transaction signed with it before it reaches the contract." },
   hidden_key: { who: "alice", label: "Run the agent with the hidden key", why: "A second line of defence, not the main one: if the hidden key is ever used on the agent's own methods, the contract sees a key it never added, freezes the agent and returns the open escrow to the buyer. A careful seller would not do this; they would redeploy instead (see mission 2)." },
   wait: { who: "clock", label: "31 days pass", args: { days: 31 }, why: "finalize_earnout(): the window closed. The seller keeps what real payments released (at least the 20% floor); the rest goes back to the buyer." },
+  offer_share: { who: "alice", label: "Offer 20% of future earnings for 500", why: "offer_share(): alice sells a slice of every future payment for a year, not the whole agent. Open slices can never total more than 49%, and the terms are fixed once anyone buys." },
+  buy_share: { who: "dave", label: "Buy the 20% slice", why: "One ft_transfer_call with the terms dave saw (any change is refused). Half the price goes to alice now; the other half waits in escrow and reaches her only as dave gets paid, so she can't take the money and send customers elsewhere." },
+  pay_customer_inv: { op: "pay_customer", who: "customer", label: "A customer pays 25", why: "pay(): 20% of the gross payment is credited to dave inside the same call, before alice's share. alice never holds it, so she can't withdraw it." },
+  pay_self_inv: { op: "pay_self", who: "alice", label: "Pay your own agent 200 (fake revenue)", why: "The meter flags it and doesn't count it, and dave still gets 20%. Faking revenue costs the cheater real money." },
+  claim_share: { who: "dave", label: "Claim what the agent paid", why: "claim(): pays only the caller's own balance. The contract debits first and credits back if the transfer fails." },
+  end_share: { who: "clock", label: "A year passes; close the slice", why: "close_share(): anyone can call it after the end date. The escrow not yet released goes back to dave, and future payments go to the owner again." },
 };
 
 // Where each action lives in the real system. `code`: the Rust function the
@@ -52,25 +59,31 @@ const ACTIONS = {
 const REPO = "https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/";
 const CORE = "contracts/agent-core/src/lib.rs";
 const CODE = {
-  pay_customer: { code: [CORE, 1170, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
-  pay_verified: { code: [CORE, 1170, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet this needs NEAR AI credit (gate G6, not run yet)." },
-  pay_self: { code: [CORE, 1152, "pub fn flags_for("], near: "ft_transfer_call from the owner's own account", tx: null },
-  pay_sub: { code: [CORE, 1152, "pub fn flags_for("], near: "ft_transfer_call from bot.alice.testnet (a sub-account only alice can create)", tx: null },
+  pay_customer: { code: [CORE, 1204, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
+  pay_verified: { code: [CORE, 1204, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet this needs NEAR AI credit (gate G6, not run yet)." },
+  pay_self: { code: [CORE, 1186, "pub fn flags_for("], near: "ft_transfer_call from the owner's own account", tx: null },
+  pay_sub: { code: [CORE, 1186, "pub fn flags_for("], near: "ft_transfer_call from bot.alice.testnet (a sub-account only alice can create)", tx: null },
   plant_key: { code: null, near: "an AddKey action on the agent's account, signed by a full-access key: plain NEAR protocol, no contract involved", tx: "alice lists cheat at 500.00", note: "The cheat agent on testnet carries such a key." },
   remove_key: { code: null, near: "a DeleteKey action on the agent's account", tx: null },
-  toggle_upgrade: { code: ["tools/scan/src/lib.rs", 132, "pub const UPGRADE_WORDS"], near: "a different wasm deployed on the agent's account", tx: null },
-  list: { code: [CORE, 798, "pub fn list("], near: "agent.list_for_sale(price, code_hash), signed by the owner", tx: "alice lists translator at 1000.00" },
-  cancel: { code: [CORE, 841, "pub fn cancel_listing("], near: "agent.cancel_listing()", tx: null },
-  scan: { code: ["tools/scan/src/lib.rs", 345, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
-  buy: { code: [CORE, 859, "pub fn begin_buy("], near: "xusd.ft_transfer_call(agent, price, {listing_version, known_keys_hash, buyer key}) -> one key batch on the agent's account (DeleteKey seller, AddKey buyer) -> on_handover callback", tx: "bob buys translator (one ft_transfer_call)" },
-  buy_skip: { code: [CORE, 859, "pub fn begin_buy("], near: "the same ft_transfer_call, sent without the scan", tx: null },
-  withdraw: { code: [CORE, 1090, "pub fn withdraw("], near: "agent.withdraw(), signed by alice", tx: "alice: withdraw 1.00" },
-  relist: { code: [CORE, 798, "pub fn list("], near: "agent.list_for_sale(), signed by alice", tx: "alice: list_for_sale 1.00" },
-  set_key: { code: [CORE, 634, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
+  toggle_upgrade: { code: ["tools/scan/src/lib.rs", 144, "pub const UPGRADE_WORDS"], near: "a different wasm deployed on the agent's account", tx: null },
+  list: { code: [CORE, 832, "pub fn list("], near: "agent.list_for_sale(price, code_hash), signed by the owner", tx: "alice lists translator at 1000.00" },
+  cancel: { code: [CORE, 875, "pub fn cancel_listing("], near: "agent.cancel_listing()", tx: null },
+  scan: { code: ["tools/scan/src/lib.rs", 357, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
+  buy: { code: [CORE, 893, "pub fn begin_buy("], near: "xusd.ft_transfer_call(agent, price, {listing_version, known_keys_hash, buyer key}) -> one key batch on the agent's account (DeleteKey seller, AddKey buyer) -> on_handover callback", tx: "bob buys translator (one ft_transfer_call)" },
+  buy_skip: { code: [CORE, 893, "pub fn begin_buy("], near: "the same ft_transfer_call, sent without the scan", tx: null },
+  withdraw: { code: [CORE, 1124, "pub fn withdraw("], near: "agent.withdraw(), signed by alice", tx: "alice: withdraw 1.00" },
+  relist: { code: [CORE, 832, "pub fn list("], near: "agent.list_for_sale(), signed by alice", tx: "alice: list_for_sale 1.00" },
+  set_key: { code: [CORE, 668, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
   old_key: { code: null, near: "any transaction signed with the deleted key: the NEAR node refuses it (AccessKeyNotFound)", tx: "alice's old runner key: heartbeat" },
-  hidden_key: { code: [CORE, 1372, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
+  hidden_key: { code: [CORE, 1417, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
   hidden_redeploy: { code: null, near: "a transaction with DeployContract and DeleteKey actions signed by the hidden full-access key: plain NEAR protocol, no contract code runs", tx: null, note: "Listed in docs/NOT-CAUGHT.md as N4: the scan is the defence." },
-  wait: { code: [CORE, 1275, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
+  wait: { code: [CORE, 1320, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
+  offer_share: { code: [CORE, 1538, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
+  buy_share: { code: [CORE, 1602, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
+  pay_customer_inv: { code: [CORE, 1504, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
+  pay_self_inv: { code: [CORE, 1504, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
+  claim_share: { code: [CORE, 1109, "pub fn claim("], near: "agent.claim(), signed by dave", tx: null },
+  end_share: { code: [CORE, 1673, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
 };
 
 let testnetTxs = [];
@@ -118,6 +131,13 @@ const MISSIONS = [
     intro: "A clean sale. bob buys the agent, then alice tries every way back in.",
     steps: ["list", "scan", "buy", "withdraw", "set_key", "old_key", "pay_customer", "wait"],
     lesson: "One transaction moved the agent. Every way back in is refused, and alice still earns her escrow from real customers.",
+  },
+  {
+    id: "invest",
+    title: "4. Invest in the agent",
+    intro: "Instead of selling the whole agent, alice sells 20% of its future earnings. You are dave, the investor. The same meter that a buyer checks pays you.",
+    steps: ["offer_share", "buy_share", "pay_customer_inv", "pay_self_inv", "claim_share", "end_share"],
+    lesson: "dave was paid inside every payment, including alice's fake one, and alice could never touch his part. If the agent stops earning, the escrow comes back to him at the end.",
   },
 ];
 
@@ -218,6 +238,16 @@ function renderState() {
       el("dt", { text: "alice can claim" }), el("dd", { text: v.claimable.alice }),
       el("dt", { text: "bob can claim" }), el("dd", { text: v.claimable.bob })));
   }
+  if (v.shares.length || v.claimable.dave !== "0.00") {
+    const rows = v.shares.flatMap((o) => [
+      el("dt", { text: `Slice ${o.id}` }), el("dd", { text: `${o.pct}% of every payment, ${o.sold_pct}% sold, for ${o.price}` }),
+      ...o.holders.flatMap((h) => [
+        el("dt", { text: `${h.account.split(".")[0]} paid / earned` }), el("dd", { text: `${h.paid_in} / ${h.earned}` }),
+        el("dt", { text: "Escrow still held" }), el("dd", { text: h.escrow })]),
+    ]);
+    kids.push(el("h4", { text: "Investors" }), el("dl", { class: "facts-grid" }, rows,
+      el("dt", { text: "dave can claim" }), el("dd", { class: "dave-claim", text: v.claimable.dave })));
+  }
   document.getElementById("pg-state").replaceChildren(...kids);
 }
 
@@ -243,7 +273,7 @@ function renderMission() {
 }
 
 function renderFree() {
-  document.getElementById("free-actions").replaceChildren(...Object.keys(ACTIONS).map((k) => {
+  document.getElementById("free-actions").replaceChildren(...Object.keys(ACTIONS).filter((k) => !k.endsWith("_inv")).map((k) => {
     const b = el("button", { type: "button", class: "free-act", "data-action": k }, who(ACTIONS[k].who), ` ${ACTIONS[k].label}`);
     b.addEventListener("click", () => run(k));
     return b;

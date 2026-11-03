@@ -140,3 +140,49 @@ fn bad_action_is_an_error_not_a_panic() {
     let v: Value = serde_json::from_str(&handle(&mut w, r#"{"op":"steal"}"#)).unwrap();
     assert_eq!(v["ok"], false);
 }
+
+#[test]
+fn p4_invest_investor_paid_inside_every_payment() {
+    let mut w = World::new();
+    let v = run(&mut w, r#"{"op":"offer_share"}"#);
+    assert!(last(&v).contains("20% of every payment"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"buy_share"}"#);
+    assert!(
+        last(&v).contains("paid 500.00: 250.00 to alice.testnet now, 250.00 held in escrow"),
+        "{}",
+        last(&v)
+    );
+    let v = run(&mut w, r#"{"op":"pay_customer"}"#);
+    assert!(last(&v).contains("5.00 to investors"), "{}", last(&v));
+    assert_eq!(v["view"]["claimable"]["dave"], "5.00");
+    // The owner's own payment is flagged and still pays dave.
+    let v = run(&mut w, r#"{"op":"pay_self"}"#);
+    assert!(
+        last(&v).contains("FLAGGED") && last(&v).contains("40.00 to investors"),
+        "{}",
+        last(&v)
+    );
+    assert_eq!(v["view"]["claimable"]["dave"], "45.00");
+    assert_eq!(v["view"]["shares"][0]["holders"][0]["escrow"], "205.00");
+    // The owner cannot withdraw dave's part.
+    assert_eq!(v["view"]["solvent"], true);
+    let v = run(&mut w, r#"{"op":"claim_share"}"#);
+    assert!(last(&v).contains("45.00 sent to dave"));
+    // A year later the slice ends and dave gets the rest of his escrow back.
+    let v = run(&mut w, r#"{"op":"end_share"}"#);
+    assert!(
+        last(&v).contains("205.00 of unreleased escrow back to dave"),
+        "{}",
+        last(&v)
+    );
+    assert_eq!(v["view"]["claimable"]["dave"], "205.00");
+}
+
+#[test]
+fn p4b_no_shares_while_listed() {
+    let mut w = World::new();
+    run(&mut w, r#"{"op":"list"}"#);
+    let v = run(&mut w, r#"{"op":"offer_share"}"#);
+    assert_eq!(v["last"]["ok"], false);
+    assert!(last(&v).contains("AlreadyListed"));
+}

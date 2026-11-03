@@ -83,6 +83,21 @@ try {
         for (const t of texts) { assert.ok(feed.includes(t), `P: ${id}: missing "${t}"`); checks++; }
       }
       assert.match(await q.textContent("#pg-state"), /Owner\s*bob\.testnet/, "P3: bob owns the agent after the honest sale");
+      // P5: mission 4, invest: dave is paid inside every payment, even alice's fake one, and gets his escrow back.
+      {
+        const r = await q.locator('#pg-feed .feed-item[data-action="buy"]').first();
+        await r.locator("details.real summary").click();
+        await q.click('[data-mission="invest"]');
+        while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
+        assert.ok(await q.isVisible("#mission-lesson"), "P5: invest lesson shown");
+        const feed = await q.textContent("#pg-feed");
+        for (const t of ["250.00 held in escrow", "5.00 to investors", "FLAGGED", "40.00 to investors", "45.00 sent to dave", "205.00 of unreleased escrow back to dave"]) {
+          assert.ok(feed.includes(t), `P5: missing "${t}"`); checks++;
+        }
+        assert.equal((await q.textContent(".dave-claim")).trim(), "205.00", "P5: dave can claim his escrow back"); checks++;
+        await q.click('[data-mission="honest"]');
+        while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
+      }
       // "How this works for real": the honest buy links its code and the same call on testnet.
       const buy = q.locator('#pg-feed .feed-item[data-action="buy"]').first();
       await buy.locator("details.real summary").click();

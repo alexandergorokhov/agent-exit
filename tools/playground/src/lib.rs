@@ -21,6 +21,7 @@ use std::cell::RefCell;
 pub const AGENT: &str = "translator.testnet";
 pub const SELLER: &str = "alice.testnet";
 pub const BUYER: &str = "bob.testnet";
+pub const INVESTOR: &str = "dave.testnet";
 /// The runner key in the recorded world (fixtures/mcp/world.json).
 pub const SELLER_KEY: &str = "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi";
 pub const BUYER_KEY: &str = "ed25519:8NZ8qJvTgpBmhSUt6vAaRkPZAG3JVVwrE3D25Lczz6Z5";
@@ -55,17 +56,31 @@ enum Action {
     PlantKey,
     RemoveKey,
     ToggleUpgrade,
-    List { price: Option<u64> },
+    List {
+        price: Option<u64>,
+    },
     Cancel,
     Scan,
-    Buy { skip_scan: Option<bool> },
+    Buy {
+        skip_scan: Option<bool>,
+    },
     Withdraw,
     Relist,
     SetKey,
     OldKey,
     HiddenKey,
     HiddenRedeploy,
-    Wait { days: Option<u64> },
+    Wait {
+        days: Option<u64>,
+    },
+    /// Owner offers 20% of every future payment for a year at 500.
+    OfferShare,
+    /// dave buys the whole open slice, with the terms he saw.
+    BuyShare,
+    /// dave claims what the agent paid him.
+    ClaimShare,
+    /// A year passes; anyone closes the slice; dave gets his escrow back.
+    EndShare,
 }
 
 fn usd(a: u128) -> String {
@@ -146,6 +161,8 @@ impl World {
                 counted,
                 verified,
                 released,
+                to_investors,
+                share_released,
                 ..
             } => {
                 let mut s = if counted {
@@ -163,6 +180,18 @@ impl World {
                 };
                 for (_, seller, r) in released {
                     s.push_str(&format!("; {} of the escrow released to {seller}", usd(r)));
+                }
+                if to_investors > 0 {
+                    s.push_str(&format!(
+                        "; {} to investors, paid inside the same call",
+                        usd(to_investors)
+                    ));
+                }
+                for (seller, r) in share_released {
+                    s.push_str(&format!(
+                        " ({} of share escrow released to {seller})",
+                        usd(r)
+                    ));
                 }
                 s
             }
@@ -296,6 +325,60 @@ impl World {
                 self.note(BUYER, ok, text)
             }
             Action::Buy { skip_scan } => self.buy(skip_scan.unwrap_or(false)),
+            Action::OfferShare => {
+                let owner = self.m.owner.clone();
+                let end = self.now + 365 * DAY_NS;
+                match self.m.offer_share(&owner, 2_000, 500 * USD, end, self.now) {
+                    Ok(id) => self.note(
+                        &owner,
+                        true,
+                        format!(
+                            "offer_share(20% of every payment for 1 year, 500.00) -> slice {id}"
+                        ),
+                    ),
+                    Err(e) => self.note(&owner, false, format!("offer_share -> {e}")),
+                }
+            }
+            Action::BuyShare => {
+                let Some(o) = self.m.offers.iter().find(|o| o.sold_bps < o.bps).cloned() else {
+                    return self.note(
+                        INVESTOR,
+                        false,
+                        "buy_share -> nothing on offer (offer a slice first)".into(),
+                    );
+                };
+                let part = o.bps - o.sold_bps;
+                let cost = o.cost(part);
+                match self.m.buy_share(INVESTOR, cost, o.terms(), part, self.now) {
+                    Ok(c) => {
+                        let (now_part, esc) = agent_core::shares::split_cost(c);
+                        self.note(INVESTOR, true, format!(
+                            "buy_share({}%) -> paid {}: {} to {} now, {} held in escrow until dave is paid that much",
+                            part as f64 / 100.0, usd(c), usd(now_part), o.seller, usd(esc)))
+                    }
+                    Err(e) => self.note(INVESTOR, false, format!("buy_share -> {e}")),
+                }
+            }
+            Action::ClaimShare => match self.m.claim(INVESTOR) {
+                Ok(a) => self.note(INVESTOR, true, format!("claim -> {} sent to dave", usd(a))),
+                Err(e) => self.note(INVESTOR, false, format!("claim -> {e}")),
+            },
+            Action::EndShare => {
+                let Some(o) = self.m.offers.first().cloned() else {
+                    return self.note(INVESTOR, false, "close_share -> no slice".into());
+                };
+                if self.now < o.end {
+                    self.now = o.end;
+                }
+                match self.m.close_share(o.id, self.now) {
+                    Ok(r) => {
+                        let back: u128 = r.iter().map(|x| x.1).sum();
+                        self.note(INVESTOR, true, format!(
+                            "a year later: close_share -> slice ended, {} of unreleased escrow back to dave", usd(back)))
+                    }
+                    Err(e) => self.note(INVESTOR, false, format!("close_share -> {e}")),
+                }
+            }
             Action::Withdraw => match self.m.withdraw(s, USD, s) {
                 Ok(a) => self.note(s, true, format!("withdraw -> {} sent", usd(a))),
                 Err(e) => self.note(s, false, format!("withdraw -> {e}")),
@@ -469,7 +552,15 @@ impl World {
             "scan": self.scan,
             "sale": sale,
             "escrow_left": usd(self.m.escrow_left()),
-            "claimable": {"alice": usd(self.m.claimable_of(SELLER)), "bob": usd(self.m.claimable_of(BUYER))},
+            "claimable": {"alice": usd(self.m.claimable_of(SELLER)), "bob": usd(self.m.claimable_of(BUYER)),
+                          "dave": usd(self.m.claimable_of(INVESTOR))},
+            "shares": self.m.offers.iter().map(|o| json!({
+                "id": o.id, "pct": o.bps as f64 / 100.0, "price": usd(o.price), "sold_pct": o.sold_bps as f64 / 100.0,
+                "seller": o.seller, "escrow": usd(o.escrow()),
+                "holders": o.holders.iter().map(|h| json!({"account": h.account, "pct": h.bps as f64 / 100.0,
+                    "paid_in": usd(h.paid_in), "earned": usd(h.earned), "escrow": usd(h.escrow)})).collect::<Vec<_>>(),
+            })).collect::<Vec<_>>(),
+            "owner_free": usd(self.m.owner_free),
             "solvent": self.m.solvent(),
             "log": self.log,
         })

@@ -211,6 +211,7 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .who.bob { background: #e3edff; color: #1f4fbf; }
 .who.cust { background: #e6f6ee; color: #0d6b45; }
 .who.clock { background: #efeff1; color: #444; }
+.who.dave { background: #fff1d6; color: #8a5a00; }
 .lesson { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
 .free { margin-top: 16px; }
 .free-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
