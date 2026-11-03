@@ -52,7 +52,7 @@ First run: agent_exit.wasm `be4b898dd821a6a5ff555a26f472768b19de97d113b2f37624c7
 `make build-testnet` gives different hashes (local toolchain); deploy and
 scenes use contracts/res whenever SHA256SUMS exists.
 
-**Stale since 2026-11-02 (STR-12 fix):** `withdraw` is now refused while Listed.
+**Stale since 2026-11-02 (STR-12 and STR-19 fixes):** `withdraw` is now refused while Listed and at most 16 Base authorizations can wait for the signer.
 The committed contracts/res wasm and the hashes above are the pre-fix build, and so
 are the agents on testnet. Before the final redeploy: run `make build`, commit the new
 contracts/res + SHA256SUMS, update the hash in README/VIDEO/this file, re-run STR-S5
@@ -97,11 +97,17 @@ All outputs of the first run are committed in `out/testnet/`, `out/gates/` and `
 
 The scenes change the world (sales move the deed: after the first run
 translator belongs to summarizer and cheat is listed). There is no reset
-target yet (`make demo-setup` is not built). To replay from a clean world:
+way back on the same root: a sale cannot be undone. To replay from a clean world:
 
-1. Create and fund a new root (section 2) and set `AGENT_EXIT_ROOT` to it,
-   for example `agentexit2.testnet` (about 29 NEAR, plus 9 per G1 run).
-2. `make deploy-testnet`, then `make scenes`.
+1. Create and fund a new root (section 2), about 40 test NEAR, and put it in
+   `~/.agent-exit.env` as `AGENT_EXIT_ROOT` and `AGENT_EXIT_ROOT_KEY`
+   (for example `agentexit2.testnet`).
+2. `make demo-setup`. It refuses a root that already played the scenes
+   (FORCE=1 overrides), then runs `make build` (the root is compiled into the
+   wasm, so the hash changes), `deploy-testnet`, `gate-g1`, `scenes` and
+   `web-testnet-data`. `make demo-setup DRY_RUN=1` prints the plan offline.
+3. Update the README testnet links and the hash in README, docs/VIDEO.md and
+   section 3, then commit `out/`, `contracts/res` and `web/data`.
 
 Re-running `make scenes` on the old world is not a replay; check
 `get_status` of both agents first.
@@ -127,8 +133,8 @@ To show the recorded run without a chain: `make demo` and `make web`.
 
 - Security review by the owner (planned, not started).
 - G6 (NEAR AI credit) and G2 (Base Sepolia key) not run on testnet.
-- `make demo-setup` (reset the world) not built; replay needs a fresh root.
+- `make demo-setup` builds a fresh world on a new root (section 7); a played root cannot be reset.
 - Stress tests (STR-*) being written; run them on the sandbox when they land.
 - Judge review 3 (2026-11-02): 41/60. Next, by points per effort: real AI buyer run (needs an API key, +2.5), page testnet links (+1.5), video (+1.5), G6 with NEAR AI credit (+1.5), scene 4 re-run on the fixed scan, hosted page.
-- Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (contract: `withdraw` while Listed adds payout rows that `near_storage` does not reserve) is open, fix pending the owner's decision; it needs a new wasm and a fresh testnet deploy. STR-17 (MCP spend cap across processes) is fixed.
+- Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (`withdraw` while Listed) and STR-19 (unbounded pending Base authorizations) are fixed in the contract code; they need `make build` and a fresh testnet deploy (`make demo-setup`). STR-17 (MCP spend cap across processes) is fixed.
 - Real AI buyer: waiting for the Anthropic key; one capped run (12 steps, 150k tokens).

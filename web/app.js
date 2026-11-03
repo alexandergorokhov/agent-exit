@@ -73,7 +73,59 @@ let demo;
 let testnet = null;
 let current = 0;
 
-const TESTNET_LABEL = "testnet: run of 2026-11-02 (recorded; live reads not wired)";
+const TESTNET_LABEL = "testnet: run of 2026-11-02 (recorded; \"Read live\" checks the chain now)";
+
+// ----- live reads (testnet mode only, on click) ------------------------------
+// The CSP allows only 'self', so reads go through the read-only relay at
+// api/rpc (web/rpc-allow.mjs): view queries only, nothing is signed or sent.
+
+async function rpcQuery(params) {
+  const r = await fetch("api/rpc", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: "page", method: "query", params: { finality: "final", ...params } }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || j.error.name || JSON.stringify(j.error));
+  if (j.result && j.result.error) throw new Error(j.result.error);
+  return j.result;
+}
+
+async function viewCall(account, method) {
+  const res = await rpcQuery({ request_type: "call_function", account_id: account, method_name: method, args_base64: btoa("{}") });
+  return JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
+}
+
+async function readAgent(account) {
+  const [acct, keys, status] = await Promise.all([
+    rpcQuery({ request_type: "view_account", account_id: account }),
+    rpcQuery({ request_type: "view_access_key_list", account_id: account }),
+    viewCall(account, "get_status"),
+  ]);
+  const full = keys.keys.filter((k) => k.access_key.permission === "FullAccess").length;
+  return { account, code_hash: acct.code_hash, owner: status.owner, status: status.status, treasury: status.treasury, keys: keys.keys.length, full };
+}
+
+async function liveRead(out) {
+  const agents = ["translator", "cheat"].map((a) => `${a}.${testnet.root}`);
+  out.replaceChildren(el("p", { class: "muted", text: `Reading ${agents.join(" and ")} from NEAR testnet…` }));
+  try {
+    const rows = await Promise.all(agents.map(readAgent));
+    const same = (h) => h === testnet.agent_code_hash ? "same as the recorded run" : "differs from the recorded run (redeployed since)";
+    out.replaceChildren(
+      el("h3", { text: `Live from NEAR testnet, ${new Date().toISOString().slice(0, 19)}Z` }),
+      el("ul", { class: "find live" }, rows.map((r) => el("li", {},
+        el("code", { text: r.account }), ` owner ${r.owner}, ${r.status}, treasury ${r.treasury ?? "?"}; `,
+        `${r.keys} access keys, ${r.full} full-access; code hash `, el("code", { text: r.code_hash }), ` (${same(r.code_hash)})`))),
+      el("p", { class: "muted", text: "Read-only view calls through the page's relay. The cheat agent is expected to show a full-access key: that is what the buyer's scan blocks." }));
+  } catch (e) {
+    out.replaceChildren(el("p", { class: "err", text: `Live read failed: ${e && e.message ? e.message : e}` }));
+  }
+}
+
+function liveButton() {
+  const out = el("div", { id: "live" });
+  const b = el("button", { type: "button", id: "read-live", text: "Read live" });
+  b.addEventListener("click", async () => { b.disabled = true; await liveRead(out); b.disabled = false; });
+  return [b, out];
+}
 
 function testnetBlock(id) {
   const t = testnet && testnet.steps[id];
@@ -146,6 +198,7 @@ function renderMode() {
   if (!TESTNET_LIVE) {
     box.replaceChildren(
       el("span", { class: "pill warn", id: "testnet-label", text: TESTNET_LABEL }),
+      ...(testnet ? liveButton() : []),
       el("a", { href: "./", text: "back to offline" }));
     return;
   }
@@ -183,7 +236,8 @@ async function main() {
     const t = await fetch("data/testnet.json");
     if (t.ok) { const j = await t.json(); if (j.schema === "web-testnet.v1") testnet = j; }
   } catch { /* the testnet run is optional on the page */ }
-  document.getElementById("source").textContent = `Data: ${demo.source}${testnet ? `, plus the NEAR testnet run of ${testnet.run} (${testnet.root}, agent code hash ${testnet.agent_code_hash})` : ""}. All results are recorded; nothing is read live.`;
+  renderMode();
+  document.getElementById("source").textContent = `Data: ${demo.source}${testnet ? `, plus the NEAR testnet run of ${testnet.run} (${testnet.root}, agent code hash ${testnet.agent_code_hash})` : ""}. All results are recorded; in testnet mode \"Read live\" makes read-only view calls.`;
   document.getElementById("prev").addEventListener("click", () => go(current - 1));
   document.getElementById("next").addEventListener("click", () => go(current + 1));
   addEventListener("hashchange", () => go(fromHash(), false));

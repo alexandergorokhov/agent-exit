@@ -252,7 +252,6 @@ fn e35_help_marks_unbuilt_targets() {
     for t in [
         "attack-sandbox",
         "attack-testnet",
-        "demo-setup",
         "record",
         "web-deploy",
         "e2e",
@@ -266,7 +265,14 @@ fn e35_help_marks_unbuilt_targets() {
             "help line for {t}: {line}"
         );
     }
-    for t in ["demo", "verify", "attack", "web-test", "mcp-test"] {
+    for t in [
+        "demo",
+        "demo-setup",
+        "verify",
+        "attack",
+        "web-test",
+        "mcp-test",
+    ] {
         let line = help
             .lines()
             .find(|l| l.starts_with(&format!("{t}\t")))

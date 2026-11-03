@@ -153,11 +153,54 @@ try {
   // Testnet flag: labelled, offers login, never loaded unless asked.
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
-  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: run of 2026-11-02 (recorded; live reads not wired)");
+  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: run of 2026-11-02 (recorded; \"Read live\" checks the chain now)");
   assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;
   await p.close();
+
+  // L7: "Read live" goes only to the same-origin relay, which refuses anything but view queries.
+  {
+    const { refuse } = await import("../rpc-allow.mjs");
+    const q = (params) => ({ jsonrpc: "2.0", id: 1, method: "query", params: { finality: "final", ...params } });
+    assert.equal(refuse(q({ request_type: "view_account", account_id: "translator.agentexit.testnet" })), null);
+    assert.equal(refuse(q({ request_type: "call_function", account_id: "translator.agentexit.testnet", method_name: "get_status", args_base64: "e30=" })), null);
+    assert.ok(refuse({ jsonrpc: "2.0", id: 1, method: "broadcast_tx_commit", params: ["AAAA"] }), "L7: sending a tx is refused");
+    assert.ok(refuse(q({ request_type: "call_function", account_id: "translator.agentexit.testnet", method_name: "withdraw", args_base64: "e30=" })), "L7: non-view method refused");
+    assert.ok(refuse(q({ request_type: "view_account", account_id: "agentexit.near" })), "L7: mainnet account refused");
+    assert.ok(refuse(q({ request_type: "view_state", account_id: "translator.agentexit.testnet", prefix_base64: "" })), "L7: view_state refused");
+    const r = await fetch(`${base}api/rpc`, { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "send_tx", params: {} }) });
+    assert.equal(r.status, 400, "L7: local relay refuses a send");
+    checks += 7;
+
+    // Mocked chain: the browser renders what the relay returns.
+    const ctx = await browser.newContext({ viewport: { width: 375, height: 740 } });
+    const seenHosts = new Set();
+    await ctx.route("**/*", async (route) => {
+      const u = route.request().url();
+      seenHosts.add(new URL(u).host);
+      if (!u.startsWith(base)) return route.abort();
+      if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+      const b = JSON.parse(route.request().postData());
+      const acc = b.params.account_id;
+      const cheat = acc.startsWith("cheat.");
+      const result = b.params.request_type === "view_account" ? { code_hash: "DoqGZ6zxNvV549SaePhjXC1zr1gJdyNVzyB3qLcBTXBa" }
+        : b.params.request_type === "view_access_key_list" ? { keys: [{ access_key: { permission: "FullAccess" } }, { access_key: { permission: { FunctionCall: {} } } }].slice(cheat ? 0 : 1) }
+        : { result: [...new TextEncoder().encode(JSON.stringify({ owner: cheat ? "carol.agentexit.testnet" : "bob.agentexit.testnet", status: "Owned", treasury: "300.00" }))] };
+      return route.fulfill({ contentType: "application/json", body: JSON.stringify({ jsonrpc: "2.0", id: b.id, result }) });
+    });
+    const lp = await ctx.newPage();
+    lp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+    await lp.goto(`${base}?network=testnet`);
+    await lp.click("#read-live");
+    await lp.waitForSelector("#live h3");
+    const live = await lp.textContent("#live");
+    for (const want of ["translator.agentexit.testnet", "owner bob.agentexit.testnet", "1 access keys, 0 full-access", "2 access keys, 1 full-access", "same as the recorded run"]) { assert.ok(live.includes(want), `L7: live box lacks "${want}"`); checks++; }
+    await noHorizontalScroll(lp, "live box at 375px");
+    assert.deepEqual([...seenHosts], [new URL(base).host], "L7: the page contacts only its own origin");
+    checks++;
+    await ctx.close();
+  }
 
   assert.deepEqual(problems, [], "no console errors");
   console.log(`web-test: ${checks} checks passed (desktop + 375px, offline + testnet flag)`);

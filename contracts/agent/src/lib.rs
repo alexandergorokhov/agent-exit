@@ -999,6 +999,10 @@ impl AgentExit {
                     core::Error::ValidityTooLong => {
                         format!(": at most {} s", core::base::MAX_VALID_SECS)
                     }
+                    core::Error::TooManyPendingAuths => format!(
+                        ": {} Base authorizations wait for the signer",
+                        core::base::MAX_PENDING_AUTHS
+                    ),
                     _ => String::new(),
                 };
                 env::panic_str(&format!("{e}{detail}"))

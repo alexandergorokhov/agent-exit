@@ -68,7 +68,7 @@ web-data: ## Rewrite web/data/demo.json from the contract (review the diff!)
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo
 
 .PHONY: web
-web: ## Serve the demo page on http://127.0.0.1:8080 (offline, recorded; ?network=testnet shows the unwired testnet mode)
+web: ## Serve the demo page on http://127.0.0.1:8080 (offline, recorded; ?network=testnet adds read-only live reads)
 	@command -v node >/dev/null || { echo "node not installed: the page server needs Node >= 20" >&2; exit 1; }
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo -- --check
 	node web/serve.mjs $(WEB_PORT)
@@ -293,8 +293,21 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
 	@echo "Real testnet transactions (2026-11-02): README section 'Live on NEAR testnet' and the page's per-step testnet links. Not shown: a real AI model buying."
-demo-setup: ## (not built yet) [testnet] Reset demo agents
-	$(call not_built,demo-setup,M2 B3)
+demo-setup: ## [testnet] Fresh demo world on a NEW root: reproducible build, deploy, G1, scenes, page data [DRY_RUN=1] [FORCE=1]
+ifdef DRY_RUN
+	@$(PLAN) deploy && $(PLAN) g1 && $(PLAN) scenes
+else
+	@used=$$(sed -n 's/.*"root": *"\([^"]*\)".*/\1/p' out/testnet/deploy.json 2>/dev/null | head -1); \
+	if [ "$(TESTNET_ROOT)" = "$$used" ] && [ -z "$(FORCE)" ]; then \
+	  echo "demo-setup: $(TESTNET_ROOT) already holds a played world (out/testnet/deploy.json): sales moved its deeds." >&2; \
+	  echo "Put a new AGENT_EXIT_ROOT and AGENT_EXIT_ROOT_KEY in ~/.agent-exit.env (runbook section 2), or FORCE=1." >&2; exit 1; fi
+	$(MAKE) build
+	$(MAKE) deploy-testnet
+	$(MAKE) gate-g1
+	$(MAKE) scenes
+	$(MAKE) web-testnet-data
+	@echo "demo-setup: done on $(TESTNET_ROOT). Update the README testnet links from out/scenes, then commit out/ contracts/res web/data."
+endif
 record: ## (not built yet) [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
 web-deploy: ## (not built yet) [testnet] Vercel deploy

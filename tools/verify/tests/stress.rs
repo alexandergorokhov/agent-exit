@@ -1416,7 +1416,7 @@ fn str18_freeze_with_sixteen_open_earnouts() {
 /// per-request growth in the blob. The seller can do it only before listing
 /// (`pay_base` is refused while Listed), so the scan could count it.
 #[test]
-fn str19_pay_base_burst_grows_the_blob() {
+fn str19_pay_base_burst_is_capped() {
     let supplier = "0x00000000000000000000000000000000000000a1";
     let mut s = business_world();
     let mut l = demo_limits();
@@ -1426,9 +1426,10 @@ fn str19_pay_base_burst_grows_the_blob() {
     });
     s.by_1y(BOB).set_limits(l);
     let b0 = s.c.state_bytes();
+    let cap = agent_core::base::MAX_PENDING_AUTHS;
     let mut g_first = 0;
     let mut g_last = 0;
-    for i in 0..700u32 {
+    for i in 0..cap {
         let mut c = s.call(AGENT);
         c.signer_pk = key(BOB_RUNNER);
         c.gas = near_sdk::Gas::from_tgas(300);
@@ -1440,9 +1441,25 @@ fn str19_pay_base_burst_grows_the_blob() {
         g_last = g;
     }
     let b1 = s.c.state_bytes();
+    let mut refused = 0;
+    for _ in 0..700 {
+        let mut c = s.call(AGENT);
+        c.signer_pk = key(BOB_RUNNER);
+        c.gas = near_sdk::Gas::from_tgas(300);
+        s.env(&c);
+        let msg = panic_text(|| {
+            let _ = s.c.pay_base(supplier.into(), U128(1), None);
+        });
+        if msg.contains("TooManyPendingAuths") {
+            refused += 1;
+        }
+    }
+    let b2 = s.c.state_bytes();
     println!(
-        "STR-19 700 pay_base requests with no MPC answer: blob {b0} -> {b1} bytes ({} B each), pending {}, pay_base {} -> {} Tgas",
-        (b1 - b0) / 700, s.m().base.pending.len(), tg(g_first), tg(g_last)
+        "STR-19 {cap} pending then 700 more asked: {refused} refused; blob {b0} -> {b1} -> {b2} bytes, pay_base {} -> {} Tgas",
+        tg(g_first), tg(g_last)
     );
-    assert_eq!(s.m().base.pending.len(), 700);
+    assert_eq!(s.m().base.pending.len(), cap);
+    assert_eq!(refused, 700, "every request past the cap is refused");
+    assert_eq!(b2, b1, "refused requests leave the blob unchanged");
 }

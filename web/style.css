@@ -127,3 +127,7 @@ pre {
 
 /* Testnet run: refusals are the expected result here, so rows stay neutral. */
 .testnet .find li, .testnet .find li.warn { background: var(--code-bg); border-left-color: var(--line); color: inherit; }
+#live { flex-basis: 100%; }
+#live:empty { display: none; }
+#live h3 { margin: 6px 0; font-size: 15px; }
+#live .find li { background: var(--code-bg); border-left-color: var(--line); color: inherit; overflow-wrap: anywhere; }

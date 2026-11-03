@@ -45,6 +45,9 @@ pub const MAX_BASE_PAYEES: usize = 16;
 /// Signed authorizations kept for `get_base_wallet` (older ones drop off;
 /// `open_auth_until` keeps covering them).
 pub const KEEP_AUTHS: usize = 20;
+/// Base authorizations waiting for the MPC signer at once. Bounds the state
+/// blob and the gas every callback reserves (STR-19).
+pub const MAX_PENDING_AUTHS: usize = 16;
 
 /// The owner's Base limits. Default: nothing may be paid.
 #[derive(
@@ -269,6 +272,9 @@ impl<S: crate::Store + Default> crate::Machine<S> {
             return Err(Error::SpendingPaused);
         }
         let from = self.base.address.clone().ok_or(Error::BaseWalletNotSet)?;
+        if self.base.pending.len() >= MAX_PENDING_AUTHS {
+            return Err(Error::TooManyPendingAuths);
+        }
         if valid_secs == 0 || valid_secs > MAX_VALID_SECS {
             return Err(Error::ValidityTooLong);
         }

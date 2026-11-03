@@ -82,6 +82,9 @@ pub enum Error {
     ValidityTooLong,
     /// A runner payment or incoming payment outside the owner's limits.
     PolicyViolation(Policy),
+    /// `MAX_PENDING_AUTHS` Base authorizations are waiting for the MPC
+    /// signer; wait for a callback before asking again (STR-19).
+    TooManyPendingAuths,
 }
 
 impl core::fmt::Display for Error {
