@@ -222,6 +222,9 @@ TESTNET_ROOT ?= $(shell sed -n 's/^AGENT_EXIT_ROOT=//p' $(HOME)/.agent-exit.env 
 TESTNET_ROOT := $(if $(TESTNET_ROOT),$(TESTNET_ROOT),agentexit.testnet)
 TESTNET_RUN = cd tools/testnet && cargo run --quiet --release --locked --
 PLAN = cargo run --quiet --locked --offline -p testnet-plan --
+# Indirect on purpose: GNU make runs a recipe line that names $(MAKE) even
+# under `make -n`, which once sent a real deploy. Use DRY_RUN=1 to preview.
+SUBMAKE = $(MAKE)
 
 .PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes testnet-plan-test
 build-testnet: ## [testnet] Build both wasm with the testnet token, admin and MPC signer compiled in -> target/near-testnet
@@ -239,9 +242,12 @@ else
 	@if [ -f contracts/res/SHA256SUMS ]; then \
 	  echo "deploying the reproducible wasm in contracts/res (make build)"; \
 	  (cd contracts/res && sha256sum -c SHA256SUMS) && \
+	  built=$$(grep -a -o -E 'xusd\.[a-z0-9_-]+\.testnet' contracts/res/agent_exit.wasm | head -1); \
+	  if [ "$$built" != "xusd.$(TESTNET_ROOT)" ]; then \
+	    echo "deploy-testnet: contracts/res/agent_exit.wasm has $$built compiled in, not xusd.$(TESTNET_ROOT). Run make build first." >&2; exit 1; fi; \
 	  export AGENT_WASM=$(CURDIR)/contracts/res/agent_exit.wasm XUSD_WASM=$(CURDIR)/contracts/res/xusd.wasm && $(TESTNET_RUN) deploy; \
 	else \
-	  $(MAKE) build-testnet && $(TESTNET_RUN) deploy; \
+	  $(SUBMAKE) build-testnet && $(TESTNET_RUN) deploy; \
 	fi
 endif
 

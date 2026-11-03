@@ -127,6 +127,7 @@ To show the recorded run without a chain: `make demo` and `make web`.
 | scene 5 blocked `code_hash_mismatch` / `unexpected_method` | scan compared with target/near-testnet and did not list the ABI/NEP-330 exports | fixed in 98bde26 |
 | NEAR AI 401 | key pasted several times into a hidden prompt | paste once; check with a length-only test |
 | NEAR AI 402 `no_limit_configured` | account has no credit | add credit at cloud.near.ai, or skip G6 |
+| `make -n demo-setup` really deployed (2026-11-03, agentexit2) | GNU make runs recipe lines naming $(MAKE) even under -n; contracts/res was built for the old root | preview only with DRY_RUN=1; deploy-testnet now uses $(SUBMAKE) and refuses a wasm built for another root |
 | `near: command not found` in a new terminal | shell start interrupted (Ctrl+C) before nvm loaded | `source ~/.bashrc` |
 
 ## 9. Open items
