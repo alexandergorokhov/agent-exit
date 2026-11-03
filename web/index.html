@@ -44,6 +44,36 @@
       </div>
     </section>
 
+    <section id="backend" class="backend">
+      <h2>What runs where</h2>
+      <p class="muted">The page is a window onto a real system. The backend is NEAR itself: nothing of ours sits between a buyer and the contract (the page's only server code is a read-only relay for Read live).</p>
+      <div class="arch">
+        <div class="arch-box chain">
+          <h3>On NEAR (the backend)</h3>
+          <ul>
+            <li><b>The agent's own account</b>, e.g. <code>translator.agentexit3.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
+            <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
+            <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
+          </ul>
+        </div>
+        <div class="arch-box buyer">
+          <h3>On the buyer's side</h3>
+          <ul>
+            <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and blocks anything extra.</li>
+            <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
+          </ul>
+        </div>
+        <div class="arch-box page">
+          <h3>In this page</h3>
+          <ul>
+            <li><b>Try it yourself</b> runs the contract's own state machine and the scan, compiled from the same Rust into WebAssembly. It is the code the deployed contract is built from, not a mock-up. The contract only adds NEAR input and output around it: key batches, token transfers, events.</li>
+            <li><b>The testnet section</b> shows the deployed contract's real transactions, and Read live queries the chain now.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="muted small">Under each result in the playground, open <b>How this works for real</b> to see the Rust function that ran, the NEAR call it corresponds to, and the same call on testnet when one was recorded.</p>
+    </section>
+
     <section id="play" class="play">
       <div class="play-head">
         <h2>Try it yourself</h2>

@@ -83,10 +83,30 @@ try {
         for (const t of texts) { assert.ok(feed.includes(t), `P: ${id}: missing "${t}"`); checks++; }
       }
       assert.match(await q.textContent("#pg-state"), /Owner\s*bob\.testnet/, "P3: bob owns the agent after the honest sale");
+      // "How this works for real": the honest buy links its code and the same call on testnet.
+      const buy = q.locator('#pg-feed .feed-item[data-action="buy"]').first();
+      await buy.locator("details.real summary").click();
+      assert.ok((await buy.locator('a[href*="contracts/agent-core/src/lib.rs#L"]').count()) === 1, "P: buy links the Rust function");
+      assert.ok((await buy.locator('a[href^="https://testnet.nearblocks.io/txns/"]').count()) === 1, "P: buy links the same call on testnet");
+      checks += 2;
       await noHorizontalScroll(q, `playground at ${vp.width}px`);
       await q.close();
     }
     checks += 1;
+  }
+
+  // P4: every code link in the playground points at the function it names.
+  {
+    const src = readFileSync(new URL("../playground.js", import.meta.url), "utf8");
+    const re = /code: \[(?:"([^"]+)"|CORE), (\d+), "([^"]+)"\]/g;
+    let m, n = 0;
+    while ((m = re.exec(src))) {
+      const line = readFileSync(new URL(`../../${m[1] || "contracts/agent-core/src/lib.rs"}`, import.meta.url), "utf8").split("\n")[Number(m[2]) - 1] || "";
+      assert.ok(line.includes(m[3]), `P4: ${m[1] || "core"}:${m[2]} is not "${m[3]}": ${line.trim()}`);
+      n++;
+    }
+    assert.ok(n >= 10, `P4: ${n} code links checked`);
+    checks += n;
   }
 
   // S23: copy matches the evidence.

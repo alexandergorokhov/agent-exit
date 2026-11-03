@@ -44,6 +44,57 @@ const ACTIONS = {
   wait: { who: "clock", label: "31 days pass", args: { days: 31 }, why: "finalize_earnout(): the window closed. The seller keeps what real payments released (at least the 20% floor); the rest goes back to the buyer." },
 };
 
+// Where each action lives in the real system. `code`: the Rust function the
+// wasm ran (file, line, signature start; the smoke test checks the line).
+// `near`: what it is on NEAR. `tx`: the label of the same call in the
+// recorded testnet run (data/testnet.json), linked to NearBlocks.
+const REPO = "https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/";
+const CORE = "contracts/agent-core/src/lib.rs";
+const CODE = {
+  pay_customer: { code: [CORE, 1170, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
+  pay_verified: { code: [CORE, 1170, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet this needs NEAR AI credit (gate G6, not run yet)." },
+  pay_self: { code: [CORE, 1152, "pub fn flags_for("], near: "ft_transfer_call from the owner's own account", tx: null },
+  pay_sub: { code: [CORE, 1152, "pub fn flags_for("], near: "ft_transfer_call from bot.alice.testnet (a sub-account only alice can create)", tx: null },
+  plant_key: { code: null, near: "an AddKey action on the agent's account, signed by a full-access key: plain NEAR protocol, no contract involved", tx: "alice lists cheat at 500.00", note: "The cheat agent on testnet carries such a key." },
+  remove_key: { code: null, near: "a DeleteKey action on the agent's account", tx: null },
+  toggle_upgrade: { code: ["tools/scan/src/lib.rs", 132, "pub const UPGRADE_WORDS"], near: "a different wasm deployed on the agent's account", tx: null },
+  list: { code: [CORE, 798, "pub fn list("], near: "agent.list_for_sale(price, code_hash), signed by the owner", tx: "alice lists translator at 1000.00" },
+  cancel: { code: [CORE, 841, "pub fn cancel_listing("], near: "agent.cancel_listing()", tx: null },
+  scan: { code: ["tools/scan/src/lib.rs", 345, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
+  buy: { code: [CORE, 859, "pub fn begin_buy("], near: "xusd.ft_transfer_call(agent, price, {listing_version, known_keys_hash, buyer key}) -> one key batch on the agent's account (DeleteKey seller, AddKey buyer) -> on_handover callback", tx: "bob buys translator (one ft_transfer_call)" },
+  buy_skip: { code: [CORE, 859, "pub fn begin_buy("], near: "the same ft_transfer_call, sent without the scan", tx: null },
+  withdraw: { code: [CORE, 1090, "pub fn withdraw("], near: "agent.withdraw(), signed by alice", tx: "alice: withdraw 1.00" },
+  relist: { code: [CORE, 798, "pub fn list("], near: "agent.list_for_sale(), signed by alice", tx: "alice: list_for_sale 1.00" },
+  set_key: { code: [CORE, 634, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
+  old_key: { code: null, near: "any transaction signed with the deleted key: the NEAR node refuses it (AccessKeyNotFound)", tx: "alice's old runner key: heartbeat" },
+  hidden_key: { code: [CORE, 1372, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
+  wait: { code: [CORE, 1275, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
+};
+
+let testnetTxs = [];
+
+function realBlock(key, request, last) {
+  const c = CODE[key];
+  const rows = [];
+  if (c.code) {
+    const [file, line] = c.code;
+    rows.push(el("li", {}, el("span", { class: "rk", text: "Code that ran" }),
+      el("a", { href: `${REPO}${file}#L${line}`, target: "_blank", rel: "noopener noreferrer", text: `${file}:${line}` })));
+  }
+  rows.push(el("li", {}, el("span", { class: "rk", text: "On NEAR" }), el("span", { text: c.near })));
+  const t = c.tx && testnetTxs.find((x) => x.label === c.tx);
+  if (t) {
+    rows.push(el("li", {}, el("span", { class: "rk", text: "Same call on testnet" }),
+      t.explorer ? el("a", { href: t.explorer, target: "_blank", rel: "noopener noreferrer", text: `${t.label} (NearBlocks)` })
+        : el("span", { text: `${t.label}: ${t.error || "refused"} (rejected before a transaction exists)` })));
+  }
+  if (c.note) rows.push(el("li", {}, el("span", { class: "rk", text: "Note" }), el("span", { text: c.note })));
+  return el("details", { class: "real" }, el("summary", { text: "How this works for real" }),
+    el("ul", { class: "real-rows" }, rows),
+    el("p", { class: "rk", text: "Raw call into the wasm, and its answer" }),
+    el("pre", { text: `${JSON.stringify(request)}\n-> ${JSON.stringify(last)}` }));
+}
+
 const MISSIONS = [
   {
     id: "fake",
@@ -90,20 +141,22 @@ function who(k) {
   return el("span", { class: `who ${w.cls}` }, w.name, w.role ? el("small", { text: ` ${w.role}` }) : null);
 }
 
-function feedItem(key, last) {
+function feedItem(key, last, request) {
   const a = ACTIONS[key];
   return el("li", { class: `feed-item ${last.ok ? "ok" : "no"}`, "data-action": key },
     el("div", { class: "feed-head" }, who(a.who), el("b", { text: a.label })),
     el("p", { class: "result", text: last.text }),
-    el("p", { class: "behind" }, el("span", { class: "behind-label", text: "Behind the scenes: " }), (!last.ok && a.whyNo) || a.why));
+    el("p", { class: "behind" }, el("span", { class: "behind-label", text: "Behind the scenes: " }), (!last.ok && a.whyNo) || a.why),
+    realBlock(key, request, last));
 }
 
 function run(key) {
   const a = ACTIONS[key];
-  const last = call({ op: a.op || key, ...(a.args || {}) });
+  const request = { op: a.op || key, ...(a.args || {}) };
+  const last = call(request);
   done.add(key);
   const feed = document.getElementById("pg-feed");
-  feed.prepend(feedItem(key, last));
+  feed.prepend(feedItem(key, last, request));
   renderState();
   renderMission();
 }
@@ -200,6 +253,10 @@ async function main() {
   if (!res.ok) throw new Error(`playground.wasm: HTTP ${res.status}`);
   const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), {});
   wasm = instance.exports;
+  try {
+    const t = await (await fetch("data/testnet.json")).json();
+    testnetTxs = Object.values(t.steps).flatMap((x) => x.txs);
+  } catch { /* the testnet links are optional */ }
   call({ op: "view" });
   renderState();
   renderMission();
