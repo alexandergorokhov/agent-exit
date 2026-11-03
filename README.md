@@ -2,6 +2,8 @@
 
 **Buy an AI agent with real earnings. The seller is locked out in one NEAR transaction.**
 
+The same checked earnings meter also pays investors: buy a share of an agent's future earnings, paid inside every payment. Fake revenue pays them too. It works for any on-chain business account, not only AI agents.
+
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
 - **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
 
@@ -17,6 +19,7 @@ The page's "Try it yourself" runs the contract's real state machine (`contracts/
 | Mission 2: hide a key, list, "Scan the agent", "Buy it" | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
 | Mission 2: "Buy without a clean scan", then "Take the agent back" | the hidden key redeploys and the seller has the agent back: the scan is the defence |
 | Mission 3: list, scan, buy, then alice tries to get back in | one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
+| Mission 4: offer 20%, "Buy the 20% slice", a customer pays, alice pays herself | dave gets `5.00 to investors` and `40.00 to investors` inside the same calls; alice can't withdraw his part; a year later `205.00 of unreleased escrow back to dave` |
 | "The same story on NEAR testnet": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
 
 Offline: `cargo test -p playground`. Everything else: `make setup` once, then `make demo` (offline story) and `make web` (the page at http://127.0.0.1:8080).
@@ -28,6 +31,7 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 | The contract runs on NEAR testnet, rebuilt bit for bit by `make build` (code hash `7K1Q5DWY…`); every scene below has NearBlocks links | Gate G6: a real NEAR AI Cloud signature checked on-chain (needs NEAR AI credit). Until then "Verified" uses a test key |
 | A real AI model (Claude Haiku) bought an agent through the MCP tools, for about $0.03 (`out/llm-buyer.json`), on offline fixtures | The same AI buy on testnet: built (`make llm-buyer-testnet`), not yet run |
 | Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale, all on testnet | Gate G2: the agent's Base wallet paying on Base Sepolia |
+| Shares of future earnings: contract, scan disclosure, 19 rule tests and a property test of conservation ([`docs/PLAN-shares.md`](docs/PLAN-shares.md), threats T1-T17) | Shares on testnet: built (`make scene-8`), not yet run. Testnet demo with fake money; not an offer of securities |
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;

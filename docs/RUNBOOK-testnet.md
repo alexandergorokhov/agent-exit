@@ -154,3 +154,22 @@ The MCP server signs as `carol.<root>` with `~/.agent-exit/keys/carol.key`
 results, never a key. The session cap is 1,000 xUSD-FAKE. Pass: cheat
 scanned and not bought, translator bought, old owner locked out, buy tx
 link in `testnet.txs`.
+
+## 11. Invest: shares on testnet (scene 8)
+
+The locked agents (translator, cheat) keep their old code by design, so
+shares run on a new agent account, `translator2.<root>`, with the new build.
+
+| Step | Command | Cost |
+|---|---|---|
+| 0 | Root holds at least 10 NEAR (translator2 9 + dave 0.5); faucet if not | test NEAR |
+| 1 | `git pull && make build-testnet` (the shares build) | |
+| 2 | Optional, for verified jobs: NEAR AI credit ($1 is enough) and a spend limit on the key; then `make llm-buyer-check` must pass | under $0.01 real |
+| 3 | `make scene-8 DRY_RUN=1`, then `make scene-8` | test NEAR + fake xUSD |
+| 4 | Commit `out/scenes/scene-8.json` | |
+
+Pass: `check.exactly_20_percent` true and dave's xUSD balance rose after
+the claim. `check.verified_jobs` is 5 with NEAR AI credit, 0 without (the
+jobs then pay as unverified, and the page says so). If NEAR AI answers
+with an unknown model, set `NEARAI_MODEL` in `~/.agent-exit.env` to a model
+from `https://cloud-api.near.ai/v1/model/list`.
