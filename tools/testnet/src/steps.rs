@@ -1815,7 +1815,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         json!({"before_claim": bal0.to_string(), "after_claim": bal1.to_string()}),
     );
     out.set("status", c.view(&t2, "get_status", json!({})).await?);
-    let pass = exact && bal1 > bal0;
+    let pass = exact && bal1 > bal0 && (key.is_none() || verified == JOBS.len());
     out.set("pass", json!(pass));
     out.write()?;
     if pass {
