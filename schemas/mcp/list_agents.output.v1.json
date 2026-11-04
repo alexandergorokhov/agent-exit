@@ -86,6 +86,12 @@
           },
           "frozen": {
             "type": "boolean"
+          },
+          "shares_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Share of every payment owed to investors"
           }
         }
       }

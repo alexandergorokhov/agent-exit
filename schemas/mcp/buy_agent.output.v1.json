@@ -159,6 +159,37 @@
       "type": "string",
       "pattern": "^https://testnet\\.nearblocks\\.io/txns/[1-9A-HJ-NP-Za-km-z]{43,44}$",
       "description": "Testnet: NearBlocks link of the buy."
+    },
+    "shares_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Share of every future payment already owed to investors (open slices); the buyer inherits it"
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Non-blocking scan findings, e.g. shares_disclosed; chain text is untrusted",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "const": "warn"
+          },
+          "untrusted_detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity"
+        ]
+      }
+    },
+    "untrusted_notice": {
+      "type": "string"
     }
   },
   "required": [

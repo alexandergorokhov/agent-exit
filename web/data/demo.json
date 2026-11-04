@@ -943,6 +943,7 @@
                 "agent": "cheat.testnet",
                 "owner": "alice.testnet",
                 "status": "Listed",
+                "shares_pct": 0,
                 "listing_version": 1,
                 "price": "500.00",
                 "gross": "500.00",
@@ -955,6 +956,7 @@
                 "agent": "translator.testnet",
                 "owner": "alice.testnet",
                 "status": "Listed",
+                "shares_pct": 0,
                 "listing_version": 1,
                 "price": "1000.00",
                 "gross": "500.00",
@@ -1245,7 +1247,9 @@
             ],
             "owner_after": "summarizer.testnet",
             "session_spent": "1000.00",
-            "recorded": true
+            "recorded": true,
+            "shares_pct": 0,
+            "warnings": []
           }
         },
         {

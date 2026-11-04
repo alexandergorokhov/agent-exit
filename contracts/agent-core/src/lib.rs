@@ -1565,7 +1565,15 @@ impl<S: Store + Default> Machine<S> {
             return Err(Error::BadShareTerms);
         }
         // Ended slices stop counting once closed; until then they count.
-        if self.offers.len() >= shares::MAX_OPEN_OFFERS {
+        // Only this owner's own slices count, so slices inherited from a
+        // seller cannot use up a buyer's slots (review 2 M1).
+        if self
+            .offers
+            .iter()
+            .filter(|o| o.seller == self.owner)
+            .count()
+            >= shares::MAX_OPEN_OFFERS
+        {
             return Err(Error::TooManyOffers);
         }
         if self.shares_bps() as u32 + bps as u32 > shares::MAX_SHARES_BPS as u32 {
@@ -1707,7 +1715,11 @@ impl<S: Store + Default> Machine<S> {
     fn trim_unsold_offers(&mut self) {
         self.offers.retain(|o| o.sold_bps > 0);
         for o in self.offers.iter_mut() {
-            o.bps = o.sold_bps;
+            if o.bps != o.sold_bps {
+                // Keep the price true to what was sold (review 2 L1).
+                o.price = o.holders.iter().map(|h| h.paid_in).sum();
+                o.bps = o.sold_bps;
+            }
         }
     }
 

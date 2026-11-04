@@ -1555,10 +1555,17 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     println!("scene-8");
     let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
     let agent_hash = sha256_b58(&agent_wasm);
-    let t2 = c.id("translator2");
+    // Locked agents cannot be upgraded: each new build goes to a new agent.
+    let name = env
+        .get("INVEST_AGENT")
+        .filter(|n| !n.is_empty())
+        .cloned()
+        .unwrap_or_else(|| "translator3".to_string());
+    let n = name.as_str();
+    let t2 = c.id(n);
 
     println!("  accounts");
-    for (name, milli) in [("translator2", 9_000u32), ("dave", 500)] {
+    for (name, milli) in [(n, 9_000u32), ("dave", 500)] {
         let id = c.id(name);
         if !c.exists(&id).await {
             let t = c
@@ -1568,7 +1575,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
             ok(&t)?;
         }
     }
-    for (name, want) in [("dave", 1_000 * USD), ("translator2", 0)] {
+    for (name, want) in [("dave", 1_000 * USD), (n, 0)] {
         let id = c.id(name);
         let registered = c
             .view(
@@ -1598,15 +1605,15 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         ok(&t)?;
     }
 
-    println!("  deploy translator2");
+    println!("  deploy {n}");
     if c.code(&t2).await.map(|(h, _)| h).ok().as_deref() != Some(agent_hash.as_str()) {
         let mpc_pk = c.view(MPC_SIGNER, "public_key", json!({})).await?;
         let root_pk = base_wallet::parse_near_secp_pk(mpc_pk.as_str().unwrap_or_default())?;
         let base = base_wallet::derive_address(&root_pk, &t2, agent_core::base::BASE_PATH);
         let t = c
             .deploy(
-                "deploy translator2 (shares build)",
-                &c.acct("translator2")?,
+                &format!("deploy {n} (shares build)"),
+                &c.acct(n)?,
                 agent_wasm.clone(),
                 json!({"owner_id": c.id("alice"), "base_address": base}),
             )
@@ -1617,12 +1624,12 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     out.set("code_hash", json!(agent_hash));
     let st = c.view(&t2, "get_status", json!({})).await?;
     if st.get("shares_bps").is_none() {
-        return Err("translator2 runs a build without shares: run make build (rewrites contracts/res) first".into());
+        return Err(format!("{n} runs a build without shares: run make build (rewrites contracts/res) first"));
     }
 
     println!("  runner key + lock");
     let alice = c.acct("alice")?;
-    let sk = c.keys.get_or_create("translator2-alice-runner")?;
+    let sk = c.keys.get_or_create(&format!("{n}-alice-runner"))?;
     let pk = sk.public_key().to_string();
     if !st["known_keys"]
         .as_array()
@@ -1630,7 +1637,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     {
         let t = c
             .call(
-                "translator2: alice sets her runner key",
+                &format!("{n}: alice sets her runner key"),
                 &alice,
                 &t2,
                 "set_runner_key",
@@ -1642,10 +1649,10 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let tr = c.acct("translator2")?;
+    let tr = c.acct(n)?;
     if c.keys(&t2).await?.iter().any(|k| k.public_key == tr.pk) {
         let t = c
-            .delete_key("translator2: delete setup key", &tr, &tr.pk.clone())
+            .delete_key(&format!("{n}: delete setup key"), &tr, &tr.pk.clone())
             .await?;
         out.tx(&t);
         ok(&t)?;
@@ -1657,7 +1664,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         let end = now_ns() + 365 * agent_core::DAY_NS;
         let t = c
             .call(
-                "alice offers 20% of translator2's earnings for a year at 500.00",
+                &format!("alice offers 20% of {n}'s earnings for a year at 500.00"),
                 &alice,
                 &t2,
                 "offer_share",
@@ -1683,7 +1690,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     );
     if report.blocks() {
         return Err(format!(
-            "dave's scan of translator2: {} {:?}",
+            "dave's scan of {n}: {} {:?}",
             report.verdict,
             report.codes()
         ));
@@ -1760,7 +1767,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         }
         let t = c
             .call(
-                &format!("{payer} pays translator2 10.00 for a translation"),
+                &format!("{payer} pays {n} 10.00 for a translation"),
                 &c.acct(payer)?,
                 &c.id("xusd"),
                 "ft_transfer_call",
@@ -1783,7 +1790,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     println!("  flagged payment");
     let t = c
         .call(
-            "x.alice (the owner's sub-account) pays translator2 20.00",
+            &format!("x.alice (the owner's sub-account) pays {n} 20.00"),
             &c.acct("x.alice")?,
             &c.id("xusd"),
             "ft_transfer_call",

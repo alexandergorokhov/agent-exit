@@ -22,6 +22,8 @@ import {
   type ModelClient,
 } from "../src/llm.js";
 import { RUNNER_PK } from "./helpers.js";
+// A path that never exists, even where /nonexistent does (review 2 L7).
+const NO_ENV_FILE = `${process.env.TMPDIR ?? "/tmp"}/agent-exit-no-env-${process.pid}-${Date.now()}/agent-exit.env`;
 
 const SECRET = "nearai-key-0123456789abcdef";
 const toolDefs = [{ name: "scan_agent", description: "scan", inputSchema: { type: "object" } }];
@@ -162,7 +164,7 @@ test("LB11 a key pasted several times is detected without printing it", () => {
   assert.equal(repeatedKey(""), null);
   const key = "sk-live-0123456789abcdef";
   const r = spawnSync(process.execPath, [join(REPO, "mcp", "dist", "scripts", "llm-buyer.js"), "--check"], {
-    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: "/nonexistent", NEARAI_API_KEY: key.repeat(3), NEARAI_BASE_URL: "https://127.0.0.1:1/v1" },
+    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: NO_ENV_FILE, NEARAI_API_KEY: key.repeat(3), NEARAI_BASE_URL: "https://127.0.0.1:1/v1" },
     encoding: "utf8",
   });
   assert.match(r.stderr, /NEARAI_API_KEY is one string of 24 characters repeated 3 times/);
@@ -183,7 +185,7 @@ test("LB12 llm-buyer --check makes one tiny authenticated chat call; 401/402 get
   await assert.rejects(new OpenAICompatClient(SECRET, "m", undefined, jsonFetch(401, "x")).ping!(), /key rejected/);
   // the script with no key: exit 2, nothing started
   const none = spawnSync(process.execPath, [join(REPO, "mcp", "dist", "scripts", "llm-buyer.js"), "--check"], {
-    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: "/nonexistent" },
+    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: NO_ENV_FILE },
     encoding: "utf8",
   });
   assert.equal(none.status, 2);

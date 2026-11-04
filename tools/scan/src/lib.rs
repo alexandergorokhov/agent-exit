@@ -677,14 +677,28 @@ pub fn scan(i: &ScanInput) -> Report {
             .iter()
             .map(|o| o["holders"].as_array().map_or(0, Vec::len))
             .sum();
+        // Review 2 M1: say what the buyer cannot do while the slices run.
+        let last_end = l
+            .shares
+            .iter()
+            .filter_map(|o| {
+                o["end"]
+                    .as_str()
+                    .and_then(|e| e.parse::<u64>().ok())
+                    .or_else(|| o["end"].as_u64())
+            })
+            .max()
+            .unwrap_or(0);
+        let days = last_end.saturating_sub(i.now_ns) / 86_400_000_000_000;
         f.push(Finding {
             code: "shares_disclosed".into(),
             severity: "warn".into(),
             detail: format!(
-                "{}% of every future payment goes to investors ({} slice(s), {} holder(s)); the buyer inherits this until each slice ends",
+                "{}% of every future payment goes to investors ({} slice(s), {} holder(s)); the buyer inherits this, and cannot raise the price floor, for up to {} more day(s)",
                 l.shares_bps as f64 / 100.0,
                 l.shares.len(),
-                holders
+                holders,
+                days
             ),
         });
     }

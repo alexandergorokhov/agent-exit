@@ -141,7 +141,9 @@ Where the code differs from the plan above, the code wins:
 | T14 | No sandbox test with a transfer failure between buy, pay and claim yet (not built) |
 | T15 | No `pay()` gas stress test with 16 holders yet (not built); `pay()` only credits balances |
 | T17 | The admin's signer list is **not** read by the scan. "Verified" proves a NEAR AI inference happened for that payer, job and amount; it does not prove the payer is an independent customer (see NOT-CAUGHT N7) |
-| MCP | `buy_agent` refuses an agent with more than `AGENT_EXIT_MAX_SHARES_BPS` (default 25%) of earnings pledged (review H2); the scan input carries the slices so `shares_disclosed` shows |
+| Slots | `MAX_OPEN_OFFERS` counts only the current owner's own slices; inherited sold slices stay, shown at the price actually paid (review 2) |
+| Deed moves | Every deed move trims unsold slices, including a transfer to the owner's own second account (documented, not prevented) |
+| MCP | `buy_agent` refuses an agent with more than `AGENT_EXIT_MAX_SHARES_BPS` (default 25%) of earnings pledged (review H2); otherwise the result carries `shares_pct` and the `shares_disclosed` warning, and `list_agents` shows `shares_pct` (review 2 M2) |
 
 ## Cold judge 8 (on this plan): 41/60 if built (was 38)
 

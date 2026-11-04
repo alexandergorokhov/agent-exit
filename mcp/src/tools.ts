@@ -301,6 +301,8 @@ export class Tools {
         owner: v.status.owner,
         // Chain text: only a known status reaches the model (review L2).
         status: STATUSES.has(String(v.status.status)) ? v.status.status : "Unknown",
+        // Share of every payment owed to investors (SH7, review 2 M2).
+        shares_pct: Number(v.status.shares_bps ?? 0) / 100,
         listing_version: v.status.listing_version,
         price: v.listing ? usd(v.listing.price) : null,
         gross: usd(e.gross),
@@ -453,6 +455,8 @@ export class Tools {
         untrusted_notice: UNTRUSTED_NOTICE,
       });
     }
+    // Review 2 M2: warnings (shares, sub-accounts) go back with the result.
+    const warnings = findings(r).filter((f) => f.severity === "warn");
     const { known_keys_hash } = r.buy_args;
     const listing_version: number = quoted.listing_version;
     // On a real node an allowance failure shows only as InvalidTransaction({}):
@@ -463,7 +467,12 @@ export class Tools {
     // report sent: false. A failed read or check becomes post_read_error.
     try {
       const after = await this.backend.agent(agent);
-      const body = this.buyBody(agent, buyer, out, listing_version, known_keys_hash, t, after.status.owner);
+      const body = {
+        ...this.buyBody(agent, buyer, out, listing_version, known_keys_hash, t, after.status.owner),
+        shares_pct: Number(quoted.shares_bps ?? 0) / 100,
+        warnings,
+        ...(warnings.length ? { untrusted_notice: UNTRUSTED_NOTICE } : {}),
+      };
       if (!this.schemas.validateOutput.buy_agent(body)) throw new Error("buy_agent output does not match its schema");
       return body;
     } catch (e) {

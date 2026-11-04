@@ -26,6 +26,8 @@ import {
   type ToolCall,
 } from "../src/llm.js";
 import { RUNNER_PK } from "./helpers.js";
+// A path that never exists, even where /nonexistent does (review 2 L7).
+const NO_ENV_FILE = `${process.env.TMPDIR ?? "/tmp"}/agent-exit-no-env-${process.pid}-${Date.now()}/agent-exit.env`;
 
 async function server(cap = "1000") {
   const s = await connect({
@@ -316,7 +318,7 @@ test("LB14 ANTHROPIC_API_KEY_FROM: the key is read from the owner's other env fi
 
 test("LB5 no key: exit 2, 'needs NEARAI_API_KEY', nothing started", () => {
   const r = spawnSync(process.execPath, [join(REPO, "mcp", "dist", "scripts", "llm-buyer.js"), "--out", "/nonexistent-dir/never.json"], {
-    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: "/nonexistent" },
+    env: { PATH: process.env.PATH, AGENT_EXIT_ENV: NO_ENV_FILE },
     encoding: "utf8",
   });
   assert.equal(r.status, 2, r.stderr);

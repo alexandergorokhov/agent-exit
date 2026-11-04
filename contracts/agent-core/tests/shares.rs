@@ -458,3 +458,35 @@ fn m1_price_floor_frozen_once_offered() {
     l.price_floor = 1_000 * USD;
     assert_eq!(m.set_limits("alice", l), Err(Error::SharesOpen));
 }
+
+/// Review 2 M1 and L1: slices inherited from a seller do not use up the
+/// buyer's slots, and a trimmed slice shows the price actually paid.
+#[test]
+fn inherited_slices_leave_the_buyer_his_slots() {
+    let mut m = agent();
+    for _ in 0..2 {
+        let id = m
+            .offer_share("alice", 1_000, 100 * USD, T0 + 2 * YEAR - DAY_NS, T0)
+            .unwrap();
+        let t = m.offer(id).unwrap().terms();
+        m.buy_share("mule", 100 * USD, t, 100, T0).unwrap();
+    }
+    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    let h = m.known_keys_hash();
+    let v = m.listing_version;
+    let plan = m
+        .begin_buy("bob", 1_000 * USD, v, &h, BOB_PK, true, T0)
+        .unwrap();
+    m.finish_buy(plan.sale_id, true, T0).unwrap();
+    assert_eq!(m.shares_bps(), 200);
+    assert_eq!(m.offer(1).unwrap().price, 10 * USD);
+    for _ in 0..2 {
+        m.offer_share("bob", 500, 50 * USD, T0 + YEAR, T0).unwrap();
+    }
+    assert_eq!(
+        m.offer_share("bob", 500, 50 * USD, T0 + YEAR, T0),
+        Err(Error::TooManyOffers)
+    );
+    conserved(&m);
+}

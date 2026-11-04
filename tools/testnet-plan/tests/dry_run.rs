@@ -52,13 +52,13 @@ fn dry_run_without_an_env_file_prints_the_plan() {
         ("scene-7", "AI buyer setup"),
         ("scene-8", "invest"),
     ] {
-        let (ok, out, _) = run("/nonexistent/agent-exit.env", &[cmd]);
+        let (ok, out, _) = run(&missing(), &[cmd]);
         assert!(ok, "{cmd}");
         assert!(out.starts_with("DRY RUN"), "{out}");
         assert!(out.contains(want), "{cmd}: {out}");
         assert!(out.contains("No env file found"));
     }
-    let (ok, out, _) = run("/nonexistent", &["scenes", "--json"]);
+    let (ok, out, _) = run(&missing(), &["scenes", "--json"]);
     assert!(ok);
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(v["schema"], "testnet-plan.v1");
@@ -137,4 +137,13 @@ fn lean_funding_still_keeps_agents_solvent() {
         total <= 30_000,
         "deploy needs {total} mNEAR; keep it under 30 NEAR"
     );
+}
+
+/// A path that never exists, even in containers where `/nonexistent` does.
+fn missing() -> String {
+    std::env::temp_dir()
+        .join(format!("agent-exit-no-env-{}", std::process::id()))
+        .join("agent-exit.env")
+        .to_string_lossy()
+        .into_owned()
 }

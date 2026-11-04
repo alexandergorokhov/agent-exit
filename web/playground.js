@@ -79,11 +79,11 @@ const CODE = {
   hidden_redeploy: { code: null, near: "a transaction with DeployContract and DeleteKey actions signed by the hidden full-access key: plain NEAR protocol, no contract code runs", tx: null, note: "Listed in docs/NOT-CAUGHT.md as N4: the scan is the defence." },
   wait: { code: [CORE, 1322, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
   offer_share: { code: [CORE, 1544, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
-  buy_share: { code: [CORE, 1608, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
+  buy_share: { code: [CORE, 1616, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
   pay_customer_inv: { code: [CORE, 1505, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
   pay_self_inv: { code: [CORE, 1505, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
   claim_share: { code: [CORE, 1110, "pub fn claim("], near: "agent.claim(), signed by dave", tx: null },
-  end_share: { code: [CORE, 1679, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
+  end_share: { code: [CORE, 1687, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
 };
 
 let testnetTxs = [];

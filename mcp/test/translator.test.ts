@@ -13,6 +13,8 @@ import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { REPO } from "./helpers.js";
 import { FixtureTranslator, JobError, NearAiTranslator, parseJob, startServer, type Translator } from "../src/translator.js";
+// A path that never exists, even where /nonexistent does (review 2 L7).
+const NO_ENV_FILE = `${process.env.TMPDIR ?? "/tmp"}/agent-exit-no-env-${process.pid}-${Date.now()}/agent-exit.env`;
 
 const sha = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
 const KEY = "nearai-key-0123456789abcdef";
@@ -207,7 +209,7 @@ test("TR4 the HTTP server: loopback only, POST /job, health, size and job limits
 test("TR5 start-up: offline by default; real mode needs testnet, a key and the agent account; exit 2 otherwise", () => {
   const script = join(REPO, "mcp", "dist", "scripts", "translator-serve.js");
   const run = (env: Record<string, string>) =>
-    spawnSync(process.execPath, [script, "--port", "0", "--check"], { env: { PATH: process.env.PATH, AGENT_EXIT_ENV: "/nonexistent", ...env }, encoding: "utf8" });
+    spawnSync(process.execPath, [script, "--port", "0", "--check"], { env: { PATH: process.env.PATH, AGENT_EXIT_ENV: NO_ENV_FILE, ...env }, encoding: "utf8" });
   const off = run({});
   assert.equal(off.status, 0, off.stderr);
   assert.match(off.stderr, /mode offline.*recorded fixture.*not NEAR AI/i);
