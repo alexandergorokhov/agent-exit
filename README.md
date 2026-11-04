@@ -26,12 +26,13 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 
 ## What is real, and what is not yet
 
-| Real | Not yet |
+| Real (on NEAR testnet, with NearBlocks links) | Not yet |
 |---|---|
-| The contract runs on NEAR testnet, rebuilt bit for bit by `make build` (code hash `7K1Q5DWY…` from commit `3d331ae`); every scene below has NearBlocks links | Gate G6 passed 2026-11-04: a real NEAR AI Cloud signature (DeepSeek V4.1 Flash, TEE signer `0xfe00…337e`) checked by the contract, payment marked verified ([tx](https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83), `out/gates/g6.json`). The offline tests still use a labelled test key |
-| A real AI model (Claude Haiku) bought an agent through the MCP tools, for about $0.03 (`out/llm-buyer.json`), on offline fixtures | The same AI buy ran on testnet 2026-11-04: Claude Haiku scanned both agents, refused the cheat, bought the translator and checked the seller was locked out, for about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) |
-| Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale, all on testnet | Gate G2: the agent's Base wallet paying on Base Sepolia |
-| Shares of future earnings: contract, scan disclosure, 22 core rule tests, 5 contract tests, MCP refusal and warning checks, and a property test of conservation, after two adversarial reviews ([`docs/PLAN-shares.md`](docs/PLAN-shares.md), threats T1-T17) | Shares on testnet ran 2026-11-04 on `translator3`, built from the reviewed code (code hash `6mssWw3U…`, commit `462caf3`; scene 8, `out/scenes/scene-8.json`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/9z7E59zkDQhHS6rPMnPjWqG8kzZjtwmDiDio3dPcZXdV)), 5 customers paid 10 each for real NEAR AI translations, each signature verified by the contract ("L'agent a été vendu en une seule transaction.", [a verified job](https://testnet.nearblocks.io/txns/GhRLiVFikW6XZjCgdy9m8BTH7HnkGuepkug3ghvkDmRw)); the owner's sub-account paid 20, was flagged, still paid dave and released no escrow; dave got exactly 14.00 = 20% of 70 ([claim](https://testnet.nearblocks.io/txns/CmExt4qML4tMqN24DZbmkjTZPLSQ6z8KsvjnbzsRDjmB)). Fake money; not an offer of securities |
+| The contract, rebuilt bit for bit by `make build`: the six scenes on `7K1Q5DWY…` (commit `3d331ae`), shares on `6mssWw3U…` (commit `462caf3`, after two adversarial reviews) | Gate G2: the agent's Base wallet paying on Base Sepolia |
+| Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale | A wallet buy button on the page (the page only reads the chain) |
+| Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83)) | MCP tools for shares (`list_offers`, `buy_share`, `portfolio`) |
+| A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) | Real users and real money: everything is `xUSD-FAKE` |
+| Shares of future earnings (scene 8, `translator3`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/9z7E59zkDQhHS6rPMnPjWqG8kzZjtwmDiDio3dPcZXdV)), 5 customers paid for real NEAR AI translations, each verified ([a job](https://testnet.nearblocks.io/txns/GhRLiVFikW6XZjCgdy9m8BTH7HnkGuepkug3ghvkDmRw)); the owner's sub-account paid too, was flagged and released no escrow; dave got exactly 20% ([claim](https://testnet.nearblocks.io/txns/CmExt4qML4tMqN24DZbmkjTZPLSQ6z8KsvjnbzsRDjmB)) | An external security audit (not an offer of securities; testnet demo) |
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
@@ -62,9 +63,9 @@ sequenceDiagram
 ## Evidence
 
 - **Real node:** the `tests/sandbox` tests (key list before and after a buy, the old keys failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`).
-- **Offline, every run:** 60 scenarios through the real contract code against checked-in goldens (`make verify`), property tests, 86 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
+- **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 86 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
 - **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers (every call trapped while loading state); the cause is unconfirmed (likely one allocation over 64 KiB). The fix keeps payer and day rows out of the state blob; covered by `a47_thousand_long_payers_then_buy_and_views` (1,000 payers, then a buy and every view). A payer row now costs 0.024 NEAR (`storage_deposit`).
-- **Live on NEAR testnet:** the six scenes and the key-handover gate, 2026-11-03, on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
+- **Live on NEAR testnet:** the six scenes and the key-handover gate (2026-11-03), then gate G6, scene 8 (shares) and the AI buyer (2026-11-04), on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
 - **A real AI buyer:** Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), rejected the cheat on its flagged earnings, scanned translator, bought it inside its 1,000 limit and checked the old seller is locked out: 5 steps, about $0.03.
 
 ### Live on NEAR testnet
@@ -127,7 +128,7 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 
 | Do | See |
 |---|---|
-| `make demo` | The offline story in one command: the verify replay (60 scenarios, both goldens), the scripted agent-buys-agent replay, then how to open the page. Faster than `make verify` (no cargo test run). |
+| `make demo` | The offline story in one command: the verify replay (73 checks, both goldens), the scripted agent-buys-agent replay, then how to open the page. Faster than `make verify` (no cargo test run). |
 | `make verify` | Unit + property tests pass, then the fixed world replays through the real contract code and `out/verify.json` equals `tests/golden/verify.json`, and the attack report equals `tests/golden/attack.json` (`... output equals ...` lines on stderr). About 1 min warm, longer on a cold build; offline. |
 | `cargo run -q -p verify` | A PASS/FAIL table, one row per scenario id (S*, E*, A*). |
 | `cargo run -q -p verify -- --json` | The same as JSON (`verify-output.v1`). |
@@ -253,8 +254,9 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 - The scan's published code hash is the reproducible build's
   (`contracts/res/SHA256SUMS`, built in the pinned cargo-near Docker image);
   the testnet agents run exactly that code.
-- NEAR Verified signatures in this repo are made with local test keys. The
-  NEAR AI Cloud signer address is set by the registry admin (not by the
+- The offline tests sign NEAR Verified payments with labelled local test
+  keys; on testnet, gate G6 and scene 8 used real NEAR AI Cloud signatures.
+  The NEAR AI Cloud signer address is set by the registry admin (not by the
   seller, who could otherwise allowlist their own key) and is checked
   against the real service on the owner's machine.
 - If a payout's own callback (`on_transfer_out`) fails after the token
@@ -281,13 +283,13 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 - The MCP server's offline mode replays recorded contract results; a buy or
   listing that was not recorded is refused (`OFFLINE_NO_RECORDING`), never
   made up. Testnet mode reads two RPC providers and refuses any mainnet URL
-  or account; it has not run from this build box (no NEAR RPC access).
+  or account; it ran on testnet on 2026-11-04 (`out/llm-buyer-testnet.json`).
 - Known issues from security review 2, not fixed yet: the deed can be
   sent to the agent's own account (after which it can never move again),
   there is no `nft_mint` event at init, and `nft_approve` neither charges
   storage nor refunds extra deposit (L3). The testnet scan reads the code
   hash, method list and status from one provider only, at possibly
-  different blocks, with `open_auth_until` fixed at 0 and no sub-account
+  different blocks, with `open_auth_until` fixed at 0 (the contract still refuses a buy while one is open) and no sub-account
   list (L6). A NEAR Verified badge shows that whoever made the NEAR AI
   request named that payer and amount; that can be the seller, so it does
   not prove a real customer (L7). The test token's faucet registers

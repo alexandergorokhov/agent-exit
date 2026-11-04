@@ -36,7 +36,7 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 | Shares of future earnings: an owner sells up to 49% of every future payment; investors are paid inside `pay()` from the gross payment, half the price waits in escrow and is released only by counted payments, unsold slices close when the agent changes hands, and buy_agent refuses agents with more than 25% pledged | offline: 22 core tests (`contracts/agent-core/tests/shares.rs`), a conservation property test over random offer/buy/pay/claim/close/sell sequences, 5 contract tests, MCP SB1-SB2, playground mission 4; testnet: scene 8 (`out/scenes/scene-8.json`) | SH1-SH11, T1-T17, review-adversarial-1/2 |
 
 Run on NEAR testnet on 2026-11-03 (root `agentexit3.testnet`) (outputs in `out/`, links in the README's
-"Live on NEAR testnet"): the deploy, gate G1 and the six scenes. Not run:
+"Live on NEAR testnet"): the deploy, gate G1 and the six scenes; on 2026-11-04 gate G6, scene 8 (shares, on `translator3`) and the AI buyer. Not run:
 G2 (needs a Base Sepolia key). Ran on testnet 2026-11-04 and passed: an AI model (Claude Haiku) buying through MCP `buy_agent` (`make llm-buyer-testnet`, `out/llm-buyer-testnet.json`). Gate G6 passed the same day: a real NEAR AI Cloud signature verified by the contract (`out/gates/g6.json`).
 Not built yet: MCP `list_agent` on testnet (returns `NOT_BUILT`), `accept_job`, a wallet login on the page, and a
 Playwright run against the deployed page (`make e2e`); their `make` targets say `not built yet`.

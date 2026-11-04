@@ -31,6 +31,37 @@ for (const [id, n] of Object.entries(STEP_SCENE)) {
     })),
   };
 }
+// Gate G6: a real NEAR AI Cloud signature checked by the contract.
+if (existsSync("out/gates/g6.json")) {
+  const g = JSON.parse(readFileSync("out/gates/g6.json", "utf8"));
+  out.steps["nearai-check"] = {
+    scene: "G6",
+    pass: g.pass === true,
+    what: "NEAR AI Cloud answers a customer's request inside its TEE and signs model:sha256(request):sha256(response). The registry admin adds the published signing address; the customer pays with the signature; the contract recovers the signer with ecrecover and marks the payment verified.",
+    scan: null,
+    txs: (g.txs || []).map((t) => ({
+      label: t.label, ok: t.ok === true, error: short(t.error), explorer: t.explorer || null,
+      tx: t.tx || null, by: t.by || null, receiver: t.receiver || null, method: t.method || null,
+      events: (t.events || []).map((e) => e.event),
+    })),
+  };
+}
+// A real AI model (Claude Haiku) buying through the MCP server on testnet.
+if (existsSync("out/llm-buyer-testnet.json")) {
+  const l = JSON.parse(readFileSync("out/llm-buyer-testnet.json", "utf8"));
+  const sm = l.summary || {};
+  const root = (l.testnet && l.testnet.root) || "agentexit3.testnet";
+  out.steps["ai-buyer"] = {
+    scene: "AI",
+    pass: sm.pass === true,
+    what: `${(l.models_reported || [l.model_requested])[0]} read the Agent Exit skill and used the MCP tools on testnet: its scan of cheat said ${(sm.scanned_cheat || []).join(", ")}, so it did not buy it; translator scanned ${(sm.scanned_translator || []).join(", ")} and it bought it, then checked the seller is locked out (${sm.seller_locked_out ? "yes" : "no"}). ${sm.steps} model steps, ${l.usage ? l.usage.total_tokens : "?"} tokens. The server, not the model, holds the key and enforces max_price, confirm and the spend cap.`,
+    scan: null,
+    txs: ((l.testnet && l.testnet.txs) || []).filter((t) => t.tx_hash).map((t) => ({
+      label: `the AI's ${t.tool}: ${l.buyer} pays for translator (one ft_transfer_call)`, ok: t.ok === true, error: null,
+      explorer: t.explorer || null, tx: t.tx_hash, by: l.buyer, receiver: `xusd.${root}`, method: "ft_transfer_call", events: [],
+    })),
+  };
+}
 const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out/testnet/deploy.json", "utf8")) : {};
 out.root = dep.root || null;
 out.agent_code_hash = dep.agent_code_hash || null;

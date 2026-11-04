@@ -525,6 +525,62 @@
           ]
         }
       ]
+    },
+    "nearai-check": {
+      "scene": "G6",
+      "pass": true,
+      "what": "NEAR AI Cloud answers a customer's request inside its TEE and signs model:sha256(request):sha256(response). The registry admin adds the published signing address; the customer pays with the signature; the contract recovers the signer with ecrecover and marks the payment verified.",
+      "scan": null,
+      "txs": [
+        {
+          "label": "registry admin: add_signer",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
+          "tx": "A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
+          "by": "agentexit3.testnet",
+          "receiver": "translator.agentexit3.testnet",
+          "method": "add_signer",
+          "events": [
+            "signer_added"
+          ]
+        },
+        {
+          "label": "p1 pays (at least the price floor) with the NEAR AI proof",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
+          "tx": "4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
+          "by": "p1.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "payment",
+            "split",
+            "earnout_release"
+          ]
+        }
+      ]
+    },
+    "ai-buyer": {
+      "scene": "AI",
+      "pass": true,
+      "what": "claude-haiku-4-5-20251001 read the Agent Exit skill and used the MCP tools on testnet: its scan of cheat said blocked, so it did not buy it; translator scanned clean and it bought it, then checked the seller is locked out (yes). 5 model steps, 26051 tokens. The server, not the model, holds the key and enforces max_price, confirm and the spend cap.",
+      "scan": null,
+      "txs": [
+        {
+          "label": "the AI's buy_agent: carol.agentexit3.testnet pays for translator (one ft_transfer_call)",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn",
+          "tx": "6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn",
+          "by": "carol.agentexit3.testnet",
+          "receiver": "xusd.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": []
+        }
+      ]
     }
   },
   "run": "2026-11-04",

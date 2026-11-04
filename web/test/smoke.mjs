@@ -304,6 +304,11 @@ try {
       vp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
       await vp.goto(base);
       await vp.waitForSelector('#scenarios[data-ready="1"]');
+      // V4: the live shares payout, the NEAR AI check and the AI buy are runnable too.
+      for (const id of ["invest", "nearai", "aibuyer"]) {
+        assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), 1, `V4: scenario ${id} is listed`);
+      }
+      checks++;
       for (const id of ["sale", "cheat"]) {
         await vp.click(`[data-scenario="${id}"] > summary`);
         await vp.click(`[data-run="${id}"]`);

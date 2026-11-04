@@ -26,6 +26,12 @@ const SCENARIOS = [
     intro: "bob, the new owner, sets a daily spending cap. Customers pay the agent; the agent pays a supplier; an over-cap payment is refused." },
   { id: "agent", title: "An AI agent buys an agent", steps: ["agent-buys-agent"],
     intro: "summarizer, itself an agent account, scans translator and buys it from bob through the same contract." },
+  { id: "invest", title: "Invest in an agent: 20% of its earnings", steps: ["invest"],
+    intro: "alice offers 20% of translator3's earnings for a year; dave scans it and buys. Five customers pay for real NEAR AI translations, each signature checked by the contract; the owner's own sub-account pays too and is flagged. dave gets exactly 20% of every payment and claims it." },
+  { id: "nearai", title: "Verified revenue: a NEAR AI signature checked on-chain", steps: ["nearai-check"],
+    intro: "A payment carries NEAR AI Cloud's TEE signature over the request and the answer. The contract recovers the signer and marks the payment verified." },
+  { id: "aibuyer", title: "A real AI model buys an agent through MCP", steps: ["ai-buyer"],
+    intro: "Claude, given only the Agent Exit skill and MCP tools, refused the agent with a hidden key and bought the clean one. The server signs; the model never sees a key." },
 ];
 
 async function rpc(method, params) {

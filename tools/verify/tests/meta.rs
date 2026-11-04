@@ -195,13 +195,20 @@ fn web_demo_data_is_recorded_from_the_contract() {
     for e in std::fs::read_dir(root().join("out/scenes")).unwrap() {
         recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
     }
+    // Gate G6 and the AI buyer's testnet run are recorded runs too.
+    for f in ["out/gates/g6.json", "out/llm-buyer-testnet.json"] {
+        recorded.push_str(&std::fs::read_to_string(root().join(f)).unwrap_or_default());
+    }
     let mut n = 0;
     for part in data.split("testnet.nearblocks.io/txns/").skip(1) {
         let h: String = part
             .chars()
             .take_while(|c| c.is_ascii_alphanumeric())
             .collect();
-        assert!(recorded.contains(&h), "page links {h}, not in out/scenes");
+        assert!(
+            recorded.contains(&h),
+            "page links {h}, not in a recorded run"
+        );
         n += 1;
     }
     assert!(n >= 10, "page should link the testnet run per step ({n})");
