@@ -28,11 +28,11 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 
 | Real (on NEAR testnet, with NearBlocks links) | Not yet |
 |---|---|
-| The contract, rebuilt bit for bit by `make build`: the six scenes on `7K1Q5DWY…` (commit `3d331ae`), shares on `6mssWw3U…` (commit `462caf3`, after two adversarial reviews) | Gate G2: the agent's Base wallet paying on Base Sepolia |
+| The contract on NEAR testnet, rebuilt bit for bit by `make build` (code hash `Aots3gb3…`, world `w2.agentexit3.testnet`, after two adversarial reviews); every link in this README resolves (`make check-links`) | Gate G2: the agent's Base wallet paying on Base Sepolia |
 | Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale | A wallet buy button on the page (the page only reads the chain) |
-| Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83)) | MCP tools for shares (`list_offers`, `buy_share`, `portfolio`) |
+| Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8)) | MCP tools for shares (`list_offers`, `buy_share`, `portfolio`) |
 | A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) | Real users and real money: everything is `xUSD-FAKE` |
-| Shares of future earnings (scene 8, `translator3`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/9z7E59zkDQhHS6rPMnPjWqG8kzZjtwmDiDio3dPcZXdV)), 5 customers paid for real NEAR AI translations, each verified ([a job](https://testnet.nearblocks.io/txns/GhRLiVFikW6XZjCgdy9m8BTH7HnkGuepkug3ghvkDmRw)); the owner's sub-account paid too, was flagged and released no escrow; dave got exactly 20% ([claim](https://testnet.nearblocks.io/txns/CmExt4qML4tMqN24DZbmkjTZPLSQ6z8KsvjnbzsRDjmB)) | An external security audit (not an offer of securities; testnet demo) |
+| Shares of future earnings (scene 8, `translator3`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD)), 5 customers paid for real NEAR AI translations, each verified ([a job](https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu)); the owner's sub-account paid too, was flagged and released no escrow; dave got exactly 20% ([claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ)) | An external security audit (not an offer of securities; testnet demo) |
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
@@ -65,26 +65,32 @@ sequenceDiagram
 - **Real node:** the `tests/sandbox` tests (key list before and after a buy, the old keys failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`).
 - **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 86 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
 - **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers (every call trapped while loading state); the cause is unconfirmed (likely one allocation over 64 KiB). The fix keeps payer and day rows out of the state blob; covered by `a47_thousand_long_payers_then_buy_and_views` (1,000 payers, then a buy and every view). A payer row now costs 0.024 NEAR (`storage_deposit`).
-- **Live on NEAR testnet:** the six scenes and the key-handover gate (2026-11-03), then gate G6, scene 8 (shares) and the AI buyer (2026-11-04), on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
+- **Live on NEAR testnet:** the six scenes, gates G1 and G6 and scene 8 (shares), re-recorded 2026-11-04 on `w2.agentexit3.testnet` with every link checked; the AI buyer ran on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
 - **A real AI buyer:** Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), rejected the cheat on its flagged earnings, scanned translator, bought it inside its 1,000 limit and checked the old seller is locked out: 5 steps, about $0.03.
 
 ### Live on NEAR testnet
 
-The six demo scenes ran on testnet on 2026-11-03. The six-scene agents run code hash `7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq` (wasm `5dc306a2…`, reproducible from commit `3d331ae`). `translator3` (shares, scene 8) runs `6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw`, the reproducible build in `contracts/res` (commit `462caf3`, after two adversarial reviews). Agents: [translator.agentexit3.testnet](https://testnet.nearblocks.io/address/translator.agentexit3.testnet), [cheat.agentexit3.testnet](https://testnet.nearblocks.io/address/cheat.agentexit3.testnet). Money is `xUSD-FAKE`.
+Recorded on 2026-11-04 in a fresh world under `w2.agentexit3.testnet` (agent code hash `Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq`, the reproducible build in `contracts/res`). Every link below was checked against an archival node (`make check-links`). Money is `xUSD-FAKE`.
 
 | What | Transaction |
 |---|---|
-| Honest sale: bob buys translator in one `ft_transfer_call` | [GAPESp9F…](https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K) |
-| Old seller withdraws the treasury: `NotOwner` | [5hjyEzsX…](https://testnet.nearblocks.io/txns/5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx) |
-| Old seller adds her own runner key: `NotOwner` | [G8AMhXRg…](https://testnet.nearblocks.io/txns/G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr) |
-| Old seller changes the spending limits: `NotOwner` | [BVzGhqHZ…](https://testnet.nearblocks.io/txns/BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk) |
-| Old seller moves the deed to herself: `NotOwner` | [3T7CkWCy…](https://testnet.nearblocks.io/txns/3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK) |
-| Old seller spends from the Base wallet: `NotRunner` | [G8AvbKNC…](https://testnet.nearblocks.io/txns/G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK) |
+| Honest sale: bob buys translator in one `ft_transfer_call` | [B5MfL9V3…](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
+| Old seller withdraws the treasury: `NotOwner` | [6peX6VpZ…](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE) |
+| Old seller adds her own runner key: `NotOwner` | [GwJXKMmV…](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek) |
+| Old seller changes the spending limits: `NotOwner` | [4A16wgc5…](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx) |
+| Old seller moves the deed to herself: `NotOwner` | [2e8b4hjL…](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX) |
+| Old seller spends from the Base wallet: `NotRunner` | [7E5tq2i5…](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
 | Old seller's runner key and the deleted setup key | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
-| New owner's runner key works | [9svxSCw7…](https://testnet.nearblocks.io/txns/9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ) |
-| Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [AkgkP4ok…](https://testnet.nearblocks.io/txns/AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt) |
-| An agent account (summarizer) buys translator; scripted client, no AI model | [ALBXiNfG…](https://testnet.nearblocks.io/txns/ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt) |
-| Gate G1, fresh agent sold and the old keys fail | [64xbZU2T…](https://testnet.nearblocks.io/txns/64xbZU2TzcunokynMeptF9kNn9cGrrpQ1PN7WJtMZPyN) |
+| New owner's runner key works | [2kH4Lsdw…](https://testnet.nearblocks.io/txns/2kH4Lsdw5TnnFL4QFx8BtUWRdagoizYH7ZUfU6G7dXkK) |
+| Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [4w9Q9Lh1…](https://testnet.nearblocks.io/txns/4w9Q9Lh1JGrHFDQ8o4D2FqXKZhkxUG6XkxeoLoQMnE6P) |
+| An agent account (summarizer) buys translator; scripted client, no AI model | [5EAhSAb2…](https://testnet.nearblocks.io/txns/5EAhSAb236hq36J5Ga3cpvvcnQJbspFeE2XzCSu1Nwdn) |
+| Gate G1, fresh agent sold and the old keys fail | [8SXLozby…](https://testnet.nearblocks.io/txns/8SXLozbywPwphxZ6M9T77YmhUYyFk9Ha3Xfy7QhB6Lo4) |
+| Gate G6, a payment verified on-chain with a real NEAR AI Cloud signature | [DVjpb5it…](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8) |
+| Shares (scene 8): dave buys 20% of translator3's earnings | [CVHZAS8R…](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD) |
+| Shares: a customer pays for a real NEAR AI translation, verified | [6Kcfgniw…](https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu) |
+| Shares: the owner's sub-account pays, flagged, no escrow released | [E8tDPSq7…](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
+| Shares: dave claims exactly 20% | [hphLreQM…](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ) |
+| A real AI model (Claude Haiku) buys an agent through MCP (run on `agentexit3.testnet`) | [6PjsAoL5…](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn) |
 
 Not run on testnet: G2 (the Base Sepolia payment; needs a Base relayer key). The cheat scan (scene 4) and the earnings view (scene 3) are read-only and recorded in `out/scenes/`.
 

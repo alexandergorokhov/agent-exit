@@ -68,7 +68,7 @@
         <div class="arch-box chain">
           <h3>On NEAR (the backend)</h3>
           <ul>
-            <li><b>The agent's own account</b>, e.g. <code>translator.agentexit3.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
+            <li><b>The agent's own account</b>, e.g. <code>translator.w2.agentexit3.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
             <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
             <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
           </ul>
@@ -117,7 +117,7 @@
 
     <section id="evidence-run" class="evidence">
       <h2>The same story on NEAR testnet</h2>
-      <p class="muted">The deployed contract (code hash <code>7K1Q5DWY…</code>, rebuilt bit for bit by <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
+      <p class="muted">The deployed contract (code hash <code>Aots3gb3…</code>, rebuilt bit for bit by <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
       <span id="scenarios-anchor"></span>
       <div id="scenarios" class="scenarios"><p class="muted">Loading the scenarios…</p></div>
       <h3 class="walk-title">Step-by-step walkthrough</h3>

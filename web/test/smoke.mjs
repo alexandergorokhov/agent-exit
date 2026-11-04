@@ -241,7 +241,9 @@ try {
     assert.equal(vr.code, 400, "L7: Vercel function loads and refuses a send");
     checks += 8;
 
-    // Mocked chain: the browser renders what the relay returns.
+    // Mocked chain: the browser renders what the relay returns, for the recorded world.
+    const world = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    const R = world.root;
     const ctx = await browser.newContext({ viewport: { width: 375, height: 740 } });
     const seenHosts = new Set();
     await ctx.route("**/*", async (route) => {
@@ -252,9 +254,9 @@ try {
       const b = JSON.parse(route.request().postData());
       const acc = b.params.account_id;
       const cheat = acc.startsWith("cheat.");
-      const result = b.params.request_type === "view_account" ? { code_hash: "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq" }
+      const result = b.params.request_type === "view_account" ? { code_hash: world.agent_code_hash }
         : b.params.request_type === "view_access_key_list" ? { keys: [{ access_key: { permission: "FullAccess" } }, { access_key: { permission: { FunctionCall: {} } } }].slice(cheat ? 0 : 1) }
-        : { result: [...new TextEncoder().encode(JSON.stringify({ owner: cheat ? "carol.agentexit3.testnet" : "bob.agentexit3.testnet", status: "Owned", treasury: "300.00" }))] };
+        : { result: [...new TextEncoder().encode(JSON.stringify({ owner: cheat ? `carol.${R}` : `bob.${R}`, status: "Owned", treasury: "300.00" }))] };
       return route.fulfill({ contentType: "application/json", body: JSON.stringify({ jsonrpc: "2.0", id: b.id, result }) });
     });
     const lp = await ctx.newPage();
@@ -263,7 +265,7 @@ try {
     await lp.click("#read-live");
     await lp.waitForSelector("#live h3");
     const live = await lp.textContent("#live");
-    for (const want of ["translator.agentexit3.testnet", "owner bob.agentexit3.testnet", "1 access keys, 0 full-access", "2 access keys, 1 full-access", "same as the recorded run"]) { assert.ok(live.includes(want), `L7: live box lacks "${want}"`); checks++; }
+    for (const want of [`translator.${R}`, `owner bob.${R}`, "1 access keys, 0 full-access", "2 access keys, 1 full-access", "same as the recorded run"]) { assert.ok(live.includes(want), `L7: live box lacks "${want}"`); checks++; }
     await noHorizontalScroll(lp, "live box at 375px");
     assert.deepEqual([...seenHosts], [new URL(base).host], "L7: the page contacts only its own origin");
     checks++;
