@@ -1,138 +1,18 @@
 {
-  "pass": true,
-  "payment_event": {
-    "amount": "5000000",
-    "counted": true,
-    "day": 20761,
-    "flags": {
-      "round_trip": false,
-      "self": false,
-      "seller_subaccount": false
-    },
-    "job_id": "g6-1793757963",
-    "payer": "p1.agentexit3.testnet",
-    "verified": true,
-    "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
-  },
-  "refused_event": null,
   "samples": [
     {
-      "chat_id": "chatcmpl-7d29e0d8-4d65-402f-8d9b-4334930bd809",
+      "chat_id": "chatcmpl-ff625663-f62c-4d68-aec3-9075c4d0df27",
       "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ms": 1242,
+      "ms": 5088,
       "recovered_offline": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-      "request_len": 300,
-      "request_sha256": "c8a5ce2c38920ac9df4ec1dd3e67d373ceb4665b3bbb07fb75c4317030313529",
-      "response_sha256": "935449e3ff91d080a8e7cfc026e38d2fe070d800931c87e95836569715588867",
-      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:c8a5ce2c38920ac9df4ec1dd3e67d373ceb4665b3bbb07fb75c4317030313529:935449e3ff91d080a8e7cfc026e38d2fe070d800931c87e95836569715588867",
+      "request_len": 301,
+      "request_sha256": "d35023d1dec066050f77fc9779cd48be1352123fe602127887f2c7e695b5bb84",
+      "response_sha256": "1f851757cf26ffec7d653e9e2eca5aa5391a7fd445c7fb7944c5e4c6227d95fb",
+      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:d35023d1dec066050f77fc9779cd48be1352123fe602127887f2c7e695b5bb84:1f851757cf26ffec7d653e9e2eca5aa5391a7fd445c7fb7944c5e4c6227d95fb",
       "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
       "signing_algo": "ecdsa",
       "text_form": "provider (model:req:resp), the form the contract checks"
     }
   ],
-  "schema": "gate-g6.v1",
-  "signer_stability": [
-    {
-      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e"
-    }
-  ],
-  "txs": [
-    {
-      "by": "agentexit3.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e"
-            }
-          ],
-          "event": "signer_added",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
-      "label": "registry admin: add_signer",
-      "method": "add_signer",
-      "ms": 4907,
-      "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
-      "value": null
-    },
-    {
-      "by": "p1.agentexit3.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "5000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "5000000",
-              "counted": true,
-              "day": 20761,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "g6-1793757963",
-              "payer": "p1.agentexit3.testnet",
-              "verified": true,
-              "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "5000000",
-              "seller_earnout_release": "2500000",
-              "to_owner": "4000000",
-              "to_treasury": "1000000"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "2500000",
-              "sale_id": 1,
-              "seller": "alice.agentexit3.testnet"
-            }
-          ],
-          "event": "earnout_release",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
-      "label": "p1 pays (at least the price floor) with the NEAR AI proof",
-      "method": "ft_transfer_call",
-      "ms": 6512,
-      "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
-      "value": "5000000"
-    }
-  ]
+  "schema": "gate-g6.v1"
 }
