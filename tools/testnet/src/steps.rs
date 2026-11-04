@@ -883,7 +883,7 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
         let request = json!({
             "model": model,
             "messages": [{"role": "user", "content": "Translate to French: the agent was sold."}],
-            "max_tokens": 32,
+            "max_tokens": 256,
             "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": amount.to_string(),
                          "signed_at": (now_ns() / 1_000_000_000).to_string()},
         })
@@ -1494,7 +1494,7 @@ async fn nearai_job(
     let request = json!({
         "model": model,
         "messages": [{"role": "user", "content": format!("Translate to French. Reply with the translation only: {text}")}],
-        "max_tokens": 64,
+        "max_tokens": 512,
         "metadata": {"agent": agent, "job_id": job, "payer": payer, "amount": JOB_PRICE.to_string(),
                      "signed_at": (now_ns() / 1_000_000_000).to_string()},
     })
@@ -1521,6 +1521,11 @@ async fn nearai_job(
         .unwrap_or_default()
         .trim()
         .to_string();
+    // A reasoning model can spend the whole token budget thinking and answer
+    // nothing: that is not a translation, so the job does not count (review 2 M3).
+    if answer.is_empty() {
+        return Err(json!({"error": "NEAR AI returned an empty answer (token limit too low?)"}));
+    }
     let chat_id = resp["id"].as_str().unwrap_or_default().to_string();
     let sig: Value = http
         .get(format!("{}/v1/signature/{chat_id}", c.cfg.nearai_base))
