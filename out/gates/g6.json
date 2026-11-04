@@ -1,16 +1,30 @@
 {
-  "pass": false,
-  "payment_event": null,
+  "pass": true,
+  "payment_event": {
+    "amount": "5000000",
+    "counted": true,
+    "day": 20761,
+    "flags": {
+      "round_trip": false,
+      "self": false,
+      "seller_subaccount": false
+    },
+    "job_id": "g6-1793757963",
+    "payer": "p1.agentexit3.testnet",
+    "verified": true,
+    "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
+  },
+  "refused_event": null,
   "samples": [
     {
-      "chat_id": "chatcmpl-157df531-e620-4f2f-a7e3-8f14757f0662",
+      "chat_id": "chatcmpl-7d29e0d8-4d65-402f-8d9b-4334930bd809",
       "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ms": 1508,
+      "ms": 1242,
       "recovered_offline": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
       "request_len": 300,
-      "request_sha256": "ae8de0ec7101ac4ae0dd990c30b3105033d87ed1aeab09b4db596b2654f189ae",
-      "response_sha256": "dce7618fbcb1c176ea4db091865e5d1b503d6c32699600fef4e6cc4ad52a9464",
-      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:ae8de0ec7101ac4ae0dd990c30b3105033d87ed1aeab09b4db596b2654f189ae:dce7618fbcb1c176ea4db091865e5d1b503d6c32699600fef4e6cc4ad52a9464",
+      "request_sha256": "c8a5ce2c38920ac9df4ec1dd3e67d373ceb4665b3bbb07fb75c4317030313529",
+      "response_sha256": "935449e3ff91d080a8e7cfc026e38d2fe070d800931c87e95836569715588867",
+      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:c8a5ce2c38920ac9df4ec1dd3e67d373ceb4665b3bbb07fb75c4317030313529:935449e3ff91d080a8e7cfc026e38d2fe070d800931c87e95836569715588867",
       "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
       "signing_algo": "ecdsa",
       "text_form": "provider (model:req:resp), the form the contract checks"
@@ -39,13 +53,13 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DWdMJgBp7deAn2HV42vG5m8Kxohj94ds6JuFzAd1pRow",
+      "explorer": "https://testnet.nearblocks.io/txns/A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
       "label": "registry admin: add_signer",
       "method": "add_signer",
-      "ms": 4643,
+      "ms": 4907,
       "ok": true,
       "receiver": "translator.agentexit3.testnet",
-      "tx": "DWdMJgBp7deAn2HV42vG5m8Kxohj94ds6JuFzAd1pRow",
+      "tx": "A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
       "value": null
     },
     {
@@ -55,7 +69,7 @@
         {
           "data": [
             {
-              "amount": "1000000",
+              "amount": "5000000",
               "new_owner_id": "translator.agentexit3.testnet",
               "old_owner_id": "p1.agentexit3.testnet"
             }
@@ -67,37 +81,58 @@
         {
           "data": [
             {
-              "amount": "1000000",
-              "reason": "PolicyViolation:PriceFloor",
-              "sender": "p1.agentexit3.testnet"
+              "amount": "5000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "g6-1793757963",
+              "payer": "p1.agentexit3.testnet",
+              "verified": true,
+              "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
             }
           ],
-          "event": "refused",
+          "event": "payment",
           "standard": "agent_exit",
           "version": "1.0.0"
         },
         {
           "data": [
             {
-              "amount": "1000000",
-              "memo": "refund",
-              "new_owner_id": "p1.agentexit3.testnet",
-              "old_owner_id": "translator.agentexit3.testnet"
+              "amount": "5000000",
+              "seller_earnout_release": "2500000",
+              "to_owner": "4000000",
+              "to_treasury": "1000000"
             }
           ],
-          "event": "ft_transfer",
-          "standard": "nep141",
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2500000",
+              "sale_id": 1,
+              "seller": "alice.agentexit3.testnet"
+            }
+          ],
+          "event": "earnout_release",
+          "standard": "agent_exit",
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/4XgQHaMy3qsjuRS7WPJU25EeuVJaP7yPY5XuDKfjf2sA",
-      "label": "p1 pays 1.00 with the NEAR AI proof",
+      "explorer": "https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
+      "label": "p1 pays (at least the price floor) with the NEAR AI proof",
       "method": "ft_transfer_call",
-      "ms": 6961,
+      "ms": 6512,
       "ok": true,
       "receiver": "xusd.agentexit3.testnet",
-      "tx": "4XgQHaMy3qsjuRS7WPJU25EeuVJaP7yPY5XuDKfjf2sA",
-      "value": "0"
+      "tx": "4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
+      "value": "5000000"
     }
   ]
 }
