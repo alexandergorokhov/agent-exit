@@ -24,6 +24,7 @@ interface Opts {
   mpcPk?: Record<string, string | undefined>; // per provider url
   mpcField?: string;
   noBaseView?: boolean;
+  openAuthUntil?: string;
 }
 /** A fake testnet: the agent's views, access keys, code, and the MPC signer. */
 function fakeChain(o: Opts = {}) {
@@ -48,7 +49,7 @@ function fakeChain(o: Opts = {}) {
             break;
           case "get_base_wallet":
             if (o.noBaseView) return new Response(JSON.stringify({ result: { error: "MethodNotFound" } }), { status: 200 });
-            result = view({ schema: "base-wallet.v1", address: o.address === undefined ? ADDR : o.address, path: "wallet-1", mpc: o.mpcField ?? MPC }).result;
+            result = view({ schema: "base-wallet.v1", address: o.address === undefined ? ADDR : o.address, path: "wallet-1", mpc: o.mpcField ?? MPC, open_auth_until: o.openAuthUntil ?? "0" }).result;
             break;
           default:
             return new Response(JSON.stringify({ result: { error: `unexpected ${p.method_name}` } }), { status: 200 });
@@ -177,4 +178,16 @@ test("SH7 open earnings slices reach the scan input; buy_agent's limit defaults 
   assert.equal(listingView({ ...l, shares_bps: undefined, shares: undefined })!.shares_bps, 0);
   assert.equal(loadConfig({}).maxSharesBps, 2500);
   assert.throws(() => loadConfig({ AGENT_EXIT_MAX_SHARES_BPS: "10001" }));
+});
+
+test("BW6 an open Base authorization reaches the scan and blocks the buy (review 1 L1)", async () => {
+  const later = String((BigInt(Date.now()) + 3_600_000n) * 1_000_000n);
+  const { b } = backend({ openAuthUntil: later });
+  const input = (await b.scanInput(AGENT, {})) as { contract: { open_auth_until: number } };
+  assert.ok(input.contract.open_auth_until > Date.now() * 1_000_000);
+  const r = await scan(backend({ openAuthUntil: later }).b);
+  assert.ok(codes(r).includes("open_base_auth"), codes(r).join(","));
+  assert.equal(r.body.safe_to_buy, false);
+  const closed = await scan(backend().b);
+  assert.ok(!codes(closed).includes("open_base_auth"), codes(closed).join(","));
 });

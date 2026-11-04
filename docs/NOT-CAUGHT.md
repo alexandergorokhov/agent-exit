@@ -2,7 +2,7 @@
 
 The backdoor scan and the contract check what is on-chain. These are not on
 chain, so Agent Exit does not claim to catch them. `make attack` prints the
-rows N1-N6 on every run (N7-N10 below cover Verified payments and shares); the earn-out (30% held, released only from
+rows N1-N6 on every run (N7-N11 below cover Verified payments, shares and one MCP testnet gap); the earn-out (30% held, released only from
 counted post-sale revenue) is how the price absorbs them.
 
 | id | Not caught | Why |
@@ -17,6 +17,7 @@ counted post-sale revenue) is how the price absorbs them.
 | N8 | Shares: an owner routing customers to an account with no meter | No contract can see off-chain routing. The price escrow limits the loss to the half paid upfront, and the meter shows the drop. |
 | N9 | Shares: unflagged sock-puppet payments | A payment from an account the meter can't tie to the owner releases the investor's escrow like a real customer's. The investor still gets the same money, but a dead agent can look like it pays. Only Verified payments prove an inference ran. |
 | N10 | Shares plus earn-out: a seller's friend holding up to 49% | With the earn-out releasing up to 50% of each payment, wash-paying after a sale costs the seller as little as 1% of what is washed. The buyer is not out of pocket (they keep the rest as revenue), but post-sale revenue can look real cheaply. A buyer should read `shares_disclosed` and keep the MCP limit (25%). |
+| N11 | Sub-accounts on testnet through MCP | NEAR RPC cannot list an account's sub-accounts, so the scan's warn-only `subaccount_does_not_move` rule fires only on offline fixtures. Payments from the seller's sub-accounts are still flagged by the contract (it checks the payer's name). An indexer could fill this in. |
 
 The scan's input comes from a JSON fixture offline; on testnet the MCP
 server reads the same fields from two RPC providers and refuses when they

@@ -440,7 +440,10 @@ export class TestnetBackend implements Backend {
       const [a, b] = await Promise.all([read(this.cfg.rpc[0]), read(this.cfg.rpc[1])]);
       mpc = a !== null && a === b ? a : null; // two providers must agree
     }
-    return { address: typeof w.address === "string" ? w.address : null, path: String(w.path ?? ""), mpc_public_key: mpc };
+    // Review 1 L1: the Base authorization window comes from the same view,
+    // so the scan's open_base_auth rule can fire through MCP too.
+    const until = /^[0-9]{1,20}$/.test(String(w.open_auth_until ?? "")) ? Number(w.open_auth_until) : 0;
+    return { address: typeof w.address === "string" ? w.address : null, path: String(w.path ?? ""), mpc_public_key: mpc, open_auth_until: until };
   }
 
   async scanInput(id: string, expect: ScanExpect): Promise<Json> {
@@ -473,6 +476,8 @@ export class TestnetBackend implements Backend {
         methods: wasmExports(Buffer.from(code.code_base64, "base64")),
         keys: keys1,
         keys_second_provider: keys2,
+        // NEAR RPC cannot list sub-accounts (an indexer can): the scan's
+        // warn-only subaccount_does_not_move rule fires offline only (N11).
         subaccounts: [],
       },
       contract: {
@@ -482,13 +487,13 @@ export class TestnetBackend implements Backend {
         known_keys: status.known_keys,
         known_keys_hash: status.known_keys_hash,
         open_approvals: status.open_approvals,
-        open_auth_until: 0,
+        open_auth_until: baseWallet?.open_auth_until ?? 0,
         frozen: status.frozen,
         admin: status.admin,
         token: status.token,
         paid_to_total: status.paid_to_total,
         near_storage_solvent: status.near_storage?.solvent,
-        ...(baseWallet ? { base_wallet: baseWallet } : {}),
+        ...(baseWallet ? { base_wallet: { address: baseWallet.address, path: baseWallet.path, mpc_public_key: baseWallet.mpc_public_key } } : {}),
       },
       ...(listing ? { listing: listingView(listing) } : {}),
     }, expect);
