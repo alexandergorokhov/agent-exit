@@ -1,8 +1,8 @@
 # Agent Exit
 
-**Buy an AI agent with real earnings. The seller is locked out in one NEAR transaction.**
+**Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.**
 
-The same checked earnings meter also pays investors: buy a share of an agent's future earnings, paid inside every payment. Fake revenue pays them too. It works for any on-chain business account, not only AI agents.
+1. **Agents are businesses:** they do jobs and get paid. 2. **Earnings are proven:** the agent's NEAR contract counts every payment by payer, flags self-payments and marks NEAR AI-verified jobs. 3. **That unlocks money:** buy a share of its future earnings, or buy the whole agent with an earn-out. 4. **It is safe:** the scan blocks hidden keys, the sale deletes the seller's keys in one transaction, and spending stays inside the owner's limits.
 
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
 - **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
@@ -220,7 +220,7 @@ one. Anything but testnet is refused. The runner is `tools/testnet` (Rust,
 near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
 `make verify`).
 
-Funding: the root account (`agentexit.testnet`, from the testnet faucet)
+Funding: the root account (`AGENT_EXIT_ROOT` in the env file, e.g. `agentexit.testnet`; the current recorded world is `w2.agentexit3.testnet`)
 needs about 29 NEAR for the deploy (`near_needed` in the dry run is
 authoritative). The two agent accounts, `translator` and `cheat`, get 9 NEAR
 each: their code (~5.3), the growth reserve the contract demands (1.83) and the
@@ -231,7 +231,7 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 |---|---|---|
 | 0 | `make deploy-testnet DRY_RUN=1` (and `gates`, `scenes`) | nothing: prints the plan |
 | 1 | `make testnet-setup` (npm install for the G2 relay) | `scripts/testnet/node_modules` |
-| 2 | `make deploy-testnet`: builds the wasm with the testnet token/admin/MPC compiled in, creates the accounts, deploys, runner keys, locks translator, seeds the fixed world | `out/testnet/deploy.json` |
+| 2 | `make deploy-testnet`: checks `contracts/res/SHA256SUMS` and deploys that reproducible wasm (built by `make build` with the root's token/admin/MPC compiled in; it refuses a wasm built for another root), creates the accounts, deploys, runner keys, locks translator, seeds the fixed world | `out/testnet/deploy.json` |
 | 3 | `make gates`: G1 key handover on a fresh agent, G6 NEAR AI signature verified by the contract, G2 MPC signs `pay_base` 5 times (latency) and the relay sends it on Base Sepolia | `out/gates/g1.json`, `g6.json`, `g2-sign.json`, `g2.json` |
 | 4 | `make scenes` (order 3, 4, 5, 1, 2, 6; waits out an open Base authorization before listing) | `out/scenes/scene-N.json` |
 | later | `make scene-N RECORDED=1` replays a recorded scene offline (tx links, real errors) | |

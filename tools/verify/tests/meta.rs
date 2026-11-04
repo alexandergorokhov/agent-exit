@@ -545,7 +545,7 @@ fn s25_readme_first_screen() {
             "{f}: marketplace label"
         );
     }
-    assert!(read("web/index.html").contains("Buy an AI agent with real earnings"));
+    assert!(read("web/index.html").contains("Earnings proven on-chain"));
     assert!(read("web/index.html").contains("Try it yourself"));
     assert!(read("web/index.html").contains("Why only on NEAR"));
     assert!(read(".gitignore").lines().any(|l| l == ".claude/"));
