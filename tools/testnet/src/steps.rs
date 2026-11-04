@@ -1556,10 +1556,10 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
     let agent_hash = sha256_b58(&agent_wasm);
     // Locked agents cannot be upgraded: each new build goes to a new agent.
-    let name = env
-        .get("INVEST_AGENT")
+    let name = std::env::var("INVEST_AGENT")
+        .ok()
+        .or_else(|| env.get("INVEST_AGENT").cloned())
         .filter(|n| !n.is_empty())
-        .cloned()
         .unwrap_or_else(|| "translator3".to_string());
     let n = name.as_str();
     let t2 = c.id(n);
@@ -1575,7 +1575,8 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
             ok(&t)?;
         }
     }
-    for (name, want) in [("dave", 1_000 * USD), (n, 0)] {
+    // x.alice pays the flagged 20.00 below: top it up on a re-run too.
+    for (name, want) in [("dave", 1_000 * USD), (n, 0), ("x.alice", 20 * USD)] {
         let id = c.id(name);
         let registered = c
             .view(
