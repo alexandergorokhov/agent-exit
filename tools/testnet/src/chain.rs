@@ -247,7 +247,9 @@ impl Chain {
             Ok(r) => match r.into_full() {
                 None => tx.error = Some("pending: no final outcome".into()),
                 Some(full) => {
-                    tx.hash = Some(full.transaction().get_hash().to_string());
+                    // The id NEAR returns for the transaction outcome: recomputing the hash
+                    // from the decoded transaction gives a different value.
+                    tx.hash = Some(full.outcome().transaction_hash.to_string());
                     tx.logs = full.logs().iter().map(|l| l.to_string()).collect();
                     match full.into_result() {
                         Ok(ok) => {
@@ -477,7 +479,9 @@ impl Chain {
             Ok(r) => match r.into_full() {
                 None => tx.error = Some("pending".into()),
                 Some(full) => {
-                    tx.hash = Some(full.transaction().get_hash().to_string());
+                    // The id NEAR returns for the transaction outcome: recomputing the hash
+                    // from the decoded transaction gives a different value.
+                    tx.hash = Some(full.outcome().transaction_hash.to_string());
                     tx.logs = full.logs().iter().map(|l| l.to_string()).collect();
                     match full.into_result() {
                         Ok(_) => tx.ok = true,

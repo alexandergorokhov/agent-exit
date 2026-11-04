@@ -73,6 +73,10 @@ web: ## Serve the demo page on http://127.0.0.1:8080 (offline, recorded; ?networ
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo -- --check
 	node web/serve.mjs $(WEB_PORT)
 
+.PHONY: check-links
+check-links: ## Every tx the page links is known to NEAR testnet (archival RPC; needs network)
+	node scripts/check-tx-links.mjs
+
 .PHONY: web-test
 web-test: ## Playwright smoke test of the page (Chromium, desktop + 375px, no network)
 	@command -v node >/dev/null || { echo "node not installed: web-test needs Node >= 20" >&2; exit 1; }

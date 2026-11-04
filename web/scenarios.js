@@ -38,7 +38,12 @@ async function rpc(method, params) {
   const r = await fetch("api/rpc", { method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: "verify", method, params }) });
   const j = await r.json();
-  if (j.error) throw new Error(j.error.message || j.error.name || JSON.stringify(j.error).slice(0, 160));
+  if (j.error) {
+    const e = new Error(j.error.message || j.error.name || JSON.stringify(j.error).slice(0, 160));
+    const c = j.error.cause && j.error.cause.name;
+    if (c === "UNKNOWN_TRANSACTION" || /UNKNOWN_TRANSACTION/.test(JSON.stringify(j.error))) e.notFound = true;
+    throw e;
+  }
   return j.result;
 }
 
@@ -150,8 +155,15 @@ function stageView(st, i) {
       return v.matches;
     } catch (e) {
       pill.className = "vpill na";
-      pill.textContent = "chain unreachable";
-      out.replaceChildren(el("p", { class: "muted small", text: `Could not reach NEAR testnet from here (${e.message}). The recording and the NearBlocks link above still stand; open the link to check by hand.` }));
+      if (e.notFound) {
+        // The node answered: it does not know this hash (too old for a
+        // non-archival node, or a wrong recording). Say so; never "unreachable".
+        pill.textContent = "not found on chain";
+        out.replaceChildren(el("p", { class: "muted small", text: "NEAR testnet answered that it does not know this transaction. Non-archival nodes keep about 2.5 days; open the NearBlocks link to check by hand." }));
+      } else {
+        pill.textContent = "chain unreachable";
+        out.replaceChildren(el("p", { class: "muted small", text: `Could not reach NEAR testnet from here (${e.message}). The recording and the NearBlocks link above still stand; open the link to check by hand.` }));
+      }
       return null;
     }
   };
