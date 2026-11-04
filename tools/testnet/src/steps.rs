@@ -860,7 +860,14 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
         .ok_or("NEARAI_API_KEY missing")?;
     let agent = c.id("translator");
     let payer = c.id("p1");
-    let amount = USD;
+    // Pay at least the agent's price floor (scene 2 sets one), or the
+    // payment is refused before the proof is checked.
+    let limits = c.view(&agent, "get_limits", json!({})).await?;
+    let floor: u128 = limits["price_floor"]
+        .as_str()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    let amount = USD.max(floor);
     let job = format!("g6-{}", now_ns() / 1_000_000_000);
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(60))
@@ -960,7 +967,7 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
     }});
     let t = c
         .call(
-            "p1 pays 1.00 with the NEAR AI proof",
+            "p1 pays (at least the price floor) with the NEAR AI proof",
             &c.acct("p1")?,
             &c.id("xusd"),
             "ft_transfer_call",
@@ -973,6 +980,7 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
     let payment = t.events("payment").first().cloned().unwrap_or(Value::Null);
     let pass = payment["verified"] == true;
     out.set("payment_event", payment);
+    out.set("refused_event", t.events("refused").first().cloned().unwrap_or(Value::Null));
     out.set(
         "signer_stability",
         json!(proofs
