@@ -206,24 +206,14 @@
           {
             "code": "full_access_key_present",
             "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account"
+          },
+          {
+            "code": "code_hash_mismatch",
+            "detail": "deployed 7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq != published 6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw"
           }
         ]
       },
-      "txs": [
-        {
-          "label": "alice lists cheat at 500.00",
-          "ok": true,
-          "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX",
-          "tx": "3ApgKxmEMiS8AqqFnyXefJipJ5gRzzt3HcpzJiiAFmqX",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "cheat.agentexit3.testnet",
-          "method": "list_for_sale",
-          "events": [
-            "listed"
-          ]
-        }
-      ]
+      "txs": []
     },
     "honest-sale": {
       "scene": 5,
@@ -528,40 +518,10 @@
     },
     "nearai-check": {
       "scene": "G6",
-      "pass": true,
+      "pass": false,
       "what": "NEAR AI Cloud answers a customer's request inside its TEE and signs model:sha256(request):sha256(response). The registry admin adds the published signing address; the customer pays with the signature; the contract recovers the signer with ecrecover and marks the payment verified.",
       "scan": null,
-      "txs": [
-        {
-          "label": "registry admin: add_signer",
-          "ok": true,
-          "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
-          "tx": "A6pMzHxL6gnRhGHt3XvLDaE7xd7dqaHQD2H1ZEfPJmjh",
-          "by": "agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
-          "method": "add_signer",
-          "events": [
-            "signer_added"
-          ]
-        },
-        {
-          "label": "p1 pays (at least the price floor) with the NEAR AI proof",
-          "ok": true,
-          "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
-          "tx": "4K3nrDGkwTBBeM9HqkkAS5X3FNS48sSMUNG8N6D3iZ83",
-          "by": "p1.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
-          "method": "ft_transfer_call",
-          "events": [
-            "ft_transfer",
-            "payment",
-            "split",
-            "earnout_release"
-          ]
-        }
-      ]
+      "txs": []
     },
     "ai-buyer": {
       "scene": "AI",
