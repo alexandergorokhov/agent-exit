@@ -32,6 +32,7 @@
             "WRITE_DISABLED",
             "CONFIRM_REQUIRED",
             "OVER_MAX_PRICE",
+            "SHARES_OVER_MAX",
             "SESSION_CAP",
             "SCAN_BLOCKED",
             "TERMS_BELOW_MINIMUM",

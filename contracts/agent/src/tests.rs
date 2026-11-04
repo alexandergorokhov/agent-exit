@@ -741,8 +741,8 @@ fn e14_signer_rotation() {
     let mut s = Sim::new(AGENT, ALICE);
     s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100);
     let rogue = fixtures()["rogue_signer"].as_str().unwrap().to_string();
-    s.by(ADMIN).add_signer(rogue.clone());
-    s.by(ADMIN).remove_signer(test_signer());
+    s.by_1y(ADMIN).add_signer(rogue.clone());
+    s.by_1y(ADMIN).remove_signer(test_signer());
     assert_eq!(s.c.get_signers(), vec![rogue]);
     // Already-verified payment stays verified.
     assert_eq!(s.c.get_earnings().verified, 12 * USD);

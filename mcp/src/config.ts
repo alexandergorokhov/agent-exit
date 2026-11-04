@@ -20,6 +20,9 @@ export interface Config {
   runnerPk: string | null;
   /** Most this server may spend in one session, in xUSD-FAKE dollars. */
   sessionCap: number;
+  /** Most of an agent's earnings that may already be pledged to investors
+   * (open share slices, basis points) for buy_agent to buy it (review H2). */
+  maxSharesBps: number;
   /** Where the spend per account and UTC day is kept across restarts (null: memory only).
    * Testnet defaults to out/mcp-spend.json; AGENT_EXIT_SPEND_FILE overrides. */
   spendFile: string | null;
@@ -130,6 +133,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!Number.isInteger(minWindow) || minWindow < 60) throw new ConfigError("AGENT_EXIT_MIN_WINDOW_SECS must be a whole number >= 60");
   const cap = Number(env.AGENT_EXIT_SESSION_CAP ?? "1500");
   if (!Number.isFinite(cap) || cap < 0) throw new ConfigError("AGENT_EXIT_SESSION_CAP must be a number >= 0");
+  const maxSharesBps = Number(env.AGENT_EXIT_MAX_SHARES_BPS ?? "2500");
+  if (!Number.isInteger(maxSharesBps) || maxSharesBps < 0 || maxSharesBps > 10_000) {
+    throw new ConfigError("AGENT_EXIT_MAX_SHARES_BPS must be a whole number from 0 to 10000");
+  }
   return {
     network,
     repo,
@@ -139,6 +146,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     hasPrivateKey: Boolean(env.AGENT_EXIT_PRIVATE_KEY),
     runnerPk,
     sessionCap: cap,
+    maxSharesBps,
     spendFile: env.AGENT_EXIT_SPEND_FILE || (network === "testnet" ? join(repo, "out", "mcp-spend.json") : null),
     rpc,
     agents,

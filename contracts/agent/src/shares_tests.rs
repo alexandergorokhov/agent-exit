@@ -79,14 +79,22 @@ fn sh7_listing_discloses_shares() {
 fn offer_needs_owner_and_one_yocto() {
     let mut s = translator_world();
     let end = U64(s.now + YEAR);
-    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let msg = |r: Box<dyn std::any::Any + Send>| {
+        r.downcast_ref::<String>()
+            .cloned()
+            .or_else(|| r.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_default()
+    };
+    let e = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         s.by(ALICE).offer_share(2_000, U128(500 * USD), end);
     }))
-    .is_err());
-    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    .unwrap_err();
+    assert!(msg(e).contains("1 yoctoNEAR"), "needs one yocto");
+    let e = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         s.by_1y(MALLORY).offer_share(2_000, U128(500 * USD), end);
     }))
-    .is_err());
+    .unwrap_err();
+    assert!(msg(e).contains("NotOwner"), "owner only");
 }
 
 #[test]

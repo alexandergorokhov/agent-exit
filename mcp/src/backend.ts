@@ -84,6 +84,9 @@ export function listingView(l: Json | null): Json | undefined {
     listing_version: l.listing_version,
     price: l.price,
     terms: { earnout_bps: t.earnout_bps, share_bps: t.share_bps, floor_bps: t.floor_bps, window_secs: t.window_secs },
+    // SH7 (review H2): open earnings slices reach the scan, so it can disclose them.
+    shares_bps: Number(l.shares_bps ?? 0),
+    shares: Array.isArray(l.shares) ? l.shares : [],
   };
 }
 

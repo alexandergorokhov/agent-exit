@@ -1036,6 +1036,7 @@ impl<S: Store + Default> Machine<S> {
         let seller = self.owner.clone();
         self.add_past_owner(&seller);
         self.owner = p.buyer.clone();
+        self.trim_unsold_offers();
         self.owner_epoch += 1;
         self.paid_to_this_epoch = 0;
         self.approvals.clear();
@@ -1216,7 +1217,7 @@ impl<S: Store + Default> Machine<S> {
         self.held += amount;
         // Investors first, from the gross payment, whoever paid (T3, SH8):
         // a cheater's own payment pays them too.
-        let (to_investors, share_released) = self.pay_investors(amount, now);
+        let (to_investors, share_released) = self.pay_investors(amount, counted, now);
         let (to_owner, to_treasury) =
             money::split_revenue(amount - to_investors, self.limits.treasury_bps);
         self.owner_free += to_owner;
@@ -1267,9 +1268,10 @@ impl<S: Store + Default> Machine<S> {
             return Err(Error::AlreadyListed);
         }
         limits.check(&self.agent)?;
-        // T4: while investors hold shares, the owner cannot turn customers
-        // away by raising the price floor.
-        if limits.price_floor > self.limits.price_floor && self.has_holders() {
+        // T4: while a slice is open (sold or not), the owner cannot turn
+        // customers away by raising the price floor; checking only holders
+        // let the owner front-run the first buy (review M1).
+        if limits.price_floor > self.limits.price_floor && !self.offers.is_empty() {
             return Err(Error::SharesOpen);
         }
         self.limits = limits;
@@ -1399,6 +1401,7 @@ impl<S: Store + Default> Machine<S> {
         self.credit(&old, revenue);
         self.add_past_owner(&old);
         self.owner = receiver.to_string();
+        self.trim_unsold_offers();
         self.owner_epoch += 1;
         self.paid_to_this_epoch = 0;
         // The keys stay `retiring` until `keys_deleted` confirms (A25).
@@ -1468,10 +1471,6 @@ impl<S: Store + Default> Machine<S> {
 
     // ----- shares of future earnings (PLAN-shares.md) -------------------------
 
-    fn has_holders(&self) -> bool {
-        self.offers.iter().any(|o| !o.holders.is_empty())
-    }
-
     fn holder_count(&self) -> usize {
         self.offers.iter().map(|o| o.holders.len()).sum()
     }
@@ -1500,8 +1499,15 @@ impl<S: Store + Default> Machine<S> {
 
     /// Credit each holder's part of a gross payment and release the matching
     /// price escrow to the slice's seller (SH2, SH11). Only credits, never a
-    /// transfer, so `pay()` stays bounded (T15).
-    fn pay_investors(&mut self, amount: Amount, now: Ts) -> (Amount, Vec<(Account, Amount)>) {
+    /// transfer, so `pay()` stays bounded (T15). A flagged payment still pays
+    /// holders (SH8) but releases no escrow, so a self-payment cannot unlock
+    /// the held half of the price (review M2).
+    fn pay_investors(
+        &mut self,
+        amount: Amount,
+        counted: bool,
+        now: Ts,
+    ) -> (Amount, Vec<(Account, Amount)>) {
         let mut total = 0;
         let mut credits: Vec<(Account, Amount)> = Vec::new();
         let mut releases: Vec<(Account, Amount)> = Vec::new();
@@ -1515,7 +1521,7 @@ impl<S: Store + Default> Machine<S> {
                 h.earned += cut;
                 total += cut;
                 credits.push((h.account.clone(), cut));
-                let r = cut.min(h.escrow);
+                let r = if counted { cut.min(h.escrow) } else { 0 };
                 h.escrow -= r;
                 released += r;
             }
@@ -1693,6 +1699,16 @@ impl<S: Store + Default> Machine<S> {
             }
         }
         out
+    }
+
+    /// The deed moved: the unsold rest of every slice closes, so the old
+    /// owner can no longer sell parts of the new owner's revenue (review H1).
+    /// Sold parts stay; the buyer saw them in the scan (T9, SH7).
+    fn trim_unsold_offers(&mut self) {
+        self.offers.retain(|o| o.sold_bps > 0);
+        for o in self.offers.iter_mut() {
+            o.bps = o.sold_bps;
+        }
     }
 
     fn end_all_offers(&mut self) {

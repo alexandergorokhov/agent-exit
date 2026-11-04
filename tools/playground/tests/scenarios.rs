@@ -163,7 +163,7 @@ fn p4_invest_investor_paid_inside_every_payment() {
         last(&v)
     );
     assert_eq!(v["view"]["claimable"]["dave"], "45.00");
-    assert_eq!(v["view"]["shares"][0]["holders"][0]["escrow"], "205.00");
+    assert_eq!(v["view"]["shares"][0]["holders"][0]["escrow"], "245.00");
     // The owner cannot withdraw dave's part.
     assert_eq!(v["view"]["solvent"], true);
     let v = run(&mut w, r#"{"op":"claim_share"}"#);
@@ -171,11 +171,11 @@ fn p4_invest_investor_paid_inside_every_payment() {
     // A year later the slice ends and dave gets the rest of his escrow back.
     let v = run(&mut w, r#"{"op":"end_share"}"#);
     assert!(
-        last(&v).contains("205.00 of unreleased escrow back to dave"),
+        last(&v).contains("245.00 of unreleased escrow back to dave"),
         "{}",
         last(&v)
     );
-    assert_eq!(v["view"]["claimable"]["dave"], "205.00");
+    assert_eq!(v["view"]["claimable"]["dave"], "245.00");
 }
 
 #[test]

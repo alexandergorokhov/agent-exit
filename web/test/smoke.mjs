@@ -91,10 +91,10 @@ try {
         while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
         assert.ok(await q.isVisible("#mission-lesson"), "P5: invest lesson shown");
         const feed = await q.textContent("#pg-feed");
-        for (const t of ["250.00 held in escrow", "5.00 to investors", "FLAGGED", "40.00 to investors", "45.00 sent to dave", "205.00 of unreleased escrow back to dave"]) {
+        for (const t of ["250.00 held in escrow", "5.00 to investors", "FLAGGED", "40.00 to investors", "45.00 sent to dave", "245.00 of unreleased escrow back to dave"]) {
           assert.ok(feed.includes(t), `P5: missing "${t}"`); checks++;
         }
-        assert.equal((await q.textContent(".dave-claim")).trim(), "205.00", "P5: dave can claim his escrow back"); checks++;
+        assert.equal((await q.textContent(".dave-claim")).trim(), "245.00", "P5: dave can claim his escrow back"); checks++;
         await q.click('[data-mission="honest"]');
         while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
       }

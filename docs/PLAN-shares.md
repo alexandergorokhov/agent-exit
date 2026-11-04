@@ -126,6 +126,23 @@ Alex (2026-11-03): "imagine the money is real and let's set up the security on i
 
 Contract code changes, so the build is reproducible and the code hash is new. The locked agents can't be upgraded (that's the point), so the new code goes to **new agent accounts under agentexit3** (for example `translator2`, `summarizer2`). The old scenes stay valid. This may need a faucet top-up from Alex.
 
+## As built (after adversarial review 1, 2026-11-04)
+
+Where the code differs from the plan above, the code wins:
+
+| Item | As built |
+|---|---|
+| SH6 | No new slice **and no share purchase** while the agent is listed or settling (`SaleInProgress`): the buyer's scan must stay true until the sale lands |
+| SH8 / SH11 | A flagged payment (owner, sub-account, round trip) still pays investors, but **releases no price escrow** (review M2). Faking revenue now costs the cheater the investors' cut with nothing unlocked |
+| T4 | The price floor cannot be raised while **any slice is open**, sold or not, so the owner cannot front-run the first investor (review M1) |
+| T9 | When the deed moves (sale or transfer), the **unsold rest of every slice closes**; sold parts stay and are disclosed (review H1) |
+| T10 | Minimum part is a tenth of the slice (`MIN_PART_DIV`), not 1%. No storage deposit is taken; the holder cap (16) bounds storage |
+| T8 | The page and the investor scan (`scan_investor`) check the agent before buying a share. The MCP server has **no** share tools (`list_offers`, `buy_share`, `portfolio` were not built) |
+| T14 | No sandbox test with a transfer failure between buy, pay and claim yet (not built) |
+| T15 | No `pay()` gas stress test with 16 holders yet (not built); `pay()` only credits balances |
+| T17 | The admin's signer list is **not** read by the scan. "Verified" proves a NEAR AI inference happened for that payer, job and amount; it does not prove the payer is an independent customer (see NOT-CAUGHT N7) |
+| MCP | `buy_agent` refuses an agent with more than `AGENT_EXIT_MAX_SHARES_BPS` (default 25%) of earnings pledged (review H2); the scan input carries the slices so `shares_disclosed` shows |
+
 ## Cold judge 8 (on this plan): 41/60 if built (was 38)
 
 - Impact +2, Sustainability +1. Any prize ~50%, top-3 track ~35%. Review: agent-exit-plan/judge-cold-8-plan.md.

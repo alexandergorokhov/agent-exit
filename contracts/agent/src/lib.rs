@@ -386,15 +386,21 @@ impl AgentExit {
 
     /// Admin adds a NEAR AI Cloud signing address. Payments verified before
     /// keep their badge whatever happens to the list later (E14).
+    #[payable]
     pub fn add_signer(&mut self, address: String) {
         self.only_admin();
+        // A function-call key of the admin cannot change who signs "Verified".
+        near_sdk::assert_one_yocto();
         let a = norm_address(&address);
         self.signers.insert(a.clone());
         emit("signer_added", json!({"address": a}));
     }
 
+    #[payable]
     pub fn remove_signer(&mut self, address: String) {
         self.only_admin();
+        // A function-call key of the admin cannot change who signs "Verified".
+        near_sdk::assert_one_yocto();
         let a = norm_address(&address);
         self.signers.remove(&a);
         emit("signer_removed", json!({"address": a}));

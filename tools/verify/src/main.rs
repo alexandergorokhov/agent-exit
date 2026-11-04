@@ -501,8 +501,8 @@ fn run() -> Value {
         .as_str()
         .unwrap_or("")
         .to_string();
-    s.by(ADMIN).add_signer(rogue);
-    s.by(ADMIN).remove_signer(test_signer());
+    s.by_1y(ADMIN).add_signer(rogue);
+    s.by_1y(ADMIN).remove_signer(test_signer());
     let kept = s.c.get_earnings().verified;
     s.ft(PAYERS[2], 12 * USD, &job_msg(&job(2)), 100);
     let e14 = note();

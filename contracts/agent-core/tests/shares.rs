@@ -102,6 +102,9 @@ fn sh8_self_payment_still_pays_investors() {
         }
     }
     assert_eq!(m.claimable_of("dave"), 30 * USD);
+    // Review M2: flagged payments release no escrow, so a self-payment
+    // cannot unlock the held half of the price.
+    assert_eq!(m.share_escrow, 250 * USD);
     conserved(&m);
 }
 
@@ -406,4 +409,52 @@ fn frozen_agent_sells_no_shares() {
         m.buy_share("dave", 100 * USD, t, 1_000, T0),
         Err(Error::Frozen)
     );
+}
+
+/// Review H1: after a sale, the old owner's unsold rest of a slice closes, so
+/// nobody can buy a cut of the new owner's revenue and pay the old owner.
+#[test]
+fn h1_sale_closes_unsold_rest_of_slices() {
+    let mut m = agent();
+    let a = m
+        .offer_share("alice", 4_000, 100 * USD, T0 + YEAR, T0)
+        .unwrap();
+    let b = m
+        .offer_share("alice", 500, 100 * USD, T0 + YEAR, T0)
+        .unwrap();
+    let ta = m.offer(a).unwrap().terms();
+    m.buy_share("mule", 100 * USD, ta, 400, T0).unwrap();
+    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    let h = m.known_keys_hash();
+    let v = m.listing_version;
+    let plan = m
+        .begin_buy("bob", 1_000 * USD, v, &h, BOB_PK, true, T0)
+        .unwrap();
+    m.finish_buy(plan.sale_id, true, T0).unwrap();
+    // Only the sold 4% survives; the unsold slice is gone.
+    assert_eq!(m.shares_bps(), 400);
+    assert!(m.offer(b).is_none());
+    assert_eq!(
+        m.buy_share("mule", 100 * USD, ta, 400, T0),
+        Err(Error::ShareChanged)
+    );
+    let t_now = m.offer(a).unwrap().terms();
+    assert_eq!(
+        m.buy_share("mule", 100 * USD, t_now, 400, T0),
+        Err(Error::OfferClosed)
+    );
+    conserved(&m);
+}
+
+/// Review M1: the price floor is frozen from the moment a slice is offered,
+/// so the owner cannot front-run the first investor.
+#[test]
+fn m1_price_floor_frozen_once_offered() {
+    let mut m = agent();
+    m.offer_share("alice", 1_000, 100 * USD, T0 + YEAR, T0)
+        .unwrap();
+    let mut l = m.limits.clone();
+    l.price_floor = 1_000 * USD;
+    assert_eq!(m.set_limits("alice", l), Err(Error::SharesOpen));
 }

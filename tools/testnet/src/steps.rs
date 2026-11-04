@@ -955,7 +955,7 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
             &agent,
             "add_signer",
             json!({"address": signer}),
-            0,
+            1,
             30,
         )
         .await;
@@ -1738,7 +1738,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
                                 &t2,
                                 "add_signer",
                                 json!({"address": p["signing_address"]}),
-                                0,
+                                1,
                                 30,
                             )
                             .await;

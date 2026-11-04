@@ -104,7 +104,7 @@ impl Sim {
             base_wallet::MockMpc::default().derive_address(agent, agent_core::base::BASE_PATH);
         s.c = AgentExit::new(acc(owner), Some(base));
         // The registry admin allowlists the LOCAL TEST signer.
-        s.by(ADMIN).add_signer(test_signer());
+        s.by_1y(ADMIN).add_signer(test_signer());
         s
     }
 

@@ -5,7 +5,7 @@
 // missing view blocks instead of crashing, BW6 offline fixtures.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TestnetBackend } from "../src/backend.js";
+import { TestnetBackend, listingView } from "../src/backend.js";
 import { loadConfig } from "../src/config.js";
 import { loadSchemas, Tools } from "../src/tools.js";
 import { REPO } from "./helpers.js";
@@ -167,4 +167,14 @@ test("RL2 a provider that keeps answering 429 gives RPC_ERROR after two retries"
   } finally {
     RETRY_429_MS.splice(0, 2, ...saved);
   }
+});
+
+test("SH7 open earnings slices reach the scan input; buy_agent's limit defaults to 25%", () => {
+  const l = { listing_version: 3, price: "1", terms: { earnout_bps: 3000, share_bps: 5000, floor_bps: 0, window_secs: 1 }, shares_bps: 4900, shares: [{ id: 1 }] };
+  const v = listingView(l)!;
+  assert.equal(v.shares_bps, 4900);
+  assert.deepEqual(v.shares, [{ id: 1 }]);
+  assert.equal(listingView({ ...l, shares_bps: undefined, shares: undefined })!.shares_bps, 0);
+  assert.equal(loadConfig({}).maxSharesBps, 2500);
+  assert.throws(() => loadConfig({ AGENT_EXIT_MAX_SHARES_BPS: "10001" }));
 });

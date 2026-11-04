@@ -88,7 +88,9 @@ export const UNTRUSTED_NOTICE =
 const MAX_UNTRUSTED = 200;
 
 /** Error codes whose message can carry text from an RPC node or the scanner's stderr: made safe like any chain text. */
-const CHAIN_TEXT_ERRORS = ["RPC_ERROR", "ALLOWANCE_LOW", "SCAN_UNAVAILABLE"];
+const CHAIN_TEXT_ERRORS = ["RPC_ERROR", "ALLOWANCE_LOW", "SCAN_UNAVAILABLE", "BUY_REFUSED", "SENT_UNCONFIRMED"];
+
+const STATUSES = new Set(["Active", "Listed", "Settling", "Sold"]);
 
 /** Chain-sourced text made safe to show a model: control, format (bidi,
  * zero-width) and unassigned characters become spaces, runs of space
@@ -297,7 +299,8 @@ export class Tools {
       out.push({
         agent: id,
         owner: v.status.owner,
-        status: v.status.status,
+        // Chain text: only a known status reaches the model (review L2).
+        status: STATUSES.has(String(v.status.status)) ? v.status.status : "Unknown",
         listing_version: v.status.listing_version,
         price: v.listing ? usd(v.listing.price) : null,
         gross: usd(e.gross),
@@ -345,7 +348,7 @@ export class Tools {
       throw new ToolError("SCAN_UNAVAILABLE", "scan binary not found: run `cargo build -p scan` (or set AGENT_EXIT_SCAN_BIN); buying is refused without a scan");
     }
     // L3: the scanner needs no secrets; give it PATH and nothing else.
-    const r = spawnSync(this.cfg.scanBin, ["-"], { input: JSON.stringify(input), encoding: "utf8", env: scanEnv() });
+    const r = spawnSync(this.cfg.scanBin, ["-"], { input: JSON.stringify(input), encoding: "utf8", env: scanEnv(), timeout: 30_000 });
     if (r.status === null || ![0, 2, 3].includes(r.status)) {
       throw new ToolError("SCAN_UNAVAILABLE", `scan failed (exit ${r.status}): ${r.stderr}`);
     }
@@ -417,6 +420,12 @@ export class Tools {
     if (t.window_secs < min.min_window_secs) low.push(`window ${t.window_secs / 86_400} days < ${min.min_window_secs / 86_400} days`);
     if (low.length) {
       throw new ToolError("TERMS_BELOW_MINIMUM", `earn-out terms below your minimum: ${low.join(", ")}`, { terms: t, minimum: min });
+    }
+    // Review H2: an agent whose revenue is already pledged to investors
+    // above the server's limit is not bought, whatever the model asks.
+    const pledged = Number(quoted.shares_bps ?? 0);
+    if (pledged > this.cfg.maxSharesBps) {
+      throw new ToolError("SHARES_OVER_MAX", `${pledged / 100}% of this agent's earnings already go to investors (limit ${this.cfg.maxSharesBps / 100}%)`, { shares_bps: pledged });
     }
     if (price > BigInt(units(maxPrice))) {
       throw new ToolError("OVER_MAX_PRICE", `price ${usd(price)} > max_price ${maxPrice.toFixed(2)}`, { price: usd(price) });
