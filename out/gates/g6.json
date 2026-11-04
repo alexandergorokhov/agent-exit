@@ -1,17 +1,103 @@
 {
+  "pass": false,
+  "payment_event": null,
   "samples": [
     {
-      "error": {
-        "error": {
-          "code": null,
-          "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
-          "param": "model",
-          "type": "invalid_request_error"
-        }
-      },
-      "model": "openai/gpt-oss-120b",
-      "status": 400
+      "chat_id": "chatcmpl-157df531-e620-4f2f-a7e3-8f14757f0662",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ms": 1508,
+      "recovered_offline": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+      "request_len": 300,
+      "request_sha256": "ae8de0ec7101ac4ae0dd990c30b3105033d87ed1aeab09b4db596b2654f189ae",
+      "response_sha256": "dce7618fbcb1c176ea4db091865e5d1b503d6c32699600fef4e6cc4ad52a9464",
+      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:ae8de0ec7101ac4ae0dd990c30b3105033d87ed1aeab09b4db596b2654f189ae:dce7618fbcb1c176ea4db091865e5d1b503d6c32699600fef4e6cc4ad52a9464",
+      "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+      "signing_algo": "ecdsa",
+      "text_form": "provider (model:req:resp), the form the contract checks"
     }
   ],
-  "schema": "gate-g6.v1"
+  "schema": "gate-g6.v1",
+  "signer_stability": [
+    {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e"
+    }
+  ],
+  "txs": [
+    {
+      "by": "agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e"
+            }
+          ],
+          "event": "signer_added",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/DWdMJgBp7deAn2HV42vG5m8Kxohj94ds6JuFzAd1pRow",
+      "label": "registry admin: add_signer",
+      "method": "add_signer",
+      "ms": 4643,
+      "ok": true,
+      "receiver": "translator.agentexit3.testnet",
+      "tx": "DWdMJgBp7deAn2HV42vG5m8Kxohj94ds6JuFzAd1pRow",
+      "value": null
+    },
+    {
+      "by": "p1.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "1000000",
+              "new_owner_id": "translator.agentexit3.testnet",
+              "old_owner_id": "p1.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "1000000",
+              "reason": "PolicyViolation:PriceFloor",
+              "sender": "p1.agentexit3.testnet"
+            }
+          ],
+          "event": "refused",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "1000000",
+              "memo": "refund",
+              "new_owner_id": "p1.agentexit3.testnet",
+              "old_owner_id": "translator.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/4XgQHaMy3qsjuRS7WPJU25EeuVJaP7yPY5XuDKfjf2sA",
+      "label": "p1 pays 1.00 with the NEAR AI proof",
+      "method": "ft_transfer_call",
+      "ms": 6961,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "4XgQHaMy3qsjuRS7WPJU25EeuVJaP7yPY5XuDKfjf2sA",
+      "value": "0"
+    }
+  ]
 }
