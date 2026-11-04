@@ -1,10 +1,18 @@
 //! `scan FILE` (or `-` for stdin): read a `scan-input.v1` JSON, print the
 //! `scan-report.v1` JSON. Exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input.
+//! `scan --investor FILE`: the investor's scan before `buy_share` (every key,
+//! code and contract rule, without the sale-listing rules).
 
 use std::io::Read;
 
 fn main() {
-    let path = std::env::args().nth(1).unwrap_or_else(|| "-".into());
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let investor = args.iter().any(|a| a == "--investor");
+    let path = args
+        .iter()
+        .find(|a| *a != "--investor")
+        .cloned()
+        .unwrap_or_else(|| "-".into());
     let mut text = String::new();
     let read = if path == "-" {
         std::io::stdin().read_to_string(&mut text).map(|_| ())
@@ -22,7 +30,11 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let r = scan::scan(&input);
+    let r = if investor {
+        scan::scan_investor(&input)
+    } else {
+        scan::scan(&input)
+    };
     println!("{}", serde_json::to_string_pretty(&r).expect("json"));
     std::process::exit(match r.verdict.as_str() {
         "clean" => 0,

@@ -1,8 +1,9 @@
-// The six Agent Exit tools. JSON in, JSON out; every input and output has a
+// The nine Agent Exit tools. JSON in, JSON out; every input and output has a
 // schema in schemas/mcp/ and names its schema_version.
 //
-// Read tools: list_agents, get_earnings, scan_agent, verify_lockout.
-// Write tools: buy_agent, list_for_sale. They need AGENT_EXIT_ALLOW_WRITE=1
+// Read tools: list_agents, get_earnings, scan_agent, verify_lockout,
+// list_offers, portfolio.
+// Write tools: buy_agent, list_for_sale, buy_share. They need AGENT_EXIT_ALLOW_WRITE=1
 // and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true, and buy_agent
 // needs max_price, stays inside the session spend cap, and scans first:
 // any finding refuses the buy before anything is sent.
@@ -10,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
-import { type Backend, type Json, type MinTerms, type ScanExpect, ToolError } from "./backend.js";
+import { type Backend, type Json, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
 
 export const TOOL_NAMES = [
@@ -20,9 +21,12 @@ export const TOOL_NAMES = [
   "buy_agent",
   "verify_lockout",
   "list_for_sale",
+  "list_offers",
+  "buy_share",
+  "portfolio",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
-export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale"];
+export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share"];
 
 const DESCRIPTIONS: Record<ToolName, string> = {
   list_agents: "List agents with owner, status, price and meter totals (counted = real customers; flagged = self, sub-account or round-trip payments). Read-only. All money is xUSD-FAKE.",
@@ -31,6 +35,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   buy_agent: "Buy a listed agent in one transaction (deed moves, seller's runner key deleted, your runner key added, 70% paid now, 30% earn-out). WRITE: needs confirm: true and max_price; scans first and refuses on any finding.",
   verify_lockout: "After a sale: check that an account (the old seller) no longer owns the agent, has no key on it, and that owner-only calls are refused. Read-only.",
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
+  list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
+  buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
+  portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
 
 export interface SchemaSet {
@@ -287,6 +294,12 @@ export class Tools {
         return this.verifyLockout(a.agent, a.account, a.account_keys);
       case "list_for_sale":
         return this.listForSale(a.agent, a.price, a.confirm);
+      case "list_offers":
+        return this.listOffers(a.agent);
+      case "buy_share":
+        return this.buyShare(a.agent, a.offer_id, a.pct, a.max_price, a.confirm);
+      case "portfolio":
+        return this.portfolio(a.account);
     }
   }
 
@@ -343,14 +356,15 @@ export class Tools {
     };
   }
 
-  /** Run the Rust scanner (tools/scan, one source of truth for the rules). */
-  private async scan(agent: string, expect: ScanExpect): Promise<Json> {
+  /** Run the Rust scanner (tools/scan, one source of truth for the rules).
+   * `investor`: the scan before buy_share, without the sale-listing rules. */
+  private async scan(agent: string, expect: ScanExpect, investor = false): Promise<Json> {
     const input = await this.backend.scanInput(agent, expect);
     if (!this.cfg.scanBin) {
       throw new ToolError("SCAN_UNAVAILABLE", "scan binary not found: run `cargo build -p scan` (or set AGENT_EXIT_SCAN_BIN); buying is refused without a scan");
     }
     // L3: the scanner needs no secrets; give it PATH and nothing else.
-    const r = spawnSync(this.cfg.scanBin, ["-"], { input: JSON.stringify(input), encoding: "utf8", env: scanEnv(), timeout: 30_000 });
+    const r = spawnSync(this.cfg.scanBin, investor ? ["--investor", "-"] : ["-"], { input: JSON.stringify(input), encoding: "utf8", env: scanEnv(), timeout: 30_000 });
     if (r.status === null || ![0, 2, 3].includes(r.status)) {
       throw new ToolError("SCAN_UNAVAILABLE", `scan failed (exit ${r.status}): ${r.stderr}`);
     }
@@ -600,4 +614,156 @@ export class Tools {
       recorded: r.recorded,
     };
   }
+
+  // ------------------------------------------- shares of future earnings
+
+  private async listOffers(only?: string): Promise<Json> {
+    const ids = only ? [only] : await this.backend.listAgents();
+    const now = this.backend.nowNs();
+    const agents = [];
+    for (const id of ids) {
+      const v = await this.backend.agent(id);
+      const status = STATUSES.has(String(v.status.status)) ? v.status.status : "Unknown";
+      const offers = (v.shares ?? [])
+        .filter((o: Json) => Number(o.sold_bps) < Number(o.bps) && BigInt(o.end) > now)
+        .map((o: Json) => ({
+          offer_id: Number(o.offer_id),
+          seller: o.seller,
+          pct: Number(o.bps) / 100,
+          price: usd(o.price),
+          price_per_pct: usd((BigInt(o.price) * 100n) / BigInt(o.bps)),
+          sold_pct: Number(o.sold_bps) / 100,
+          open_pct: (Number(o.bps) - Number(o.sold_bps)) / 100,
+          min_part_pct: Number(o.min_part) / 100,
+          ends: day(o.end),
+          holders: (o.holders as Json[]).length,
+          seller_is_owner: o.seller === v.status.owner,
+        }));
+      if (only === undefined && offers.length === 0) continue;
+      agents.push({
+        agent: id,
+        owner: v.status.owner,
+        status,
+        counted: usd(v.earnings.counted),
+        counted_payers: Number(v.earnings.counted_payers ?? 0),
+        shares_pct: Number(v.status.shares_bps ?? 0) / 100,
+        buyable: status === "Active" && !v.status.frozen,
+        offers,
+      });
+    }
+    return {
+      ...this.base("list_offers"),
+      agents,
+      meaning:
+        "a slice gets pct of every future payment to the agent until it ends; half of what you pay goes to the owner now, half is held and released to the owner only by counted (real customer) payments; at the end, escrow still held is refunded to you. Judge the price against counted earnings, not gross",
+    };
+  }
+
+  private async buyShare(agent: string, offerId: number, pct: number, maxPrice: number, confirm: boolean): Promise<Json> {
+    const investor = this.writeGate();
+    if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", "buy_share needs confirm: true");
+    if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
+      throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet buy_share only buys into agents the operator listed`);
+    }
+    const part = Math.round(pct * 100);
+    if (part < 1 || Math.abs(part - pct * 100) > 1e-6) throw new ToolError("BAD_INPUT", "pct must be a multiple of 0.01");
+    // The offer terms come from this one read; the contract refuses others (T6).
+    const v = await this.backend.agent(agent);
+    const owner: string = v.status.owner;
+    if (v.status.status !== "Active" || v.status.frozen) {
+      throw new ToolError("NOT_BUYABLE", `${agent} is ${v.status.frozen ? "frozen" : v.status.status}: share buys are refused while it is listed, settling or frozen`);
+    }
+    if (investor === owner || investor.endsWith(`.${owner}`)) {
+      throw new ToolError("NOT_BUYABLE", "the owner and the owner's sub-accounts cannot buy shares of their own agent");
+    }
+    const o = (v.shares ?? []).find((x: Json) => Number(x.offer_id) === offerId);
+    if (!o) throw new ToolError("UNKNOWN_OFFER", `no offer ${offerId} on ${agent}`);
+    if (o.seller !== owner) throw new ToolError("NOT_BUYABLE", `offer ${offerId} was made by ${o.seller}, not the current owner`);
+    const open = Number(o.bps) - Number(o.sold_bps);
+    if (BigInt(o.end) <= this.backend.nowNs() || open <= 0) throw new ToolError("OFFER_CLOSED", `offer ${offerId} has ended or is sold out`);
+    if (part > open) throw new ToolError("OFFER_CLOSED", `only ${open / 100}% of offer ${offerId} is still open`);
+    if (part < Number(o.min_part)) throw new ToolError("SHARE_TOO_SMALL", `the smallest part of offer ${offerId} is ${Number(o.min_part) / 100}%`);
+    // Same rounding as the contract (rounded up, shares.rs cost()).
+    const price = BigInt(o.price);
+    const bps = BigInt(o.bps);
+    const cost = (price * BigInt(part) + bps - 1n) / bps;
+    if (cost > BigInt(units(maxPrice))) {
+      throw new ToolError("OVER_MAX_PRICE", `cost ${usd(cost)} > max_price ${maxPrice.toFixed(2)}`, { cost: usd(cost) });
+    }
+    const cap = BigInt(units(this.cfg.sessionCap));
+    this.ledger.reserve(cost, cap);
+    try {
+      // The investor scan: keys, code, contract rules; not the sale listing.
+      const r = await this.scan(agent, {}, true);
+      if (r.verdict !== "clean") {
+        throw new ToolError("SCAN_BLOCKED", `investor scan verdict ${r.verdict}: not buying`, {
+          findings: findings(r).filter((f) => f.severity === "block"),
+          untrusted_notice: UNTRUSTED_NOTICE,
+        });
+      }
+      const seen: ShareTerms = { offer_id: offerId, bps: Number(o.bps), price: String(o.price), end: String(o.end) };
+      const out = await this.backend.buyShare(agent, investor, seen, part, cost.toString());
+      const paid = BigInt(out.cost);
+      const escrow = paid / 2n;
+      return {
+        ...this.base("buy_share"),
+        agent,
+        investor,
+        offer_id: offerId,
+        pct: part / 100,
+        cost: usd(paid),
+        refund: usd(out.refund),
+        paid_to_owner_now: usd(paid - escrow),
+        held_in_escrow: usd(escrow),
+        ends: day(o.end),
+        scan_verdict: "clean",
+        session_spent: usd(this.spent),
+        recorded: out.recorded,
+        ...(out.tx_hash ? { tx_hash: out.tx_hash, explorer: out.explorer } : {}),
+      };
+    } catch (e) {
+      // As buy_agent: keep the reservation only when the send is unconfirmed.
+      if (!(e instanceof ToolError && e.code === "SENT_UNCONFIRMED")) this.ledger.add(-cost);
+      throw e;
+    }
+  }
+
+  private async portfolio(account?: string): Promise<Json> {
+    const who = account ?? this.cfg.accountId;
+    if (!who) throw new ToolError("BAD_INPUT", "portfolio needs account (or AGENT_EXIT_ACCOUNT_ID in the server env)");
+    const holdings = [];
+    const claimable = [];
+    let paidIn = 0n;
+    let earned = 0n;
+    let claim = 0n;
+    for (const id of await this.backend.listAgents()) {
+      const h = await this.backend.holdings(id, who);
+      for (const x of (h.holdings as Json[]) ?? []) {
+        paidIn += BigInt(x.paid_in);
+        earned += BigInt(x.earned);
+        holdings.push({ agent: id, offer_id: Number(x.offer_id), pct: Number(x.bps) / 100, paid_in: usd(x.paid_in), earned: usd(x.earned), escrow: usd(x.escrow), ends: day(x.end) });
+      }
+      const c = BigInt(h.claimable ?? "0");
+      if (c > 0n) {
+        claim += c;
+        claimable.push({ agent: id, amount: usd(c) });
+      }
+    }
+    return {
+      ...this.base("portfolio"),
+      account: who,
+      holdings,
+      claimable,
+      total_paid_in: usd(paidIn),
+      total_earned: usd(earned),
+      total_claimable: usd(claim),
+      meaning:
+        "earned = your cut of payments so far; escrow = the part of your price still held (released to the owner by counted payments, refunded to you at the end); claimable = paid out to you on the agent's `claim` call",
+    };
+  }
+}
+
+/** Nanoseconds since the epoch -> UTC date. */
+function day(ns: string | number | bigint): string {
+  return new Date(Number(BigInt(ns) / 1_000_000n)).toISOString().slice(0, 10);
 }

@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/portfolio.output.v1.json",
+  "title": "portfolio output",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.portfolio.v1"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "testnet"
+      ]
+    },
+    "account": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "holdings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9._-]+$"
+          },
+          "offer_id": {
+            "type": "integer"
+          },
+          "pct": {
+            "type": "number"
+          },
+          "paid_in": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "description": "xUSD-FAKE dollars, 2 decimals"
+          },
+          "earned": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "description": "xUSD-FAKE dollars, 2 decimals"
+          },
+          "escrow": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "description": "xUSD-FAKE dollars, 2 decimals"
+          },
+          "ends": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent",
+          "offer_id",
+          "pct",
+          "paid_in",
+          "earned",
+          "escrow",
+          "ends"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "claimable": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9._-]+$"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "description": "xUSD-FAKE dollars, 2 decimals"
+          }
+        },
+        "required": [
+          "agent",
+          "amount"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "total_paid_in": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]{2}$",
+      "description": "xUSD-FAKE dollars, 2 decimals"
+    },
+    "total_earned": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]{2}$",
+      "description": "xUSD-FAKE dollars, 2 decimals"
+    },
+    "total_claimable": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]{2}$",
+      "description": "xUSD-FAKE dollars, 2 decimals"
+    },
+    "meaning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "network",
+    "account",
+    "holdings",
+    "claimable",
+    "total_paid_in",
+    "total_earned",
+    "total_claimable",
+    "meaning"
+  ],
+  "additionalProperties": false
+}

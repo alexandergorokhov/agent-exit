@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/buy_share.input.v1.json",
+  "title": "buy_share input",
+  "description": "Buy part of a share offer: that % of every future customer payment to the agent, until the slice ends. WRITE tool: needs AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true and max_price. Runs the investor scan first and refuses on any finding. Half the price goes to the owner now, half is held and released to the owner only by counted payments. The offer terms come from one read; the contract refuses changed terms and the token refunds.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the agent account, e.g. research.testnet"
+    },
+    "offer_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pct": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "description": "% of every payment to buy, e.g. 10 (must be at least the offer's min_part_pct)"
+    },
+    "max_price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000000,
+      "description": "most you will pay, in xUSD-FAKE dollars"
+    },
+    "confirm": {
+      "type": "boolean",
+      "description": "must be true"
+    }
+  },
+  "required": [
+    "agent",
+    "offer_id",
+    "pct",
+    "max_price",
+    "confirm"
+  ],
+  "additionalProperties": false
+}

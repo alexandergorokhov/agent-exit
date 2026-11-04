@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/portfolio.input.v1.json",
+  "title": "portfolio input",
+  "description": "Share holdings of one investor across the agents this server knows: % held, paid in, earned so far, escrow still held, and what can be claimed now. Read-only.",
+  "type": "object",
+  "properties": {
+    "account": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "the investor account; default: the server's AGENT_EXIT_ACCOUNT_ID"
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

@@ -137,7 +137,7 @@ Where the code differs from the plan above, the code wins:
 | T4 | The price floor cannot be raised while **any slice is open**, sold or not, so the owner cannot front-run the first investor (review M1) |
 | T9 | When the deed moves (sale or transfer), the **unsold rest of every slice closes**; sold parts stay and are disclosed (review H1) |
 | T10 | Minimum part is a tenth of the slice (`MIN_PART_DIV`), not 1%. No storage deposit is taken; the holder cap (16) bounds storage |
-| T8 | The page and the investor scan (`scan_investor`) check the agent before buying a share. The MCP server has **no** share tools (`list_offers`, `buy_share`, `portfolio` were not built) |
+| T8 | The page and the investor scan (`scan_investor`) check the agent before buying a share. The MCP server's `buy_share` runs the same investor scan (`scan --investor`) and refuses a non-clean agent; `list_offers` and `portfolio` are read-only (2026-11-04, `mcp/test/shares_tools.test.ts`; offline replay of results recorded from the contract, not yet run on testnet) |
 | T14 | No sandbox test with a transfer failure between buy, pay and claim yet (not built) |
 | T15 | No `pay()` gas stress test with 16 holders yet (not built); `pay()` only credits balances |
 | T17 | The admin's signer list is **not** read by the scan. "Verified" proves a NEAR AI inference happened for that payer, job and amount; it does not prove the payer is an independent customer (see NOT-CAUGHT N7) |

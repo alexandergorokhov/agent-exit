@@ -496,7 +496,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 86, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, 91, "{f}: the MCP test count differs from make mcp-test");
         }
     }
 }

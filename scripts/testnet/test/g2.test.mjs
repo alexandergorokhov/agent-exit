@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkAuthorization, checkBaseRpc, checkChainsig, checkRelayerKey, checkSecretFileMode, parseEnvFile, requireTestnet, scrub } from "../g2-guards.mjs";
+// A path that surely does not exist (some hosts have a real /nonexistent).
+const NO_ENV_FILE = join(mkdtempSync(join(tmpdir(), "agent-exit-g2-")), "no.env");
 
 const RELAY = join(dirname(fileURLToPath(import.meta.url)), "..", "g2-relay.mjs");
 const KEY = "0x" + "ab12".repeat(16);
@@ -18,7 +20,7 @@ function relay(env, signJson) {
   const dir = mkdtempSync(join(tmpdir(), "g2-"));
   const sign = join(dir, "g2-sign.json");
   if (signJson) writeFileSync(sign, JSON.stringify(signJson));
-  const base = { PATH: process.env.PATH, AGENT_EXIT_ENV: "/nonexistent", AGENT_EXIT_NETWORK: "testnet" };
+  const base = { PATH: process.env.PATH, AGENT_EXIT_ENV: NO_ENV_FILE, AGENT_EXIT_NETWORK: "testnet" };
   const r = spawnSync(process.execPath, [RELAY, sign], { env: { ...base, ...env }, encoding: "utf8" });
   const outFile = join(dir, "g2.json");
   return { r, out: r.stdout + r.stderr, written: existsSync(outFile) ? readFileSync(outFile, "utf8") : "" };

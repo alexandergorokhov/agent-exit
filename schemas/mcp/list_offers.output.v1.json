@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/list_offers.output.v1.json",
+  "title": "list_offers output",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.list_offers.v1"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "testnet"
+      ]
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9._-]+$"
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9._-]+$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Listed",
+              "Settling",
+              "Sold",
+              "Unknown"
+            ]
+          },
+          "counted": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "description": "xUSD-FAKE dollars, 2 decimals"
+          },
+          "counted_payers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shares_pct": {
+            "type": "number"
+          },
+          "buyable": {
+            "type": "boolean",
+            "description": "share buys are refused while the agent is listed or frozen"
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "offer_id": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "seller": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9._-]+$"
+                },
+                "pct": {
+                  "type": "number",
+                  "description": "% of every future payment this slice gets"
+                },
+                "price": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]{2}$",
+                  "description": "xUSD-FAKE dollars, 2 decimals"
+                },
+                "price_per_pct": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]{2}$",
+                  "description": "xUSD-FAKE dollars, 2 decimals"
+                },
+                "sold_pct": {
+                  "type": "number"
+                },
+                "open_pct": {
+                  "type": "number"
+                },
+                "min_part_pct": {
+                  "type": "number",
+                  "description": "smallest part you can buy now"
+                },
+                "ends": {
+                  "type": "string",
+                  "description": "UTC date the slice ends"
+                },
+                "holders": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "seller_is_owner": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "offer_id",
+                "seller",
+                "pct",
+                "price",
+                "price_per_pct",
+                "sold_pct",
+                "open_pct",
+                "min_part_pct",
+                "ends",
+                "holders",
+                "seller_is_owner"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "agent",
+          "owner",
+          "status",
+          "counted",
+          "counted_payers",
+          "shares_pct",
+          "buyable",
+          "offers"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "meaning": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "network",
+    "agents",
+    "meaning"
+  ],
+  "additionalProperties": false
+}

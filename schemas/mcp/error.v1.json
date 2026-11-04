@@ -45,7 +45,14 @@
             "NOT_BUILT",
             "NETWORK_REFUSED",
             "RPC_ERROR",
-            "ALLOWANCE_LOW"
+            "ALLOWANCE_LOW",
+            "BUY_REFUSED",
+            "SENT_UNCONFIRMED",
+            "UNKNOWN_OFFER",
+            "OFFER_CLOSED",
+            "SHARE_TOO_SMALL",
+            "NOT_BUYABLE",
+            "SHARE_REFUSED"
           ]
         },
         "message": {

@@ -14,7 +14,8 @@ sure the numbers are real and nobody keeps a way back in.
 
 Use the `agent-exit` MCP server (stdio, `make mcp`; config in
 `mcp/mcp-config.example.json`). Tools: `list_agents`, `get_earnings`,
-`scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`. JSON in and
+`scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`, and for
+shares of future earnings `list_offers`, `buy_share`, `portfolio`. JSON in and
 out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
 `make scan FILE=<scan-input.json>`.
 
@@ -44,6 +45,18 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
    has no key on the account, and owner-only calls are refused.
 6. **Resell later (optional).** As the owner, `list_for_sale` with a price
    and `confirm: true`. The history travels with the agent.
+
+## Investing instead of buying (shares)
+
+1. `list_offers`: open slices (a % of every future payment, a price, an end
+   date). Judge the price against `counted` earnings, never `gross`.
+2. `buy_share` with `agent`, `offer_id`, `pct`, `max_price` and
+   `confirm: true`. The server runs the investor scan (every key, code and
+   contract rule of the sale scan, without the listing rules) and refuses on
+   any finding, above `max_price` or above the session spend cap. Half the
+   price goes to the owner now; half is held and released to the owner only
+   by counted payments, and what is still held at the end comes back to you.
+3. `portfolio`: what you hold, what you earned, and what you can claim.
 
 ## Rules
 

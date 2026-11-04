@@ -34,6 +34,25 @@ export interface AgentView {
   access_keys: Json[];
   /** Public key -> account that used it, when known. */
   key_owners: Record<string, string>;
+  /** Open share offers (get_shares). */
+  shares: Json[];
+}
+
+/** One share buy as the contract settled it. */
+export interface ShareOutcome {
+  cost: string;
+  refund: string;
+  recorded: boolean;
+  tx_hash?: string;
+  explorer?: string;
+}
+
+/** The offer terms the investor read (the contract refuses others, T6). */
+export interface ShareTerms {
+  offer_id: number;
+  bps: number;
+  price: string;
+  end: string;
 }
 
 export interface BuyOutcome {
@@ -108,6 +127,12 @@ export interface Backend {
   assertAllowance(account: string, publicKey: string, min: bigint): Promise<void>;
   /** Results of owner-only calls attempted by `account`, when known. */
   probes(id: string, account: string): Promise<Record<string, string> | null>;
+  /** The chain's clock in ns (offline: the recorded world's clock). */
+  nowNs(): bigint;
+  /** get_holdings of one investor on one agent. */
+  holdings(id: string, account: string): Promise<Json>;
+  /** One ft_transfer_call with a buy_share message. */
+  buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome>;
 }
 
 // ------------------------------------------------------------------ offline
@@ -193,6 +218,29 @@ export class OfflineBackend implements Backend {
     const rec = this.bought.get(id);
     if (rec && rec.old_owner_probes.account === account) return rec.old_owner_probes.results;
     return null;
+  }
+
+  nowNs(): bigint {
+    const a = [...this.agents.values()][0] as Json;
+    return BigInt(a?.scan_input?.now_ns ?? 0);
+  }
+
+  async holdings(id: string, account: string): Promise<Json> {
+    const a = this.get(id) as Json;
+    return structuredClone(a.holdings?.[account] ?? { agent: id, investor: account, holdings: [], claimable: "0" });
+  }
+
+  async buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome> {
+    const rec = ((this.world.recorded_share_buys as Json[]) ?? []).find(
+      (b) => b.agent === id && b.investor === investor && b.offer_id === seen.offer_id && b.part === part && b.amount === amount,
+    );
+    if (!rec) {
+      throw new ToolError("OFFLINE_NO_RECORDING", "offline mode replays recorded contract results only; this share buy (agent, investor, offer, part, amount) was not recorded", {
+        recorded: ((this.world.recorded_share_buys as Json[]) ?? []).map((b) => ({ agent: b.agent, investor: b.investor, offer_id: b.offer_id, part: b.part, amount: b.amount })),
+      });
+    }
+    this.agents.set(id, structuredClone(rec.after));
+    return { cost: String(rec.share_bought.cost), refund: String(rec.refund), recorded: true };
   }
 }
 
@@ -348,15 +396,16 @@ export class TestnetBackend implements Backend {
 
   async agent(id: string): Promise<AgentView> {
     this.known(id);
-    const [status, earnings, listing, limits, sales, keys] = await Promise.all([
+    const [status, earnings, listing, limits, sales, keys, shares] = await Promise.all([
       this.view(id, "get_status"),
       this.view(id, "get_earnings"),
       this.view(id, "get_listing"),
       this.view(id, "get_limits"),
       this.view(id, "get_sales"),
       this.keys(this.cfg.rpc[0], id),
+      this.view(id, "get_shares"),
     ]);
-    return { status, earnings, listing, limits, sales, access_keys: keys, key_owners: {} };
+    return { status, earnings, listing, limits, sales, access_keys: keys, key_owners: {}, shares: Array.isArray(shares) ? shares : [] };
   }
 
   /** A51: the agent's Base wallet as it reports it, plus the MPC root key read
@@ -448,12 +497,14 @@ export class TestnetBackend implements Backend {
   /** One ft_transfer_call on the token, signed with the server's key. The
    * price, listing version and key hash are the ones the scan saw; the
    * contract refuses anything else and the token refunds it. */
-  async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome> {
+  /** One ft_transfer_call on the published token, signed with the server's
+   * key and waited on to FINAL. `what` names the call in errors. */
+  private async ftTransferCall(id: string, signer: string, amount: string, msg: string, what: string): Promise<{ result: Json; txHash: string; explorer: string }> {
     this.known(id);
-    this.known(buyer);
+    this.known(signer);
     if (!this.secret) throw new ToolError("WRITE_DISABLED", "testnet writes need AGENT_EXIT_PRIVATE_KEY in the server env; nothing was sent");
     const token = this.cfg.expectedToken;
-    if (!token) throw new ToolError("WRITE_DISABLED", "testnet buy needs AGENT_EXIT_TOKEN (the published xUSD-FAKE token); nothing was sent");
+    if (!token) throw new ToolError("WRITE_DISABLED", `testnet ${what} needs AGENT_EXIT_TOKEN (the published xUSD-FAKE token); nothing was sent`);
     let key: NearKey;
     try {
       key = new NearKey(this.secret);
@@ -466,13 +517,12 @@ export class TestnetBackend implements Backend {
     const ak = await this.rpc(this.cfg.rpc[0], {
       request_type: "view_access_key",
       finality: "final",
-      account_id: buyer,
+      account_id: signer,
       public_key: key.publicKeyString,
     });
-    const msg = JSON.stringify({ kind: "buy", listing_version: version, known_keys_hash: hash, buyer_runner_pk: pk });
     const { signed, hash: txHash } = signTx(
       {
-        signerId: buyer,
+        signerId: signer,
         publicKey: key.publicKey,
         nonce: BigInt(ak.nonce) + 1n,
         receiverId: token,
@@ -490,8 +540,14 @@ export class TestnetBackend implements Backend {
       result = await this.rpcMethod(this.cfg.rpc[0], "send_tx", { signed_tx_base64: signed.toString("base64"), wait_until: "FINAL" }, 90_000);
     } catch (e) {
       // Sent or not, we cannot tell: never report it as not sent.
-      throw new ToolError("SENT_UNCONFIRMED", `the buy transaction ${txHash} may have been sent (${(e as Error).message}); check ${explorer} before retrying`, { tx_hash: txHash, explorer });
+      throw new ToolError("SENT_UNCONFIRMED", `the ${what} transaction ${txHash} may have been sent (${(e as Error).message}); check ${explorer} before retrying`, { tx_hash: txHash, explorer });
     }
+    return { result, txHash, explorer };
+  }
+
+  async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome> {
+    const msg = JSON.stringify({ kind: "buy", listing_version: version, known_keys_hash: hash, buyer_runner_pk: pk });
+    const { result, txHash, explorer } = await this.ftTransferCall(id, buyer, amount, msg, "buy");
     const sale = txEvents(result, "sale")[0];
     if (!sale) {
       const rolled = txEvents(result, "sale_rolled_back")[0];
@@ -540,6 +596,31 @@ export class TestnetBackend implements Backend {
 
   async probes(): Promise<Record<string, string> | null> {
     return null;
+  }
+
+  nowNs(): bigint {
+    return BigInt(Date.now()) * 1_000_000n;
+  }
+
+  async holdings(id: string, account: string): Promise<Json> {
+    this.known(id);
+    return this.view(id, "get_holdings", { account_id: account });
+  }
+
+  async buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome> {
+    const msg = JSON.stringify({ kind: "buy_share", offer_id: seen.offer_id, bps: seen.bps, price: seen.price, end: seen.end, part });
+    const { result, txHash, explorer } = await this.ftTransferCall(id, investor, amount, msg, "share buy");
+    const bought = txEvents(result, "share_bought")[0];
+    if (!bought) {
+      const refused = txEvents(result, "refused")[0];
+      const failure = result?.status?.Failure ? JSON.stringify(result.status.Failure).slice(0, 300) : null;
+      throw new ToolError("SHARE_REFUSED", `no share bought: ${refused ? `the contract refused it (${String(refused.reason)}); the token refunded the payment` : failure ?? "the contract refused it; the token refunded the payment"} (${explorer})`, {
+        tx_hash: txHash,
+        explorer,
+      });
+    }
+    const cost = String(bought.cost);
+    return { cost, refund: (BigInt(amount) - BigInt(cost)).toString(), recorded: false, tx_hash: txHash, explorer };
   }
 }
 

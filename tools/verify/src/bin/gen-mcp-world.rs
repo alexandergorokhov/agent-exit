@@ -10,7 +10,10 @@
 //! - one recorded buy: `summarizer` buys `translator` at 1,000.00 with the
 //!   listing version and key hash its scan saw, plus the after-state and the
 //!   old seller's refused calls (lockout probes);
-//! - one recorded resale listing: `summarizer` lists `translator` at 1,200.00.
+//! - one recorded resale listing: `summarizer` lists `translator` at 1,200.00;
+//! - `research` (owner carol, not for sale) offers 20% of its earnings for a
+//!   year at 300.00, and one recorded share buy: dave buys 10% for 150.00,
+//!   plus the after-state with dave's holdings.
 //!
 //! `gen-mcp-world --check` fails if the committed file differs.
 
@@ -97,11 +100,25 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
     })
 }
 
+const RESEARCH: &str = "research.testnet";
+const DAVE: &str = "dave.testnet";
+
 /// One agent as the MCP server sees it.
 fn snapshot(s: &mut Sim, key_owners: Value, hidden_full: Option<String>) -> Value {
+    snapshot_with(s, key_owners, hidden_full, &[])
+}
+
+/// Same, plus `get_holdings` of each named investor.
+fn snapshot_with(s: &mut Sim, key_owners: Value, hidden_full: Option<String>, investors: &[&str]) -> Value {
     let scan = scan_input(s, hidden_full.clone());
+    let holdings: serde_json::Map<String, Value> = investors
+        .iter()
+        .map(|a| (a.to_string(), s.by(MALLORY).get_holdings(acc(a))))
+        .collect();
     let c = s.by(MALLORY);
     json!({
+        "shares": c.get_shares(),
+        "holdings": holdings,
         "status": c.get_status(),
         "earnings": c.get_earnings(),
         "listing": c.get_listing(),
@@ -164,6 +181,35 @@ fn build() -> String {
         .list_for_sale(U128(1_200 * USD), CODE_HASH.into(), None);
     let after_relist = snapshot(&mut t, owners, None);
 
+    // research: carol's agent, 4 customers x 3 payments x 20.00, not for
+    // sale; carol offers 20% of its earnings for a year at 300.00.
+    let mut r = Sim::new(RESEARCH, CAROL);
+    r.by_1y(CAROL).set_runner_key(key(CAROL_RUNNER)).detach();
+    r.runner_key_cb(true, vec![], vec![], key_str(CAROL_RUNNER));
+    for p in &PAYERS[..4] {
+        r.register(p);
+    }
+    for day in 0..3u64 {
+        r.now = T0 + day * DAY;
+        for p in &PAYERS[..4] {
+            assert_eq!(r.pay(p, 20 * USD), Some(0));
+        }
+    }
+    r.now = T0 + 10 * DAY;
+    let carol_key = key_str(CAROL_RUNNER);
+    let end = near_sdk::json_types::U64(r.now + 365 * DAY);
+    let offer = r.by_1y(CAROL).offer_share(2_000, U128(300 * USD), end);
+    let research = snapshot_with(&mut r, json!({ (carol_key.clone()): CAROL }), None, &[DAVE]);
+    let share_msg = json!({"kind": "buy_share", "offer_id": offer["offer_id"], "bps": offer["bps"],
+        "price": offer["price"], "end": offer["end"], "part": 1_000})
+    .to_string();
+    let share_refund = r
+        .ft(DAVE, 150 * USD, &share_msg, 100)
+        .expect("share buy settles in one call");
+    let bought = events("share_bought");
+    assert_eq!(bought.len(), 1, "dave's share buy");
+    let after_share = snapshot_with(&mut r, json!({ (carol_key): CAROL }), None, &[DAVE]);
+
     let world = json!({
         "schema": "mcp-world.v1",
         "_note": "RECORDED from the real contract code in near-sdk's mocked runtime by `cargo run -q -p verify --bin gen-mcp-world`. All money is xUSD-FAKE (no value). Not testnet, not mainnet.",
@@ -174,6 +220,7 @@ fn build() -> String {
         "agents": {
             (AGENT): translator,
             (CHEAT): cheat,
+            (RESEARCH): research,
         },
         "recorded_buys": [{
             "agent": AGENT,
@@ -195,6 +242,16 @@ fn build() -> String {
             "price": (1_200 * USD).to_string(),
             "listing": resale_card,
             "after": after_relist,
+        }],
+        "recorded_share_buys": [{
+            "agent": RESEARCH,
+            "investor": DAVE,
+            "offer_id": offer["offer_id"],
+            "part": 1_000,
+            "amount": (150 * USD).to_string(),
+            "share_bought": bought[0],
+            "refund": share_refund.to_string(),
+            "after": after_share,
         }],
     });
     serde_json::to_string_pretty(&world).expect("json") + "\n"

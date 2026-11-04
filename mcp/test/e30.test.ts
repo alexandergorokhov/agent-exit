@@ -26,11 +26,14 @@ for (const env of envs) {
       assert.equal(b.body.error.code, "WRITE_DISABLED");
       const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
       assert.equal(l.body.error.code, "WRITE_DISABLED");
+      const sh = await s.call("buy_share", { agent: "research.testnet", offer_id: 1, pct: 10, max_price: 150, confirm: true });
+      assert.equal(sh.body.error.code, "WRITE_DISABLED");
       const tools = await s.client.listTools();
       const ro = Object.fromEntries(tools.tools.map((t) => [t.name, t.annotations?.readOnlyHint]));
       assert.deepEqual(ro, {
         list_agents: true, get_earnings: true, scan_agent: true,
         buy_agent: false, verify_lockout: true, list_for_sale: false,
+        list_offers: true, buy_share: false, portfolio: true,
       });
     } finally {
       await s.close();
