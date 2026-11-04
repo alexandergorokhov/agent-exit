@@ -33,6 +33,9 @@ test("LT1 testnet setup: carol signs in the server env only", () => {
   assert.equal(s.serverEnv.AGENT_EXIT_TOKEN, "xusd.agentexit3.testnet");
   assert.equal(s.serverEnv.AGENT_EXIT_AGENTS, "translator.agentexit3.testnet,cheat.agentexit3.testnet");
   assert.equal(s.serverEnv.AGENT_EXIT_SESSION_CAP, "1000");
+  // fastnear first: rpc.testnet.near.org rate-limited the 2026-11-04 night run.
+  assert.equal(s.serverEnv.AGENT_EXIT_RPC, "https://rpc.testnet.fastnear.com");
+  assert.equal(s.serverEnv.AGENT_EXIT_RPC_2, "https://rpc.testnet.near.org");
   assert.deepEqual(s.names, { cheat: "cheat.agentexit3.testnet", translator: "translator.agentexit3.testnet" });
   // The model's inputs never carry the key.
   assert.ok(!s.goal.includes("ed25519:") && !s.network.includes("ed25519:"));

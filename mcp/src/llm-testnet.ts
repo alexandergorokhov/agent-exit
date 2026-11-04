@@ -64,7 +64,10 @@ export function testnetSetup(repo: string, argv: string[] = process.argv, env: N
     AGENT_EXIT_CODE_HASH: deploy.agent_code_hash ?? "",
     AGENT_EXIT_SPEND_FILE: join(repo, "out", "mcp-spend-testnet.json"),
   };
-  for (const k of ["AGENT_EXIT_RPC", "AGENT_EXIT_RPC_2"]) if (env[k]) serverEnv[k] = env[k] as string;
+  // fastnear first: rpc.testnet.near.org rate-limits (HTTP 429) a run of
+  // a dozen tool calls (night run 2026-11-04).
+  serverEnv.AGENT_EXIT_RPC = (env.AGENT_EXIT_RPC as string) || "https://rpc.testnet.fastnear.com";
+  serverEnv.AGENT_EXIT_RPC_2 = (env.AGENT_EXIT_RPC_2 as string) || "https://rpc.testnet.near.org";
   return {
     serverEnv,
     network: `testnet (${root}); MCP server signs as ${buyer} with its own key; the model never sees a key`,

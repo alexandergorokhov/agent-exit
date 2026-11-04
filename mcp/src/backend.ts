@@ -252,6 +252,9 @@ export function wasmExports(code: Uint8Array): string[] {
 /** The Chain Signatures contract the published agent wasm is built for. */
 export const MPC_SIGNER = "v1.signer-prod.testnet";
 
+/** Waits before the 1st and 2nd retry of a rate-limited (429) RPC call. Tests may shorten it. */
+export const RETRY_429_MS = [1_000, 3_000];
+
 export class TestnetBackend implements Backend {
   network: Network = "testnet";
   constructor(
@@ -261,15 +264,26 @@ export class TestnetBackend implements Backend {
     private secret: string | null = null,
   ) {}
 
+  /** POST with up to two retries on HTTP 429 (rate limit), waiting 1 s then
+   * 3 s. A send_tx retry is safe: the same signed transaction has one hash. */
+  private async post(url: string, body: string, timeoutMs: number): Promise<Response> {
+    for (let attempt = 0; ; attempt++) {
+      const res = await this.fetchImpl(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        // L5: a redirect could send a read to a host that is not allowlisted.
+        redirect: "error",
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (res.status !== 429 || attempt >= 2) return res;
+      await new Promise((r) => setTimeout(r, RETRY_429_MS[attempt]));
+    }
+  }
+
   /** A JSON-RPC call other than `query` (send_tx); errors keep the body short. */
   private async rpcMethod(url: string, method: string, params: Json, timeoutMs: number): Promise<Json> {
-    const res = await this.fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method, params }),
-      redirect: "error",
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const res = await this.post(url, JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method, params }), timeoutMs);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = await res.json();
     if (body.error) throw new Error(JSON.stringify(body.error).slice(0, 400));
@@ -279,14 +293,7 @@ export class TestnetBackend implements Backend {
   private async rpc(url: string, params: Json): Promise<Json> {
     let res: Response;
     try {
-      res = await this.fetchImpl(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method: "query", params }),
-        // L5: a redirect could send a read to a host that is not allowlisted.
-        redirect: "error",
-        signal: AbortSignal.timeout(this.cfg.rpcTimeoutMs),
-      });
+      res = await this.post(url, JSON.stringify({ jsonrpc: "2.0", id: "agent-exit", method: "query", params }), this.cfg.rpcTimeoutMs);
     } catch (e) {
       throw new ToolError("RPC_ERROR", `RPC ${url} unreachable: ${(e as Error).message}`);
     }

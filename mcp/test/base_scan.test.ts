@@ -129,3 +129,42 @@ test("BW6 offline fixtures: the translator scans clean of Base findings; cheat i
     await s.close();
   }
 });
+
+test("RL1 a rate-limited RPC (HTTP 429) is retried with backoff, then answers", async () => {
+  const { RETRY_429_MS } = await import("../src/backend.js");
+  const saved = [...RETRY_429_MS];
+  RETRY_429_MS.splice(0, 2, 1, 1);
+  try {
+    const c = fakeChain();
+    let calls = 0;
+    const f = (async (url: string, init?: RequestInit) => {
+      calls++;
+      if (calls <= 2) return new Response("Too Many Requests", { status: 429 });
+      return (c.f as unknown as (u: string, i?: RequestInit) => Promise<Response>)(url, init);
+    }) as unknown as typeof fetch;
+    const b = new TestnetBackend(cfg(), f) as unknown as { rpc(u: string, p: unknown): Promise<{ keys: unknown[] }> };
+    const r = await b.rpc(RPC1, { request_type: "view_access_key_list", account_id: AGENT, finality: "final" });
+    assert.deepEqual(r.keys, []);
+    assert.equal(calls, 3, "two 429s, then the answer");
+  } finally {
+    RETRY_429_MS.splice(0, 2, ...saved);
+  }
+});
+
+test("RL2 a provider that keeps answering 429 gives RPC_ERROR after two retries", async () => {
+  const { RETRY_429_MS } = await import("../src/backend.js");
+  const saved = [...RETRY_429_MS];
+  RETRY_429_MS.splice(0, 2, 1, 1);
+  try {
+    let calls = 0;
+    const f = (async () => {
+      calls++;
+      return new Response("Too Many Requests", { status: 429 });
+    }) as unknown as typeof fetch;
+    const b = new TestnetBackend(cfg(), f) as unknown as { rpc(u: string, p: unknown): Promise<unknown> };
+    await assert.rejects(() => b.rpc(RPC1, { request_type: "view_access_key_list", account_id: AGENT, finality: "final" }), /HTTP 429/);
+    assert.equal(calls, 3, "one try and two retries");
+  } finally {
+    RETRY_429_MS.splice(0, 2, ...saved);
+  }
+});
