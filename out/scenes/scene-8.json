@@ -1,0 +1,1431 @@
+{
+  "check": {
+    "dave_gained": "14000000",
+    "exactly_20_percent": true,
+    "paid": "70000000",
+    "verified_jobs": 0
+  },
+  "code_hash": "BwHV7mhaK2bPRn3Y4F6fTjyaHjq4kW3sBCaPMdfhVNp6",
+  "dave_xusd": {
+    "after_claim": "514000000",
+    "before_claim": "500000000"
+  },
+  "flagged": {
+    "payment": {
+      "amount": "20000000",
+      "counted": false,
+      "day": 20761,
+      "flags": {
+        "round_trip": false,
+        "self": false,
+        "seller_subaccount": true
+      },
+      "job_id": null,
+      "payer": "x.alice.agentexit3.testnet",
+      "verified": false,
+      "verify": "NoProof"
+    },
+    "split": {
+      "amount": "20000000",
+      "seller_earnout_release": "0",
+      "to_investors": "4000000",
+      "to_owner": "16000000",
+      "to_treasury": "0"
+    }
+  },
+  "holdings_after_jobs": {
+    "agent": "translator2.agentexit3.testnet",
+    "claimable": "14000000",
+    "holdings": [
+      {
+        "bps": 2000,
+        "earned": "14000000",
+        "end": "1825292795930625817",
+        "escrow": "236000000",
+        "offer_id": 1,
+        "paid_in": "500000000"
+      }
+    ],
+    "investor": "dave.agentexit3.testnet"
+  },
+  "holdings_before_jobs": {
+    "agent": "translator2.agentexit3.testnet",
+    "claimable": "0",
+    "holdings": [
+      {
+        "bps": 2000,
+        "earned": "0",
+        "end": "1825292795930625817",
+        "escrow": "250000000",
+        "offer_id": 1,
+        "paid_in": "500000000"
+      }
+    ],
+    "investor": "dave.agentexit3.testnet"
+  },
+  "investor_scan": {
+    "agent": "translator2.agentexit3.testnet",
+    "buy_args": null,
+    "findings": [],
+    "schema": "scan-report.v1",
+    "verdict": "clean"
+  },
+  "jobs": [
+    {
+      "nearai": {
+        "error": {
+          "error": {
+            "error": {
+              "code": null,
+              "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+              "param": "model",
+              "type": "invalid_request_error"
+            }
+          },
+          "status": 400
+        }
+      },
+      "payer": "p1.agentexit3.testnet",
+      "payment": {
+        "amount": "10000000",
+        "counted": true,
+        "day": 20761,
+        "flags": {
+          "round_trip": false,
+          "self": false,
+          "seller_subaccount": false
+        },
+        "job_id": "invest-1793756816-0",
+        "payer": "p1.agentexit3.testnet",
+        "verified": false,
+        "verify": "NoProof"
+      },
+      "split": {
+        "amount": "10000000",
+        "seller_earnout_release": "0",
+        "to_investors": "2000000",
+        "to_owner": "8000000",
+        "to_treasury": "0"
+      },
+      "text": "The agent was sold in one transaction.",
+      "translation": null,
+      "tx": {
+        "by": "p1.agentexit3.testnet",
+        "error": null,
+        "events": [
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "new_owner_id": "translator2.agentexit3.testnet",
+                "old_owner_id": "p1.agentexit3.testnet"
+              }
+            ],
+            "event": "ft_transfer",
+            "standard": "nep141",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "counted": true,
+                "day": 20761,
+                "flags": {
+                  "round_trip": false,
+                  "self": false,
+                  "seller_subaccount": false
+                },
+                "job_id": "invest-1793756816-0",
+                "payer": "p1.agentexit3.testnet",
+                "verified": false,
+                "verify": "NoProof"
+              }
+            ],
+            "event": "payment",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "seller_earnout_release": "0",
+                "to_investors": "2000000",
+                "to_owner": "8000000",
+                "to_treasury": "0"
+              }
+            ],
+            "event": "split",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "2000000",
+                "escrow_released": [
+                  {
+                    "amount": "2000000",
+                    "seller": "alice.agentexit3.testnet"
+                  }
+                ]
+              }
+            ],
+            "event": "share_paid",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          }
+        ],
+        "explorer": "https://testnet.nearblocks.io/txns/CSAPpyVZTiP62i1HhA5e3y3gwN9JS96TCvWEqJs9Q4P8",
+        "label": "p1 pays translator2 10.00 for a translation",
+        "method": "ft_transfer_call",
+        "ms": 6827,
+        "ok": true,
+        "receiver": "xusd.agentexit3.testnet",
+        "tx": "CSAPpyVZTiP62i1HhA5e3y3gwN9JS96TCvWEqJs9Q4P8",
+        "value": "10000000"
+      }
+    },
+    {
+      "nearai": {
+        "error": {
+          "error": {
+            "error": {
+              "code": null,
+              "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+              "param": "model",
+              "type": "invalid_request_error"
+            }
+          },
+          "status": 400
+        }
+      },
+      "payer": "p2.agentexit3.testnet",
+      "payment": {
+        "amount": "10000000",
+        "counted": true,
+        "day": 20761,
+        "flags": {
+          "round_trip": false,
+          "self": false,
+          "seller_subaccount": false
+        },
+        "job_id": "invest-1793756824-1",
+        "payer": "p2.agentexit3.testnet",
+        "verified": false,
+        "verify": "NoProof"
+      },
+      "split": {
+        "amount": "10000000",
+        "seller_earnout_release": "0",
+        "to_investors": "2000000",
+        "to_owner": "8000000",
+        "to_treasury": "0"
+      },
+      "text": "Investors are paid inside every payment.",
+      "translation": null,
+      "tx": {
+        "by": "p2.agentexit3.testnet",
+        "error": null,
+        "events": [
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "new_owner_id": "translator2.agentexit3.testnet",
+                "old_owner_id": "p2.agentexit3.testnet"
+              }
+            ],
+            "event": "ft_transfer",
+            "standard": "nep141",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "counted": true,
+                "day": 20761,
+                "flags": {
+                  "round_trip": false,
+                  "self": false,
+                  "seller_subaccount": false
+                },
+                "job_id": "invest-1793756824-1",
+                "payer": "p2.agentexit3.testnet",
+                "verified": false,
+                "verify": "NoProof"
+              }
+            ],
+            "event": "payment",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "seller_earnout_release": "0",
+                "to_investors": "2000000",
+                "to_owner": "8000000",
+                "to_treasury": "0"
+              }
+            ],
+            "event": "split",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "2000000",
+                "escrow_released": [
+                  {
+                    "amount": "2000000",
+                    "seller": "alice.agentexit3.testnet"
+                  }
+                ]
+              }
+            ],
+            "event": "share_paid",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          }
+        ],
+        "explorer": "https://testnet.nearblocks.io/txns/7YDnSgSyP1zhZSQinjoJqrRJsgECSjiR3QJKex7LYRPi",
+        "label": "p2 pays translator2 10.00 for a translation",
+        "method": "ft_transfer_call",
+        "ms": 6815,
+        "ok": true,
+        "receiver": "xusd.agentexit3.testnet",
+        "tx": "7YDnSgSyP1zhZSQinjoJqrRJsgECSjiR3QJKex7LYRPi",
+        "value": "10000000"
+      }
+    },
+    {
+      "nearai": {
+        "error": {
+          "error": {
+            "error": {
+              "code": null,
+              "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+              "param": "model",
+              "type": "invalid_request_error"
+            }
+          },
+          "status": 400
+        }
+      },
+      "payer": "p3.agentexit3.testnet",
+      "payment": {
+        "amount": "10000000",
+        "counted": true,
+        "day": 20761,
+        "flags": {
+          "round_trip": false,
+          "self": false,
+          "seller_subaccount": false
+        },
+        "job_id": "invest-1793756831-2",
+        "payer": "p3.agentexit3.testnet",
+        "verified": false,
+        "verify": "NoProof"
+      },
+      "split": {
+        "amount": "10000000",
+        "seller_earnout_release": "0",
+        "to_investors": "2000000",
+        "to_owner": "8000000",
+        "to_treasury": "0"
+      },
+      "text": "Half of the price waits in escrow.",
+      "translation": null,
+      "tx": {
+        "by": "p3.agentexit3.testnet",
+        "error": null,
+        "events": [
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "new_owner_id": "translator2.agentexit3.testnet",
+                "old_owner_id": "p3.agentexit3.testnet"
+              }
+            ],
+            "event": "ft_transfer",
+            "standard": "nep141",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "counted": true,
+                "day": 20761,
+                "flags": {
+                  "round_trip": false,
+                  "self": false,
+                  "seller_subaccount": false
+                },
+                "job_id": "invest-1793756831-2",
+                "payer": "p3.agentexit3.testnet",
+                "verified": false,
+                "verify": "NoProof"
+              }
+            ],
+            "event": "payment",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "seller_earnout_release": "0",
+                "to_investors": "2000000",
+                "to_owner": "8000000",
+                "to_treasury": "0"
+              }
+            ],
+            "event": "split",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "2000000",
+                "escrow_released": [
+                  {
+                    "amount": "2000000",
+                    "seller": "alice.agentexit3.testnet"
+                  }
+                ]
+              }
+            ],
+            "event": "share_paid",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          }
+        ],
+        "explorer": "https://testnet.nearblocks.io/txns/Eg3iRXMaY9JCr1HNonm2cvxMHo48DThRRc3EYwZxoeQv",
+        "label": "p3 pays translator2 10.00 for a translation",
+        "method": "ft_transfer_call",
+        "ms": 6594,
+        "ok": true,
+        "receiver": "xusd.agentexit3.testnet",
+        "tx": "Eg3iRXMaY9JCr1HNonm2cvxMHo48DThRRc3EYwZxoeQv",
+        "value": "10000000"
+      }
+    },
+    {
+      "nearai": {
+        "error": {
+          "error": {
+            "error": {
+              "code": null,
+              "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+              "param": "model",
+              "type": "invalid_request_error"
+            }
+          },
+          "status": 400
+        }
+      },
+      "payer": "p4.agentexit3.testnet",
+      "payment": {
+        "amount": "10000000",
+        "counted": true,
+        "day": 20761,
+        "flags": {
+          "round_trip": false,
+          "self": false,
+          "seller_subaccount": false
+        },
+        "job_id": "invest-1793756838-3",
+        "payer": "p4.agentexit3.testnet",
+        "verified": false,
+        "verify": "NoProof"
+      },
+      "split": {
+        "amount": "10000000",
+        "seller_earnout_release": "0",
+        "to_investors": "2000000",
+        "to_owner": "8000000",
+        "to_treasury": "0"
+      },
+      "text": "The seller can no longer touch the agent.",
+      "translation": null,
+      "tx": {
+        "by": "p4.agentexit3.testnet",
+        "error": null,
+        "events": [
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "new_owner_id": "translator2.agentexit3.testnet",
+                "old_owner_id": "p4.agentexit3.testnet"
+              }
+            ],
+            "event": "ft_transfer",
+            "standard": "nep141",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "counted": true,
+                "day": 20761,
+                "flags": {
+                  "round_trip": false,
+                  "self": false,
+                  "seller_subaccount": false
+                },
+                "job_id": "invest-1793756838-3",
+                "payer": "p4.agentexit3.testnet",
+                "verified": false,
+                "verify": "NoProof"
+              }
+            ],
+            "event": "payment",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "seller_earnout_release": "0",
+                "to_investors": "2000000",
+                "to_owner": "8000000",
+                "to_treasury": "0"
+              }
+            ],
+            "event": "split",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "2000000",
+                "escrow_released": [
+                  {
+                    "amount": "2000000",
+                    "seller": "alice.agentexit3.testnet"
+                  }
+                ]
+              }
+            ],
+            "event": "share_paid",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          }
+        ],
+        "explorer": "https://testnet.nearblocks.io/txns/3p8fc4NUnb8JzM4aokdmnaRtLgvEW8KTU1DWpnxwBX3C",
+        "label": "p4 pays translator2 10.00 for a translation",
+        "method": "ft_transfer_call",
+        "ms": 5957,
+        "ok": true,
+        "receiver": "xusd.agentexit3.testnet",
+        "tx": "3p8fc4NUnb8JzM4aokdmnaRtLgvEW8KTU1DWpnxwBX3C",
+        "value": "10000000"
+      }
+    },
+    {
+      "nearai": {
+        "error": {
+          "error": {
+            "error": {
+              "code": null,
+              "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+              "param": "model",
+              "type": "invalid_request_error"
+            }
+          },
+          "status": 400
+        }
+      },
+      "payer": "p5.agentexit3.testnet",
+      "payment": {
+        "amount": "10000000",
+        "counted": true,
+        "day": 20761,
+        "flags": {
+          "round_trip": false,
+          "self": false,
+          "seller_subaccount": false
+        },
+        "job_id": "invest-1793756844-4",
+        "payer": "p5.agentexit3.testnet",
+        "verified": false,
+        "verify": "NoProof"
+      },
+      "split": {
+        "amount": "10000000",
+        "seller_earnout_release": "0",
+        "to_investors": "2000000",
+        "to_owner": "8000000",
+        "to_treasury": "0"
+      },
+      "text": "Every payment is counted on chain.",
+      "translation": null,
+      "tx": {
+        "by": "p5.agentexit3.testnet",
+        "error": null,
+        "events": [
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "new_owner_id": "translator2.agentexit3.testnet",
+                "old_owner_id": "p5.agentexit3.testnet"
+              }
+            ],
+            "event": "ft_transfer",
+            "standard": "nep141",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "counted": true,
+                "day": 20761,
+                "flags": {
+                  "round_trip": false,
+                  "self": false,
+                  "seller_subaccount": false
+                },
+                "job_id": "invest-1793756844-4",
+                "payer": "p5.agentexit3.testnet",
+                "verified": false,
+                "verify": "NoProof"
+              }
+            ],
+            "event": "payment",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "10000000",
+                "seller_earnout_release": "0",
+                "to_investors": "2000000",
+                "to_owner": "8000000",
+                "to_treasury": "0"
+              }
+            ],
+            "event": "split",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          },
+          {
+            "data": [
+              {
+                "amount": "2000000",
+                "escrow_released": [
+                  {
+                    "amount": "2000000",
+                    "seller": "alice.agentexit3.testnet"
+                  }
+                ]
+              }
+            ],
+            "event": "share_paid",
+            "standard": "agent_exit",
+            "version": "1.0.0"
+          }
+        ],
+        "explorer": "https://testnet.nearblocks.io/txns/FGf5Q4qwnMxNReuuGxPDf6xTV9ddrpC8bGsvUU4VaLhN",
+        "label": "p5 pays translator2 10.00 for a translation",
+        "method": "ft_transfer_call",
+        "ms": 5751,
+        "ok": true,
+        "receiver": "xusd.agentexit3.testnet",
+        "tx": "FGf5Q4qwnMxNReuuGxPDf6xTV9ddrpC8bGsvUU4VaLhN",
+        "value": "10000000"
+      }
+    }
+  ],
+  "pass": true,
+  "scene": 8,
+  "schema": "scene.v1",
+  "status": {
+    "admin": "agentexit3.testnet",
+    "agent": "translator2.agentexit3.testnet",
+    "claimable_accounts": 0,
+    "claimable_total": "0",
+    "closed_sales": 0,
+    "empty_payer_rows": 0,
+    "escrow_left": "0",
+    "frozen": false,
+    "held": "556000000",
+    "incoming_keys": [],
+    "known_keys": [
+      "ed25519:2vGCi87rtDzdZDsTByEGoay4B7FBXRs1RHxzCdSjsnkx"
+    ],
+    "known_keys_hash": "3519831b4981ccd641667cd79bbafe4604d518b4423784bc6bc3fa2b4647ffdd",
+    "listing_version": 0,
+    "near_storage": {
+      "balance": "8995773594711729200000001",
+      "day_entries": 1,
+      "empty_payer_entries": 0,
+      "growth_reserve": "1822000000000000000000000",
+      "max_day_entries": 400,
+      "max_sig_entries": 512,
+      "payer_deposits": "0",
+      "payer_entries": 0,
+      "sig_entries": 0,
+      "solvent": true,
+      "staked": "5538250000000000000000000",
+      "usage_bytes": 553825
+    },
+    "open_approvals": 0,
+    "open_sales": 0,
+    "owner": "alice.agentexit3.testnet",
+    "owner_epoch": 1,
+    "owner_free": "320000000",
+    "paid_to_owner": 0,
+    "paid_to_total": 0,
+    "past_owners": 0,
+    "paused": false,
+    "retiring_keys": [],
+    "schema": "agent-status.v1",
+    "share_escrow": "236000000",
+    "shares_bps": 2000,
+    "signers": [],
+    "solvent": true,
+    "status": "Active",
+    "terms_config": "prod",
+    "terms_min": {
+      "max_floor_bps": 5000,
+      "min_earnout_bps": 3000,
+      "min_window_secs": 2592000
+    },
+    "token": "xusd.agentexit3.testnet",
+    "tracked_payers": 0,
+    "treasury": "0"
+  },
+  "txs": [
+    {
+      "by": "agentexit3.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/6hTSaviVV3V8Pjn3YNboFr8uocXSJyyva5PU18hofeUa",
+      "label": "create translator2.agentexit3.testnet",
+      "method": "create_account",
+      "ms": 4812,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "6hTSaviVV3V8Pjn3YNboFr8uocXSJyyva5PU18hofeUa",
+      "value": null
+    },
+    {
+      "by": "agentexit3.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/47B95LWoiksD16q3GCGSJiq7DYiiYp5apA4YWtzUcYma",
+      "label": "create dave.agentexit3.testnet",
+      "method": "create_account",
+      "ms": 4797,
+      "ok": true,
+      "receiver": "dave.agentexit3.testnet",
+      "tx": "47B95LWoiksD16q3GCGSJiq7DYiiYp5apA4YWtzUcYma",
+      "value": null
+    },
+    {
+      "by": "agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "1000000000",
+              "memo": "FAKE test dollars",
+              "owner_id": "dave.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/5imHD2fVnPgNSvBm1LxAwhenW1UhkSg9WhM7yE3wZ9Gx",
+      "label": "mint dave.agentexit3.testnet",
+      "method": "mint",
+      "ms": 5782,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "5imHD2fVnPgNSvBm1LxAwhenW1UhkSg9WhM7yE3wZ9Gx",
+      "value": null
+    },
+    {
+      "by": "agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "0",
+              "memo": "FAKE test dollars",
+              "owner_id": "translator2.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_mint",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/EPtxKPdQk85FPoSnWRPgJG3MZT451mLrsv7h5wWjjvwC",
+      "label": "mint translator2.agentexit3.testnet",
+      "method": "mint",
+      "ms": 5363,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "EPtxKPdQk85FPoSnWRPgJG3MZT451mLrsv7h5wWjjvwC",
+      "value": null
+    },
+    {
+      "by": "translator2.agentexit3.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/FpQzdf3QX5sJYX64DRf4nzJTq21JrhXUz2VJbV6y6V34",
+      "label": "deploy translator2 (shares build)",
+      "method": "deploy+new",
+      "ms": 5936,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "FpQzdf3QX5sJYX64DRf4nzJTq21JrhXUz2VJbV6y6V34",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "key": "ed25519:2vGCi87rtDzdZDsTByEGoay4B7FBXRs1RHxzCdSjsnkx",
+              "owner": "alice.agentexit3.testnet",
+              "pending": true,
+              "removed": []
+            }
+          ],
+          "event": "runner_key_set",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "deleted": [],
+              "key": "ed25519:2vGCi87rtDzdZDsTByEGoay4B7FBXRs1RHxzCdSjsnkx"
+            }
+          ],
+          "event": "runner_key_confirmed",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/H3B4WE8MGnWiVqCozTV9fmYsfCmcCniyCAUsjw27EneL",
+      "label": "translator2: alice sets her runner key",
+      "method": "set_runner_key",
+      "ms": 6490,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "H3B4WE8MGnWiVqCozTV9fmYsfCmcCniyCAUsjw27EneL",
+      "value": true
+    },
+    {
+      "by": "translator2.agentexit3.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/6uqZnw81ciYzP5WsV9CfCyXCUEWp1R8qTLgcThK7f9Nf",
+      "label": "translator2: delete setup key",
+      "method": "delete_key",
+      "ms": 4172,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "6uqZnw81ciYzP5WsV9CfCyXCUEWp1R8qTLgcThK7f9Nf",
+      "value": null
+    },
+    {
+      "by": "alice.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "bps": 2000,
+              "created": "1793756799488682719",
+              "end": "1825292795930625817",
+              "escrow": "0",
+              "holders": [],
+              "min_part": 200,
+              "offer_id": 1,
+              "price": "500000000",
+              "seller": "alice.agentexit3.testnet",
+              "sold_bps": 0
+            }
+          ],
+          "event": "share_offered",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/8oUdZe1rq8otF9CWJf9sYAzZv7udy5SK9WqWGhzBuRbU",
+      "label": "alice offers 20% of translator2's earnings for a year at 500.00",
+      "method": "offer_share",
+      "ms": 5966,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "8oUdZe1rq8otF9CWJf9sYAzZv7udy5SK9WqWGhzBuRbU",
+      "value": {
+        "bps": 2000,
+        "created": "1793756799488682719",
+        "end": "1825292795930625817",
+        "escrow": "0",
+        "holders": [],
+        "min_part": 200,
+        "offer_id": 1,
+        "price": "500000000",
+        "seller": "alice.agentexit3.testnet",
+        "sold_bps": 0
+      }
+    },
+    {
+      "by": "dave.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "500000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "dave.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "cost": "500000000",
+              "investor": "dave.agentexit3.testnet",
+              "offer_id": 1,
+              "part_bps": 2000
+            }
+          ],
+          "event": "share_bought",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/FNNgEee5gct4cphWXXm3h6xBRzxWuAc8FhUN9HMP7KzJ",
+      "label": "dave buys the 20% slice (one ft_transfer_call)",
+      "method": "ft_transfer_call",
+      "ms": 7108,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "FNNgEee5gct4cphWXXm3h6xBRzxWuAc8FhUN9HMP7KzJ",
+      "value": "500000000"
+    },
+    {
+      "by": "p1.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "p1.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "invest-1793756816-0",
+              "payer": "p1.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "seller_earnout_release": "0",
+              "to_investors": "2000000",
+              "to_owner": "8000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2000000",
+              "escrow_released": [
+                {
+                  "amount": "2000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/CSAPpyVZTiP62i1HhA5e3y3gwN9JS96TCvWEqJs9Q4P8",
+      "label": "p1 pays translator2 10.00 for a translation",
+      "method": "ft_transfer_call",
+      "ms": 6827,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "CSAPpyVZTiP62i1HhA5e3y3gwN9JS96TCvWEqJs9Q4P8",
+      "value": "10000000"
+    },
+    {
+      "by": "p2.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "p2.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "invest-1793756824-1",
+              "payer": "p2.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "seller_earnout_release": "0",
+              "to_investors": "2000000",
+              "to_owner": "8000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2000000",
+              "escrow_released": [
+                {
+                  "amount": "2000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/7YDnSgSyP1zhZSQinjoJqrRJsgECSjiR3QJKex7LYRPi",
+      "label": "p2 pays translator2 10.00 for a translation",
+      "method": "ft_transfer_call",
+      "ms": 6815,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "7YDnSgSyP1zhZSQinjoJqrRJsgECSjiR3QJKex7LYRPi",
+      "value": "10000000"
+    },
+    {
+      "by": "p3.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "p3.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "invest-1793756831-2",
+              "payer": "p3.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "seller_earnout_release": "0",
+              "to_investors": "2000000",
+              "to_owner": "8000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2000000",
+              "escrow_released": [
+                {
+                  "amount": "2000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/Eg3iRXMaY9JCr1HNonm2cvxMHo48DThRRc3EYwZxoeQv",
+      "label": "p3 pays translator2 10.00 for a translation",
+      "method": "ft_transfer_call",
+      "ms": 6594,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "Eg3iRXMaY9JCr1HNonm2cvxMHo48DThRRc3EYwZxoeQv",
+      "value": "10000000"
+    },
+    {
+      "by": "p4.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "p4.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "invest-1793756838-3",
+              "payer": "p4.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "seller_earnout_release": "0",
+              "to_investors": "2000000",
+              "to_owner": "8000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2000000",
+              "escrow_released": [
+                {
+                  "amount": "2000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/3p8fc4NUnb8JzM4aokdmnaRtLgvEW8KTU1DWpnxwBX3C",
+      "label": "p4 pays translator2 10.00 for a translation",
+      "method": "ft_transfer_call",
+      "ms": 5957,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "3p8fc4NUnb8JzM4aokdmnaRtLgvEW8KTU1DWpnxwBX3C",
+      "value": "10000000"
+    },
+    {
+      "by": "p5.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "p5.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "counted": true,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": false
+              },
+              "job_id": "invest-1793756844-4",
+              "payer": "p5.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "10000000",
+              "seller_earnout_release": "0",
+              "to_investors": "2000000",
+              "to_owner": "8000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "2000000",
+              "escrow_released": [
+                {
+                  "amount": "2000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/FGf5Q4qwnMxNReuuGxPDf6xTV9ddrpC8bGsvUU4VaLhN",
+      "label": "p5 pays translator2 10.00 for a translation",
+      "method": "ft_transfer_call",
+      "ms": 5751,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "FGf5Q4qwnMxNReuuGxPDf6xTV9ddrpC8bGsvUU4VaLhN",
+      "value": "10000000"
+    },
+    {
+      "by": "x.alice.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "20000000",
+              "new_owner_id": "translator2.agentexit3.testnet",
+              "old_owner_id": "x.alice.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "20000000",
+              "counted": false,
+              "day": 20761,
+              "flags": {
+                "round_trip": false,
+                "self": false,
+                "seller_subaccount": true
+              },
+              "job_id": null,
+              "payer": "x.alice.agentexit3.testnet",
+              "verified": false,
+              "verify": "NoProof"
+            }
+          ],
+          "event": "payment",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "20000000",
+              "seller_earnout_release": "0",
+              "to_investors": "4000000",
+              "to_owner": "16000000",
+              "to_treasury": "0"
+            }
+          ],
+          "event": "split",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "4000000",
+              "escrow_released": [
+                {
+                  "amount": "4000000",
+                  "seller": "alice.agentexit3.testnet"
+                }
+              ]
+            }
+          ],
+          "event": "share_paid",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/4UfxkjgSrQT1tpfD5DeDam9qeBJUxMMZ5MdSz38ktqWX",
+      "label": "x.alice (the owner's sub-account) pays translator2 20.00",
+      "method": "ft_transfer_call",
+      "ms": 6740,
+      "ok": true,
+      "receiver": "xusd.agentexit3.testnet",
+      "tx": "4UfxkjgSrQT1tpfD5DeDam9qeBJUxMMZ5MdSz38ktqWX",
+      "value": "20000000"
+    },
+    {
+      "by": "dave.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "amount": "14000000",
+              "memo": "agent_exit:Claim",
+              "new_owner_id": "dave.agentexit3.testnet",
+              "old_owner_id": "translator2.agentexit3.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/9bWqsV15XwZnwFbJrHrKRLX6NDeDCUAsfX9A2SWEjXFr",
+      "label": "dave claims",
+      "method": "claim",
+      "ms": 6864,
+      "ok": true,
+      "receiver": "translator2.agentexit3.testnet",
+      "tx": "9bWqsV15XwZnwFbJrHrKRLX6NDeDCUAsfX9A2SWEjXFr",
+      "value": true
+    }
+  ],
+  "what": "invest (not part of `scenes`): creates translator2 (new code with shares) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 real translations (NEAR AI-signed when NEARAI_API_KEY has credit, else unverified); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims"
+}
