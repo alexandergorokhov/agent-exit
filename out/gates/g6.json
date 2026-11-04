@@ -4,13 +4,13 @@
       "error": {
         "error": {
           "code": null,
-          "message": "No spending limit configured. Please contact support to set up credits.",
-          "param": null,
-          "type": "no_limit_configured"
+          "message": "Model 'openai/gpt-oss-120b' not found. It's not a valid model name or alias.",
+          "param": "model",
+          "type": "invalid_request_error"
         }
       },
       "model": "openai/gpt-oss-120b",
-      "status": 402
+      "status": 400
     }
   ],
   "schema": "gate-g6.v1"
