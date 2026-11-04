@@ -10,9 +10,9 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "g1-1793763780.agentexit3.testnet"
+        "receiver_id": "g1-1793766193.w2.agentexit3.testnet"
       },
-      "public_key": "ed25519:8YTnAEjWni4MBqkWfPEoJNQQCycUj7RqR2wEoqV6FUhE"
+      "public_key": "ed25519:9AHGfLabqakRB83Pof2NGaGNVSpQZok5fP9cjdPaXd8o"
     }
   ],
   "keys_before": [
@@ -25,52 +25,52 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "g1-1793763780.agentexit3.testnet"
+        "receiver_id": "g1-1793766193.w2.agentexit3.testnet"
       },
-      "public_key": "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az"
+      "public_key": "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa"
     }
   ],
-  "old_runner_key_error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"4g1Bz1Yk4Dge47S1UExeFU2SVg2mKiGepJP3MLE8mUS4\\\",\\\"block_height\\\":276141495,\\\"error\\\":\\\"access key ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+  "old_runner_key_error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"6SAegeEvMgxcthnwJU6pF8DVLPK1ghyusii28RBLsyhu\\\",\\\"block_height\\\":276145542,\\\"error\\\":\\\"access key ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
   "pass": true,
   "result": "G1 PASS: prototype A (locked account) works on testnet",
   "schema": "gate-g1.v1",
-  "setup_key_error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"GcnwF6akVkE7iH2g5RnBCNiGcy47GMDdjcQbWX1Aaz39\\\",\\\"block_height\\\":276141499,\\\"error\\\":\\\"access key ed25519:HxVGKNYWgVZ5hpbrut6FmDfmTegasaenuKUboU7DX1pb does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+  "setup_key_error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"BpiqRq9b3fJHHiFyxFSay7UJXV91q67UDm7VqPwXw1Qr\\\",\\\"block_height\\\":276145544,\\\"error\\\":\\\"access key ed25519:FFiVGF5z9cjSgSAwPA3HfezUGU39agHpyLjKMgS7iY3B does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
   "txs": [
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/7F4DQ7xFQNC4WT7VqpT7GMXpqFdNpnjPUZzwrunj7uNU",
-      "label": "create g1-1793763780.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/6zEchFXpW7Jv5A4MTDvKbV57uSA9dqcCy1URgjLCpFr7",
+      "label": "create g1-1793766193.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4437,
+      "ms": 4476,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "7F4DQ7xFQNC4WT7VqpT7GMXpqFdNpnjPUZzwrunj7uNU",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "6zEchFXpW7Jv5A4MTDvKbV57uSA9dqcCy1URgjLCpFr7",
       "value": null
     },
     {
-      "by": "g1-1793763780.agentexit3.testnet",
+      "by": "g1-1793766193.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/13PzHhE25P4df848UYhLPz9rGcL7tr7v6Lvgpfo1oSsP",
+      "explorer": "https://testnet.nearblocks.io/txns/3JXzDAonCDpKqti25rHctaU1HvMfcu3En6vJYjqb5YFG",
       "label": "deploy + new(owner alice)",
       "method": "deploy+new",
-      "ms": 5267,
+      "ms": 4666,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "13PzHhE25P4df848UYhLPz9rGcL7tr7v6Lvgpfo1oSsP",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "3JXzDAonCDpKqti25rHctaU1HvMfcu3En6vJYjqb5YFG",
       "value": null
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "key": "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az",
-              "owner": "alice.agentexit3.testnet",
+              "key": "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa",
+              "owner": "alice.w2.agentexit3.testnet",
               "pending": true,
               "removed": []
             }
@@ -83,7 +83,7 @@
           "data": [
             {
               "deleted": [],
-              "key": "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az"
+              "key": "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa"
             }
           ],
           "event": "runner_key_confirmed",
@@ -91,17 +91,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5hqs54vkGxD4aYbqbmXdVws2ZZfsGw1DaHU11csW9sN9",
+      "explorer": "https://testnet.nearblocks.io/txns/4x2nXhx5AxUxMmJNbd7QvtCv6JEwW4XN9umYa4iZuwGo",
       "label": "alice: set_runner_key",
       "method": "set_runner_key",
-      "ms": 5939,
+      "ms": 5879,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "5hqs54vkGxD4aYbqbmXdVws2ZZfsGw1DaHU11csW9sN9",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "4x2nXhx5AxUxMmJNbd7QvtCv6JEwW4XN9umYa4iZuwGo",
       "value": true
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -109,7 +109,7 @@
             {
               "amount": "0",
               "memo": "FAKE test dollars",
-              "owner_id": "g1-1793763780.agentexit3.testnet"
+              "owner_id": "g1-1793766193.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -117,48 +117,48 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DQAeWX8tBKtHSXKoPV687rQZwEdoP6aDV5AM79TwXMJK",
+      "explorer": "https://testnet.nearblocks.io/txns/2RPUuVhr5h5pKAu4vDoL4qGLB4HcGaiAA3brDTx8G9KY",
       "label": "register agent on xusd",
       "method": "mint",
-      "ms": 4817,
+      "ms": 4842,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DQAeWX8tBKtHSXKoPV687rQZwEdoP6aDV5AM79TwXMJK",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "2RPUuVhr5h5pKAu4vDoL4qGLB4HcGaiAA3brDTx8G9KY",
       "value": null
     },
     {
-      "by": "g1-1793763780.agentexit3.testnet",
+      "by": "g1-1793766193.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/DWMu6dRJRCzbicynwhGcD7v8eZivJD18gFqoXfMFZQFN",
+      "explorer": "https://testnet.nearblocks.io/txns/WSYCNbcj7hwFPinmiZE8y3EKoVmsHqX9Tc5WEB8seXk",
       "label": "delete the setup full-access key",
       "method": "delete_key",
-      "ms": 4101,
+      "ms": 3837,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "DWMu6dRJRCzbicynwhGcD7v8eZivJD18gFqoXfMFZQFN",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "WSYCNbcj7hwFPinmiZE8y3EKoVmsHqX9Tc5WEB8seXk",
       "value": null
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "g1-1793763780.agentexit3.testnet",
-              "code_hash": "6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw",
+              "agent": "g1-1793766193.w2.agentexit3.testnet",
+              "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
               "escrow": "3000000",
               "known_keys": [
-                "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az"
+                "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa"
               ],
-              "known_keys_hash": "5e7d33ade4a13c7a67f72345fc5c9651980e605b936d2c674b1ae8f332ad67b9",
-              "listed_at": "1793763809121805818",
+              "known_keys_hash": "a7c10c8ad1f7764c952fc3b4526fd27cc247fb3d9865960d11e780d8ea9fe8d6",
+              "listed_at": "1793766220687050492",
               "listing_version": 1,
               "paid_now": "7000000",
               "price": "10000000",
               "schema": "listing.v1",
-              "seller": "alice.agentexit3.testnet",
+              "seller": "alice.w2.agentexit3.testnet",
               "shares": [],
               "shares_bps": 0,
               "terms": {
@@ -173,7 +173,7 @@
                 "min_earnout_bps": 3000,
                 "min_window_secs": 2592000
               },
-              "token": "xusd.agentexit3.testnet",
+              "token": "xusd.w2.agentexit3.testnet",
               "treasury_snapshot": "0"
             }
           ],
@@ -182,27 +182,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5MS8ZZmqVkrGzhippw4kbhcgTGUsdbcaG8SturDvSD9e",
+      "explorer": "https://testnet.nearblocks.io/txns/HbysijhABm9gGFb9RvgeK8ikhf3fEHhDHBFrL3zJF1Md",
       "label": "alice lists at 10.00",
       "method": "list_for_sale",
-      "ms": 5836,
+      "ms": 4799,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "5MS8ZZmqVkrGzhippw4kbhcgTGUsdbcaG8SturDvSD9e",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "HbysijhABm9gGFb9RvgeK8ikhf3fEHhDHBFrL3zJF1Md",
       "value": {
-        "agent": "g1-1793763780.agentexit3.testnet",
-        "code_hash": "6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw",
+        "agent": "g1-1793766193.w2.agentexit3.testnet",
+        "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
         "escrow": "3000000",
         "known_keys": [
-          "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az"
+          "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa"
         ],
-        "known_keys_hash": "5e7d33ade4a13c7a67f72345fc5c9651980e605b936d2c674b1ae8f332ad67b9",
-        "listed_at": "1793763809121805818",
+        "known_keys_hash": "a7c10c8ad1f7764c952fc3b4526fd27cc247fb3d9865960d11e780d8ea9fe8d6",
+        "listed_at": "1793766220687050492",
         "listing_version": 1,
         "paid_now": "7000000",
         "price": "10000000",
         "schema": "listing.v1",
-        "seller": "alice.agentexit3.testnet",
+        "seller": "alice.w2.agentexit3.testnet",
         "shares": [],
         "shares_bps": 0,
         "terms": {
@@ -217,20 +217,20 @@
           "min_earnout_bps": 3000,
           "min_window_secs": 2592000
         },
-        "token": "xusd.agentexit3.testnet",
+        "token": "xusd.w2.agentexit3.testnet",
         "treasury_snapshot": "0"
       }
     },
     {
-      "by": "bob.agentexit3.testnet",
+      "by": "bob.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "10000000",
-              "new_owner_id": "g1-1793763780.agentexit3.testnet",
-              "old_owner_id": "bob.agentexit3.testnet"
+              "new_owner_id": "g1-1793766193.w2.agentexit3.testnet",
+              "old_owner_id": "bob.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -240,11 +240,11 @@
         {
           "data": [
             {
-              "add_key": "ed25519:8YTnAEjWni4MBqkWfPEoJNQQCycUj7RqR2wEoqV6FUhE",
+              "add_key": "ed25519:9AHGfLabqakRB83Pof2NGaGNVSpQZok5fP9cjdPaXd8o",
               "amount": "10000000",
-              "buyer": "bob.agentexit3.testnet",
+              "buyer": "bob.w2.agentexit3.testnet",
               "delete_keys": [
-                "ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az"
+                "ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa"
               ],
               "sale_id": 1
             }
@@ -257,8 +257,8 @@
           "data": [
             {
               "memo": "agent_exit:buy",
-              "new_owner_id": "bob.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet",
+              "new_owner_id": "bob.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -271,19 +271,19 @@
         {
           "data": [
             {
-              "buyer": "bob.agentexit3.testnet",
+              "buyer": "bob.w2.agentexit3.testnet",
               "escrow": "3000000",
               "known_keys": [
-                "ed25519:8YTnAEjWni4MBqkWfPEoJNQQCycUj7RqR2wEoqV6FUhE"
+                "ed25519:9AHGfLabqakRB83Pof2NGaGNVSpQZok5fP9cjdPaXd8o"
               ],
               "overpay_refund": "0",
               "owner_epoch": 2,
               "paid_now": "7000000",
               "price": "10000000",
               "sale_id": 1,
-              "seller": "alice.agentexit3.testnet",
+              "seller": "alice.w2.agentexit3.testnet",
               "seller_revenue_claimable": "0",
-              "window_end": "1796355818868763102"
+              "window_end": "1796358227973727517"
             }
           ],
           "event": "sale",
@@ -295,8 +295,8 @@
             {
               "amount": "7000000",
               "memo": "agent_exit:SellerPayout",
-              "new_owner_id": "alice.agentexit3.testnet",
-              "old_owner_id": "g1-1793763780.agentexit3.testnet"
+              "new_owner_id": "alice.w2.agentexit3.testnet",
+              "old_owner_id": "g1-1793766193.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -304,52 +304,52 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GdaMXaLxFdkgaWZ26L6uqs8zaajNCcJgMigGe4s6ZehS",
+      "explorer": "https://testnet.nearblocks.io/txns/8SXLozbywPwphxZ6M9T77YmhUYyFk9Ha3Xfy7QhB6Lo4",
       "label": "bob buys (one ft_transfer_call)",
       "method": "ft_transfer_call",
-      "ms": 9133,
+      "ms": 7725,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GdaMXaLxFdkgaWZ26L6uqs8zaajNCcJgMigGe4s6ZehS",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "8SXLozbywPwphxZ6M9T77YmhUYyFk9Ha3Xfy7QhB6Lo4",
       "value": "10000000"
     },
     {
-      "by": "g1-1793763780.agentexit3.testnet",
-      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"4g1Bz1Yk4Dge47S1UExeFU2SVg2mKiGepJP3MLE8mUS4\\\",\\\"block_height\\\":276141495,\\\"error\\\":\\\"access key ed25519:V5jGNGcMv6CYod8ytUpEN1NKFtXxFEjx5zM4nvTC5Az does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+      "by": "g1-1793766193.w2.agentexit3.testnet",
+      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"6SAegeEvMgxcthnwJU6pF8DVLPK1ghyusii28RBLsyhu\\\",\\\"block_height\\\":276145542,\\\"error\\\":\\\"access key ed25519:BXo3sLtRTSnaYsFVRtAkZSVqVKGCzkkpxsj6s4r2sgLa does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
       "events": [],
       "explorer": null,
       "label": "alice's old runner key: heartbeat",
       "method": "heartbeat",
-      "ms": 1394,
+      "ms": 839,
       "ok": false,
-      "receiver": "g1-1793763780.agentexit3.testnet",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
       "tx": null,
       "value": null
     },
     {
-      "by": "g1-1793763780.agentexit3.testnet",
-      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"GcnwF6akVkE7iH2g5RnBCNiGcy47GMDdjcQbWX1Aaz39\\\",\\\"block_height\\\":276141499,\\\"error\\\":\\\"access key ed25519:HxVGKNYWgVZ5hpbrut6FmDfmTegasaenuKUboU7DX1pb does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
+      "by": "g1-1793766193.w2.agentexit3.testnet",
+      "error": "MetaSignError(SignerError(FetchNonceError(QueryError(Critical(TransportError(Invalid Response Payload (b\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"result\\\":{\\\"block_hash\\\":\\\"BpiqRq9b3fJHHiFyxFSay7UJXV91q67UDm7VqPwXw1Qr\\\",\\\"block_height\\\":276145544,\\\"error\\\":\\\"access key ed25519:FFiVGF5z9cjSgSAwPA3HfezUGU39agHpyLjKMgS7iY3B does not exist while viewing\\\",\\\"logs\\\":[]},\\\"id\\\":\\\"0\\\"}\"): data did not match any variant of untagged enum JsonRpcResponseForRpcQueryResponseAndRpcQueryError))))))",
       "events": [],
       "explorer": null,
       "label": "deleted setup key: heartbeat",
       "method": "heartbeat",
-      "ms": 1944,
+      "ms": 819,
       "ok": false,
-      "receiver": "g1-1793763780.agentexit3.testnet",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
       "tx": null,
       "value": null
     },
     {
-      "by": "g1-1793763780.agentexit3.testnet",
+      "by": "g1-1793766193.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/D1mgyCaGzhyjqMtrv6MmmSic7F1m3he49UWiTKJQ9q1r",
+      "explorer": "https://testnet.nearblocks.io/txns/4grSh95eAzLC4yUTmYkJFSRie6VqiJDCDKotWSMAN2N3",
       "label": "bob's runner key: heartbeat",
       "method": "heartbeat",
-      "ms": 5982,
+      "ms": 4068,
       "ok": true,
-      "receiver": "g1-1793763780.agentexit3.testnet",
-      "tx": "D1mgyCaGzhyjqMtrv6MmmSic7F1m3he49UWiTKJQ9q1r",
+      "receiver": "g1-1793766193.w2.agentexit3.testnet",
+      "tx": "4grSh95eAzLC4yUTmYkJFSRie6VqiJDCDKotWSMAN2N3",
       "value": {
         "ok": true,
         "owner_epoch": 2

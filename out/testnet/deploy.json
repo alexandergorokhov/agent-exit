@@ -1,23 +1,23 @@
 {
   "accounts": {
-    "alice": "alice.agentexit3.testnet",
-    "bob": "bob.agentexit3.testnet",
-    "carol": "carol.agentexit3.testnet",
-    "cheat": "cheat.agentexit3.testnet",
-    "p1": "p1.agentexit3.testnet",
-    "p2": "p2.agentexit3.testnet",
-    "p3": "p3.agentexit3.testnet",
-    "p4": "p4.agentexit3.testnet",
-    "p5": "p5.agentexit3.testnet",
-    "p6": "p6.agentexit3.testnet",
-    "summarizer": "summarizer.agentexit3.testnet",
-    "translator": "translator.agentexit3.testnet",
-    "x.alice": "x.alice.agentexit3.testnet",
-    "xusd": "xusd.agentexit3.testnet"
+    "alice": "alice.w2.agentexit3.testnet",
+    "bob": "bob.w2.agentexit3.testnet",
+    "carol": "carol.w2.agentexit3.testnet",
+    "cheat": "cheat.w2.agentexit3.testnet",
+    "p1": "p1.w2.agentexit3.testnet",
+    "p2": "p2.w2.agentexit3.testnet",
+    "p3": "p3.w2.agentexit3.testnet",
+    "p4": "p4.w2.agentexit3.testnet",
+    "p5": "p5.w2.agentexit3.testnet",
+    "p6": "p6.w2.agentexit3.testnet",
+    "summarizer": "summarizer.w2.agentexit3.testnet",
+    "translator": "translator.w2.agentexit3.testnet",
+    "x.alice": "x.alice.w2.agentexit3.testnet",
+    "xusd": "xusd.w2.agentexit3.testnet"
   },
   "agent_checks": [
     {
-      "agent": "translator.agentexit3.testnet",
+      "agent": "translator.w2.agentexit3.testnet",
       "checks": {
         "admin": true,
         "base_address": true,
@@ -26,7 +26,7 @@
       }
     },
     {
-      "agent": "cheat.agentexit3.testnet",
+      "agent": "cheat.w2.agentexit3.testnet",
       "checks": {
         "admin": true,
         "base_address": true,
@@ -35,10 +35,10 @@
       }
     }
   ],
-  "agent_code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+  "agent_code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
   "base_addresses": {
-    "cheat": "0x9d1f32bb7eed978158a0269035b5140dd9d6f87d",
-    "translator": "0xa151912e5337aaec269ed1832059c5fc4f2e0617"
+    "cheat": "0x54fa666b6ff57e5a03a07b2e710d27174a28b415",
+    "translator": "0xc3d4d4d85d8dc631abf5f934ef88d59fc1401094"
   },
   "earnings": {
     "cheat": {
@@ -48,7 +48,7 @@
       "days": [
         {
           "counted": 0,
-          "day": 20760,
+          "day": 20761,
           "gross": 500000000,
           "payments": 5,
           "verified": 0
@@ -74,7 +74,7 @@
       "days": [
         {
           "counted": 360000000,
-          "day": 20760,
+          "day": 20761,
           "gross": 500000000,
           "payments": 33,
           "verified": 0
@@ -99,19 +99,19 @@
     "signer": "v1.signer-prod.testnet"
   },
   "pass": true,
-  "root": "agentexit3.testnet",
+  "root": "w2.agentexit3.testnet",
   "schema": "testnet-deploy.v1",
   "seed": [
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -123,14 +123,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p1-0",
-              "payer": "p1.agentexit3.testnet",
+              "payer": "p1.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -144,6 +144,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -153,25 +154,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/G9QSS8aoEZjzgqUCT2x3UPqp7QDXbHpHdhUzrUQ5J4vc",
+      "explorer": "https://testnet.nearblocks.io/txns/7orvsAmxkBxNBHvZtSh15pb51W8WBEjE8Vmikd2mtM3n",
       "label": "p1 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5971,
+      "ms": 5207,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "G9QSS8aoEZjzgqUCT2x3UPqp7QDXbHpHdhUzrUQ5J4vc",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "7orvsAmxkBxNBHvZtSh15pb51W8WBEjE8Vmikd2mtM3n",
       "value": "12000000"
     },
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -183,14 +184,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p1-1",
-              "payer": "p1.agentexit3.testnet",
+              "payer": "p1.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -204,6 +205,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -213,25 +215,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9X3JkF6y7gTtTXKhrxPBaoNnCp5dvHakHgTCfFceFoyw",
+      "explorer": "https://testnet.nearblocks.io/txns/J7DB3c26ewBLRXFfhAzvupJeaAGVMqjA5ZKmZbUnmQBN",
       "label": "p1 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6118,
+      "ms": 5283,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "9X3JkF6y7gTtTXKhrxPBaoNnCp5dvHakHgTCfFceFoyw",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "J7DB3c26ewBLRXFfhAzvupJeaAGVMqjA5ZKmZbUnmQBN",
       "value": "12000000"
     },
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -243,14 +245,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p1-2",
-              "payer": "p1.agentexit3.testnet",
+              "payer": "p1.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -264,6 +266,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -273,25 +276,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FtADSWrPxrg9d62CUpLb4xFZBeNm2d6Xop5Z1AtMYeud",
+      "explorer": "https://testnet.nearblocks.io/txns/Ed4AcyNv9ifP7naPswuiKSA8ae8swzkEGuEWyZbvRi5L",
       "label": "p1 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6515,
+      "ms": 5965,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "FtADSWrPxrg9d62CUpLb4xFZBeNm2d6Xop5Z1AtMYeud",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Ed4AcyNv9ifP7naPswuiKSA8ae8swzkEGuEWyZbvRi5L",
       "value": "12000000"
     },
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -303,14 +306,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p1-3",
-              "payer": "p1.agentexit3.testnet",
+              "payer": "p1.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -324,6 +327,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -333,25 +337,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GrUPsvSvJwSDRGR9HupdMtqHjMFpGM9j2ShKf81em5Ws",
+      "explorer": "https://testnet.nearblocks.io/txns/B1uS4YRV3kNKXjUyx9FQzwG1goEA7GTTbmainPfkg193",
       "label": "p1 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5913,
+      "ms": 5434,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GrUPsvSvJwSDRGR9HupdMtqHjMFpGM9j2ShKf81em5Ws",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "B1uS4YRV3kNKXjUyx9FQzwG1goEA7GTTbmainPfkg193",
       "value": "12000000"
     },
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p1.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -363,14 +367,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p1-4",
-              "payer": "p1.agentexit3.testnet",
+              "payer": "p1.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -384,6 +388,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -393,25 +398,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DdFhgFisfEMx94D9YXUiV6ouvL9U1GkrQ6TPAAksUDkb",
+      "explorer": "https://testnet.nearblocks.io/txns/FSk81QjjL7AtotFRrb1xmrGCKQSpLvy79AEXKBVRu3GB",
       "label": "p1 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6014,
+      "ms": 6039,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DdFhgFisfEMx94D9YXUiV6ouvL9U1GkrQ6TPAAksUDkb",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FSk81QjjL7AtotFRrb1xmrGCKQSpLvy79AEXKBVRu3GB",
       "value": "12000000"
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p2.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -423,14 +428,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p2-0",
-              "payer": "p2.agentexit3.testnet",
+              "payer": "p2.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -444,6 +449,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -453,25 +459,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FeHyxfhni5MQTkhVEyuFKJh5jtAZ9E5xDuWav1odavZb",
+      "explorer": "https://testnet.nearblocks.io/txns/4LhHvUDNLzuB1F6Ebs1MTueJ7k3C59e98hAGCshCk74F",
       "label": "p2 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6411,
+      "ms": 5626,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "FeHyxfhni5MQTkhVEyuFKJh5jtAZ9E5xDuWav1odavZb",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "4LhHvUDNLzuB1F6Ebs1MTueJ7k3C59e98hAGCshCk74F",
       "value": "12000000"
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p2.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -483,14 +489,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p2-1",
-              "payer": "p2.agentexit3.testnet",
+              "payer": "p2.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -504,6 +510,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -513,25 +520,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Ei6qbZe6sUQ8qa5wQ8iCYec6S3tXGohjhbFfgJoBkd3v",
+      "explorer": "https://testnet.nearblocks.io/txns/46gAfhzvbKav4c8D7xCBiZM7qqkkT8a2aMEpwn3PJeXP",
       "label": "p2 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6407,
+      "ms": 5299,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "Ei6qbZe6sUQ8qa5wQ8iCYec6S3tXGohjhbFfgJoBkd3v",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "46gAfhzvbKav4c8D7xCBiZM7qqkkT8a2aMEpwn3PJeXP",
       "value": "12000000"
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p2.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -543,14 +550,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p2-2",
-              "payer": "p2.agentexit3.testnet",
+              "payer": "p2.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -564,6 +571,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -573,25 +581,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/YrxbvdgYR3vNN6Jk3N5ofJ3xaCwBx2TBjWo6PbnVVHs",
+      "explorer": "https://testnet.nearblocks.io/txns/8NMoB6mykGKQoBkgcTYPnaJCGHbqtqYDxdiJMCkrwCpn",
       "label": "p2 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5973,
+      "ms": 5148,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "YrxbvdgYR3vNN6Jk3N5ofJ3xaCwBx2TBjWo6PbnVVHs",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "8NMoB6mykGKQoBkgcTYPnaJCGHbqtqYDxdiJMCkrwCpn",
       "value": "12000000"
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p2.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -603,14 +611,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p2-3",
-              "payer": "p2.agentexit3.testnet",
+              "payer": "p2.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -624,6 +632,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -633,25 +642,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DPhnTcXs2Vso8vEvKaMhYE7TmsXbZe1tfqa1nurLu1Up",
+      "explorer": "https://testnet.nearblocks.io/txns/Bi75nhJFiHv86pHfJb7Mp3eHELRsSNLavEWFGHRCG9C2",
       "label": "p2 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5936,
+      "ms": 5039,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DPhnTcXs2Vso8vEvKaMhYE7TmsXbZe1tfqa1nurLu1Up",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Bi75nhJFiHv86pHfJb7Mp3eHELRsSNLavEWFGHRCG9C2",
       "value": "12000000"
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p2.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -663,14 +672,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p2-4",
-              "payer": "p2.agentexit3.testnet",
+              "payer": "p2.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -684,6 +693,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -693,25 +703,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/D3UYjJKVBnNVV62K4XsWDjLVNUaT2XW2XaHwpEYTY6UC",
+      "explorer": "https://testnet.nearblocks.io/txns/HhLDLfYXjSh2ravDL62zb2d8vkFCKNLtufLJ8PqqRKSY",
       "label": "p2 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5520,
+      "ms": 5031,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "D3UYjJKVBnNVV62K4XsWDjLVNUaT2XW2XaHwpEYTY6UC",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "HhLDLfYXjSh2ravDL62zb2d8vkFCKNLtufLJ8PqqRKSY",
       "value": "12000000"
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p3.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -723,14 +733,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p3-0",
-              "payer": "p3.agentexit3.testnet",
+              "payer": "p3.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -744,6 +754,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -753,25 +764,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/D1u8TVrXBgoue5obPrc6W5eEK6Zm1m6adoz31GzxCvHN",
+      "explorer": "https://testnet.nearblocks.io/txns/5NDctdh4MtH2zjgGMfG8n1xqpdm2T1yu9h5Ra5njkkCy",
       "label": "p3 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5389,
+      "ms": 5634,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "D1u8TVrXBgoue5obPrc6W5eEK6Zm1m6adoz31GzxCvHN",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "5NDctdh4MtH2zjgGMfG8n1xqpdm2T1yu9h5Ra5njkkCy",
       "value": "12000000"
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p3.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -783,14 +794,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p3-1",
-              "payer": "p3.agentexit3.testnet",
+              "payer": "p3.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -804,6 +815,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -813,25 +825,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/padRymQSsBx3QFbCY2zJ9b5zzm2xcuDKJGSFbKVH91k",
+      "explorer": "https://testnet.nearblocks.io/txns/FQLSAmZBcGtMHNQndrnuMEGoXguEmVTRS2XKBuqDzZ8P",
       "label": "p3 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5867,
+      "ms": 5784,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "padRymQSsBx3QFbCY2zJ9b5zzm2xcuDKJGSFbKVH91k",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FQLSAmZBcGtMHNQndrnuMEGoXguEmVTRS2XKBuqDzZ8P",
       "value": "12000000"
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p3.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -843,14 +855,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p3-2",
-              "payer": "p3.agentexit3.testnet",
+              "payer": "p3.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -864,6 +876,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -873,25 +886,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/8jpJamWNv4rk2idT69mZvLJJHHTyh1hFQPqx8zQPWziW",
+      "explorer": "https://testnet.nearblocks.io/txns/GMxrVACJKVbBrUEbnBsYAwoxeKc44jEjk8iCxFPJF9B6",
       "label": "p3 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5826,
+      "ms": 5609,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "8jpJamWNv4rk2idT69mZvLJJHHTyh1hFQPqx8zQPWziW",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "GMxrVACJKVbBrUEbnBsYAwoxeKc44jEjk8iCxFPJF9B6",
       "value": "12000000"
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p3.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -903,14 +916,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p3-3",
-              "payer": "p3.agentexit3.testnet",
+              "payer": "p3.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -924,6 +937,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -933,25 +947,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FxJo2DNMbnZBURbaGzUQ5daLo2JXdTQFbzxB3Ro9DC24",
+      "explorer": "https://testnet.nearblocks.io/txns/CvGzsDJbgc5LdP53vzGi4FqEY6u8BZvhosP3YUYKWsbW",
       "label": "p3 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6081,
+      "ms": 5407,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "FxJo2DNMbnZBURbaGzUQ5daLo2JXdTQFbzxB3Ro9DC24",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "CvGzsDJbgc5LdP53vzGi4FqEY6u8BZvhosP3YUYKWsbW",
       "value": "12000000"
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p3.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -963,14 +977,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p3-4",
-              "payer": "p3.agentexit3.testnet",
+              "payer": "p3.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -984,6 +998,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -993,25 +1008,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FcgwqSanSBC1vZkfeFV6gzwbqJHqzyJogGMDJpokrnnv",
+      "explorer": "https://testnet.nearblocks.io/txns/FS165TKWmcNqRipxevBGBugGczL4P8TkdYPZFHHQ6Fcp",
       "label": "p3 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6426,
+      "ms": 5959,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "FcgwqSanSBC1vZkfeFV6gzwbqJHqzyJogGMDJpokrnnv",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FS165TKWmcNqRipxevBGBugGczL4P8TkdYPZFHHQ6Fcp",
       "value": "12000000"
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p4.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1023,14 +1038,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p4-0",
-              "payer": "p4.agentexit3.testnet",
+              "payer": "p4.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1044,6 +1059,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1053,25 +1069,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/99TzN9tzesE45zSfiLTHVBTSyajcrLkkgWNrdQUrEqVT",
+      "explorer": "https://testnet.nearblocks.io/txns/Gp3uQcPNFZxWiceauarn7Neyv5Pt3bPqURYhbyWDwsWb",
       "label": "p4 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6020,
+      "ms": 7155,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "99TzN9tzesE45zSfiLTHVBTSyajcrLkkgWNrdQUrEqVT",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Gp3uQcPNFZxWiceauarn7Neyv5Pt3bPqURYhbyWDwsWb",
       "value": "12000000"
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p4.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1083,14 +1099,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p4-1",
-              "payer": "p4.agentexit3.testnet",
+              "payer": "p4.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1104,6 +1120,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1113,25 +1130,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GxxWZiLv1jiXbDDadFfkfF82YEEas7puDCVxP4h4wzfC",
+      "explorer": "https://testnet.nearblocks.io/txns/Bepf7m1UAJUoBmKCAaMijergSgMp7MDmVm64ZRnNXGkM",
       "label": "p4 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6118,
+      "ms": 5689,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GxxWZiLv1jiXbDDadFfkfF82YEEas7puDCVxP4h4wzfC",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Bepf7m1UAJUoBmKCAaMijergSgMp7MDmVm64ZRnNXGkM",
       "value": "12000000"
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p4.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1143,14 +1160,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p4-2",
-              "payer": "p4.agentexit3.testnet",
+              "payer": "p4.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1164,6 +1181,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1173,25 +1191,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/J2xc9tEfjdtDNzcAW6aeswhrugH8BK2UzgxkDpUQMZvW",
+      "explorer": "https://testnet.nearblocks.io/txns/FeerzHM1Pbjrm7t21x36q5YAuqHTFi65iaQALtbTji7K",
       "label": "p4 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5575,
+      "ms": 5992,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "J2xc9tEfjdtDNzcAW6aeswhrugH8BK2UzgxkDpUQMZvW",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FeerzHM1Pbjrm7t21x36q5YAuqHTFi65iaQALtbTji7K",
       "value": "12000000"
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p4.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1203,14 +1221,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p4-3",
-              "payer": "p4.agentexit3.testnet",
+              "payer": "p4.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1224,6 +1242,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1233,25 +1252,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DKBRcV92k4aS2mGS45ikYKfotKLfp5rCwDMpC2PeBAC1",
+      "explorer": "https://testnet.nearblocks.io/txns/12WHy1EgWHmBD9Sx4EeAGKKxRjeqSaL4rwmFmSLbEUK6",
       "label": "p4 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5534,
+      "ms": 7390,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DKBRcV92k4aS2mGS45ikYKfotKLfp5rCwDMpC2PeBAC1",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "12WHy1EgWHmBD9Sx4EeAGKKxRjeqSaL4rwmFmSLbEUK6",
       "value": "12000000"
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p4.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1263,14 +1282,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p4-4",
-              "payer": "p4.agentexit3.testnet",
+              "payer": "p4.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1284,6 +1303,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1293,25 +1313,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CpNaVy4Fkw6zaVvX2pEmJxtH28FgPFV6ztLZN6UuMffm",
+      "explorer": "https://testnet.nearblocks.io/txns/zekXf3sZBBrmfAbduE2JKP7pdBov5j81tySwrueEvBM",
       "label": "p4 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6083,
+      "ms": 5986,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "CpNaVy4Fkw6zaVvX2pEmJxtH28FgPFV6ztLZN6UuMffm",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "zekXf3sZBBrmfAbduE2JKP7pdBov5j81tySwrueEvBM",
       "value": "12000000"
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p5.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1323,14 +1343,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p5-0",
-              "payer": "p5.agentexit3.testnet",
+              "payer": "p5.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1344,6 +1364,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1353,25 +1374,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/AQnXXr5QtD8op5B52L24W6JKfJH5FSzSPZKGxaAaQLzx",
+      "explorer": "https://testnet.nearblocks.io/txns/2g24WNjgoYJzAwfKt9GGnFgUjnzkQWUPCgMFiGyW6yBJ",
       "label": "p5 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6284,
+      "ms": 5997,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "AQnXXr5QtD8op5B52L24W6JKfJH5FSzSPZKGxaAaQLzx",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "2g24WNjgoYJzAwfKt9GGnFgUjnzkQWUPCgMFiGyW6yBJ",
       "value": "12000000"
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p5.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1383,14 +1404,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p5-1",
-              "payer": "p5.agentexit3.testnet",
+              "payer": "p5.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1404,6 +1425,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1413,25 +1435,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9Caza5NqL1nT5xP629QciC3QLMJ5zmdLjR7J6E4PRCxX",
+      "explorer": "https://testnet.nearblocks.io/txns/53HMsVhHbUyqdxBtN8TQAX2NqqpsPGic1n1GrUnmPMoj",
       "label": "p5 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6003,
+      "ms": 5815,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "9Caza5NqL1nT5xP629QciC3QLMJ5zmdLjR7J6E4PRCxX",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "53HMsVhHbUyqdxBtN8TQAX2NqqpsPGic1n1GrUnmPMoj",
       "value": "12000000"
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p5.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1443,14 +1465,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p5-2",
-              "payer": "p5.agentexit3.testnet",
+              "payer": "p5.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1464,6 +1486,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1473,25 +1496,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FvixgbRZrPq63hyn5MnbqzNmhbcbJiY1VXFoNQbaAe4p",
+      "explorer": "https://testnet.nearblocks.io/txns/3hSVGTSmMjvxxEQbeQq1cmNZpjbp9zWqN7BrmSgnLPJ5",
       "label": "p5 pays translator 12.00",
       "method": "ft_transfer_call",
       "ms": 5078,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "FvixgbRZrPq63hyn5MnbqzNmhbcbJiY1VXFoNQbaAe4p",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "3hSVGTSmMjvxxEQbeQq1cmNZpjbp9zWqN7BrmSgnLPJ5",
       "value": "12000000"
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p5.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1503,14 +1526,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p5-3",
-              "payer": "p5.agentexit3.testnet",
+              "payer": "p5.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1524,6 +1547,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1533,25 +1557,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/BqzoJ14g3p2hFa67Ssm83uT8eMZxHwgpym1LJDXojJAh",
+      "explorer": "https://testnet.nearblocks.io/txns/C85MJXC7wC6r3YayFYbydigHkFnGhLeMpE8zf64vsKK3",
       "label": "p5 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5360,
+      "ms": 5745,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "BqzoJ14g3p2hFa67Ssm83uT8eMZxHwgpym1LJDXojJAh",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "C85MJXC7wC6r3YayFYbydigHkFnGhLeMpE8zf64vsKK3",
       "value": "12000000"
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p5.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1563,14 +1587,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p5-4",
-              "payer": "p5.agentexit3.testnet",
+              "payer": "p5.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1584,6 +1608,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1593,25 +1618,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/65T9n233xfiKzEBfb9rn4pF5Bwz7VSZrWsM5j7kDMKbG",
+      "explorer": "https://testnet.nearblocks.io/txns/xdFCgh3vM8DnuY1p8qCxiGPGW1Su3tfXkNq59VXz6Hf",
       "label": "p5 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5613,
+      "ms": 5445,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "65T9n233xfiKzEBfb9rn4pF5Bwz7VSZrWsM5j7kDMKbG",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "xdFCgh3vM8DnuY1p8qCxiGPGW1Su3tfXkNq59VXz6Hf",
       "value": "12000000"
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p6.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1623,14 +1648,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p6-0",
-              "payer": "p6.agentexit3.testnet",
+              "payer": "p6.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1644,6 +1669,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1653,25 +1679,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/8rcmK1GtgZmbhjkaZ1Aim4Jo1SLwV5kW7jUgzuyqBzsK",
+      "explorer": "https://testnet.nearblocks.io/txns/Dg23Mac2qEZhC5JPT9WriQhUypgGKyyyp1vCM6xJ8bRT",
       "label": "p6 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5709,
+      "ms": 5805,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "8rcmK1GtgZmbhjkaZ1Aim4Jo1SLwV5kW7jUgzuyqBzsK",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Dg23Mac2qEZhC5JPT9WriQhUypgGKyyyp1vCM6xJ8bRT",
       "value": "12000000"
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p6.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1683,14 +1709,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p6-1",
-              "payer": "p6.agentexit3.testnet",
+              "payer": "p6.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1704,6 +1730,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1713,25 +1740,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GRa6PoPigjqJYaW4M5J6i5SBkp8H9a7rgj3U6Rvfkoch",
+      "explorer": "https://testnet.nearblocks.io/txns/CgYneKUGpc1TSyRVcD9j478di2ewMLQSEcAgC9ZhUPVw",
       "label": "p6 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 5529,
+      "ms": 5816,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GRa6PoPigjqJYaW4M5J6i5SBkp8H9a7rgj3U6Rvfkoch",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "CgYneKUGpc1TSyRVcD9j478di2ewMLQSEcAgC9ZhUPVw",
       "value": "12000000"
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p6.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1743,14 +1770,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p6-2",
-              "payer": "p6.agentexit3.testnet",
+              "payer": "p6.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1764,6 +1791,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1773,25 +1801,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/JA4T6qJrUsyBSma9RJdefACaPdqxS3cNH4xjPKsHLagt",
+      "explorer": "https://testnet.nearblocks.io/txns/EsjhG9zZz4KpJ3gW5ktVrLuArzhczH7AFraBh3mBgcYH",
       "label": "p6 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6045,
+      "ms": 5438,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "JA4T6qJrUsyBSma9RJdefACaPdqxS3cNH4xjPKsHLagt",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "EsjhG9zZz4KpJ3gW5ktVrLuArzhczH7AFraBh3mBgcYH",
       "value": "12000000"
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p6.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1803,14 +1831,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p6-3",
-              "payer": "p6.agentexit3.testnet",
+              "payer": "p6.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1824,6 +1852,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1833,25 +1862,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/H8bkYZod7bGT7Q15abZ4UA7GFRPnTDLsTjjLHkHnjpn4",
+      "explorer": "https://testnet.nearblocks.io/txns/Czj3efQirY68rMWjcX8YWSjsWgBPs7E72kFY1uQqovcn",
       "label": "p6 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6109,
+      "ms": 4871,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "H8bkYZod7bGT7Q15abZ4UA7GFRPnTDLsTjjLHkHnjpn4",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Czj3efQirY68rMWjcX8YWSjsWgBPs7E72kFY1uQqovcn",
       "value": "12000000"
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "12000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "p6.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1863,14 +1892,14 @@
             {
               "amount": "12000000",
               "counted": true,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "seed-p6-4",
-              "payer": "p6.agentexit3.testnet",
+              "payer": "p6.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1884,6 +1913,7 @@
             {
               "amount": "12000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "12000000",
               "to_treasury": "0"
             }
@@ -1893,25 +1923,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/97bzATptooPqqCMARiGL1KRCgfz5cFKaWittpjEPGmRU",
+      "explorer": "https://testnet.nearblocks.io/txns/715oEionBSfkF9xWGngQUfaAGbfrg1VRitjAuVJ1vfW",
       "label": "p6 pays translator 12.00",
       "method": "ft_transfer_call",
-      "ms": 6015,
+      "ms": 5413,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "97bzATptooPqqCMARiGL1KRCgfz5cFKaWittpjEPGmRU",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "715oEionBSfkF9xWGngQUfaAGbfrg1VRitjAuVJ1vfW",
       "value": "12000000"
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "50000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1923,14 +1953,14 @@
             {
               "amount": "50000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": true,
                 "seller_subaccount": false
               },
               "job_id": null,
-              "payer": "alice.agentexit3.testnet",
+              "payer": "alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -1944,6 +1974,7 @@
             {
               "amount": "50000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "50000000",
               "to_treasury": "0"
             }
@@ -1953,25 +1984,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/7JYvLna6o64N52H78tcqDhtpoKWEcAi6jxCqNuMYxajS",
+      "explorer": "https://testnet.nearblocks.io/txns/4LuYgKm2R5qyjKfZaWJ3NvuTAzdKq6qvf9aiJG11FDhP",
       "label": "alice pays translator 50.00",
       "method": "ft_transfer_call",
-      "ms": 6066,
+      "ms": 5582,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "7JYvLna6o64N52H78tcqDhtpoKWEcAi6jxCqNuMYxajS",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "4LuYgKm2R5qyjKfZaWJ3NvuTAzdKq6qvf9aiJG11FDhP",
       "value": "50000000"
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "50000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -1983,14 +2014,14 @@
             {
               "amount": "50000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": true,
                 "seller_subaccount": false
               },
               "job_id": null,
-              "payer": "alice.agentexit3.testnet",
+              "payer": "alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2004,6 +2035,7 @@
             {
               "amount": "50000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "50000000",
               "to_treasury": "0"
             }
@@ -2013,25 +2045,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CFon159cnUre6bXqz3bWkE3B1wfqNe3Q8WGvnzDjT9A5",
+      "explorer": "https://testnet.nearblocks.io/txns/BZi9QJaoGcNxJwmioVa79royhCvQcWUb4HYUwoZoHXMp",
       "label": "alice pays translator 50.00",
       "method": "ft_transfer_call",
-      "ms": 6246,
+      "ms": 5822,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "CFon159cnUre6bXqz3bWkE3B1wfqNe3Q8WGvnzDjT9A5",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "BZi9QJaoGcNxJwmioVa79royhCvQcWUb4HYUwoZoHXMp",
       "value": "50000000"
     },
     {
-      "by": "x.alice.agentexit3.testnet",
+      "by": "x.alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "40000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "x.alice.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "x.alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2043,14 +2075,14 @@
             {
               "amount": "40000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": true
               },
               "job_id": null,
-              "payer": "x.alice.agentexit3.testnet",
+              "payer": "x.alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2064,6 +2096,7 @@
             {
               "amount": "40000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "40000000",
               "to_treasury": "0"
             }
@@ -2073,25 +2106,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/7CrpUif5P1HQDf2CkVmCnvwFgJpJZGkPyaKrnVxogwSw",
+      "explorer": "https://testnet.nearblocks.io/txns/FcEmBoNaibMwXnUtPF9dESBnCZYJshQCwzgRAzT894tC",
       "label": "x.alice pays translator 40.00",
       "method": "ft_transfer_call",
-      "ms": 5416,
+      "ms": 5797,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "7CrpUif5P1HQDf2CkVmCnvwFgJpJZGkPyaKrnVxogwSw",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FcEmBoNaibMwXnUtPF9dESBnCZYJshQCwzgRAzT894tC",
       "value": "40000000"
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "cheat.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet"
+              "new_owner_id": "cheat.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2103,14 +2136,14 @@
             {
               "amount": "100000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": true,
                 "seller_subaccount": false
               },
               "job_id": null,
-              "payer": "alice.agentexit3.testnet",
+              "payer": "alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2124,6 +2157,7 @@
             {
               "amount": "100000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "100000000",
               "to_treasury": "0"
             }
@@ -2133,25 +2167,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5ow285uUD5y4myouUpKo3Ys4qyqtA3dTyYBCUxHknoy3",
+      "explorer": "https://testnet.nearblocks.io/txns/6Kqf74ipmmEvgW9eu7y4LZzzjgwqXWax1Je24RQWuN9w",
       "label": "alice pays cheat 100.00",
       "method": "ft_transfer_call",
-      "ms": 6331,
+      "ms": 5818,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "5ow285uUD5y4myouUpKo3Ys4qyqtA3dTyYBCUxHknoy3",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "6Kqf74ipmmEvgW9eu7y4LZzzjgwqXWax1Je24RQWuN9w",
       "value": "100000000"
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "cheat.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet"
+              "new_owner_id": "cheat.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2163,14 +2197,14 @@
             {
               "amount": "100000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": true,
                 "seller_subaccount": false
               },
               "job_id": null,
-              "payer": "alice.agentexit3.testnet",
+              "payer": "alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2184,6 +2218,7 @@
             {
               "amount": "100000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "100000000",
               "to_treasury": "0"
             }
@@ -2193,25 +2228,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Hu3vAHSkAb3bFNcrwhyh7qPQzUzuUvebX3eJHR3PbfDh",
+      "explorer": "https://testnet.nearblocks.io/txns/Ht31qmG8q7RM5y7GEuLR4R3C6mpZhMsQtN5Tkccsq7Uv",
       "label": "alice pays cheat 100.00",
       "method": "ft_transfer_call",
-      "ms": 6296,
+      "ms": 5826,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "Hu3vAHSkAb3bFNcrwhyh7qPQzUzuUvebX3eJHR3PbfDh",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Ht31qmG8q7RM5y7GEuLR4R3C6mpZhMsQtN5Tkccsq7Uv",
       "value": "100000000"
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "cheat.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet"
+              "new_owner_id": "cheat.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2223,14 +2258,14 @@
             {
               "amount": "100000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": true,
                 "seller_subaccount": false
               },
               "job_id": null,
-              "payer": "alice.agentexit3.testnet",
+              "payer": "alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2244,6 +2279,7 @@
             {
               "amount": "100000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "100000000",
               "to_treasury": "0"
             }
@@ -2253,25 +2289,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5z74xQXqsQWHDGsAoTgC2V7PeAhWHdryBxdthcZqAhzn",
+      "explorer": "https://testnet.nearblocks.io/txns/Bm5DHTwybrv7NKR5QqCVBxc8TVhp3YCZmEzZ5ZfV5Jaw",
       "label": "alice pays cheat 100.00",
       "method": "ft_transfer_call",
-      "ms": 6393,
+      "ms": 7745,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "5z74xQXqsQWHDGsAoTgC2V7PeAhWHdryBxdthcZqAhzn",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Bm5DHTwybrv7NKR5QqCVBxc8TVhp3YCZmEzZ5ZfV5Jaw",
       "value": "100000000"
     },
     {
-      "by": "x.alice.agentexit3.testnet",
+      "by": "x.alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "cheat.agentexit3.testnet",
-              "old_owner_id": "x.alice.agentexit3.testnet"
+              "new_owner_id": "cheat.w2.agentexit3.testnet",
+              "old_owner_id": "x.alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2283,14 +2319,14 @@
             {
               "amount": "100000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": true
               },
               "job_id": null,
-              "payer": "x.alice.agentexit3.testnet",
+              "payer": "x.alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2304,6 +2340,7 @@
             {
               "amount": "100000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "100000000",
               "to_treasury": "0"
             }
@@ -2313,25 +2350,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/b8Lp5dbLgD89qKg8nRMnaNw9FY4pAnFKpKdJ5srFq1X",
+      "explorer": "https://testnet.nearblocks.io/txns/D1GP4qLvC29NcHt4QrCU3jmCbJ52G7MkVyjXiVkNSpBi",
       "label": "x.alice pays cheat 100.00",
       "method": "ft_transfer_call",
-      "ms": 6093,
+      "ms": 6167,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "b8Lp5dbLgD89qKg8nRMnaNw9FY4pAnFKpKdJ5srFq1X",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "D1GP4qLvC29NcHt4QrCU3jmCbJ52G7MkVyjXiVkNSpBi",
       "value": "100000000"
     },
     {
-      "by": "x.alice.agentexit3.testnet",
+      "by": "x.alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "cheat.agentexit3.testnet",
-              "old_owner_id": "x.alice.agentexit3.testnet"
+              "new_owner_id": "cheat.w2.agentexit3.testnet",
+              "old_owner_id": "x.alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -2343,14 +2380,14 @@
             {
               "amount": "100000000",
               "counted": false,
-              "day": 20760,
+              "day": 20761,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": true
               },
               "job_id": null,
-              "payer": "x.alice.agentexit3.testnet",
+              "payer": "x.alice.w2.agentexit3.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -2364,6 +2401,7 @@
             {
               "amount": "100000000",
               "seller_earnout_release": "0",
+              "to_investors": "0",
               "to_owner": "100000000",
               "to_treasury": "0"
             }
@@ -2373,13 +2411,13 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/C9vdqfVccyemRKcxVhhGc994cGLxB6tXz35iu5iqH5LB",
+      "explorer": "https://testnet.nearblocks.io/txns/C2kDi1P9VZS8JXJyUZLswLBGWN9XHXfh35Eq9XFXpjaM",
       "label": "x.alice pays cheat 100.00",
       "method": "ft_transfer_call",
-      "ms": 6067,
+      "ms": 5597,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "C9vdqfVccyemRKcxVhhGc994cGLxB6tXz35iu5iqH5LB",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "C2kDi1P9VZS8JXJyUZLswLBGWN9XHXfh35Eq9XFXpjaM",
       "value": "100000000"
     }
   ],
@@ -2393,209 +2431,209 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "translator.agentexit3.testnet"
+        "receiver_id": "translator.w2.agentexit3.testnet"
       },
       "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
     }
   ],
   "txs": [
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/89SzQhvbS86pBsTjphszYGzzZsRMdkWZY4WVWokppuWZ",
-      "label": "create xusd.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/4gFrzY7WSfw23nr1DMCf3mNSnirHJYrtL9V1FhtQyprP",
+      "label": "create xusd.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4200,
+      "ms": 4130,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "89SzQhvbS86pBsTjphszYGzzZsRMdkWZY4WVWokppuWZ",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "4gFrzY7WSfw23nr1DMCf3mNSnirHJYrtL9V1FhtQyprP",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/3LkCvkPa21TTZs3aCmxsGBxDSpT4exYAZR3wU436vGuf",
-      "label": "create translator.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/EvUbw9rnWbMZE5VjtGHJeUFihDsrcFqfPiA95cmc9U7J",
+      "label": "create translator.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4352,
+      "ms": 4560,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "3LkCvkPa21TTZs3aCmxsGBxDSpT4exYAZR3wU436vGuf",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "EvUbw9rnWbMZE5VjtGHJeUFihDsrcFqfPiA95cmc9U7J",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/GJfEyhSAiQSbQyddWQQ9ZZKoZfWajLE6ttCS9dXpwqny",
-      "label": "create cheat.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/A7G37kgGBCM17Rhzafd2BuANHrswY9EFcndfd8o4vd9D",
+      "label": "create cheat.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4330,
+      "ms": 4040,
       "ok": true,
-      "receiver": "cheat.agentexit3.testnet",
-      "tx": "GJfEyhSAiQSbQyddWQQ9ZZKoZfWajLE6ttCS9dXpwqny",
+      "receiver": "cheat.w2.agentexit3.testnet",
+      "tx": "A7G37kgGBCM17Rhzafd2BuANHrswY9EFcndfd8o4vd9D",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/AqiMhean4Ye8EdWyecwt37fw4AieQgdEapLDtrJtuAdm",
-      "label": "create summarizer.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/29dwXFVLLhPXeskAZivcJ3Peq7A1QTSBvyNGTsVWBn2F",
+      "label": "create summarizer.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4241,
+      "ms": 4385,
       "ok": true,
-      "receiver": "summarizer.agentexit3.testnet",
-      "tx": "AqiMhean4Ye8EdWyecwt37fw4AieQgdEapLDtrJtuAdm",
+      "receiver": "summarizer.w2.agentexit3.testnet",
+      "tx": "29dwXFVLLhPXeskAZivcJ3Peq7A1QTSBvyNGTsVWBn2F",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/51kXn3shGXjFuxzJWpbSs9TvApeWMqKd3KYtJ75YRLPQ",
-      "label": "create alice.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/eETbrESQ4MSC11ryCrAUU1qVrCb8DPg8wmgfqvPQp8H",
+      "label": "create alice.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4813,
+      "ms": 4174,
       "ok": true,
-      "receiver": "alice.agentexit3.testnet",
-      "tx": "51kXn3shGXjFuxzJWpbSs9TvApeWMqKd3KYtJ75YRLPQ",
+      "receiver": "alice.w2.agentexit3.testnet",
+      "tx": "eETbrESQ4MSC11ryCrAUU1qVrCb8DPg8wmgfqvPQp8H",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/HxUVdb3eRUrbQaBWtZa4LiH8GHGnUXdXANVXvJGp7299",
-      "label": "create bob.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/2Uv99B3R5ZQ6KvVpNe3RxTjL7SirRBEvBTpjaRP1XxEz",
+      "label": "create bob.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 5237,
+      "ms": 4641,
       "ok": true,
-      "receiver": "bob.agentexit3.testnet",
-      "tx": "HxUVdb3eRUrbQaBWtZa4LiH8GHGnUXdXANVXvJGp7299",
+      "receiver": "bob.w2.agentexit3.testnet",
+      "tx": "2Uv99B3R5ZQ6KvVpNe3RxTjL7SirRBEvBTpjaRP1XxEz",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/GaPoVRzx2p3Dw3vFC4Lg8P39zT6nXBsxfvHJLsJqM17s",
-      "label": "create carol.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/ANyRiTUyAjesjxBXKV66S8tVaYLtYSrsUeJD6Ueufz8z",
+      "label": "create carol.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 3681,
+      "ms": 4697,
       "ok": true,
-      "receiver": "carol.agentexit3.testnet",
-      "tx": "GaPoVRzx2p3Dw3vFC4Lg8P39zT6nXBsxfvHJLsJqM17s",
+      "receiver": "carol.w2.agentexit3.testnet",
+      "tx": "ANyRiTUyAjesjxBXKV66S8tVaYLtYSrsUeJD6Ueufz8z",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/CJBgCEJRhM25LaH4js6QCE2ZBZ734eTpHSAzs8Cyioob",
-      "label": "create p1.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/593fXYobkzjX5XdYMkpuRY1z84w2yusETfMeymEeXjAD",
+      "label": "create p1.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4706,
+      "ms": 4219,
       "ok": true,
-      "receiver": "p1.agentexit3.testnet",
-      "tx": "CJBgCEJRhM25LaH4js6QCE2ZBZ734eTpHSAzs8Cyioob",
+      "receiver": "p1.w2.agentexit3.testnet",
+      "tx": "593fXYobkzjX5XdYMkpuRY1z84w2yusETfMeymEeXjAD",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/61RfTCxM2ajqDRc55b8PAyzEd7Bq83nBGRQXDcmjNbse",
-      "label": "create p2.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/AhAijAeaDK1BwcKFKvEnEfwQoewdFMJMqjNfuVzUvY82",
+      "label": "create p2.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4832,
+      "ms": 4479,
       "ok": true,
-      "receiver": "p2.agentexit3.testnet",
-      "tx": "61RfTCxM2ajqDRc55b8PAyzEd7Bq83nBGRQXDcmjNbse",
+      "receiver": "p2.w2.agentexit3.testnet",
+      "tx": "AhAijAeaDK1BwcKFKvEnEfwQoewdFMJMqjNfuVzUvY82",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/5qWCdkRJsBSTo4B4L39nHJaUEj8TNi6dkXAYjFZ7SF5v",
-      "label": "create p3.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/EfdHChHELuvYqfuS6J1ocQzaA1Hx9upHn2hEEJLXCqfG",
+      "label": "create p3.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4314,
+      "ms": 4641,
       "ok": true,
-      "receiver": "p3.agentexit3.testnet",
-      "tx": "5qWCdkRJsBSTo4B4L39nHJaUEj8TNi6dkXAYjFZ7SF5v",
+      "receiver": "p3.w2.agentexit3.testnet",
+      "tx": "EfdHChHELuvYqfuS6J1ocQzaA1Hx9upHn2hEEJLXCqfG",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/9dTETWmmQkD6vfdaotVkUeyuAWoUf48CPUZ5YuPZ4HAN",
-      "label": "create p4.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/45XyF7mQRFtWtwFyX1ScNT7W5K4mTmYzzK7CcZ2UXTWK",
+      "label": "create p4.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4421,
+      "ms": 4398,
       "ok": true,
-      "receiver": "p4.agentexit3.testnet",
-      "tx": "9dTETWmmQkD6vfdaotVkUeyuAWoUf48CPUZ5YuPZ4HAN",
+      "receiver": "p4.w2.agentexit3.testnet",
+      "tx": "45XyF7mQRFtWtwFyX1ScNT7W5K4mTmYzzK7CcZ2UXTWK",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/3aSqsd9nNeRBbYpgCcN3GnumcXWH9ZSYVHNHJ8ZbRJ9x",
-      "label": "create p5.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/FNUi2mGpusiW4KR8qvKLeESsApn8uwgad8mqcw2r2Qkm",
+      "label": "create p5.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4373,
+      "ms": 4468,
       "ok": true,
-      "receiver": "p5.agentexit3.testnet",
-      "tx": "3aSqsd9nNeRBbYpgCcN3GnumcXWH9ZSYVHNHJ8ZbRJ9x",
+      "receiver": "p5.w2.agentexit3.testnet",
+      "tx": "FNUi2mGpusiW4KR8qvKLeESsApn8uwgad8mqcw2r2Qkm",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/2Pu77SjuLME6vTyC4LcdjQ2wCfBZta49bF1rGYnEDurr",
-      "label": "create p6.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/DMJ9SXkGbjeSvdTDwi6tGfqiQq8gjEenC3YPBqrX2Qmo",
+      "label": "create p6.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4469,
+      "ms": 4020,
       "ok": true,
-      "receiver": "p6.agentexit3.testnet",
-      "tx": "2Pu77SjuLME6vTyC4LcdjQ2wCfBZta49bF1rGYnEDurr",
+      "receiver": "p6.w2.agentexit3.testnet",
+      "tx": "DMJ9SXkGbjeSvdTDwi6tGfqiQq8gjEenC3YPBqrX2Qmo",
       "value": null
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/HPHffoTDEW4cjPk2FyEZKQBwHytUxVmXXTYvDBTz533T",
-      "label": "create x.alice.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/AWH4vkHCD6rseTLW9UQWjXGEBiuErx7wiZ7o5vhRRkFH",
+      "label": "create x.alice.w2.agentexit3.testnet",
       "method": "create_account",
-      "ms": 4622,
+      "ms": 4477,
       "ok": true,
-      "receiver": "x.alice.agentexit3.testnet",
-      "tx": "HPHffoTDEW4cjPk2FyEZKQBwHytUxVmXXTYvDBTz533T",
+      "receiver": "x.alice.w2.agentexit3.testnet",
+      "tx": "AWH4vkHCD6rseTLW9UQWjXGEBiuErx7wiZ7o5vhRRkFH",
       "value": null
     },
     {
-      "by": "xusd.agentexit3.testnet",
+      "by": "xusd.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/58LH3NHEniA1GR9ieiJQVyYjCJN5VjvdT6z1211xjBfX",
+      "explorer": "https://testnet.nearblocks.io/txns/4VnuhgN2hCyEf16tu2mbJdUsYuEEozo1h9gYzQ8uE3ep",
       "label": "deploy xusd",
       "method": "deploy+new",
-      "ms": 4746,
+      "ms": 5100,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "58LH3NHEniA1GR9ieiJQVyYjCJN5VjvdT6z1211xjBfX",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "4VnuhgN2hCyEf16tu2mbJdUsYuEEozo1h9gYzQ8uE3ep",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2603,7 +2641,7 @@
             {
               "amount": "2000000000",
               "memo": "FAKE test dollars",
-              "owner_id": "bob.agentexit3.testnet"
+              "owner_id": "bob.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2611,17 +2649,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/7KR1NcSRXYpyawcVToe3ppcf97jJFn53KwqSLjs5BodL",
-      "label": "mint bob.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/FuwtrTzKgruHD3JX7JR2DFyKyMXysoZyoohKjbU2e15H",
+      "label": "mint bob.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4918,
+      "ms": 5335,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "7KR1NcSRXYpyawcVToe3ppcf97jJFn53KwqSLjs5BodL",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "FuwtrTzKgruHD3JX7JR2DFyKyMXysoZyoohKjbU2e15H",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2629,7 +2667,7 @@
             {
               "amount": "2000000000",
               "memo": "FAKE test dollars",
-              "owner_id": "carol.agentexit3.testnet"
+              "owner_id": "carol.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2637,17 +2675,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/B4W7SYKyDamkMz9VgEebTefvPnRnaKXjdjEboi1xUyhx",
-      "label": "mint carol.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/9rWGzCSUHFkq3NoCu4zdtY2HszvBrYrbEii4Y2UjaUTH",
+      "label": "mint carol.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4747,
+      "ms": 5299,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "B4W7SYKyDamkMz9VgEebTefvPnRnaKXjdjEboi1xUyhx",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "9rWGzCSUHFkq3NoCu4zdtY2HszvBrYrbEii4Y2UjaUTH",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2655,7 +2693,7 @@
             {
               "amount": "2000000000",
               "memo": "FAKE test dollars",
-              "owner_id": "summarizer.agentexit3.testnet"
+              "owner_id": "summarizer.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2663,17 +2701,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CBZcBUCMuW7pkj1AWyZBoyHFTQ74QBDEpgu7pgHqYP36",
-      "label": "mint summarizer.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/GYV8sLCw4T2LjbTdk8PpKDZxKm7p58FZTeMV9J5UrDFq",
+      "label": "mint summarizer.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5232,
+      "ms": 4995,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "CBZcBUCMuW7pkj1AWyZBoyHFTQ74QBDEpgu7pgHqYP36",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "GYV8sLCw4T2LjbTdk8PpKDZxKm7p58FZTeMV9J5UrDFq",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2681,7 +2719,7 @@
             {
               "amount": "500000000",
               "memo": "FAKE test dollars",
-              "owner_id": "alice.agentexit3.testnet"
+              "owner_id": "alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2689,17 +2727,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/AswVK1b9iipAebgSVyYguR1wctWotbi2wGP96nquewJa",
-      "label": "mint alice.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/4JC8keh7GYXntuzwtniQrJGudjvfAmeQphikbt1T52BK",
+      "label": "mint alice.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5060,
+      "ms": 4821,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "AswVK1b9iipAebgSVyYguR1wctWotbi2wGP96nquewJa",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "4JC8keh7GYXntuzwtniQrJGudjvfAmeQphikbt1T52BK",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2707,7 +2745,7 @@
             {
               "amount": "300000000",
               "memo": "FAKE test dollars",
-              "owner_id": "x.alice.agentexit3.testnet"
+              "owner_id": "x.alice.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2715,17 +2753,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/HzitghxhMWLFc3wo8h9w44UYLezkM36sF3AUPmwQ5Uc9",
-      "label": "mint x.alice.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/Asvksstazk5oBhPoHwz2L33Zk7BPEvoz6AZgCLnaoMWa",
+      "label": "mint x.alice.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4302,
+      "ms": 4442,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "HzitghxhMWLFc3wo8h9w44UYLezkM36sF3AUPmwQ5Uc9",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "Asvksstazk5oBhPoHwz2L33Zk7BPEvoz6AZgCLnaoMWa",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2733,7 +2771,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p1.agentexit3.testnet"
+              "owner_id": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2741,17 +2779,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Cav411H7PRj5Hw87zXQjb893SnmwLy12QPEbDgZTnXUv",
-      "label": "mint p1.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/CiH2XS5UikXq2r3sCubamxNZkitM9ERqN6S5gDZ2Egui",
+      "label": "mint p1.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5224,
+      "ms": 5006,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "Cav411H7PRj5Hw87zXQjb893SnmwLy12QPEbDgZTnXUv",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "CiH2XS5UikXq2r3sCubamxNZkitM9ERqN6S5gDZ2Egui",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2759,7 +2797,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p2.agentexit3.testnet"
+              "owner_id": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2767,17 +2805,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5XvoRby72VfrvRziVpJdfwp7abpiwtRZjYnErXrBhvN2",
-      "label": "mint p2.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/AF3CdMc4YhrgXUqHUVAe3LFGnzDdBMLoens6521J1YkL",
+      "label": "mint p2.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5174,
+      "ms": 4983,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "5XvoRby72VfrvRziVpJdfwp7abpiwtRZjYnErXrBhvN2",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "AF3CdMc4YhrgXUqHUVAe3LFGnzDdBMLoens6521J1YkL",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2785,7 +2823,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p3.agentexit3.testnet"
+              "owner_id": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2793,17 +2831,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CXwyJBVHjPP79fzYQ1EqJoSi22bvqcFmuG57VnDJFPxY",
-      "label": "mint p3.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/BCc6rcaZi291DmLCVdLtGykSYnkmLW134s99jfKjnbEP",
+      "label": "mint p3.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5153,
+      "ms": 3975,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "CXwyJBVHjPP79fzYQ1EqJoSi22bvqcFmuG57VnDJFPxY",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "BCc6rcaZi291DmLCVdLtGykSYnkmLW134s99jfKjnbEP",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2811,7 +2849,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p4.agentexit3.testnet"
+              "owner_id": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2819,17 +2857,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/3by9x1VhosnMPV7yureb2YNVp1zvXomVXm56rj8PwtSe",
-      "label": "mint p4.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/C9FLoaZ38BG2i5KTw1ij4GKXADHHtawhBZtkny4CFdCm",
+      "label": "mint p4.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4981,
+      "ms": 4867,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "3by9x1VhosnMPV7yureb2YNVp1zvXomVXm56rj8PwtSe",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "C9FLoaZ38BG2i5KTw1ij4GKXADHHtawhBZtkny4CFdCm",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2837,7 +2875,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p5.agentexit3.testnet"
+              "owner_id": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2845,17 +2883,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GhHFkNbEpDC7GV1qt26xEqY2ECwthCqLedhwQdvNA3qh",
-      "label": "mint p5.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/GiytcX2mzH2nE1jLsi9NbA7uoRNrfLwPMAcoVrXeWXnd",
+      "label": "mint p5.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5205,
+      "ms": 4315,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GhHFkNbEpDC7GV1qt26xEqY2ECwthCqLedhwQdvNA3qh",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "GiytcX2mzH2nE1jLsi9NbA7uoRNrfLwPMAcoVrXeWXnd",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2863,7 +2901,7 @@
             {
               "amount": "200000000",
               "memo": "FAKE test dollars",
-              "owner_id": "p6.agentexit3.testnet"
+              "owner_id": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2871,17 +2909,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DiJja3AqUXwdof7xzFvf8QjUpTFAYZMJYRXuvxoo27ht",
-      "label": "mint p6.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/237AQVYQo9zPKuXtL7t7D1mMdymH6Y7WUVRmKjy3oGLs",
+      "label": "mint p6.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4963,
+      "ms": 4439,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DiJja3AqUXwdof7xzFvf8QjUpTFAYZMJYRXuvxoo27ht",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "237AQVYQo9zPKuXtL7t7D1mMdymH6Y7WUVRmKjy3oGLs",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2889,7 +2927,7 @@
             {
               "amount": "0",
               "memo": "FAKE test dollars",
-              "owner_id": "translator.agentexit3.testnet"
+              "owner_id": "translator.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2897,17 +2935,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DbtNq61p8nN6UXhTpCsVaeGymQij36QV9YDg7xbVepot",
-      "label": "mint translator.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/DmHhWvkqgG9ADMDf4cNN5Ja9pZbeAwRmTzXL3DPdKYU7",
+      "label": "mint translator.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 5234,
+      "ms": 5154,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "DbtNq61p8nN6UXhTpCsVaeGymQij36QV9YDg7xbVepot",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "DmHhWvkqgG9ADMDf4cNN5Ja9pZbeAwRmTzXL3DPdKYU7",
       "value": null
     },
     {
-      "by": "agentexit3.testnet",
+      "by": "w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
@@ -2915,7 +2953,7 @@
             {
               "amount": "0",
               "memo": "FAKE test dollars",
-              "owner_id": "cheat.agentexit3.testnet"
+              "owner_id": "cheat.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_mint",
@@ -2923,50 +2961,50 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/8RsX5nfDKEfDdQ19EguqRMhLJzYDrqXkvR34R3wqAB2c",
-      "label": "mint cheat.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/3W6F9iaFV9qAeBrgUqWmdbWCsQv7vdZ5LhjCQDNn3Lwq",
+      "label": "mint cheat.w2.agentexit3.testnet",
       "method": "mint",
-      "ms": 4614,
+      "ms": 4766,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "8RsX5nfDKEfDdQ19EguqRMhLJzYDrqXkvR34R3wqAB2c",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "3W6F9iaFV9qAeBrgUqWmdbWCsQv7vdZ5LhjCQDNn3Lwq",
       "value": null
     },
     {
-      "by": "translator.agentexit3.testnet",
+      "by": "translator.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/CSBNFr7qtKrLmYeEK7WiuynJiQvP8qVgWJipb5N1YMV",
-      "label": "deploy translator.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/2m4y4gR5dHiEtE1rKzaXnAs2kVPxzjKb4aYswA68Rmba",
+      "label": "deploy translator.w2.agentexit3.testnet",
       "method": "deploy+new",
-      "ms": 4451,
+      "ms": 5343,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "CSBNFr7qtKrLmYeEK7WiuynJiQvP8qVgWJipb5N1YMV",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "2m4y4gR5dHiEtE1rKzaXnAs2kVPxzjKb4aYswA68Rmba",
       "value": null
     },
     {
-      "by": "cheat.agentexit3.testnet",
+      "by": "cheat.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/26wmPRQNwtksRrqQ2ZJhbELNUS5kZAnZ9oQG1rquXBfQ",
-      "label": "deploy cheat.agentexit3.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/GByDYvUk1aLKJ4JyHfrZr1ctaacaz5fTTQZ4xzHtfpQ9",
+      "label": "deploy cheat.w2.agentexit3.testnet",
       "method": "deploy+new",
-      "ms": 4314,
+      "ms": 4782,
       "ok": true,
-      "receiver": "cheat.agentexit3.testnet",
-      "tx": "26wmPRQNwtksRrqQ2ZJhbELNUS5kZAnZ9oQG1rquXBfQ",
+      "receiver": "cheat.w2.agentexit3.testnet",
+      "tx": "GByDYvUk1aLKJ4JyHfrZr1ctaacaz5fTTQZ4xzHtfpQ9",
       "value": null
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm",
-              "owner": "alice.agentexit3.testnet",
+              "owner": "alice.w2.agentexit3.testnet",
               "pending": true,
               "removed": []
             }
@@ -2987,24 +3025,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/H3ArYW9eaTPuWzN1jvhuW3fLRG2mNTiAWwdGf636fJm9",
+      "explorer": "https://testnet.nearblocks.io/txns/5qKnyy2hZuw4xh9qwxNZbRxUPzGFjnJGVK1hgprZ19hs",
       "label": "translator: set_runner_key",
       "method": "set_runner_key",
-      "ms": 5995,
+      "ms": 5767,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "H3ArYW9eaTPuWzN1jvhuW3fLRG2mNTiAWwdGf636fJm9",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "5qKnyy2hZuw4xh9qwxNZbRxUPzGFjnJGVK1hgprZ19hs",
       "value": true
     },
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "key": "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt",
-              "owner": "alice.agentexit3.testnet",
+              "owner": "alice.w2.agentexit3.testnet",
               "pending": true,
               "removed": []
             }
@@ -3025,37 +3063,37 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9PiVegqdj3hg9cNB7smEamxTAzY3J39GNd7TWMJcKBsW",
+      "explorer": "https://testnet.nearblocks.io/txns/5znAkzxeiKRTpFecUgBzSgz8EznoGS2Y6zVtzuG1PhSw",
       "label": "cheat: set_runner_key",
       "method": "set_runner_key",
-      "ms": 6176,
+      "ms": 6268,
       "ok": true,
-      "receiver": "cheat.agentexit3.testnet",
-      "tx": "9PiVegqdj3hg9cNB7smEamxTAzY3J39GNd7TWMJcKBsW",
+      "receiver": "cheat.w2.agentexit3.testnet",
+      "tx": "5znAkzxeiKRTpFecUgBzSgz8EznoGS2Y6zVtzuG1PhSw",
       "value": true
     },
     {
-      "by": "translator.agentexit3.testnet",
+      "by": "translator.w2.agentexit3.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/5ojB1xZiMXy9kynfw9hEo86nuxR3sbuCCqYvBfBsZefy",
+      "explorer": "https://testnet.nearblocks.io/txns/EbB8QV3WVfv71SwMw2bkDZSSxH3JawKy12NNjc4gc2HP",
       "label": "translator: delete setup key",
       "method": "delete_key",
-      "ms": 3878,
+      "ms": 4050,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "5ojB1xZiMXy9kynfw9hEo86nuxR3sbuCCqYvBfBsZefy",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "EbB8QV3WVfv71SwMw2bkDZSSxH3JawKy12NNjc4gc2HP",
       "value": null
     },
     {
-      "by": "p1.agentexit3.testnet",
+      "by": "p1.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p1.agentexit3.testnet",
-              "by": "p1.agentexit3.testnet"
+              "account": "p1.w2.agentexit3.testnet",
+              "by": "p1.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3063,27 +3101,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/HCFbsg7y7mViGNty6NYAX2vXSEMRjSpWPrpDYiqyDL6C",
+      "explorer": "https://testnet.nearblocks.io/txns/dCoA6mV5XnzGLsdBvZPetPCruKU4FtywzYHGfm6iFst",
       "label": "p1 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 4719,
+      "ms": 4375,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "HCFbsg7y7mViGNty6NYAX2vXSEMRjSpWPrpDYiqyDL6C",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "dCoA6mV5XnzGLsdBvZPetPCruKU4FtywzYHGfm6iFst",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p2.agentexit3.testnet",
+      "by": "p2.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p2.agentexit3.testnet",
-              "by": "p2.agentexit3.testnet"
+              "account": "p2.w2.agentexit3.testnet",
+              "by": "p2.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3091,27 +3129,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/3d1bNPePqjRBN9nmJBTZZc5ECbu2VNEtSVHgEZDcwAkE",
+      "explorer": "https://testnet.nearblocks.io/txns/tAxEk8vAjEJkDeZ76UNF8JJHZUF4hdjdvmWE438SzFD",
       "label": "p2 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 5118,
+      "ms": 4405,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "3d1bNPePqjRBN9nmJBTZZc5ECbu2VNEtSVHgEZDcwAkE",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "tAxEk8vAjEJkDeZ76UNF8JJHZUF4hdjdvmWE438SzFD",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p3.agentexit3.testnet",
+      "by": "p3.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p3.agentexit3.testnet",
-              "by": "p3.agentexit3.testnet"
+              "account": "p3.w2.agentexit3.testnet",
+              "by": "p3.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3119,27 +3157,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GJZuqRVxdQE677LbBG9uKSfENgPSk1XCQ66gNugEprRS",
+      "explorer": "https://testnet.nearblocks.io/txns/9TZuCgdX78iePUxTT49fDn83kWvXdy1DY9jVvzzhJxB9",
       "label": "p3 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 4982,
+      "ms": 4564,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "GJZuqRVxdQE677LbBG9uKSfENgPSk1XCQ66gNugEprRS",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "9TZuCgdX78iePUxTT49fDn83kWvXdy1DY9jVvzzhJxB9",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p4.agentexit3.testnet",
+      "by": "p4.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p4.agentexit3.testnet",
-              "by": "p4.agentexit3.testnet"
+              "account": "p4.w2.agentexit3.testnet",
+              "by": "p4.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3147,27 +3185,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9rnFnjTbg65aMx67FZLyRFRSJnDxkxx7iZKSfWAcmTDu",
+      "explorer": "https://testnet.nearblocks.io/txns/8yUtp5HjGWcRNPYcK8pYD7us1F4J6XD1vW43DBfcJRJp",
       "label": "p4 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 5177,
+      "ms": 4813,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "9rnFnjTbg65aMx67FZLyRFRSJnDxkxx7iZKSfWAcmTDu",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "8yUtp5HjGWcRNPYcK8pYD7us1F4J6XD1vW43DBfcJRJp",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p5.agentexit3.testnet",
+      "by": "p5.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p5.agentexit3.testnet",
-              "by": "p5.agentexit3.testnet"
+              "account": "p5.w2.agentexit3.testnet",
+              "by": "p5.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3175,27 +3213,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9HVvVD7hG3CMCaPkngBrbV2RLUnQmZc9Ypdzgijn9SgU",
+      "explorer": "https://testnet.nearblocks.io/txns/BSvb3Q7u54xUPK1463tjL8xcfmaVGenARf6vLbd7kyvn",
       "label": "p5 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 5066,
+      "ms": 4288,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "9HVvVD7hG3CMCaPkngBrbV2RLUnQmZc9Ypdzgijn9SgU",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "BSvb3Q7u54xUPK1463tjL8xcfmaVGenARf6vLbd7kyvn",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p6.agentexit3.testnet",
+      "by": "p6.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p6.agentexit3.testnet",
-              "by": "p6.agentexit3.testnet"
+              "account": "p6.w2.agentexit3.testnet",
+              "by": "p6.w2.agentexit3.testnet"
             }
           ],
           "event": "payer_registered",
@@ -3203,13 +3241,13 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Bd31NYoQBixG78gJTszFzj9vdX2fJ2h7bjAPe9oSEHUm",
+      "explorer": "https://testnet.nearblocks.io/txns/4mMbuwAsM7ydtxqTUaZoYwtpcmDPzqCvQ1jU1TZzN4vZ",
       "label": "p6 registers a payer row on translator",
       "method": "storage_deposit",
-      "ms": 4862,
+      "ms": 4215,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "Bd31NYoQBixG78gJTszFzj9vdX2fJ2h7bjAPe9oSEHUm",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "4mMbuwAsM7ydtxqTUaZoYwtpcmDPzqCvQ1jU1TZzN4vZ",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"

@@ -13,10 +13,10 @@
           "label": "alice: withdraw 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx",
-          "tx": "5hjyEzsXyRiNueMAhR4dE3k4wq39DyZ1RnD1gJjC3Rpx",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE",
+          "tx": "6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "withdraw",
           "events": []
         },
@@ -24,10 +24,10 @@
           "label": "alice: set_runner_key (her own key)",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr",
-          "tx": "G8AMhXRgE9eaR9vdnjWsnzRusmC2tXkV2woZjQd89xnr",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek",
+          "tx": "GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "set_runner_key",
           "events": []
         },
@@ -35,10 +35,10 @@
           "label": "alice: list_for_sale 1.00",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f",
-          "tx": "88gLX2usWGCK8xrLmz9RF3a1ATRV3Pu834Khc8RTZC8f",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/3nCoTzQn5jv5wyhVHJdymEzkDRpq4R1NoSJ1b1wM3WUv",
+          "tx": "3nCoTzQn5jv5wyhVHJdymEzkDRpq4R1NoSJ1b1wM3WUv",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "list_for_sale",
           "events": []
         },
@@ -46,10 +46,10 @@
           "label": "alice: set_limits",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk",
-          "tx": "BVzGhqHZ61hEADcX1SjB5dmHF8gY1AfF5DPetB74rJWk",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx",
+          "tx": "4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "set_limits",
           "events": []
         },
@@ -57,10 +57,10 @@
           "label": "alice: nft_transfer the deed to herself",
           "ok": false,
           "error": "NotOwner",
-          "explorer": "https://testnet.nearblocks.io/txns/3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK",
-          "tx": "3T7CkWCy7bHC89JoJbnnqK81o2B5Z5eDLxBdcePZgahK",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX",
+          "tx": "2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "nft_transfer",
           "events": []
         },
@@ -68,10 +68,10 @@
           "label": "alice: pay_base (the Base wallet)",
           "ok": false,
           "error": "NotRunner",
-          "explorer": "https://testnet.nearblocks.io/txns/G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK",
-          "tx": "G8AvbKNC5gDynZYP9kHeu2w5VuM9XSBF2PFkSxEdYHTK",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq",
+          "tx": "7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "pay_base",
           "events": []
         },
@@ -81,8 +81,8 @@
           "error": "rejected by the node: the access key does not exist (no transaction possible)",
           "explorer": null,
           "tx": null,
-          "by": "translator.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "by": "translator.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "heartbeat",
           "events": []
         },
@@ -92,8 +92,8 @@
           "error": "rejected by the node: the access key does not exist (no transaction possible)",
           "explorer": null,
           "tx": null,
-          "by": "translator.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "by": "translator.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "heartbeat",
           "events": []
         },
@@ -101,10 +101,10 @@
           "label": "bob's runner key: heartbeat",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ",
-          "tx": "9svxSCw7Zi5o8WLy9PdxMDuVuj1EofSPgzb9v7d2iRLJ",
-          "by": "translator.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/2kH4Lsdw5TnnFL4QFx8BtUWRdagoizYH7ZUfU6G7dXkK",
+          "tx": "2kH4Lsdw5TnnFL4QFx8BtUWRdagoizYH7ZUfU6G7dXkK",
+          "by": "translator.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "heartbeat",
           "events": []
         }
@@ -120,10 +120,10 @@
           "label": "bob: set_limits (cap 50.00, payee summarizer, split 80/20)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1",
-          "tx": "9RPGhncYvJHNnvQ2kqK3yb9fuFXGV8hRcQnLYp4dbXS1",
-          "by": "bob.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/Avh9GJQC4QM7GCbw3ipuHrKbbmH3GEELET6KwaBzi1iE",
+          "tx": "Avh9GJQC4QM7GCbw3ipuHrKbbmH3GEELET6KwaBzi1iE",
+          "by": "bob.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "set_limits",
           "events": [
             "limits_set"
@@ -133,10 +133,10 @@
           "label": "p1 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG",
-          "tx": "ffzkhcbgsNi9X6bmL5CqSE1yi2bFrzbvN1BvpFF7NiG",
-          "by": "p1.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/3V2hGqVgRoPxcNYhSKkyp9NyPzfbrPC7J1YRzCJv63mt",
+          "tx": "3V2hGqVgRoPxcNYhSKkyp9NyPzfbrPC7J1YRzCJv63mt",
+          "by": "p1.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -149,10 +149,10 @@
           "label": "p2 pays 25.00 for a job",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa",
-          "tx": "DiZ2Ymgq1xDcvEEGR1s7BJcBSkxW1Z2547Bhd6WnTBEa",
-          "by": "p2.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/FknP3DZm9uEg154mf6LGaQZCz1SQxSmq1kXZWiiArVz7",
+          "tx": "FknP3DZm9uEg154mf6LGaQZCz1SQxSmq1kXZWiiArVz7",
+          "by": "p2.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -165,10 +165,10 @@
           "label": "runner pays summarizer 8.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo",
-          "tx": "3ZxS4etPb5wuap8ypEDN9RqUAd4QPx4ujNHTzcMG92yo",
-          "by": "translator.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/7W7ugvgLyXjc23np7Emr1XzEykMtMiDQ9BojL7WHei6h",
+          "tx": "7W7ugvgLyXjc23np7Emr1XzEykMtMiDQ9BojL7WHei6h",
+          "by": "translator.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "pay",
           "events": [
             "treasury_pay",
@@ -179,10 +179,10 @@
           "label": "runner pays summarizer 45.00",
           "ok": false,
           "error": "PolicyViolation:DailyCap: 8.00 + 45.00 > daily cap 50.00",
-          "explorer": "https://testnet.nearblocks.io/txns/AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt",
-          "tx": "AkgkP4oktjnbSmRVtVC4yhLhHsFun11xP6BZejR2YAzt",
-          "by": "translator.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/4w9Q9Lh1JGrHFDQ8o4D2FqXKZhkxUG6XkxeoLoQMnE6P",
+          "tx": "4w9Q9Lh1JGrHFDQ8o4D2FqXKZhkxUG6XkxeoLoQMnE6P",
+          "by": "translator.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "pay",
           "events": []
         }
@@ -200,27 +200,37 @@
       "pass": true,
       "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent",
       "scan": {
-        "agent": "cheat.agentexit3.testnet",
+        "agent": "cheat.w2.agentexit3.testnet",
         "verdict": "blocked",
         "findings": [
           {
             "code": "full_access_key_present",
             "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account"
-          },
-          {
-            "code": "code_hash_mismatch",
-            "detail": "deployed 7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq != published 6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw"
           }
         ]
       },
-      "txs": []
+      "txs": [
+        {
+          "label": "alice lists cheat at 500.00",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/BnBizGuhFXYKAeNUmX2b86HvLK3CtWeubcZdFw5bRgpK",
+          "tx": "BnBizGuhFXYKAeNUmX2b86HvLK3CtWeubcZdFw5bRgpK",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "cheat.w2.agentexit3.testnet",
+          "method": "list_for_sale",
+          "events": [
+            "listed"
+          ]
+        }
+      ]
     },
     "honest-sale": {
       "scene": 5,
       "pass": true,
       "what": "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00",
       "scan": {
-        "agent": "translator.agentexit3.testnet",
+        "agent": "translator.w2.agentexit3.testnet",
         "verdict": "clean",
         "findings": []
       },
@@ -229,10 +239,10 @@
           "label": "alice lists translator at 1000.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
-          "tx": "6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/ASwD5X6LaLXcKonNjMHqv392YncDmR7bM7DFDgpamD6q",
+          "tx": "ASwD5X6LaLXcKonNjMHqv392YncDmR7bM7DFDgpamD6q",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "list_for_sale",
           "events": [
             "listed"
@@ -242,10 +252,10 @@
           "label": "bob buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
-          "tx": "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
-          "by": "bob.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp",
+          "tx": "B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp",
+          "by": "bob.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -260,9 +270,9 @@
     "agent-buys-agent": {
       "scene": 6,
       "pass": true,
-      "what": "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client; MCP testnet writes are not wired yet)",
+      "what": "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)",
       "scan": {
-        "agent": "translator.agentexit3.testnet",
+        "agent": "translator.w2.agentexit3.testnet",
         "verdict": "clean",
         "findings": []
       },
@@ -271,10 +281,10 @@
           "label": "bob lists translator at 1200.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2",
-          "tx": "3vXHZ6RVsPf9ATNn6TTdNiZVPFMiijKPEbbAgtDWxQH2",
-          "by": "bob.agentexit3.testnet",
-          "receiver": "translator.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/2E5sFSbhFAC6rPotwgAAkjbtU7CFEBd3y3UaUFZxpHsr",
+          "tx": "2E5sFSbhFAC6rPotwgAAkjbtU7CFEBd3y3UaUFZxpHsr",
+          "by": "bob.w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
           "method": "list_for_sale",
           "events": [
             "listed"
@@ -284,10 +294,10 @@
           "label": "summarizer buys translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt",
-          "tx": "ALBXiNfGJQQdY8S1pQLdpL8M9E2HyRhCetMnyfftbwDt",
-          "by": "summarizer.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/5EAhSAb236hq36J5Ga3cpvvcnQJbspFeE2XzCSu1Nwdn",
+          "tx": "5EAhSAb236hq36J5Ga3cpvvcnQJbspFeE2XzCSu1Nwdn",
+          "by": "summarizer.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -306,24 +316,48 @@
       "scan": null,
       "txs": [
         {
-          "label": "create translator3.agentexit3.testnet",
+          "label": "create translator3.w2.agentexit3.testnet",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/8GhiNEEnkBXhhjzeWPaWqz98jXKcG7wzGHVY2yjH1XM9",
-          "tx": "8GhiNEEnkBXhhjzeWPaWqz98jXKcG7wzGHVY2yjH1XM9",
-          "by": "agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/D3ATW86xPmzvH9HRFkqEki6DPEvyDJdV6gheFvmkAjon",
+          "tx": "D3ATW86xPmzvH9HRFkqEki6DPEvyDJdV6gheFvmkAjon",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "create_account",
           "events": []
         },
         {
-          "label": "mint translator3.agentexit3.testnet",
+          "label": "create dave.w2.agentexit3.testnet",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/7g5TbfKVQxM52FYQ7GvWVCEjrnczWUQHhx9XZyrEAb1H",
-          "tx": "7g5TbfKVQxM52FYQ7GvWVCEjrnczWUQHhx9XZyrEAb1H",
-          "by": "agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/DsCcZTSTz1owechFjYbEVJpBK97uXGXM18ohnMWaonqj",
+          "tx": "DsCcZTSTz1owechFjYbEVJpBK97uXGXM18ohnMWaonqj",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "dave.w2.agentexit3.testnet",
+          "method": "create_account",
+          "events": []
+        },
+        {
+          "label": "mint dave.w2.agentexit3.testnet",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/883qEYNjkT7EJVwovaEfEGGg19y5ydTNa3Y2DMZvJCzG",
+          "tx": "883qEYNjkT7EJVwovaEfEGGg19y5ydTNa3Y2DMZvJCzG",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
+          "method": "mint",
+          "events": [
+            "ft_mint"
+          ]
+        },
+        {
+          "label": "mint translator3.w2.agentexit3.testnet",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/AZvQBJufzt7HeA7f8rA2P7AZYqZFXwwwwcWCn3jaMXJz",
+          "tx": "AZvQBJufzt7HeA7f8rA2P7AZYqZFXwwwwcWCn3jaMXJz",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "mint",
           "events": [
             "ft_mint"
@@ -333,10 +367,10 @@
           "label": "deploy translator3 (shares build)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/HWrUmYKpkcaGWaDsWuPmKGC4ARt1rLsVRfPw8SXz6LWu",
-          "tx": "HWrUmYKpkcaGWaDsWuPmKGC4ARt1rLsVRfPw8SXz6LWu",
-          "by": "translator3.agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/GQVgJVg3o6NaXgMzZs2Xji1QnFtzSH4YPMmt3VVYNgm8",
+          "tx": "GQVgJVg3o6NaXgMzZs2Xji1QnFtzSH4YPMmt3VVYNgm8",
+          "by": "translator3.w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "deploy+new",
           "events": []
         },
@@ -344,10 +378,10 @@
           "label": "translator3: alice sets her runner key",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/BDMK9dbQ3uavDUZUgshqNL8BPEMfFRnfczEn2S496sGD",
-          "tx": "BDMK9dbQ3uavDUZUgshqNL8BPEMfFRnfczEn2S496sGD",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/sXSYWEnbNW2615m7Abrr52yLSpMaq9teeG6qLxnt8n5",
+          "tx": "sXSYWEnbNW2615m7Abrr52yLSpMaq9teeG6qLxnt8n5",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "set_runner_key",
           "events": [
             "runner_key_set",
@@ -358,10 +392,10 @@
           "label": "translator3: delete setup key",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/tmUjdF2MdEdb8oR6fpXmy54yVYmT6jWURrBSSUT64K9",
-          "tx": "tmUjdF2MdEdb8oR6fpXmy54yVYmT6jWURrBSSUT64K9",
-          "by": "translator3.agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/FVCHNe2BsSRG9vMV3YxYyVTByobB1QSEapkw4e8Huqjg",
+          "tx": "FVCHNe2BsSRG9vMV3YxYyVTByobB1QSEapkw4e8Huqjg",
+          "by": "translator3.w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "delete_key",
           "events": []
         },
@@ -369,10 +403,10 @@
           "label": "alice offers 20% of translator3's earnings for a year at 500.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/4VBKdeNPRyNRz5mkWWxr3J2oF5zzQ7LM1HF77134FoYN",
-          "tx": "4VBKdeNPRyNRz5mkWWxr3J2oF5zzQ7LM1HF77134FoYN",
-          "by": "alice.agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/ADvudrfZii1wSJAGWhQPYBU8rdfLaU1dLAbpSSL5a7FT",
+          "tx": "ADvudrfZii1wSJAGWhQPYBU8rdfLaU1dLAbpSSL5a7FT",
+          "by": "alice.w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "offer_share",
           "events": [
             "share_offered"
@@ -382,10 +416,10 @@
           "label": "dave buys the 20% slice (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9z7E59zkDQhHS6rPMnPjWqG8kzZjtwmDiDio3dPcZXdV",
-          "tx": "9z7E59zkDQhHS6rPMnPjWqG8kzZjtwmDiDio3dPcZXdV",
-          "by": "dave.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD",
+          "tx": "CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD",
+          "by": "dave.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -396,10 +430,10 @@
           "label": "registry admin: add_signer (NEAR AI Cloud signing address)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/26Rak3X5Y3NmEQryEZhnUU1uy9eBvCXDKc2C8NWAc77Z",
-          "tx": "26Rak3X5Y3NmEQryEZhnUU1uy9eBvCXDKc2C8NWAc77Z",
-          "by": "agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/yEoMD6RpFFtA9KJfAtm69AGGcuroRDuqsBNMY1KcUQC",
+          "tx": "yEoMD6RpFFtA9KJfAtm69AGGcuroRDuqsBNMY1KcUQC",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "add_signer",
           "events": [
             "signer_added"
@@ -409,10 +443,10 @@
           "label": "p1 pays translator3 10.00 for a translation",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/GhRLiVFikW6XZjCgdy9m8BTH7HnkGuepkug3ghvkDmRw",
-          "tx": "GhRLiVFikW6XZjCgdy9m8BTH7HnkGuepkug3ghvkDmRw",
-          "by": "p1.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu",
+          "tx": "6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu",
+          "by": "p1.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -425,10 +459,10 @@
           "label": "p2 pays translator3 10.00 for a translation",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/2G4x2qXopnA64Kow1VVzpRZCkj4yiCJRE3vUMTRUL4zB",
-          "tx": "2G4x2qXopnA64Kow1VVzpRZCkj4yiCJRE3vUMTRUL4zB",
-          "by": "p2.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/71AwukEaoL5qWttJhEPhH5nFRQFayNYArnZqw4gNy7Ff",
+          "tx": "71AwukEaoL5qWttJhEPhH5nFRQFayNYArnZqw4gNy7Ff",
+          "by": "p2.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -441,10 +475,10 @@
           "label": "p3 pays translator3 10.00 for a translation",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/AmHY2FNWM1XYgS53A4YkJtajtGLsmLT24TyWzWoY7Zts",
-          "tx": "AmHY2FNWM1XYgS53A4YkJtajtGLsmLT24TyWzWoY7Zts",
-          "by": "p3.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/HC7Zyx4aPnHSbwXB87GUNZVAi6yCS6JnPsEHm4vMmzbe",
+          "tx": "HC7Zyx4aPnHSbwXB87GUNZVAi6yCS6JnPsEHm4vMmzbe",
+          "by": "p3.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -457,10 +491,10 @@
           "label": "p4 pays translator3 10.00 for a translation",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/9XzYx7fHd25E9VgE5pPAGYYrfJiFxHiT21rMyCEck2up",
-          "tx": "9XzYx7fHd25E9VgE5pPAGYYrfJiFxHiT21rMyCEck2up",
-          "by": "p4.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/Be6o4rARY9FgsYGALzUrFsdGxVf87wx71zGiZwa66JAa",
+          "tx": "Be6o4rARY9FgsYGALzUrFsdGxVf87wx71zGiZwa66JAa",
+          "by": "p4.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -473,10 +507,10 @@
           "label": "p5 pays translator3 10.00 for a translation",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/8xLhL6dpRgVv61MFUJCQg2pFugXLRpkCYNTmd4d2XjnT",
-          "tx": "8xLhL6dpRgVv61MFUJCQg2pFugXLRpkCYNTmd4d2XjnT",
-          "by": "p5.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/3ELNgRppZzPTxWXdYAfeAMXQ5XcwZfFYbMong6HAPLU7",
+          "tx": "3ELNgRppZzPTxWXdYAfeAMXQ5XcwZfFYbMong6HAPLU7",
+          "by": "p5.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -489,10 +523,10 @@
           "label": "x.alice (the owner's sub-account) pays translator3 20.00",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/GedjNFKVnZqWWEVD4orPNjMttPeBFq1c3gUZQk4bEMZ4",
-          "tx": "GedjNFKVnZqWWEVD4orPNjMttPeBFq1c3gUZQk4bEMZ4",
-          "by": "x.alice.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6",
+          "tx": "E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6",
+          "by": "x.alice.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -505,10 +539,10 @@
           "label": "dave claims",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/CmExt4qML4tMqN24DZbmkjTZPLSQ6z8KsvjnbzsRDjmB",
-          "tx": "CmExt4qML4tMqN24DZbmkjTZPLSQ6z8KsvjnbzsRDjmB",
-          "by": "dave.agentexit3.testnet",
-          "receiver": "translator3.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ",
+          "tx": "hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ",
+          "by": "dave.w2.agentexit3.testnet",
+          "receiver": "translator3.w2.agentexit3.testnet",
           "method": "claim",
           "events": [
             "ft_transfer"
@@ -518,10 +552,40 @@
     },
     "nearai-check": {
       "scene": "G6",
-      "pass": false,
+      "pass": true,
       "what": "NEAR AI Cloud answers a customer's request inside its TEE and signs model:sha256(request):sha256(response). The registry admin adds the published signing address; the customer pays with the signature; the contract recovers the signer with ecrecover and marks the payment verified.",
       "scan": null,
-      "txs": []
+      "txs": [
+        {
+          "label": "registry admin: add_signer",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/2yzdFFMvikoAsxaHFzDyEstZ8HadKUevcspSFAncyLW2",
+          "tx": "2yzdFFMvikoAsxaHFzDyEstZ8HadKUevcspSFAncyLW2",
+          "by": "w2.agentexit3.testnet",
+          "receiver": "translator.w2.agentexit3.testnet",
+          "method": "add_signer",
+          "events": [
+            "signer_added"
+          ]
+        },
+        {
+          "label": "p1 pays (at least the price floor) with the NEAR AI proof",
+          "ok": true,
+          "error": null,
+          "explorer": "https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8",
+          "tx": "DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8",
+          "by": "p1.w2.agentexit3.testnet",
+          "receiver": "xusd.w2.agentexit3.testnet",
+          "method": "ft_transfer_call",
+          "events": [
+            "ft_transfer",
+            "payment",
+            "split",
+            "earnout_release"
+          ]
+        }
+      ]
     },
     "ai-buyer": {
       "scene": "AI",
@@ -544,6 +608,6 @@
     }
   },
   "run": "2026-11-04",
-  "root": "agentexit3.testnet",
-  "agent_code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq"
+  "root": "w2.agentexit3.testnet",
+  "agent_code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq"
 }

@@ -2,17 +2,12 @@
   "buy_sent": false,
   "pass": true,
   "scan": {
-    "agent": "cheat.agentexit3.testnet",
+    "agent": "cheat.w2.agentexit3.testnet",
     "buy_args": null,
     "findings": [
       {
         "code": "full_access_key_present",
         "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account",
-        "severity": "block"
-      },
-      {
-        "code": "code_hash_mismatch",
-        "detail": "deployed 7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq != published 6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw",
         "severity": "block"
       }
     ],
@@ -20,9 +15,9 @@
     "verdict": "blocked"
   },
   "scan_input": {
-    "agent": "cheat.agentexit3.testnet",
+    "agent": "cheat.w2.agentexit3.testnet",
     "chain": {
-      "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+      "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
       "keys": [
         {
           "permission": {
@@ -33,7 +28,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "cheat.agentexit3.testnet"
+            "receiver_id": "cheat.w2.agentexit3.testnet"
           },
           "public_key": "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
         },
@@ -52,7 +47,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "cheat.agentexit3.testnet"
+            "receiver_id": "cheat.w2.agentexit3.testnet"
           },
           "public_key": "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
         },
@@ -65,7 +60,9 @@
         "__contract_abi",
         "add_signer",
         "cancel_listing",
+        "cancel_offer",
         "claim",
+        "close_share",
         "contract_source_metadata",
         "finalize_earnout",
         "ft_on_transfer",
@@ -73,10 +70,12 @@
         "get_claimable",
         "get_earnings",
         "get_earnings_days",
+        "get_holdings",
         "get_limits",
         "get_listing",
         "get_payer",
         "get_sales",
+        "get_shares",
         "get_signers",
         "get_status",
         "heartbeat",
@@ -98,6 +97,7 @@
         "nft_total_supply",
         "nft_transfer",
         "nft_transfer_call",
+        "offer_share",
         "on_base_signed",
         "on_handover",
         "on_keys_deleted",
@@ -122,9 +122,9 @@
       "subaccounts": []
     },
     "contract": {
-      "admin": "agentexit3.testnet",
+      "admin": "w2.agentexit3.testnet",
       "base_wallet": {
-        "address": "0x9d1f32bb7eed978158a0269035b5140dd9d6f87d",
+        "address": "0x54fa666b6ff57e5a03a07b2e710d27174a28b415",
         "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
         "path": "wallet-1"
       },
@@ -137,17 +137,17 @@
       "near_storage_solvent": true,
       "open_approvals": 0,
       "open_auth_until": 0,
-      "owner": "alice.agentexit3.testnet",
+      "owner": "alice.w2.agentexit3.testnet",
       "paid_to_total": 0,
       "status": "Listed",
-      "token": "xusd.agentexit3.testnet"
+      "token": "xusd.w2.agentexit3.testnet"
     },
     "expected": {
-      "admin": "agentexit3.testnet",
-      "code_hash": "6mssWw3UfGoJXqjuXc8FD9MBkoj351wcmUZhg5WaSkWw",
+      "admin": "w2.agentexit3.testnet",
+      "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
       "listing_version": 1,
       "price": "500000000",
-      "token": "xusd.agentexit3.testnet"
+      "token": "xusd.w2.agentexit3.testnet"
     },
     "listing": {
       "listing_version": 1,
@@ -161,10 +161,94 @@
         "window_secs": 2592000
       }
     },
-    "now_ns": 1793764033480209235,
+    "now_ns": 1793766251450156403,
     "schema": "scan-input.v1"
   },
   "scene": 4,
   "schema": "scene.v1",
+  "txs": [
+    {
+      "by": "alice.w2.agentexit3.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "agent": "cheat.w2.agentexit3.testnet",
+              "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
+              "escrow": "150000000",
+              "known_keys": [
+                "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
+              ],
+              "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
+              "listed_at": "1793766244456417547",
+              "listing_version": 1,
+              "paid_now": "350000000",
+              "price": "500000000",
+              "schema": "listing.v1",
+              "seller": "alice.w2.agentexit3.testnet",
+              "shares": [],
+              "shares_bps": 0,
+              "terms": {
+                "earnout_bps": 3000,
+                "floor_bps": 2000,
+                "share_bps": 5000,
+                "window_secs": 2592000
+              },
+              "terms_config": "prod",
+              "terms_min": {
+                "max_floor_bps": 5000,
+                "min_earnout_bps": 3000,
+                "min_window_secs": 2592000
+              },
+              "token": "xusd.w2.agentexit3.testnet",
+              "treasury_snapshot": "0"
+            }
+          ],
+          "event": "listed",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/BnBizGuhFXYKAeNUmX2b86HvLK3CtWeubcZdFw5bRgpK",
+      "label": "alice lists cheat at 500.00",
+      "method": "list_for_sale",
+      "ms": 4748,
+      "ok": true,
+      "receiver": "cheat.w2.agentexit3.testnet",
+      "tx": "BnBizGuhFXYKAeNUmX2b86HvLK3CtWeubcZdFw5bRgpK",
+      "value": {
+        "agent": "cheat.w2.agentexit3.testnet",
+        "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
+        "escrow": "150000000",
+        "known_keys": [
+          "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
+        ],
+        "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
+        "listed_at": "1793766244456417547",
+        "listing_version": 1,
+        "paid_now": "350000000",
+        "price": "500000000",
+        "schema": "listing.v1",
+        "seller": "alice.w2.agentexit3.testnet",
+        "shares": [],
+        "shares_bps": 0,
+        "terms": {
+          "earnout_bps": 3000,
+          "floor_bps": 2000,
+          "share_bps": 5000,
+          "window_secs": 2592000
+        },
+        "terms_config": "prod",
+        "terms_min": {
+          "max_floor_bps": 5000,
+          "min_earnout_bps": 3000,
+          "min_window_secs": 2592000
+        },
+        "token": "xusd.w2.agentexit3.testnet",
+        "treasury_snapshot": "0"
+      }
+    }
+  ],
   "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent"
 }

@@ -10,7 +10,7 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "translator.agentexit3.testnet"
+        "receiver_id": "translator.w2.agentexit3.testnet"
       },
       "public_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
     }
@@ -25,7 +25,7 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "translator.agentexit3.testnet"
+        "receiver_id": "translator.w2.agentexit3.testnet"
       },
       "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
     }
@@ -33,7 +33,7 @@
   "pass": true,
   "sale": [
     {
-      "buyer": "bob.agentexit3.testnet",
+      "buyer": "bob.w2.agentexit3.testnet",
       "escrow": "300000000",
       "known_keys": [
         "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
@@ -43,13 +43,13 @@
       "paid_now": "700000000",
       "price": "1000000000",
       "sale_id": 1,
-      "seller": "alice.agentexit3.testnet",
+      "seller": "alice.w2.agentexit3.testnet",
       "seller_revenue_claimable": "500000000",
-      "window_end": "1796266590567741306"
+      "window_end": "1796358268471552359"
     }
   ],
   "scan": {
-    "agent": "translator.agentexit3.testnet",
+    "agent": "translator.w2.agentexit3.testnet",
     "buy_args": {
       "known_keys_hash": "3983259e274f8ba57fd9acdd2be6fdc3db80e457809a1a046209a06808b1402c",
       "listing_version": 1,
@@ -60,9 +60,9 @@
     "verdict": "clean"
   },
   "scan_input": {
-    "agent": "translator.agentexit3.testnet",
+    "agent": "translator.w2.agentexit3.testnet",
     "chain": {
-      "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+      "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
       "keys": [
         {
           "permission": {
@@ -73,7 +73,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "translator.agentexit3.testnet"
+            "receiver_id": "translator.w2.agentexit3.testnet"
           },
           "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
         }
@@ -88,7 +88,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "translator.agentexit3.testnet"
+            "receiver_id": "translator.w2.agentexit3.testnet"
           },
           "public_key": "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
         }
@@ -97,7 +97,9 @@
         "__contract_abi",
         "add_signer",
         "cancel_listing",
+        "cancel_offer",
         "claim",
+        "close_share",
         "contract_source_metadata",
         "finalize_earnout",
         "ft_on_transfer",
@@ -105,10 +107,12 @@
         "get_claimable",
         "get_earnings",
         "get_earnings_days",
+        "get_holdings",
         "get_limits",
         "get_listing",
         "get_payer",
         "get_sales",
+        "get_shares",
         "get_signers",
         "get_status",
         "heartbeat",
@@ -130,6 +134,7 @@
         "nft_total_supply",
         "nft_transfer",
         "nft_transfer_call",
+        "offer_share",
         "on_base_signed",
         "on_handover",
         "on_keys_deleted",
@@ -154,9 +159,9 @@
       "subaccounts": []
     },
     "contract": {
-      "admin": "agentexit3.testnet",
+      "admin": "w2.agentexit3.testnet",
       "base_wallet": {
-        "address": "0xa151912e5337aaec269ed1832059c5fc4f2e0617",
+        "address": "0xc3d4d4d85d8dc631abf5f934ef88d59fc1401094",
         "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
         "path": "wallet-1"
       },
@@ -169,21 +174,23 @@
       "near_storage_solvent": true,
       "open_approvals": 0,
       "open_auth_until": 0,
-      "owner": "alice.agentexit3.testnet",
+      "owner": "alice.w2.agentexit3.testnet",
       "paid_to_total": 0,
       "status": "Listed",
-      "token": "xusd.agentexit3.testnet"
+      "token": "xusd.w2.agentexit3.testnet"
     },
     "expected": {
-      "admin": "agentexit3.testnet",
-      "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+      "admin": "w2.agentexit3.testnet",
+      "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
       "listing_version": 1,
       "price": "1000000000",
-      "token": "xusd.agentexit3.testnet"
+      "token": "xusd.w2.agentexit3.testnet"
     },
     "listing": {
       "listing_version": 1,
       "price": "1000000000",
+      "shares": [],
+      "shares_bps": 0,
       "terms": {
         "earnout_bps": 3000,
         "floor_bps": 2000,
@@ -191,14 +198,14 @@
         "window_secs": 2592000
       }
     },
-    "now_ns": 1793674586270748076,
+    "now_ns": 1793766263219588939,
     "schema": "scan-input.v1"
   },
   "scene": 5,
   "schema": "scene.v1",
   "status_after": {
-    "admin": "agentexit3.testnet",
-    "agent": "translator.agentexit3.testnet",
+    "admin": "w2.agentexit3.testnet",
+    "agent": "translator.w2.agentexit3.testnet",
     "claimable_accounts": 1,
     "claimable_total": "500000000",
     "closed_sales": 0,
@@ -213,7 +220,7 @@
     "known_keys_hash": "6e9797964b787cad9e954e7c6cc6e1cf2758b2228f1963684046c4ac3c59b727",
     "listing_version": 2,
     "near_storage": {
-      "balance": "9139988325218857600000001",
+      "balance": "9139770437509500200000001",
       "day_entries": 1,
       "empty_payer_entries": 0,
       "growth_reserve": "1822000000000000000000000",
@@ -223,12 +230,12 @@
       "payer_entries": 6,
       "sig_entries": 0,
       "solvent": true,
-      "staked": "5258000000000000000000000",
-      "usage_bytes": 525800
+      "staked": "5559370000000000000000000",
+      "usage_bytes": 555937
     },
     "open_approvals": 0,
     "open_sales": 1,
-    "owner": "bob.agentexit3.testnet",
+    "owner": "bob.w2.agentexit3.testnet",
     "owner_epoch": 2,
     "owner_free": "0",
     "paid_to_owner": 0,
@@ -237,6 +244,8 @@
     "paused": false,
     "retiring_keys": [],
     "schema": "agent-status.v1",
+    "share_escrow": "0",
+    "shares_bps": 0,
     "signers": [],
     "solvent": true,
     "status": "Sold",
@@ -246,31 +255,33 @@
       "min_earnout_bps": 3000,
       "min_window_secs": 2592000
     },
-    "token": "xusd.agentexit3.testnet",
+    "token": "xusd.w2.agentexit3.testnet",
     "tracked_payers": 6,
     "treasury": "0"
   },
   "txs": [
     {
-      "by": "alice.agentexit3.testnet",
+      "by": "alice.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "translator.agentexit3.testnet",
-              "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+              "agent": "translator.w2.agentexit3.testnet",
+              "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
               "escrow": "300000000",
               "known_keys": [
                 "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
               ],
               "known_keys_hash": "3983259e274f8ba57fd9acdd2be6fdc3db80e457809a1a046209a06808b1402c",
-              "listed_at": "1793674578206597615",
+              "listed_at": "1793766256278789824",
               "listing_version": 1,
               "paid_now": "700000000",
               "price": "1000000000",
               "schema": "listing.v1",
-              "seller": "alice.agentexit3.testnet",
+              "seller": "alice.w2.agentexit3.testnet",
+              "shares": [],
+              "shares_bps": 0,
               "terms": {
                 "earnout_bps": 3000,
                 "floor_bps": 2000,
@@ -283,7 +294,7 @@
                 "min_earnout_bps": 3000,
                 "min_window_secs": 2592000
               },
-              "token": "xusd.agentexit3.testnet",
+              "token": "xusd.w2.agentexit3.testnet",
               "treasury_snapshot": "0"
             }
           ],
@@ -292,27 +303,29 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
+      "explorer": "https://testnet.nearblocks.io/txns/ASwD5X6LaLXcKonNjMHqv392YncDmR7bM7DFDgpamD6q",
       "label": "alice lists translator at 1000.00",
       "method": "list_for_sale",
-      "ms": 4695,
+      "ms": 4217,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "6WqQpVJckxVXxPPr3AsVKgosnmasnRnhQYFGoXLWu3wH",
+      "receiver": "translator.w2.agentexit3.testnet",
+      "tx": "ASwD5X6LaLXcKonNjMHqv392YncDmR7bM7DFDgpamD6q",
       "value": {
-        "agent": "translator.agentexit3.testnet",
-        "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+        "agent": "translator.w2.agentexit3.testnet",
+        "code_hash": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
         "escrow": "300000000",
         "known_keys": [
           "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
         ],
         "known_keys_hash": "3983259e274f8ba57fd9acdd2be6fdc3db80e457809a1a046209a06808b1402c",
-        "listed_at": "1793674578206597615",
+        "listed_at": "1793766256278789824",
         "listing_version": 1,
         "paid_now": "700000000",
         "price": "1000000000",
         "schema": "listing.v1",
-        "seller": "alice.agentexit3.testnet",
+        "seller": "alice.w2.agentexit3.testnet",
+        "shares": [],
+        "shares_bps": 0,
         "terms": {
           "earnout_bps": 3000,
           "floor_bps": 2000,
@@ -325,20 +338,20 @@
           "min_earnout_bps": 3000,
           "min_window_secs": 2592000
         },
-        "token": "xusd.agentexit3.testnet",
+        "token": "xusd.w2.agentexit3.testnet",
         "treasury_snapshot": "0"
       }
     },
     {
-      "by": "bob.agentexit3.testnet",
+      "by": "bob.w2.agentexit3.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "1000000000",
-              "new_owner_id": "translator.agentexit3.testnet",
-              "old_owner_id": "bob.agentexit3.testnet"
+              "new_owner_id": "translator.w2.agentexit3.testnet",
+              "old_owner_id": "bob.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -350,7 +363,7 @@
             {
               "add_key": "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2",
               "amount": "1000000000",
-              "buyer": "bob.agentexit3.testnet",
+              "buyer": "bob.w2.agentexit3.testnet",
               "delete_keys": [
                 "ed25519:DttugEB5ofqv73GNZF694Zc2JDGAeGTgB1z9wfyPAqVm"
               ],
@@ -365,8 +378,8 @@
           "data": [
             {
               "memo": "agent_exit:buy",
-              "new_owner_id": "bob.agentexit3.testnet",
-              "old_owner_id": "alice.agentexit3.testnet",
+              "new_owner_id": "bob.w2.agentexit3.testnet",
+              "old_owner_id": "alice.w2.agentexit3.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -379,7 +392,7 @@
         {
           "data": [
             {
-              "buyer": "bob.agentexit3.testnet",
+              "buyer": "bob.w2.agentexit3.testnet",
               "escrow": "300000000",
               "known_keys": [
                 "ed25519:7yUNZVz8j4PEuxU4AxyEBifRk8dxpRLCbfyHrNGfG7E2"
@@ -389,9 +402,9 @@
               "paid_now": "700000000",
               "price": "1000000000",
               "sale_id": 1,
-              "seller": "alice.agentexit3.testnet",
+              "seller": "alice.w2.agentexit3.testnet",
               "seller_revenue_claimable": "500000000",
-              "window_end": "1796266590567741306"
+              "window_end": "1796358268471552359"
             }
           ],
           "event": "sale",
@@ -403,8 +416,8 @@
             {
               "amount": "700000000",
               "memo": "agent_exit:SellerPayout",
-              "new_owner_id": "alice.agentexit3.testnet",
-              "old_owner_id": "translator.agentexit3.testnet"
+              "new_owner_id": "alice.w2.agentexit3.testnet",
+              "old_owner_id": "translator.w2.agentexit3.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -412,13 +425,13 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
+      "explorer": "https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp",
       "label": "bob buys translator (one ft_transfer_call)",
       "method": "ft_transfer_call",
-      "ms": 7134,
+      "ms": 7317,
       "ok": true,
-      "receiver": "xusd.agentexit3.testnet",
-      "tx": "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K",
+      "receiver": "xusd.w2.agentexit3.testnet",
+      "tx": "B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp",
       "value": "1000000000"
     }
   ],
