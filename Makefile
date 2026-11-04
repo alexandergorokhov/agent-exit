@@ -142,7 +142,10 @@ attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/at
 
 .PHONY: scan
 scan: ## Scan one agent: make scan FILE=fixtures/scan/cheat.json (exit 0 clean, 2 blocked, 3 inconclusive)
-	cargo run --quiet --locked --offline -p scan -- $(FILE)
+	@s=0; cargo run --quiet --locked --offline -p scan -- $(FILE) || s=$$?; \
+	case $$s in 0) echo "scan: CLEAN (exit 0)" >&2;; \
+	  2) echo "scan: BLOCKED (exit 2): the agent is not safe to buy. For fixtures/scan/cheat.json this is the expected result; make then prints 'Error 2'." >&2;; \
+	  3) echo "scan: INCONCLUSIVE (exit 3): do not buy" >&2;; esac; exit $$s
 
 FUZZ_CASES ?= 3000
 .PHONY: fuzz
@@ -326,7 +329,7 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
-	@echo "Real testnet transactions (2026-11-02): README section 'Live on NEAR testnet' and the page's per-step testnet links. Not shown: a real AI model buying."
+	@echo "Real testnet transactions (2026-11-04, w2.agentexit3.testnet): README section 'Live on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
 demo-setup: ## [testnet] Fresh demo world on a NEW root: reproducible build, deploy, G1, scenes, page data [DRY_RUN=1] [FORCE=1]
 ifdef DRY_RUN
 	@$(PLAN) deploy && $(PLAN) g1 && $(PLAN) scenes

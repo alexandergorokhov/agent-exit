@@ -109,7 +109,12 @@ fn snapshot(s: &mut Sim, key_owners: Value, hidden_full: Option<String>) -> Valu
 }
 
 /// Same, plus `get_holdings` of each named investor.
-fn snapshot_with(s: &mut Sim, key_owners: Value, hidden_full: Option<String>, investors: &[&str]) -> Value {
+fn snapshot_with(
+    s: &mut Sim,
+    key_owners: Value,
+    hidden_full: Option<String>,
+    investors: &[&str],
+) -> Value {
     let scan = scan_input(s, hidden_full.clone());
     let holdings: serde_json::Map<String, Value> = investors
         .iter()
