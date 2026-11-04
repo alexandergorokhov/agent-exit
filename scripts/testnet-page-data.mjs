@@ -3,7 +3,7 @@
 // and its NearBlocks link. Only what the runner recorded; nothing is invented.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
-const STEP_SCENE = { "break-in": 1, business: 2, verified: 3, cheat: 4, "honest-sale": 5, "agent-buys-agent": 6 };
+const STEP_SCENE = { "break-in": 1, business: 2, verified: 3, cheat: 4, "honest-sale": 5, "agent-buys-agent": 6, invest: 8 };
 const out = { schema: "web-testnet.v1", network: "testnet", money: "xUSD-FAKE", steps: {} };
 
 function short(err) {
@@ -34,6 +34,6 @@ for (const [id, n] of Object.entries(STEP_SCENE)) {
 const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out/testnet/deploy.json", "utf8")) : {};
 out.root = dep.root || null;
 out.agent_code_hash = dep.agent_code_hash || null;
-out.run = "2026-11-03";
+out.run = "2026-11-04";
 writeFileSync("web/data/testnet.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`web/data/testnet.json: ${Object.keys(out.steps).length} steps, ${Object.values(out.steps).reduce((a, s) => a + s.txs.filter((t) => t.explorer).length, 0)} explorer links`);

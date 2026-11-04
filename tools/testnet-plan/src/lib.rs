@@ -218,7 +218,7 @@ pub fn check(env: &BTreeMap<String, String>) -> Result<Config, Vec<String>> {
         base_rpc,
         nearai_base,
         nearai_model: get("NEARAI_MODEL")
-            .unwrap_or("openai/gpt-oss-120b")
+            .unwrap_or("deepseek-ai/DeepSeek-V4.1-Flash-1017")
             .to_string(),
         nearai_model_2: get("NEARAI_MODEL_2").map(str::to_string),
         base_payee,
