@@ -288,6 +288,29 @@ async function main() {
   go(fromHash(), false);
 }
 
+// Hero proof strip: the sale tx and the old seller's refused break-in calls,
+// straight from the recorded testnet run (data/testnet.json).
+async function renderProofStrip() {
+  const box = document.getElementById("proof-strip");
+  if (!box) return;
+  const t = await (await fetch("data/testnet.json")).json();
+  if (t.schema !== "web-testnet.v1") return;
+  const sale = (t.steps["honest-sale"]?.txs || []).find((x) => x.method === "ft_transfer_call" && x.ok);
+  const tries = (t.steps["break-in"]?.txs || []).filter((x) => !x.ok && x.explorer);
+  if (!sale || !tries.length) return;
+  const short = (h) => `${h.slice(0, 6)}…`;
+  const link = (x, text) => el("a", { href: x.explorer, target: "_blank", rel: "noopener", text });
+  box.replaceChildren(
+    el("p", { class: "ps-head" }, "On NEAR testnet: ", el("b", { text: "bob bought the agent in one transaction" }), " (", link(sale, short(sale.tx)), "). ",
+      "Then the old seller tried to take it back ", el("b", { text: `${tries.length} times. All refused:` })),
+    el("ul", { class: "ps-list" }, tries.map((x) => el("li", {},
+      el("span", { class: "ps-x", text: "✗" }), " ",
+      el("span", { text: x.label.replace(/^alice: /, "") }), " ",
+      el("code", { text: x.error || "refused" }), " ", link(x, short(x.tx))))),
+    el("p", { class: "small muted" }, "Her old keys were deleted in the sale, so they fail at the node too. ", el("a", { href: "#evidence-run", text: "Re-check every step on chain" }), "."));
+}
+renderProofStrip().catch(() => { /* the static fallback text stays */ });
+
 main().catch((e) => {
   document.getElementById("step").replaceChildren(el("p", { class: "err", text: `Could not load the demo: ${e.message}` }));
 });

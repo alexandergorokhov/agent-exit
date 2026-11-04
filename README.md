@@ -96,8 +96,6 @@ Not run on testnet: G2 (the Base Sepolia payment; needs a Base relayer key). The
 
 AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 
----
-
 ## The problem, and what the contract does
 
 AI agents that earn money will be bought and sold. Today a buyer can trust

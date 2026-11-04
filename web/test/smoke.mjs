@@ -306,6 +306,13 @@ try {
       vp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
       await vp.goto(base);
       await vp.waitForSelector('#scenarios[data-ready="1"]');
+      // V5: the hero proof strip lists the sale tx and every refused break-in call.
+      await vp.waitForSelector("#proof-strip .ps-list li");
+      const strip = await vp.locator("#proof-strip").textContent();
+      assert.ok(/one transaction/.test(strip) && /All refused/.test(strip), "V5: proof strip text");
+      assert.equal(await vp.locator("#proof-strip .ps-list li").count(), 6, "V5: six refused calls");
+      assert.equal(await vp.locator('#proof-strip a[href^="https://testnet.nearblocks.io/txns/"]').count(), 7, "V5: seven tx links");
+      checks++;
       // V4: the live shares payout, the NEAR AI check and the AI buy are runnable too.
       for (const id of ["invest", "nearai", "aibuyer"]) {
         assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), 1, `V4: scenario ${id} is listed`);
