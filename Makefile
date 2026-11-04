@@ -256,7 +256,7 @@ else
 	@if [ -f contracts/res/SHA256SUMS ]; then \
 	  echo "deploying the reproducible wasm in contracts/res (make build)"; \
 	  (cd contracts/res && sha256sum -c SHA256SUMS) && \
-	  built=$$(grep -a -o -E 'xusd\.[a-z0-9_-]+\.testnet' contracts/res/agent_exit.wasm | head -1); \
+	  built=$$(grep -a -o -E 'xusd\.[a-z0-9_.-]+\.testnet' contracts/res/agent_exit.wasm | sort -u | grep -x -F "xusd.$(TESTNET_ROOT)" || grep -a -o -E 'xusd\.[a-z0-9_.-]+\.testnet' contracts/res/agent_exit.wasm | head -1); \
 	  if [ "$$built" != "xusd.$(TESTNET_ROOT)" ]; then \
 	    echo "deploy-testnet: contracts/res/agent_exit.wasm has $$built compiled in, not xusd.$(TESTNET_ROOT). Run make build first." >&2; exit 1; fi; \
 	  export AGENT_WASM=$(CURDIR)/contracts/res/agent_exit.wasm XUSD_WASM=$(CURDIR)/contracts/res/xusd.wasm && $(TESTNET_RUN) deploy; \

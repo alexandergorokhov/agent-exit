@@ -177,3 +177,19 @@ the claim. `check.verified_jobs` is 5 with NEAR AI credit, 0 without (the
 jobs then pay as unverified, and the page says so). If NEAR AI answers
 with an unknown model, set `NEARAI_MODEL` in `~/.agent-exit.env` to a model
 from `https://cloud-api.near.ai/v1/model/list`.
+
+## 12. A fresh world under the same root (sub-world)
+
+Sales move deeds, so a played world cannot record the scenes again. To
+re-record without a new top-level account:
+
+1. The owner creates the sub-root with the root's own public key (no new secret):
+   `near account create-account fund-myself w2.<root> '30 NEAR' use-manually-provided-public-key <root public key> sign-as <root> network-config testnet sign-with-legacy-keychain send`.
+   Fund it with about 50 test NEAR in total (deploy ~29.5, G1 + scene 8 ~18).
+2. Copy `~/.agent-exit.env` to `~/.agent-exit-w2.env` (mode 600) with only
+   `AGENT_EXIT_ROOT=w2.<root>` changed; the tools read the root from the env file.
+3. `AGENT_EXIT_ENV=~/.agent-exit-w2.env make demo-setup FORCE=1 TESTNET_ROOT=w2.<root>`,
+   then `make gate-g6`, `make scene-8` and `make check-links` with the same two settings.
+
+Recorded transaction ids are the outcome ids NEAR returns (since 45da6fd);
+`make check-links` confirms every link on the page resolves.
