@@ -47,7 +47,7 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 
 ## Judge FAQ
 
-- **Is this just a web game?** No. The page is a viewer. Contracts are deployed on testnet (code hash `Aots3gb3…`, the same as the reproducible build), and every step links to a real transaction. `make verify` re-runs 232 tests offline. `make check-links` checks that all 37 transaction links exist.
+- **Is this just a web game?** No. The page is a viewer. Contracts are deployed on testnet (code hash `Aots3gb3…`, the same as the reproducible build of commit `42a8ee3`), and every step links to a real transaction. `make verify` re-runs 232 tests offline. `make check-links` checks that all 37 transaction links exist.
 - **Can I run it?** `make setup && make demo` runs everything offline in a few minutes, with no keys. `make verify` and `make attack` show the tests and the 19 attack families.
 - **What can't it catch?** Off-chain things: the agent's prompts, API keys and copies of its code. It also cannot catch fake customers on accounts the seller funded through other wallets; before a sale that is cheap, so a buyer should weigh counted revenue by how old and how spread out the payers are. After a sale, wash-paying costs the seller money. The README section "Honest limits" and rows N1-N7 in every `make attack` run list them. "Verified" means a NEAR AI job really ran; it does not prove that the payer is independent.
 - **Is the money real?** No. Everything is `xUSD-FAKE` on testnet. No mainnet deployment yet.

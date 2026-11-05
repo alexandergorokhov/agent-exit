@@ -2,9 +2,9 @@
 
 **Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.**
 
-[![88-second demo: what a buyer sees, a sale that locks the seller out, an investor paid 20%](docs/img/demo.gif)](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)
+[![90-second demo: what a buyer sees, a sale that locks the seller out, an investor paid 20%](docs/img/demo.gif)](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)
 
-**[Watch the 88-second demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)** (recorded from the page; no voiceover).
+**[Watch the 90-second demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)** (recorded from the page; no voiceover).
 
 1. **Agents are businesses:** they do jobs and get paid. 2. **Earnings are proven:** the agent's NEAR contract counts every payment by payer, flags self-payments and marks NEAR AI-verified jobs. 3. **That unlocks money:** buy a share of its future earnings, or buy the whole agent with an earn-out. 4. **It is safe:** the scan blocks hidden keys, the sale deletes the seller's keys in one transaction, and spending stays inside the owner's limits.
 
@@ -15,7 +15,7 @@
 |---|---|
 | **Earnings are real:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8), [flagged](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
 | **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD), [claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ), [sale](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
-| **Seller locked out:** after the sale, every way back in fails | [treasury](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE), [key](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek), [limits](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx), [deed](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX), [Base wallet](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
+| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE), [relist](https://testnet.nearblocks.io/txns/3nCoTzQn5jv5wyhVHJdymEzkDRpq4R1NoSJ1b1wM3WUv), [key](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek), [limits](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx), [deed](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX), [Base wallet](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
@@ -45,7 +45,7 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 
 | Real (on NEAR testnet, with NearBlocks links) | Not yet |
 |---|---|
-| The contract on NEAR testnet, rebuilt bit for bit by `make build` (code hash `Aots3gb3…`, world `w2.agentexit3.testnet`, after two adversarial reviews); every link in this README resolves (`make check-links`) | Gate G2: the agent's Base wallet paying on Base Sepolia |
+| The contract on NEAR testnet, rebuilt bit for bit from the deployed commit (`git checkout 42a8ee3 && make build`: code hash `Aots3gb3…`, world `w2.agentexit3.testnet`); `main` adds review-5 fixes C27–C32, live after the next deploy; every link in this README resolves (`make check-links`) | Gate G2: the agent's Base wallet paying on Base Sepolia |
 | Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale | A wallet buy button on the page (the page only reads the chain) |
 | Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8)) | MCP share tools (`list_offers`, `buy_share`, `portfolio`) are built and tested offline, not yet run on testnet |
 | A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) | Real users and real money: everything is `xUSD-FAKE` |

@@ -19,9 +19,9 @@
       <p class="lede">Turn an AI agent into a business you can trust.<br>Earnings proven on-chain. Invest in a share, or buy it whole. The seller is locked out.</p>
       <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet: one-transaction sale, then the old seller's break-in attempts, each refused. <a href="#evidence-run">See the runs</a>.</p></div>
       <div class="cta">
-        <a class="btn primary" href="#run-invest">Check an agent's proven earnings (live)</a>
-        <a class="btn" href="#run-cheat">Watch a backdoor get caught (live)</a>
-        <a class="btn" href="media/agent-exit-demo.mp4">Watch the 88 s video</a>
+        <a class="btn primary" href="#run-invest">Check an agent's earnings on testnet</a>
+        <a class="btn" href="#run-cheat">Watch a backdoor get caught on testnet</a>
+        <a class="btn" href="media/agent-exit-demo.mp4">Watch the 90 s video</a>
         <a class="btn" href="#play">Try it yourself</a>
         <a class="btn" href="#for-judges">For judges</a>
       </div>
@@ -111,7 +111,7 @@
 
     <section id="evidence-run" class="evidence">
       <h2>The same story on NEAR testnet</h2>
-      <p class="muted">The deployed contract (code hash <code>Aots3gb3…</code>, rebuilt bit for bit by <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
+      <p class="muted">The deployed contract (code hash <code>Aots3gb3…</code>, rebuilt bit for bit from commit <code>42a8ee3</code> with <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
       <span id="scenarios-anchor"></span>
       <div id="scenarios" class="scenarios"><p class="muted">Loading the scenarios…</p></div>
       <h3 class="walk-title">Step-by-step walkthrough</h3>
@@ -142,7 +142,7 @@
     <section id="for-judges" class="judges">
       <h2>For judges: where each criterion is shown</h2>
       <div class="crit">
-        <a href="#scenarios-anchor"><b>Technical implementation</b><span>Rust contract on NEAR testnet, rebuilt bit for bit (<code>make build</code>). Run a scenario and every stage is re-checked against the chain.</span></a>
+        <a href="#scenarios-anchor"><b>Technical implementation</b><span>Rust contract on NEAR testnet, rebuilt bit for bit (<code>make build</code> at commit <code>42a8ee3</code>). Run a scenario and every stage is re-checked against the chain.</span></a>
         <a href="#play"><b>Design</b><span>Four missions you play in two minutes, against the real contract code. Each result says what the contract checked.</span></a>
         <a href="#concept"><b>Impact</b><span>AI agents are becoming businesses. Agent Exit makes them sellable: real revenue, a clean handover.</span></a>
         <a href="#why-near"><b>Originality</b><span>The agent is its own NEAR account. Selling it deletes the seller's keys on-chain, and the earn-out pays only from real customers.</span></a>

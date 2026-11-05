@@ -76,7 +76,7 @@ await card(["Agent Exit", "Turn an AI agent into a business you can trust.", "Ea
 await card([], 0);
 await caption("Recorded on NEAR testnet: 5 of 5 customer payments signed by NEAR AI and checked by the contract", 3800);
 await caption("An investor bought 20% of an agent's earnings and got exactly 20%", 3200);
-await caption("After a one-transaction sale, the old seller tried 6 ways back in. All refused.", 3500);
+await caption("After a one-transaction sale, the old seller tried 6 ways back in on testnet. All refused.", 3500);
 
 // Shot 2 (0:14-0:34): what a buyer sees before paying.
 await scrollTo("#diligence");
@@ -97,7 +97,7 @@ await act("scan", 2200);
 await act("buy", 3200);
 await caption("One transaction: bob pays, alice's keys are deleted, 70% to alice now, 30% held for the earn-out", 0);
 await wait(3000);
-await caption("Now alice tries to get back in", 0);
+await caption("Now alice tries to get back in", 2000);
 await act("withdraw", 2200);
 await act("set_key", 2200);
 await act("old_key", 2600);
