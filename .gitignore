@@ -15,6 +15,7 @@ out/*
 *.key
 *.pem
 media/
+!web/media/
 .DS_Store
 proptest-regressions/
 mcp/dist/
