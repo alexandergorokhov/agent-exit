@@ -1,4 +1,5 @@
 {
+  "functions": { "api/rpc.mjs": { "maxDuration": 30 } },
   "headers": [
     {
       "source": "/(.*)",

@@ -119,6 +119,13 @@ function stagesFor(data, stepIds) {
   return stages;
 }
 
+/** A curl the reader can run to ask a public archival node, not our relay. */
+function selfCheck(t) {
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: t.tx, sender_account_id: t.by, wait_until: "NONE" } });
+  return `curl -s https://archival-rpc.testnet.near.org -H 'content-type: application/json' \
+  -d '${body}'`;
+}
+
 function stageView(st, i) {
   const head = st.kind === "scan"
     ? `buyer's scan of ${st.scan.agent}: ${st.scan.verdict}`
@@ -132,7 +139,11 @@ function stageView(st, i) {
   const body = el("div", { class: "stage-body" },
     el("p", { class: "stage-rec" }, el("b", { text: "Recorded: " }), recorded),
     st.kind === "tx" ? el("p", { class: "stage-call" }, el("code", { text: `${st.t.by} → ${st.t.receiver}.${st.t.method}()` }), " · ",
-      el("a", { href: st.t.explorer, target: "_blank", rel: "noopener noreferrer", text: "NearBlocks" })) : null);
+      el("a", { href: st.t.explorer, target: "_blank", rel: "noopener noreferrer", text: "NearBlocks" })) : null,
+    // Review 5: the check above goes through this page's relay; this one does not.
+    st.kind === "tx" ? el("details", { class: "selfcheck" }, el("summary", { text: "Check it without this page" }),
+      el("p", { class: "muted small", text: "Ask a public NEAR archival node yourself:" }),
+      el("pre", {}, el("code", { text: selfCheck(st.t) }))) : null);
   const out = el("div", { class: "stage-chain" });
   const d = el("details", { class: `stage ${st.kind === "tx" && !st.t.ok ? "refused" : ""}`, "data-kind": st.kind },
     el("summary", {}, el("span", { class: "snum", text: String(i + 1) }), el("span", { class: "stitle", text: head }), pill),
@@ -208,6 +219,19 @@ async function main() {
   const data = await r.json();
   box.replaceChildren(...SCENARIOS.map((sc) => scenarioCard(sc, data)));
   box.dataset.ready = "1";
+  // Review 5: a link to #run-<id> (the hero button) opens that scenario and runs it.
+  const autorun = () => {
+    const m = /^#run-([a-z]+)$/.exec(location.hash);
+    if (!m) return;
+    const card = box.querySelector(`details.scenario[data-scenario="${m[1]}"]`);
+    const btn = card && card.querySelector("button[data-run]");
+    if (!btn || btn.disabled) return;
+    card.open = true;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    btn.click();
+  };
+  window.addEventListener("hashchange", autorun);
+  autorun();
 }
 
 main().catch((e) => {

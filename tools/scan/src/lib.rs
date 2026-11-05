@@ -342,12 +342,27 @@ fn block(code: &str, detail: String) -> Finding {
     }
 }
 
+/// Keys as two providers must agree on them: the key and what it may do.
+/// The allowance is left out (review 5, M2): it drops on every call the
+/// runner makes, so providers a block apart see different numbers.
 fn key_set(keys: &[AccessKey]) -> BTreeSet<(String, String)> {
     keys.iter()
         .map(|k| {
+            let p = match &k.permission {
+                Permission::FunctionCall {
+                    receiver_id,
+                    method_names,
+                    ..
+                } => Permission::FunctionCall {
+                    receiver_id: receiver_id.clone(),
+                    method_names: method_names.clone(),
+                    allowance: None,
+                },
+                full => full.clone(),
+            };
             (
                 k.public_key.clone(),
-                serde_json::to_string(&k.permission).unwrap_or_default(),
+                serde_json::to_string(&p).unwrap_or_default(),
             )
         })
         .collect()

@@ -14,6 +14,7 @@
 // and says so in every answer. Real mode is NEAR AI Cloud on testnet only.
 // The worker listens on 127.0.0.1 only. The model text is data; it never
 // decides anything here.
+import type { AddressInfo } from "node:net";
 import { createHash, randomBytes } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { checkBaseUrl, scrub } from "./llm.js";
@@ -310,6 +311,14 @@ export function startServer(tr: Translator, opts: { port: number; maxJobs?: numb
       }
       if (path !== "/job") throw new JobError("NOT_FOUND", "POST /job or GET /health", 404);
       if (req.method !== "POST") throw new JobError("METHOD", "POST only", 405);
+      // Review 5, M7: only a local client may spend the NEAR AI credit. A web
+      // page's cross-origin POST carries Origin (or a text/plain body), and a
+      // DNS-rebinding page arrives with its own Host name.
+      const port = (server.address() as AddressInfo | null)?.port;
+      const host = String(req.headers.host ?? "");
+      if (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`) throw new JobError("FORBIDDEN", "only a local client may post jobs", 403);
+      if (req.headers.origin !== undefined) throw new JobError("FORBIDDEN", "browser requests are refused", 403);
+      if (!/^application\/json(\s*;.*)?$/i.test(String(req.headers["content-type"] ?? ""))) throw new JobError("CONTENT_TYPE", "content-type must be application/json", 415);
       let body: unknown;
       const text = await readBody(req);
       try {

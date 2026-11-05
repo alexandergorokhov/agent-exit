@@ -26,7 +26,7 @@ const WHO = {
 // Every action: who does it, the button label, and what the contract does behind it.
 const ACTIONS = {
   pay_customer: { who: "customer", label: "A customer pays 25", why: "pay(): the payer is a stranger to the owner, so the meter counts it. After a sale, half of each counted payment is released from escrow to the old seller (the earn-out)." },
-  pay_verified: { who: "customer", label: "A customer pays 25 with a NEAR AI signature", why: "pay() with a NEAR AI Cloud signature on the work. The contract checks the signature on-chain, so the payment is counted and marked Verified. Here and in the offline tests the signature comes from a test key; the same check against NEAR AI Cloud's real key on testnet (gate G6) is pending." },
+  pay_verified: { who: "customer", label: "A customer pays 25 with a NEAR AI signature", why: "pay() with a NEAR AI Cloud signature on the work. The contract checks the signature on-chain, so the payment is counted and marked Verified. Here and in the offline tests the signature comes from a test key; the same check against NEAR AI Cloud's real key passed on testnet (gate G6, 2026-11-04; scenario \"Verified revenue\" below)." },
   pay_self: { who: "alice", label: "Pay your own agent 200", why: "pay(): the contract looks at who paid. The payer is the owner, so the payment is recorded but flagged and not counted. A buyer sees counted revenue only." },
   pay_sub: { who: "alice", label: "Pay from bot.alice.testnet 200", why: "NEAR account names are hierarchical: bot.alice.testnet can only be created by alice. The contract sees the parent and flags the payment." },
   plant_key: { who: "alice", label: "Hide a full-access key in the agent", why: "A NEAR account can hold many keys. alice adds one straight to the account, outside the contract. The contract only knows the keys it added itself." },
@@ -60,7 +60,7 @@ const REPO = "https://github.com/alexandergorokhov/near-transparent-agent-market
 const CORE = "contracts/agent-core/src/lib.rs";
 const CODE = {
   pay_customer: { code: [CORE, 1205, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
-  pay_verified: { code: [CORE, 1205, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet this needs NEAR AI credit (gate G6, not run yet)." },
+  pay_verified: { code: [CORE, 1205, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet gate G6 passed (2026-11-04) with a real NEAR AI Cloud signature: see the scenario \"Verified revenue\" below." },
   pay_self: { code: [CORE, 1187, "pub fn flags_for("], near: "ft_transfer_call from the owner's own account", tx: null },
   pay_sub: { code: [CORE, 1187, "pub fn flags_for("], near: "ft_transfer_call from bot.alice.testnet (a sub-account only alice can create)", tx: null },
   plant_key: { code: null, near: "an AddKey action on the agent's account, signed by a full-access key: plain NEAR protocol, no contract involved", tx: "alice lists cheat at 500.00", note: "The cheat agent on testnet carries such a key." },

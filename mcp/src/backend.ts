@@ -8,9 +8,10 @@
 //   providers. buy_agent signs and sends one ft_transfer_call with the
 //   server's own key (AGENT_EXIT_PRIVATE_KEY, never the model's input);
 //   list_for_sale on testnet is not built yet and says so.
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { Config, Network } from "./config.js";
-import { NearKey, signTx } from "./nearsign.js";
+import { b58encode, NearKey, signTx } from "./nearsign.js";
 
 export type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -457,6 +458,19 @@ export class TestnetBackend implements Backend {
       this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id }),
       this.baseWallet(id),
     ]);
+    // Review 5, M1: the hash handed to the scanner is the hash of the bytes we
+    // parsed for the method list, and both providers must report it. Any
+    // disagreement becomes a hash that matches nothing, so the scan blocks
+    // with code_hash_mismatch instead of trusting one node.
+    const bytes = Buffer.from(code.code_base64, "base64");
+    const local = b58encode(createHash("sha256").update(bytes).digest());
+    let second: string | null = null;
+    try {
+      second = (await this.rpc(this.cfg.rpc[1], { request_type: "view_account", finality: "final", account_id: id })).code_hash;
+    } catch {
+      second = null;
+    }
+    const codeHash = account.code_hash === local && second === local ? local : `unverified: rpc says ${String(account.code_hash).slice(0, 44)}, second rpc ${String(second).slice(0, 44)}, bytes hash ${local}`;
     return applyExpect({
       schema: "scan-input.v1",
       agent: id,
@@ -472,8 +486,8 @@ export class TestnetBackend implements Backend {
         ...(this.cfg.expectedToken ? { token: this.cfg.expectedToken } : {}),
       },
       chain: {
-        code_hash: account.code_hash,
-        methods: wasmExports(Buffer.from(code.code_base64, "base64")),
+        code_hash: codeHash,
+        methods: wasmExports(bytes),
         keys: keys1,
         keys_second_provider: keys2,
         // NEAR RPC cannot list sub-accounts (an indexer can): the scan's

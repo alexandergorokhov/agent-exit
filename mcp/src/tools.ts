@@ -8,7 +8,8 @@
 // needs max_price, stays inside the session spend cap, and scans first:
 // any finding refuses the buy before anything is sent.
 import { spawnSync } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
@@ -94,9 +95,6 @@ export const UNTRUSTED_NOTICE =
 
 const MAX_UNTRUSTED = 200;
 
-/** Error codes whose message can carry text from an RPC node or the scanner's stderr: made safe like any chain text. */
-const CHAIN_TEXT_ERRORS = ["RPC_ERROR", "ALLOWANCE_LOW", "SCAN_UNAVAILABLE", "BUY_REFUSED", "SENT_UNCONFIRMED"];
-
 const STATUSES = new Set(["Active", "Listed", "Settling", "Sold"]);
 
 /** Chain-sourced text made safe to show a model: control, format (bidi,
@@ -109,6 +107,34 @@ export function untrusted(s: string): string {
     .trim();
   const chars = [...clean];
   return chars.length > MAX_UNTRUSTED ? `${chars.slice(0, MAX_UNTRUSTED).join("")}...[cut]` : clean;
+}
+
+/** A status read from the chain, shown only if it is one of the known enum
+ * values (review 5, H1): a seller's contract can return any string. */
+function statusName(s: unknown): string {
+  return typeof s === "string" && STATUSES.has(s) ? s : "in an unknown state";
+}
+
+const ACCOUNT_RE = /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
+
+/** An account id read from the chain, shown only if it is a valid NEAR id. */
+function acct(s: unknown): string {
+  return typeof s === "string" && ACCOUNT_RE.test(s) ? s : "an invalid account id";
+}
+
+/** Error details with every string sanitised and nesting bounded (review 5, H1). */
+function safeDetails(x: unknown, depth = 0): unknown {
+  if (depth > 4) return "[cut]";
+  if (typeof x === "string") return untrusted(x);
+  if (typeof x === "number" || typeof x === "boolean" || x === null) return x;
+  if (typeof x === "bigint") return x.toString();
+  if (Array.isArray(x)) return x.slice(0, 20).map((v) => safeDetails(v, depth + 1));
+  if (typeof x === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(x as object).slice(0, 20)) out[untrusted(k).slice(0, 40)] = safeDetails(v, depth + 1);
+    return out;
+  }
+  return undefined;
 }
 
 /** Scanner findings with their chain-sourced detail marked untrusted. The
@@ -200,17 +226,31 @@ export class SpendLedger {
     if (!this.file) return f();
     mkdirSync(dirname(this.file), { recursive: true });
     const lock = `${this.file}.lock`;
+    // Review 5, L1: the lock holds a token, so a process removes only its own.
+    const token = `${process.pid}-${randomBytes(8).toString("hex")}`;
     const deadline = Date.now() + 10_000;
     let fd: number | null = null;
     while (fd === null) {
       try {
         fd = openSync(lock, "wx", 0o600);
+        writeSync(fd, token);
       } catch (e) {
         if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
         try {
-          // A lock left by a crashed process is dropped after 30 s.
-          if (Date.now() - statSync(lock).mtimeMs > 30_000) unlinkSync(lock);
-        } catch { /* gone already */ }
+          // A lock left by a crashed process is dropped after 30 s. It is
+          // moved aside first (only one waiter's rename succeeds) and put
+          // back if what was moved turns out to be a fresh lock.
+          const seen = readFileSync(lock, "utf8");
+          if (Date.now() - statSync(lock).mtimeMs > 30_000) {
+            const aside = `${lock}.${token}.stale`;
+            renameSync(lock, aside);
+            if (readFileSync(aside, "utf8") === seen) unlinkSync(aside);
+            else {
+              try { linkSync(aside, lock); } catch { /* a newer lock exists */ }
+              unlinkSync(aside);
+            }
+          }
+        } catch { /* gone already, or another waiter moved it */ }
         if (Date.now() > deadline) throw new ToolError("SESSION_CAP", `the spend file ${this.file} is locked by another process; refusing to buy without a known spend`);
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
       }
@@ -219,7 +259,9 @@ export class SpendLedger {
       f();
     } finally {
       closeSync(fd);
-      try { unlinkSync(lock); } catch { /* ignore */ }
+      try {
+        if (readFileSync(lock, "utf8") === token) unlinkSync(lock);
+      } catch { /* ignore */ }
     }
   }
 
@@ -272,11 +314,18 @@ export class Tools {
       if (!vo(body)) throw new Error(`internal: ${tool} output does not match its schema: ${JSON.stringify(vo.errors)}`);
       return { ok: true, body };
     } catch (e) {
+      // Review 5, H1: every message is sanitised and cut, every detail string
+      // too, and an unexpected error (often a parse of malformed chain data,
+      // whose message echoes that data) is reported without its text.
       const err =
         e instanceof ToolError
-          ? { code: e.code, message: CHAIN_TEXT_ERRORS.includes(e.code) ? untrusted(e.message) : e.message, ...(e.details === undefined ? {} : { details: e.details }) }
-          : { code: "BAD_INPUT", message: (e as Error).message };
-      return { ok: false, body: { schema_version: "agent-exit.mcp.error.v1", ok: false, error: err, sent: false } };
+          ? { code: e.code, message: untrusted(e.message), ...(e.details === undefined ? {} : { details: safeDetails(e.details) }) }
+          : { code: "BAD_INPUT", message: `internal error (${untrusted((e as Error)?.name ?? "Error").slice(0, 40)}): the agent's data could not be read; nothing was sent` };
+      const body = { schema_version: "agent-exit.mcp.error.v1", ok: false, error: err, sent: false };
+      if (!this.schemas.validateError(body)) {
+        return { ok: false, body: { schema_version: "agent-exit.mcp.error.v1", ok: false, error: { code: "BAD_INPUT", message: "error body failed validation; nothing was sent" }, sent: false } };
+      }
+      return { ok: false, body };
     }
   }
 
@@ -425,7 +474,7 @@ export class Tools {
     // Price, listing version and terms all come from this one read (A32);
     // the scan checks them again and the contract refuses a changed version.
     const v = await this.backend.agent(agent);
-    if (v.status.status !== "Listed" || !v.listing) throw new ToolError("NOT_LISTED", `${agent} is ${v.status.status}, not listed`);
+    if (v.status.status !== "Listed" || !v.listing) throw new ToolError("NOT_LISTED", `${agent} is ${statusName(v.status.status)}, not listed`);
     const quoted = v.listing;
     const price = BigInt(quoted.price);
     const min = this.minTerms(a);
@@ -435,7 +484,7 @@ export class Tools {
     if (t.floor_bps > min.max_floor_bps) low.push(`seller floor ${t.floor_bps / 100}% > ${min.max_floor_bps / 100}%`);
     if (t.window_secs < min.min_window_secs) low.push(`window ${t.window_secs / 86_400} days < ${min.min_window_secs / 86_400} days`);
     if (low.length) {
-      throw new ToolError("TERMS_BELOW_MINIMUM", `earn-out terms below your minimum: ${low.join(", ")}`, { terms: t, minimum: min });
+      throw new ToolError("TERMS_BELOW_MINIMUM", `earn-out terms below your minimum: ${low.join(", ")}`, { terms: { earnout_bps: Number(t.earnout_bps), floor_bps: Number(t.floor_bps), window_secs: Number(t.window_secs) }, minimum: min });
     }
     // Review H2: an agent whose revenue is already pledged to investors
     // above the server's limit is not bought, whatever the model asks.
@@ -582,6 +631,10 @@ export class Tools {
       checks.push({ id: "no_pending_key_batch", pass: pending.length === 0, untrusted_detail: untrusted(`${pending.length} key(s) incoming or retiring`) });
       // Cannot prove it: no buyer key to compare, or a key change is still in flight.
       inconclusive = mine === null || pending.length > 0;
+    } else if (!probes && keys.length === 0) {
+      // Review 5, M3: no recorded probe and no key to check proves nothing
+      // about this account; an empty list must not pass as "locked out".
+      inconclusive = true;
     }
     const locked = !inconclusive && checks.every((c) => c.pass);
     return {
@@ -598,8 +651,16 @@ export class Tools {
   private async listForSale(agent: string, price: number, confirm: boolean): Promise<Json> {
     const seller = this.writeGate();
     if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", "list_for_sale needs confirm: true");
+    // Review 5, M4: the operator's floor and allowlist bound what a model
+    // (perhaps talked into it by chain text) can sell, and for how little.
+    if (this.cfg.minListPrice !== null && price < this.cfg.minListPrice) {
+      throw new ToolError("UNDER_MIN_PRICE", `${price.toFixed(2)} is below this server's floor of ${this.cfg.minListPrice.toFixed(2)} (AGENT_EXIT_MIN_LIST_PRICE)`);
+    }
+    if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
+      throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet list_for_sale only lists agents the operator named`);
+    }
     const v = await this.backend.agent(agent);
-    if (v.status.owner !== seller) throw new ToolError("NOT_OWNER", `${seller} does not own ${agent} (owner: ${v.status.owner})`);
+    if (v.status.owner !== seller) throw new ToolError("NOT_OWNER", `${seller} does not own ${agent} (owner: ${acct(v.status.owner)})`);
     const r = await this.backend.list(agent, seller, units(price));
     const l = r.listing;
     return {
@@ -671,14 +732,14 @@ export class Tools {
     const v = await this.backend.agent(agent);
     const owner: string = v.status.owner;
     if (v.status.status !== "Active" || v.status.frozen) {
-      throw new ToolError("NOT_BUYABLE", `${agent} is ${v.status.frozen ? "frozen" : v.status.status}: share buys are refused while it is listed, settling or frozen`);
+      throw new ToolError("NOT_BUYABLE", `${agent} is ${v.status.frozen ? "frozen" : statusName(v.status.status)}: share buys are refused while it is listed, settling or frozen`);
     }
     if (investor === owner || investor.endsWith(`.${owner}`)) {
       throw new ToolError("NOT_BUYABLE", "the owner and the owner's sub-accounts cannot buy shares of their own agent");
     }
     const o = (v.shares ?? []).find((x: Json) => Number(x.offer_id) === offerId);
     if (!o) throw new ToolError("UNKNOWN_OFFER", `no offer ${offerId} on ${agent}`);
-    if (o.seller !== owner) throw new ToolError("NOT_BUYABLE", `offer ${offerId} was made by ${o.seller}, not the current owner`);
+    if (o.seller !== owner) throw new ToolError("NOT_BUYABLE", `offer ${offerId} was made by ${acct(o.seller)}, not the current owner`);
     const open = Number(o.bps) - Number(o.sold_bps);
     if (BigInt(o.end) <= this.backend.nowNs() || open <= 0) throw new ToolError("OFFER_CLOSED", `offer ${offerId} has ended or is sold out`);
     if (part > open) throw new ToolError("OFFER_CLOSED", `only ${open / 100}% of offer ${offerId} is still open`);

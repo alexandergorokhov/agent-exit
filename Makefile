@@ -81,6 +81,7 @@ check-links: ## Every tx the page links is known to NEAR testnet (archival RPC; 
 web-test: ## Playwright smoke test of the page (Chromium, desktop + 375px, no network)
 	@command -v node >/dev/null || { echo "node not installed: web-test needs Node >= 20" >&2; exit 1; }
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo -- --check
+	node --test web/test/relay.test.mjs
 	NODE_PATH="$${NODE_PATH:+$$NODE_PATH:}$(NODE_GLOBAL)" node web/test/smoke.mjs
 
 # ---------------------------------------------------------------- MCP + Skill

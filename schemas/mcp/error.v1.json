@@ -52,11 +52,13 @@
             "OFFER_CLOSED",
             "SHARE_TOO_SMALL",
             "NOT_BUYABLE",
-            "SHARE_REFUSED"
+            "SHARE_REFUSED",
+            "UNDER_MIN_PRICE"
           ]
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 400
         },
         "details": {}
       }

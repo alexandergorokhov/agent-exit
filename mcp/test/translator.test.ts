@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { request as httpRequest } from "node:http";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { REPO } from "./helpers.js";
@@ -230,4 +231,38 @@ test("TR5 start-up: offline by default; real mode needs testnet, a key and the a
   assert.equal(ok.status, 0, ok.stderr);
   assert.match(ok.stderr, /mode testnet.*NEAR AI Cloud/);
   for (const r of [off, nokey, noacct, mainnet, net, badUrl, ok]) assert.ok(!r.stderr.includes(KEY) && !r.stdout.includes(KEY));
+});
+
+// M16 (review 5, M7): a web page cannot drive the loopback worker. A browser's
+// cross-origin POST carries an Origin header or a text/plain body, and a DNS
+// rebinding attack arrives with a foreign Host; each is refused before any
+// NEAR AI call is made.
+function raw(base: string, headers: Record<string, string>, body: string): Promise<number> {
+  const u = new URL(`${base}/job`);
+  return new Promise((resolve, reject) => {
+    const r = httpRequest({ host: u.hostname, port: u.port, path: u.pathname, method: "POST", headers: { "content-length": String(Buffer.byteLength(body)), ...headers } }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode ?? 0));
+    });
+    r.on("error", reject);
+    r.end(body);
+  });
+}
+
+test("M16 the worker refuses a foreign Host, an Origin header and a non-JSON content type", async () => {
+  let calls = 0;
+  const counting: Translator = { mode: "offline", label: "TEST FIXTURE", translate: async (j) => { calls++; return new FixtureTranslator(fixture).translate(j); } } as Translator;
+  const { base, close } = await serve(counting, { maxJobs: 20 });
+  try {
+    const body = JSON.stringify(JOB);
+    const port = new URL(base).port;
+    assert.equal(await raw(base, { host: `127.0.0.1:${port}`, "content-type": "application/json" }, body), 200);
+    assert.equal(await raw(base, { host: `localhost:${port}`, "content-type": "application/json" }, JSON.stringify({ ...JOB, job_id: "job-2", payer: "p2.testnet" })), 200);
+    assert.equal(await raw(base, { host: `evil.example:${port}`, "content-type": "application/json" }, body), 403);
+    assert.equal(await raw(base, { host: `127.0.0.1:${port}`, "content-type": "text/plain" }, body), 415);
+    assert.equal(await raw(base, { host: `127.0.0.1:${port}`, "content-type": "application/json", origin: "https://evil.example" }, body), 403);
+    assert.equal(calls, 2, "refused requests never reach the translator");
+  } finally {
+    await close();
+  }
 });

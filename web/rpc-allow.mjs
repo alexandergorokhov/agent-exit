@@ -40,23 +40,52 @@ export function refuse(body) {
   return "request_type not allowed";
 }
 
+// Review 5, M6: judges may all press "Run and verify" at once. A finished
+// transaction never changes, so its answer is cached for the life of the
+// function instance; a view query is cached for 10 s. Errors are never cached.
+const CACHE = new Map();
+const CACHE_MAX = 500;
+const QUERY_TTL_MS = 10_000;
+const UPSTREAM_TIMEOUT_MS = 4500;
+
+export function clearCache() { CACHE.clear(); }
+
+function cacheKey(body) { return JSON.stringify([body.method, body.params]); }
+
+function cached(body) {
+  const hit = CACHE.get(cacheKey(body));
+  if (!hit || (hit.expires && hit.expires < Date.now())) return null;
+  return { ...hit.json, id: body.id };
+}
+
+function remember(body, json) {
+  if (!json || json.error || json.result === undefined) return;
+  if (CACHE.size >= CACHE_MAX) CACHE.delete(CACHE.keys().next().value);
+  CACHE.set(cacheKey(body), { json, expires: body.method === "tx" ? 0 : Date.now() + QUERY_TTL_MS });
+}
+
+const short = (s) => String(s).replace(/[^ -~]/g, " ").slice(0, 120);
+
 /** Forwards an allowed body to the first upstream that answers. */
 export async function relay(body, upstreams = UPSTREAMS, fetchImpl = fetch) {
   const why = refuse(body);
   if (why) return { status: 400, json: { jsonrpc: "2.0", id: body && body.id, error: { message: `refused by relay: ${why}` } } };
+  const hit = cached(body);
+  if (hit) return { status: 200, json: hit };
   let last = "no upstream";
   const urls = body.method === "tx" ? [...upstreams, ARCHIVAL] : upstreams;
   for (const url of urls) {
     try {
-      const r = await fetchImpl(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) });
+      const r = await fetchImpl(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
       if (r.ok) {
         const j = await r.json();
         const unknown = body.method === "tx" && j && j.error && /UNKNOWN_TRANSACTION|doesn't exist|garbage/i.test(JSON.stringify(j.error));
         if (unknown && url !== urls[urls.length - 1]) { last = `${new URL(url).host}: not on this node`; continue; }
+        remember(body, j);
         return { status: 200, json: j };
       }
       last = `${new URL(url).host}: HTTP ${r.status}`;
-    } catch (e) { last = `${new URL(url).host}: ${e && e.message ? e.message : e}`; }
+    } catch (e) { last = `${new URL(url).host}: ${short(e && e.message ? e.message : e)}`; }
   }
   return { status: 502, json: { jsonrpc: "2.0", id: body.id, error: { message: `testnet RPC unreachable (${last})` } } };
 }

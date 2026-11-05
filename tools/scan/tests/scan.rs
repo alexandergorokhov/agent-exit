@@ -76,6 +76,33 @@ fn e31_rpc_disagree_is_inconclusive_and_refuses() {
     assert!(r.codes().contains(&"rpc_disagree"));
 }
 
+/// M12 (review 5, M2): a runner key spends allowance on every call, so two
+/// providers a block apart see different allowances. That is not a
+/// disagreement; a different receiver or method list still is.
+#[test]
+fn m12_allowance_drift_is_not_rpc_disagree() {
+    let mut i = judge();
+    let fc = i
+        .chain
+        .keys
+        .iter()
+        .position(|k| !k.is_full())
+        .expect("the judge fixture has a function-call key");
+    let mut second = i.chain.keys.clone();
+    if let Permission::FunctionCall { allowance, .. } = &mut second[fc].permission {
+        *allowance = Some("1".into());
+    }
+    i.chain.keys_second_provider = Some(second.clone());
+    let r = scan(&i);
+    assert!(!r.codes().contains(&"rpc_disagree"), "{:?}", r.codes());
+    assert_eq!(r.verdict, "clean");
+    if let Permission::FunctionCall { method_names, .. } = &mut second[fc].permission {
+        method_names.push("withdraw".into());
+    }
+    i.chain.keys_second_provider = Some(second);
+    assert!(scan(&i).codes().contains(&"rpc_disagree"));
+}
+
 #[test]
 fn e34_subaccount_warns_but_does_not_block() {
     let mut i = judge();
