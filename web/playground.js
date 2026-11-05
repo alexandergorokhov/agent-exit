@@ -59,8 +59,8 @@ const ACTIONS = {
 const REPO = "https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/";
 const CORE = "contracts/agent-core/src/lib.rs";
 const CODE = {
-  pay_customer: { code: [CORE, 1205, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
-  pay_verified: { code: [CORE, 1205, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet gate G6 passed (2026-11-04) with a real NEAR AI Cloud signature: see the scenario \"Verified revenue\" below." },
+  pay_customer: { code: [CORE, 1210, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },
+  pay_verified: { code: [CORE, 1210, "pub fn pay("], near: "ft_transfer_call with a NEAR AI Cloud signature, checked by the contract (ecrecover)", tx: null, note: "On testnet gate G6 passed (2026-11-04) with a real NEAR AI Cloud signature: see the scenario \"Verified revenue\" below." },
   pay_self: { code: [CORE, 1187, "pub fn flags_for("], near: "ft_transfer_call from the owner's own account", tx: null },
   pay_sub: { code: [CORE, 1187, "pub fn flags_for("], near: "ft_transfer_call from bot.alice.testnet (a sub-account only alice can create)", tx: null },
   plant_key: { code: null, near: "an AddKey action on the agent's account, signed by a full-access key: plain NEAR protocol, no contract involved", tx: "alice lists cheat at 500.00", note: "The cheat agent on testnet carries such a key." },
@@ -68,22 +68,22 @@ const CODE = {
   toggle_upgrade: { code: ["tools/scan/src/lib.rs", 144, "pub const UPGRADE_WORDS"], near: "a different wasm deployed on the agent's account", tx: null },
   list: { code: [CORE, 832, "pub fn list("], near: "agent.list_for_sale(price, code_hash), signed by the owner", tx: "alice lists translator at 1000.00" },
   cancel: { code: [CORE, 875, "pub fn cancel_listing("], near: "agent.cancel_listing()", tx: null },
-  scan: { code: ["tools/scan/src/lib.rs", 406, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
+  scan: { code: ["tools/scan/src/lib.rs", 409, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
   buy: { code: [CORE, 893, "pub fn begin_buy("], near: "xusd.ft_transfer_call(agent, price, {listing_version, known_keys_hash, buyer key}) -> one key batch on the agent's account (DeleteKey seller, AddKey buyer) -> on_handover callback", tx: "bob buys translator (one ft_transfer_call)" },
   buy_skip: { code: [CORE, 893, "pub fn begin_buy("], near: "the same ft_transfer_call, sent without the scan", tx: null },
   withdraw: { code: [CORE, 1125, "pub fn withdraw("], near: "agent.withdraw(), signed by alice", tx: "alice: withdraw 1.00" },
   relist: { code: [CORE, 832, "pub fn list("], near: "agent.list_for_sale(), signed by alice", tx: "alice: list_for_sale 1.00" },
   set_key: { code: [CORE, 668, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
   old_key: { code: null, near: "any transaction signed with the deleted key: the NEAR node refuses it (AccessKeyNotFound)", tx: "alice's old runner key: heartbeat" },
-  hidden_key: { code: [CORE, 1420, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
+  hidden_key: { code: [CORE, 1434, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
   hidden_redeploy: { code: null, near: "a transaction with DeployContract and DeleteKey actions signed by the hidden full-access key: plain NEAR protocol, no contract code runs", tx: null, note: "Listed in docs/NOT-CAUGHT.md as N4: the scan is the defence." },
-  wait: { code: [CORE, 1322, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
-  offer_share: { code: [CORE, 1544, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
-  buy_share: { code: [CORE, 1616, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
-  pay_customer_inv: { code: [CORE, 1505, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
-  pay_self_inv: { code: [CORE, 1505, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
+  wait: { code: [CORE, 1331, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
+  offer_share: { code: [CORE, 1558, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
+  buy_share: { code: [CORE, 1630, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
+  pay_customer_inv: { code: [CORE, 1519, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
+  pay_self_inv: { code: [CORE, 1519, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
   claim_share: { code: [CORE, 1110, "pub fn claim("], near: "agent.claim(), signed by dave", tx: null },
-  end_share: { code: [CORE, 1687, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
+  end_share: { code: [CORE, 1701, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
 };
 
 let testnetTxs = [];

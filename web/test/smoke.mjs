@@ -306,14 +306,17 @@ try {
       vp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
       await vp.goto(base);
       await vp.waitForSelector('#scenarios[data-ready="1"]');
-      // W6 (review 5): the hero's first button runs the cheat scenario.
-      assert.equal(await vp.locator('header .cta a.primary[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
+      // W6: the hero's first button checks proven earnings; the second runs the cheat scenario.
+      assert.equal(await vp.locator('header .cta a.primary[href="#run-invest"]').count(), 1, "W6: the main hero button checks proven earnings");
+      assert.equal(await vp.locator('header .cta a[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
       // V5: the hero proof strip lists the sale tx and every refused break-in call.
       await vp.waitForSelector("#proof-strip .ps-list li");
       const strip = await vp.locator("#proof-strip").textContent();
       assert.ok(/one transaction/.test(strip) && /All refused/.test(strip), "V5: proof strip text");
       assert.equal(await vp.locator("#proof-strip .ps-list li").count(), 6, "V5: six refused calls");
-      assert.equal(await vp.locator('#proof-strip a[href^="https://testnet.nearblocks.io/txns/"]').count(), 7, "V5: seven tx links");
+      assert.equal(await vp.locator('#proof-strip a[href^="https://testnet.nearblocks.io/txns/"]').count(), 10, "V5: seven tx links plus three stat links");
+      assert.equal(await vp.locator("#proof-strip .ps-stats li").count(), 3, "V5: three numbers, business first");
+      assert.ok(/5\/5 customer payments signed by NEAR AI/.test(strip), "V5: verified earnings first");
       checks++;
       // V4: the live shares payout, the NEAR AI check and the AI buy are runnable too.
       for (const id of ["invest", "nearai", "aibuyer"]) {

@@ -300,7 +300,18 @@ async function renderProofStrip() {
   if (!sale || !tries.length) return;
   const short = (h) => `${h.slice(0, 6)}…`;
   const link = (x, text) => el("a", { href: x.explorer, target: "_blank", rel: "noopener", text });
+  // Business first: three numbers, each with its transaction.
+  const inv = t.steps["invest"]?.txs || [];
+  const jobs = inv.filter((x) => x.ok && /pays .* for a translation/.test(x.label || ""));
+  const share = inv.find((x) => x.ok && x.method === "ft_transfer_call" && /buys the 20% slice/.test(x.label || ""));
+  const claim = inv.find((x) => x.ok && /claim/i.test(x.label || ""));
+  const stat = (num, text, x) => el("li", {}, el("b", { class: "ps-num", text: num }), " ", el("span", { text }), x ? [" ", link(x, short(x.tx))] : []);
+  const stats = [];
+  if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "customer payments signed by NEAR AI and checked on-chain", jobs[0]));
+  if (share && claim) stats.push(stat("20%", "of earnings bought by an investor, who got exactly 20%", claim));
+  stats.push(stat(`${tries.length}/${tries.length}`, "break-in attempts by the old seller refused after the sale", sale));
   box.replaceChildren(
+    el("ul", { class: "ps-stats" }, stats),
     el("p", { class: "ps-head" }, "On NEAR testnet: ", el("b", { text: "bob bought the agent in one transaction" }), " (", link(sale, short(sale.tx)), "). ",
       "Then the old seller tried to take it back ", el("b", { text: `${tries.length} times. All refused:` })),
     el("ul", { class: "ps-list" }, tries.map((x) => el("li", {},

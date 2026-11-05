@@ -7,6 +7,19 @@
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
 - **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
 
+| Proven on NEAR testnet | Transactions |
+|---|---|
+| **Earnings are real:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8), [flagged](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
+| **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD), [claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ), [sale](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
+| **Seller locked out:** after the sale, every way back in fails | [treasury](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE), [key](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek), [limits](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx), [deed](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX), [Base wallet](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
+
+**Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
+- a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
+- function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
+- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
+- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
+- NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
+
 ![The demo page](docs/img/demo.png)
 
 ## Try it in 2 minutes (do X, see Y)
@@ -33,13 +46,6 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 | Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8)) | MCP share tools (`list_offers`, `buy_share`, `portfolio`) are built and tested offline, not yet run on testnet |
 | A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) | Real users and real money: everything is `xUSD-FAKE` |
 | Shares of future earnings (scene 8, `translator3`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD)), 5 customers paid for real NEAR AI translations, each verified ([a job](https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu)); the owner's sub-account paid too, was flagged and released no escrow; dave got exactly 20% ([claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ)) | An external security audit (not an offer of securities; testnet demo) |
-
-**Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
-- a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
-- function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
-- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
-- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
-- NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
 
 Every claim and its test: [`docs/PROOF.md`](docs/PROOF.md). Edge cases and attacks: [`docs/SCENARIOS.md`](docs/SCENARIOS.md). For AI agents: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt).
 
@@ -68,31 +74,7 @@ sequenceDiagram
 - **Live on NEAR testnet:** the six scenes, gates G1 and G6 and scene 8 (shares), re-recorded 2026-11-04 on `w2.agentexit3.testnet` with every link checked; the AI buyer ran on `agentexit3.testnet` (table below; outputs in `out/scenes/`, `out/gates/`).
 - **A real AI buyer:** Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), rejected the cheat on its flagged earnings, scanned translator, bought it inside its 1,000 limit and checked the old seller is locked out: 5 steps, about $0.03.
 
-### Live on NEAR testnet
-
-Recorded on 2026-11-04 in a fresh world under `w2.agentexit3.testnet` (agent code hash `Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq`, the reproducible build in `contracts/res`). Every link below was checked against an archival node (`make check-links`). Money is `xUSD-FAKE`.
-
-| What | Transaction |
-|---|---|
-| Honest sale: bob buys translator in one `ft_transfer_call` | [B5MfL9V3…](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
-| Old seller withdraws the treasury: `NotOwner` | [6peX6VpZ…](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE) |
-| Old seller adds her own runner key: `NotOwner` | [GwJXKMmV…](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek) |
-| Old seller changes the spending limits: `NotOwner` | [4A16wgc5…](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx) |
-| Old seller moves the deed to herself: `NotOwner` | [2e8b4hjL…](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX) |
-| Old seller spends from the Base wallet: `NotRunner` | [7E5tq2i5…](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
-| Old seller's runner key and the deleted setup key | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
-| New owner's runner key works | [2kH4Lsdw…](https://testnet.nearblocks.io/txns/2kH4Lsdw5TnnFL4QFx8BtUWRdagoizYH7ZUfU6G7dXkK) |
-| Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [4w9Q9Lh1…](https://testnet.nearblocks.io/txns/4w9Q9Lh1JGrHFDQ8o4D2FqXKZhkxUG6XkxeoLoQMnE6P) |
-| An agent account (summarizer) buys translator; scripted client, no AI model | [5EAhSAb2…](https://testnet.nearblocks.io/txns/5EAhSAb236hq36J5Ga3cpvvcnQJbspFeE2XzCSu1Nwdn) |
-| Gate G1, fresh agent sold and the old keys fail | [8SXLozby…](https://testnet.nearblocks.io/txns/8SXLozbywPwphxZ6M9T77YmhUYyFk9Ha3Xfy7QhB6Lo4) |
-| Gate G6, a payment verified on-chain with a real NEAR AI Cloud signature | [DVjpb5it…](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8) |
-| Shares (scene 8): dave buys 20% of translator3's earnings | [CVHZAS8R…](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD) |
-| Shares: a customer pays for a real NEAR AI translation, verified | [6Kcfgniw…](https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu) |
-| Shares: the owner's sub-account pays, flagged, no escrow released | [E8tDPSq7…](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
-| Shares: dave claims exactly 20% | [hphLreQM…](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ) |
-| A real AI model (Claude Haiku) buys an agent through MCP (run on `agentexit3.testnet`) | [6PjsAoL5…](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn) |
-
-Not run on testnet: G2 (the Base Sepolia payment; needs a Base relayer key). The cheat scan (scene 4) and the earnings view (scene 3) are read-only and recorded in `out/scenes/`.
+Every testnet transaction: [All testnet transactions](#all-testnet-transactions).
 
 AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
 
@@ -156,6 +138,32 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make help` | Every target. Targets that are not built yet are marked `(not built yet)` in the help and exit 1. |
 
 AI agents: start with [`AGENTS.md`](AGENTS.md) and [`llms.txt`](llms.txt).
+
+## All testnet transactions
+
+Recorded on 2026-11-04 in a fresh world under `w2.agentexit3.testnet` (agent code hash `Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq`, the reproducible build in `contracts/res`). Every link below was checked against an archival node (`make check-links`). Money is `xUSD-FAKE`.
+
+| What | Transaction |
+|---|---|
+| Honest sale: bob buys translator in one `ft_transfer_call` | [B5MfL9V3…](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
+| Old seller withdraws the treasury: `NotOwner` | [6peX6VpZ…](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE) |
+| Old seller adds her own runner key: `NotOwner` | [GwJXKMmV…](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek) |
+| Old seller changes the spending limits: `NotOwner` | [4A16wgc5…](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx) |
+| Old seller moves the deed to herself: `NotOwner` | [2e8b4hjL…](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX) |
+| Old seller spends from the Base wallet: `NotRunner` | [7E5tq2i5…](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
+| Old seller's runner key and the deleted setup key | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
+| New owner's runner key works | [2kH4Lsdw…](https://testnet.nearblocks.io/txns/2kH4Lsdw5TnnFL4QFx8BtUWRdagoizYH7ZUfU6G7dXkK) |
+| Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [4w9Q9Lh1…](https://testnet.nearblocks.io/txns/4w9Q9Lh1JGrHFDQ8o4D2FqXKZhkxUG6XkxeoLoQMnE6P) |
+| An agent account (summarizer) buys translator; scripted client, no AI model | [5EAhSAb2…](https://testnet.nearblocks.io/txns/5EAhSAb236hq36J5Ga3cpvvcnQJbspFeE2XzCSu1Nwdn) |
+| Gate G1, fresh agent sold and the old keys fail | [8SXLozby…](https://testnet.nearblocks.io/txns/8SXLozbywPwphxZ6M9T77YmhUYyFk9Ha3Xfy7QhB6Lo4) |
+| Gate G6, a payment verified on-chain with a real NEAR AI Cloud signature | [DVjpb5it…](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8) |
+| Shares (scene 8): dave buys 20% of translator3's earnings | [CVHZAS8R…](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD) |
+| Shares: a customer pays for a real NEAR AI translation, verified | [6Kcfgniw…](https://testnet.nearblocks.io/txns/6KcfgniwKPWJkAUju8ZNvxooDv1WUzPqhube5W4BtZcu) |
+| Shares: the owner's sub-account pays, flagged, no escrow released | [E8tDPSq7…](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
+| Shares: dave claims exactly 20% | [hphLreQM…](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ) |
+| A real AI model (Claude Haiku) buys an agent through MCP (run on `agentexit3.testnet`) | [6PjsAoL5…](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn) |
+
+Not run on testnet: G2 (the Base Sepolia payment; needs a Base relayer key). The cheat scan (scene 4) and the earnings view (scene 3) are read-only and recorded in `out/scenes/`.
 
 ## How to pay an agent (customers)
 

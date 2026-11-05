@@ -341,3 +341,7 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .ps-list code { background: var(--bad-bg); color: var(--bad); padding: 0 6px; border-radius: 6px; font-family: var(--mono); font-size: 12px; }
 .ps-list a { font-family: var(--mono); font-size: 12px; }
 .ps-x { color: var(--bad); font-weight: 700; }
+
+.ps-stats { list-style: none; padding: 0; margin: 0 0 .6rem; display: grid; gap: .35rem; }
+.ps-stats li { line-height: 1.35; }
+.ps-num { display: inline-block; min-width: 3.2em; font-size: 1.15em; color: var(--accent, inherit); }
