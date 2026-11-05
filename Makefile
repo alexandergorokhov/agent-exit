@@ -63,6 +63,7 @@ NODE_GLOBAL := $(shell npm root -g 2>/dev/null)
 .PHONY: web-data web-testnet-data
 web-testnet-data: ## Rewrite web/data/testnet.json from the recorded testnet run in out/scenes
 	node scripts/testnet-page-data.mjs
+	node scripts/diligence-data.mjs
 
 web-data: ## Rewrite web/data/demo.json from the contract (review the diff!)
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo

@@ -1,0 +1,116 @@
+{
+  "schema": "diligence.v1",
+  "note": "Recorded on NEAR testnet (out/scenes, world w2.agentexit3.testnet). All money is xUSD-FAKE.",
+  "cards": [
+    {
+      "agent": "translator.w2.agentexit3.testnet",
+      "name": "translator",
+      "deal": "For sale at 1000.00",
+      "rows": [
+        [
+          "Revenue paid in",
+          "500.00 from 33 payments"
+        ],
+        [
+          "Counted (real customers)",
+          "360.00 (72%) from 6 paying accounts"
+        ],
+        [
+          "Flagged, not counted",
+          "140.00: owner self-pay 100.00, seller sub-accounts 40.00, round trips 0.00"
+        ],
+        [
+          "Price ÷ counted revenue",
+          "2.8× the counted revenue recorded so far"
+        ],
+        [
+          "Keys and code",
+          "clean: no key but the runner's, the published code, no open approval"
+        ],
+        [
+          "Payment terms",
+          "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
+        ]
+      ],
+      "verdict": "Buy at the listed terms",
+      "ok": true,
+      "why": "72% of its revenue comes from 6 outside accounts; the scan is clean; 30% of the price only reaches the seller if customers keep paying.",
+      "run": "#run-sale"
+    },
+    {
+      "agent": "cheat.w2.agentexit3.testnet",
+      "name": "cheat",
+      "deal": "For sale at 500.00",
+      "rows": [
+        [
+          "Revenue paid in",
+          "500.00 from 5 payments"
+        ],
+        [
+          "Counted (real customers)",
+          "0.00 (0%) from 0 paying accounts"
+        ],
+        [
+          "Flagged, not counted",
+          "500.00: owner self-pay 300.00, seller sub-accounts 200.00, round trips 0.00"
+        ],
+        [
+          "Price ÷ counted revenue",
+          "no counted revenue: the price buys nothing proven"
+        ],
+        [
+          "Keys and code",
+          "blocked: full_access_key_present"
+        ],
+        [
+          "Payment terms",
+          "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
+        ]
+      ],
+      "verdict": "Do not buy",
+      "ok": false,
+      "why": "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
+      "run": "#run-cheat"
+    },
+    {
+      "agent": "translator3.w2.agentexit3.testnet",
+      "name": "translator3",
+      "deal": "20% of future earnings for a year, 500.00",
+      "rows": [
+        [
+          "Revenue paid in",
+          "70.00 from 6 payments"
+        ],
+        [
+          "Counted (real customers)",
+          "50.00 from 5 paying accounts"
+        ],
+        [
+          "Signed by NEAR AI, checked on-chain",
+          "50.00 (100% of counted): each job's output signed in a TEE by 0xfe007189…"
+        ],
+        [
+          "Flagged, not counted",
+          "20.00 from x.alice (the owner's sub-account); it still paid the investor 4.00"
+        ],
+        [
+          "Investor received",
+          "14.00 of 70.00 paid in: exactly 20%"
+        ],
+        [
+          "Investor's money at risk",
+          "half paid to the owner now, half (240.00 left) in escrow and returned if the agent stops earning"
+        ],
+        [
+          "Keys and code",
+          "clean: no key but the runner's, the published code, no open approval"
+        ]
+      ],
+      "verdict": "Invest at these terms",
+      "ok": true,
+      "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
+      "run": "#run-invest",
+      "tx": "https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD"
+    }
+  ]
+}

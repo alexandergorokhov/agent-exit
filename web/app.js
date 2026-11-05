@@ -322,6 +322,21 @@ async function renderProofStrip() {
 }
 renderProofStrip().catch(() => { /* the static fallback text stays */ });
 
+// Due-diligence cards (scripts/diligence-data.mjs, from the recorded testnet run).
+async function renderDiligence() {
+  const box = document.getElementById("dd-cards");
+  if (!box) return;
+  const d = await (await fetch("data/diligence.json")).json();
+  if (d.schema !== "diligence.v1") return;
+  box.replaceChildren(...d.cards.map((c) => el("article", { class: `dd-card ${c.ok ? "dd-ok" : "dd-no"}`, "data-agent": c.name },
+    el("h3", {}, el("code", { text: c.name }), " ", el("span", { class: "muted small", text: c.deal })),
+    el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
+    el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })),
+    el("p", { class: "small" }, el("a", { href: c.run, text: "Re-check it on NEAR testnet now" })))));
+  box.after(el("p", { class: "small muted", text: d.note }));
+}
+renderDiligence().catch(() => { /* the loading text stays */ });
+
 main().catch((e) => {
   document.getElementById("step").replaceChildren(el("p", { class: "err", text: `Could not load the demo: ${e.message}` }));
 });

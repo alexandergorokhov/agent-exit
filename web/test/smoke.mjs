@@ -309,6 +309,12 @@ try {
       // W6: the hero's first button checks proven earnings; the second runs the cheat scenario.
       assert.equal(await vp.locator('header .cta a.primary[href="#run-invest"]').count(), 1, "W6: the main hero button checks proven earnings");
       assert.equal(await vp.locator('header .cta a[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
+      // M1: the buyer's due-diligence cards: two buys (one refused) and one investment.
+      await vp.waitForSelector("#dd-cards .dd-card");
+      assert.equal(await vp.locator("#dd-cards .dd-card").count(), 3, "M1: three cards");
+      assert.equal(await vp.locator('#dd-cards .dd-no[data-agent="cheat"]').count(), 1, "M1: the cheat card says do not buy");
+      assert.ok(/100% of counted/.test(await vp.locator('#dd-cards [data-agent="translator3"]').textContent()), "M1: verified share shown");
+      checks++;
       // V5: the hero proof strip lists the sale tx and every refused break-in call.
       await vp.waitForSelector("#proof-strip .ps-list li");
       const strip = await vp.locator("#proof-strip").textContent();
