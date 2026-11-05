@@ -35,7 +35,7 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 - **Handover**: one batch on the agent's own account deletes the seller's runner key and adds the buyer's, then the `on_handover` callback moves the deed. If the batch fails, the buyer is refunded.
 - **Verified revenue**: the NEAR AI Cloud signature over `model:sha(request):sha(response)` is checked with `ecrecover` against an admin-set signer list. Each job is single-use.
 - **Base wallet** through NEAR Chain Signatures. It is derived from the agent's account name, so it changes hands with the deed, and the old seller's attempt to spend from it is refused.
-- **Scanner** (`tools/scan`). It checks the code hash against a reproducible build, the methods, every access key, the pending key changes and the Base wallet. It uses two RPC providers. Any doubt blocks the buy.
+- **Scanner** (`tools/scan`). It checks the code hash against a reproducible build (and hashes the code bytes itself), the methods, every access key, the pending key changes, the Base wallet, and that the money the contract says it holds is really in its token balance. It reads from two RPC providers. Any doubt blocks the buy.
 - **For AI agents**: an MCP server with 9 tools and an Agent Skill. The server, not the model, enforces `confirm`, `max_price`, a daily spend cap and an operator allowlist. Chain text is treated as data and sanitised.
 
 ## Why only on NEAR
@@ -49,7 +49,7 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 
 - **Is this just a web game?** No. The page is a viewer. Contracts are deployed on testnet (code hash `Aots3gb3…`, the same as the reproducible build), and every step links to a real transaction. `make verify` re-runs 232 tests offline. `make check-links` checks that all 37 transaction links exist.
 - **Can I run it?** `make setup && make demo` runs everything offline in a few minutes, with no keys. `make verify` and `make attack` show the tests and the 19 attack families.
-- **What can't it catch?** It cannot catch a payer who is a real stranger paid off-chain, or a seller who leaks the agent's off-chain secrets (prompts, API keys). The README section "Honest limits" and rows N1-N7 in every `make attack` run list them. "Verified" means a NEAR AI job really ran; it does not prove that the payer is independent.
+- **What can't it catch?** Off-chain things: the agent's prompts, API keys and copies of its code. It also cannot catch fake customers on accounts the seller funded through other wallets; before a sale that is cheap, so a buyer should weigh counted revenue by how old and how spread out the payers are. After a sale, wash-paying costs the seller money. The README section "Honest limits" and rows N1-N7 in every `make attack` run list them. "Verified" means a NEAR AI job really ran; it does not prove that the payer is independent.
 - **Is the money real?** No. Everything is `xUSD-FAKE` on testnet. No mainnet deployment yet.
 
 ## Close (the last 10 seconds of the video)

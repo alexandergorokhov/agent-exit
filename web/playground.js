@@ -68,7 +68,7 @@ const CODE = {
   toggle_upgrade: { code: ["tools/scan/src/lib.rs", 144, "pub const UPGRADE_WORDS"], near: "a different wasm deployed on the agent's account", tx: null },
   list: { code: [CORE, 832, "pub fn list("], near: "agent.list_for_sale(price, code_hash), signed by the owner", tx: "alice lists translator at 1000.00" },
   cancel: { code: [CORE, 875, "pub fn cancel_listing("], near: "agent.cancel_listing()", tx: null },
-  scan: { code: ["tools/scan/src/lib.rs", 380, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
+  scan: { code: ["tools/scan/src/lib.rs", 406, "pub fn scan("], near: "read-only RPC: view_access_key_list, view_account (code hash), get_status, get_listing; run by the buyer's SDK and the MCP server's scan_agent tool", tx: null },
   buy: { code: [CORE, 893, "pub fn begin_buy("], near: "xusd.ft_transfer_call(agent, price, {listing_version, known_keys_hash, buyer key}) -> one key batch on the agent's account (DeleteKey seller, AddKey buyer) -> on_handover callback", tx: "bob buys translator (one ft_transfer_call)" },
   buy_skip: { code: [CORE, 893, "pub fn begin_buy("], near: "the same ft_transfer_call, sent without the scan", tx: null },
   withdraw: { code: [CORE, 1125, "pub fn withdraw("], near: "agent.withdraw(), signed by alice", tx: "alice: withdraw 1.00" },

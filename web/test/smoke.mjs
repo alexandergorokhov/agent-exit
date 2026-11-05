@@ -154,7 +154,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("92 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("114 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
@@ -306,6 +306,8 @@ try {
       vp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
       await vp.goto(base);
       await vp.waitForSelector('#scenarios[data-ready="1"]');
+      // W6 (review 5): the hero's first button runs the cheat scenario.
+      assert.equal(await vp.locator('header .cta a.primary[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
       // V5: the hero proof strip lists the sale tx and every refused break-in call.
       await vp.waitForSelector("#proof-strip .ps-list li");
       const strip = await vp.locator("#proof-strip").textContent();
@@ -336,8 +338,12 @@ try {
       } else {
         assert.equal(differs, txStages, `V3: a different signer on chain shows as a mismatch (${differs}/${txStages}: ${pills.join(" | ")})`);
       }
+      // W6 (review 5): each tx stage offers a curl to a public archival node, not our relay.
+      const curls = await vp.locator(".selfcheck pre code").allTextContents();
+      assert.equal(curls.length, txStages, "W6: one self-check per tx stage");
+      assert.ok(curls.every((c) => c.includes("https://archival-rpc.testnet.near.org") && /"method":"tx"/.test(c)), "W6: curl to the public archival node");
       await noHorizontalScroll(vp, "scenario runner at 375px");
-      checks += 3;
+      checks += 4;
       await ctx.close();
     }
     const { refuse } = await import("../rpc-allow.mjs");

@@ -106,7 +106,9 @@ test("BW4 only the published MPC signer is asked; the agent cannot name another"
   const { b, asked } = backend({ mpcField: "attacker.testnet" });
   const input = (await b.scanInput(AGENT, {})) as { contract: { base_wallet: { mpc_public_key: unknown } } };
   assert.equal(input.contract.base_wallet.mpc_public_key, null);
-  assert.ok(asked.every((a) => a.account === AGENT), "no read went to the account the agent named");
+  // Reads go to the agent and the published token (C21), never to the signer the agent named.
+  assert.ok(asked.every((a) => a.account === AGENT || a.account === "xusd.testnet"), "no read went to the account the agent named");
+  assert.ok(!asked.some((a) => a.account === "attacker.testnet"));
   const r = await scan(backend({ mpcField: "attacker.testnet" }).b);
   assert.ok(codes(r).includes("base_wallet_unchecked"));
 });

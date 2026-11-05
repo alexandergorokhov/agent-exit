@@ -223,6 +223,10 @@ pub struct Chain {
     pub keys_second_provider: Option<Vec<AccessKey>>,
     #[serde(default)]
     pub subaccounts: Vec<String>,
+    /// The agent's balance in the payment token (`ft_balance_of`), base
+    /// units. Absent (offline fixtures) = not reconciled (C21).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_balance: Option<String>,
 }
 
 /// The contract's own view (`get_status`).
@@ -257,6 +261,13 @@ pub struct ContractView {
     /// (A51). Missing = cannot check = block.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base_wallet: Option<BaseWalletView>,
+    /// `get_status.held`: what the contract says it holds in the token (C21).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub held: Option<String>,
+    /// `get_status.solvent`: the contract's own check that its buckets sum
+    /// to `held` (C21).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ledger_solvent: Option<bool>,
 }
 
 /// The agent's Base wallet as the contract reports it, and the MPC root key
@@ -549,6 +560,32 @@ pub fn scan(i: &ScanInput) -> Report {
                 None => "near_storage.solvent not shown".into(),
             },
         ));
+    }
+
+    // C21 (review 5, C1): NEAR keeps storage across DeployContract, so a
+    // seller can write state with a throw-away contract and then deploy the
+    // published wasm on top. The code hash then matches, but the balances
+    // may be forged. What the contract says it holds must be backed by real
+    // tokens, and its own ledger check must pass.
+    if i.contract.ledger_solvent == Some(false) {
+        f.push(block(
+            "ledger_insolvent",
+            "the contract's own ledger check fails: its buckets do not add up to what it holds"
+                .into(),
+        ));
+    }
+    if let (Some(held), Some(bal)) = (&i.contract.held, &i.chain.token_balance) {
+        match (held.parse::<u128>(), bal.parse::<u128>()) {
+            (Ok(h), Ok(b)) if b >= h => {}
+            (Ok(h), Ok(b)) => f.push(block(
+                "held_exceeds_balance",
+                format!("the contract says it holds {h} but its token balance is {b}"),
+            )),
+            _ => f.push(block(
+                "held_exceeds_balance",
+                "held or the token balance is not a number".into(),
+            )),
+        }
     }
 
     // A51: the Base address is an init argument, so the code hash does not

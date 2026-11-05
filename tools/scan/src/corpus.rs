@@ -124,6 +124,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             keys: vec![runner_key(&agent, &pk)],
             keys_second_provider: Some(vec![runner_key(&agent, &pk)]),
             subaccounts,
+            token_balance: None,
         },
         contract: ContractView {
             status: "Listed".into(),
@@ -143,6 +144,8 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
                 path: BASE_PATH.into(),
                 mpc_public_key: Some(test_mpc_public_key()),
             }),
+            held: None,
+            ledger_solvent: None,
         },
         listing: Some(ListingView {
             listing_version: version,

@@ -470,6 +470,29 @@ export class TestnetBackend implements Backend {
     } catch {
       second = null;
     }
+    // Review 5, C1 (scenario C21): what the contract says it holds must be
+    // backed by the token balance, read from both providers. A value that
+    // cannot be read or does not agree becomes a non-number, which blocks.
+    // The published token only, never one the agent names (as BW4 for the MPC signer).
+    const token = this.cfg.expectedToken ?? "xusd.testnet";
+    const balanceOf = async (url: string): Promise<string | null> => {
+      try {
+        const r = await this.rpc(url, {
+          request_type: "call_function",
+          finality: "final",
+          account_id: token,
+          method_name: "ft_balance_of",
+          args_base64: Buffer.from(JSON.stringify({ account_id: id })).toString("base64"),
+        });
+        const v = JSON.parse(Buffer.from(r.result).toString("utf8"));
+        return typeof v === "string" && /^[0-9]{1,39}$/.test(v) ? v : null;
+      } catch {
+        return null;
+      }
+    };
+    const [bal1, bal2] = token ? await Promise.all([balanceOf(this.cfg.rpc[0]), balanceOf(this.cfg.rpc[1])]) : [null, null];
+    const tokenBalance = bal1 !== null && bal1 === bal2 ? bal1 : "unreadable";
+    const held = typeof status.held === "string" && /^[0-9]{1,39}$/.test(status.held) ? status.held : "not shown";
     const codeHash = account.code_hash === local && second === local ? local : `unverified: rpc says ${String(account.code_hash).slice(0, 44)}, second rpc ${String(second).slice(0, 44)}, bytes hash ${local}`;
     return applyExpect({
       schema: "scan-input.v1",
@@ -493,6 +516,7 @@ export class TestnetBackend implements Backend {
         // NEAR RPC cannot list sub-accounts (an indexer can): the scan's
         // warn-only subaccount_does_not_move rule fires offline only (N11).
         subaccounts: [],
+        token_balance: tokenBalance,
       },
       contract: {
         status: status.status,
@@ -507,6 +531,8 @@ export class TestnetBackend implements Backend {
         token: status.token,
         paid_to_total: status.paid_to_total,
         near_storage_solvent: status.near_storage?.solvent,
+        held,
+        ...(typeof status.solvent === "boolean" ? { ledger_solvent: status.solvent } : { ledger_solvent: false }),
         ...(baseWallet ? { base_wallet: { address: baseWallet.address, path: baseWallet.path, mpc_public_key: baseWallet.mpc_public_key } } : {}),
       },
       ...(listing ? { listing: listingView(listing) } : {}),

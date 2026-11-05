@@ -103,6 +103,28 @@ fn m12_allowance_drift_is_not_rpc_disagree() {
     assert!(scan(&i).codes().contains(&"rpc_disagree"));
 }
 
+/// C21 (review 5, C1): redeploying the published wasm over storage a seller
+/// wrote first can forge balances the contract believes it owes. The scan
+/// reconciles: the token balance must cover what the contract says it holds,
+/// and the contract's own ledger check must pass.
+#[test]
+fn c21_held_must_be_covered_by_the_token_balance() {
+    let mut i = judge();
+    i.contract.held = Some("1000".into());
+    i.chain.token_balance = Some("1000".into());
+    i.contract.ledger_solvent = Some(true);
+    assert_eq!(scan(&i).verdict, "clean");
+    i.chain.token_balance = Some("999".into());
+    assert!(scan(&i).codes().contains(&"held_exceeds_balance"));
+    assert_eq!(scan(&i).verdict, "blocked");
+    i.chain.token_balance = Some("1000".into());
+    i.contract.ledger_solvent = Some(false);
+    assert!(scan(&i).codes().contains(&"ledger_insolvent"));
+    i.contract.ledger_solvent = Some(true);
+    i.chain.token_balance = Some("not a number".into());
+    assert!(scan(&i).codes().contains(&"held_exceeds_balance"));
+}
+
 #[test]
 fn e34_subaccount_warns_but_does_not_block() {
     let mut i = judge();
