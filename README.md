@@ -2,6 +2,10 @@
 
 **Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.**
 
+[![88-second demo: what a buyer sees, a sale that locks the seller out, an investor paid 20%](docs/img/demo.gif)](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)
+
+**[Watch the 88-second demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4)** (recorded from the page; no voiceover).
+
 1. **Agents are businesses:** they do jobs and get paid. 2. **Earnings are proven:** the agent's NEAR contract counts every payment by payer, flags self-payments and marks NEAR AI-verified jobs. 3. **That unlocks money:** buy a share of its future earnings, or buy the whole agent with an earn-out. 4. **It is safe:** the scan blocks hidden keys, the sale deletes the seller's keys in one transaction, and spending stays inside the owner's limits.
 
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
