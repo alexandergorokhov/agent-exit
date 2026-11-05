@@ -154,7 +154,14 @@ proptest! {
         s.env(&c);
         let out = no_panic(|| s.c.on_base_signed(id));
         prop_assert!(out.is_ok(), "{:?}", out);
-        prop_assert_eq!(&out.unwrap()["ok"], &json!(false));
-        prop_assert_eq!(s.by(BOB).get_base_wallet()["spent_today"].clone(), json!("0"));
+        let out = out.unwrap();
+        prop_assert_eq!(&out["ok"], &json!(false));
+        // C29: an unreadable answer keeps the cap; a readable wrong one frees it.
+        let spent = s.by(BOB).get_base_wallet()["spent_today"].clone();
+        if out.get("sign_unverified").is_some() {
+            prop_assert_eq!(spent, json!("1000000"));
+        } else {
+            prop_assert_eq!(spent, json!("0"));
+        }
     }
 }

@@ -63,6 +63,8 @@ pub mod sim;
 mod tests;
 pub mod verified;
 
+/// C27: at most this many NEAR AI signing addresses (each costs an ecrecover per verified payment).
+pub const MAX_SIGNERS: usize = 8;
 pub const DEED_ID: &str = "deed";
 
 /// Registry admin (edits the NEAR AI signer list only) and the one accepted
@@ -392,6 +394,11 @@ impl AgentExit {
         // A function-call key of the admin cannot change who signs "Verified".
         near_sdk::assert_one_yocto();
         let a = norm_address(&address);
+        // C27: each signer costs an ecrecover in every verified payment.
+        require!(
+            self.signers.contains(&a) || self.signers.len() < MAX_SIGNERS,
+            "TooManySigners"
+        );
         self.signers.insert(a.clone());
         emit("signer_added", json!({"address": a}));
     }
@@ -1180,10 +1187,18 @@ impl AgentExit {
         let Some(auth) = self.m.base.pending.get(&auth_id).cloned() else {
             return json!({"ok": false, "reason": "UnknownAuth"});
         };
-        let sig = match env::promise_result_checked(0, 2_048) {
-            Ok(bytes) => mpc_signature(&bytes),
-            Err(_) => Err("SignFailed"),
+        let bytes = match env::promise_result_checked(0, 2_048) {
+            Ok(bytes) => bytes,
+            Err(_) => {
+                // The signer failed: no signature exists, release the cap.
+                self.m.finish_base_pay(auth_id, false);
+                let data = json!({"auth_id": auth_id, "reason": "SignFailed", "released": amt(auth.value),
+                                  "open_auth_until": U64(self.m.open_auth_until)});
+                emit("sign_failed", data.clone());
+                return json!({"ok": false, "sign_failed": data});
+            }
         };
+        let sig = mpc_signature(&bytes);
         let digest: [u8; 32] = verified::hex_decode(&auth.digest)
             .and_then(|d| d.try_into().ok())
             .expect("stored digest");
@@ -1230,12 +1245,24 @@ impl AgentExit {
                 emit("base_auth_signed", data.clone());
                 json!({"ok": true, "auth": data})
             }
-            Err(reason) => {
+            Err(reason) if reason != "BadSignResponse" => {
+                // A well-formed signature that is not the wallet's cannot
+                // move the wallet's USDC: release the cap.
                 self.m.finish_base_pay(auth_id, false);
                 let data = json!({"auth_id": auth_id, "reason": reason, "released": amt(auth.value),
                                   "open_auth_until": U64(self.m.open_auth_until)});
                 emit("sign_failed", data.clone());
                 json!({"ok": false, "sign_failed": data})
+            }
+            Err(reason) => {
+                // C29: the signer answered but the answer cannot be read. A
+                // valid signature may still be in that receipt, so the cap
+                // stays spent and the agent stays blocked until valid_before.
+                self.m.finish_base_pay_unknown(auth_id);
+                let data = json!({"auth_id": auth_id, "reason": reason, "released": amt(0),
+                                  "open_auth_until": U64(self.m.open_auth_until)});
+                emit("sign_unverified", data.clone());
+                json!({"ok": false, "sign_unverified": data})
             }
         }
     }

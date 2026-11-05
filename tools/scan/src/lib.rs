@@ -381,6 +381,9 @@ fn key_set(keys: &[AccessKey]) -> BTreeSet<(String, String)> {
 
 /// Codes about the sale listing only: an investor buying a share slice of
 /// an agent that is not for sale does not need them.
+/// C31: the most of each payment a listing may pledge to investors.
+pub const MAX_SHARES_BPS: u16 = 2_500;
+
 pub const LISTING_ONLY: [&str; 5] = [
     "not_listed",
     "listing_missing",
@@ -719,6 +722,19 @@ pub fn scan(i: &ScanInput) -> Report {
         f.push(block(
             "open_base_auth",
             "a signed Base authorization is still valid".into(),
+        ));
+    }
+
+    // C31: past this much, a buyer pays for revenue that is mostly not theirs
+    // (the MCP server refuses the same line, AGENT_EXIT_MAX_SHARES_BPS).
+    if let Some(l) = i.listing.as_ref().filter(|l| l.shares_bps > MAX_SHARES_BPS) {
+        f.push(block(
+            "shares_over_max",
+            format!(
+                "{}% of every future payment is pledged to investors (limit {}%)",
+                l.shares_bps as f64 / 100.0,
+                MAX_SHARES_BPS as f64 / 100.0
+            ),
         ));
     }
 

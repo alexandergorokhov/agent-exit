@@ -226,12 +226,12 @@ Two reviews (off-chain: MCP, AI, web, tests; on-chain: contracts, crypto, scanne
 | C21 | **Forged state under the published wasm.** The scan blocks when what the contract says it holds exceeds its token balance (read from both providers; unreadable = block) or when its own ledger check fails (`held_exceeds_balance`, `ledger_insolvent`). The live w2 agents pass (held = balance) | unit, ts | `scan.rs::c21_held_must_be_covered_by_the_token_balance`, `m12_code_hash.test.ts` (`C21`) | done |
 | C20 | Redeploying the published wasm over pre-seeded storage is blocked outright (code-change history from an archival node or indexer) | sandbox | `s_forged_state_redeploy` | planned (N12) |
 | C24 | Pre-sale wash through two hops or faucet-funded accounts is warned or blocked by payer age and spread | unit | scan | planned (N3 wording fixed now) |
-| C27 | `add_signer` is capped (8); the buy's gas stays under the limit with a full signer set | unit | contract | planned (contract) |
-| C28 | `nft_transfer` is refused while a Base authorization is open or pending | unit | contract | planned (contract) |
-| C29 | `on_base_signed` with a garbled success result keeps the cap and `open_auth_until` | unit | contract | planned (contract) |
-| C30 | The agent's ancestor accounts (`alice.testnet` for `bot.alice.testnet`) pay as self | unit | contract | planned (contract) |
-| C31 | The scan blocks a share pledge above a threshold (the MCP server already refuses above 25%) | unit | scan | planned |
-| C32 | `pay` on a frozen agent is refunded | unit | contract | planned (contract) |
+| C27 | `add_signer` is capped (`MAX_SIGNERS` 8, `TooManySigners`); a signed payment still verifies with a full signer set | unit | `review4_regressions.rs::c27_signer_list_is_capped` | done (live after redeploy) |
+| C28 | `nft_transfer` is refused (`OpenApproval`) while a Base authorization is open or pending | unit | `base_tests.rs::c28_no_deed_transfer_while_a_base_auth_is_open` | done (live after redeploy) |
+| C29 | `on_base_signed` with a garbled success result keeps the cap and `open_auth_until` (`sign_unverified`); a failed signer or a readable wrong signature still releases it | unit, fuzz | `base_tests.rs::c29_garbled_success_keeps_the_cap_and_the_block`, `fuzz_mpc_answer` | done (live after redeploy) |
+| C30 | The agent's ancestor accounts (`alice.testnet` for `bot.alice.testnet`) pay as self; a look-alike (`lice.testnet`) does not | unit | `review4_regressions.rs::c30_the_agents_ancestor_pays_as_self` | done (live after redeploy) |
+| C31 | The scan blocks a listing pledging more than 25% of each payment to investors (`shares_over_max`), the same line the MCP server refuses | unit | `scan.rs::c31_share_pledge_over_the_limit_blocks` | done |
+| C32 | A payment to a frozen agent is refunded in full (`Frozen`) | unit, property | `review4_regressions.rs::c32_pay_on_a_frozen_agent_is_refunded`, `prop.rs` | done (live after redeploy) |
 | C33 | `on_handover` fits its gas budget at maximum state size | sandbox | contract | planned |
 
 ## Stress (STR-*): scale and hostile load

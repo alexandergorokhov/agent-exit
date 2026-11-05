@@ -404,6 +404,22 @@ fn sh7_shares_disclosed_not_blocked() {
     );
 }
 
+/// C31: a listing pledging more than 25% of each payment is blocked.
+#[test]
+fn c31_share_pledge_over_the_limit_blocks() {
+    let mut i = judge();
+    let l = i.listing.as_mut().expect("listing");
+    l.shares_bps = 2_500;
+    assert_eq!(scan(&i).verdict, "clean");
+    i.listing.as_mut().unwrap().shares_bps = 2_501;
+    let r = scan(&i);
+    assert_eq!(r.verdict, "blocked");
+    assert!(r
+        .findings
+        .iter()
+        .any(|f| f.code == "shares_over_max" && f.severity == "block"));
+}
+
 /// T8: the investor's scan drops the listing rules but keeps the key rules.
 #[test]
 fn t8_investor_scan_keeps_key_rules_without_a_listing() {

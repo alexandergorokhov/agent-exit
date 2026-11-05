@@ -1188,7 +1188,12 @@ impl<S: Store + Default> Machine<S> {
         // One lookup per name and per parent of the payer, never a scan of
         // all past owners (A47).
         let ours = |a: &str| a == self.agent || a == self.owner || self.store.past_owner(a);
-        let is_self = ours(payer);
+        // C30: an ancestor of the agent's account (`alice.testnet` for
+        // `bot.alice.testnet`) created it and is the seller's own money.
+        let ancestor = self.agent.len() > payer.len() + 1
+            && self.agent.ends_with(payer)
+            && self.agent.as_bytes()[self.agent.len() - payer.len() - 1] == b'.';
+        let is_self = ours(payer) || ancestor;
         let sub = payer
             .char_indices()
             .filter(|(_, c)| *c == '.')
@@ -1203,6 +1208,10 @@ impl<S: Store + Default> Machine<S> {
     /// Record an incoming payment. `verified` is the contract's NEAR AI
     /// signature check; it only counts for a counted payment (I9).
     pub fn pay(&mut self, payer: &str, amount: Amount, verified: bool, now: Ts) -> PayResult {
+        // C32: a frozen agent proved a backdoor; it takes no new revenue.
+        if self.frozen {
+            return PayResult::Refund("Frozen");
+        }
         if amount < meter::MIN_PAYMENT {
             return PayResult::Refund("Dust");
         }
@@ -1387,6 +1396,11 @@ impl<S: Store + Default> Machine<S> {
         }
         if receiver == self.owner {
             return Err(Error::SameOwner);
+        }
+        // C28: a Base authorization signed (or being signed) by the agent's
+        // wallet must not travel with the deed to a new owner.
+        if self.open_auth_until > now {
+            return Err(Error::OpenApproval);
         }
         self.approvals.clear();
         if self.status == Status::Listed {

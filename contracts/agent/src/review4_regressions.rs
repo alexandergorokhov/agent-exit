@@ -381,3 +381,51 @@ fn a50_owner_cannot_withdraw_payer_deposits() {
         held0 + 9 * PAYER_ROW_DEPOSIT.as_yoctonear()
     );
 }
+
+// ------------------------------------------------- review 5 (C27, C30, C32)
+
+/// C27: the signer list is capped, so a verified payment's ecrecover loop
+/// stays inside the gas limit; re-adding a listed address is still fine.
+#[test]
+fn c27_signer_list_is_capped() {
+    let mut s = translator_world();
+    let have = s.by(BOB).get_signers().len();
+    for i in have..crate::MAX_SIGNERS {
+        s.by_1y(ADMIN).add_signer(format!("0x{:040x}", i + 1));
+    }
+    assert_eq!(s.by(BOB).get_signers().len(), crate::MAX_SIGNERS);
+    s.by_1y(ADMIN).add_signer(test_signer());
+    let e = panic_text(|| s.by_1y(ADMIN).add_signer(format!("0x{:040x}", 999)));
+    assert_eq!(e, "TooManySigners");
+    // A signed payment still verifies with the full list.
+    s.register(PAYERS[0]);
+    assert_eq!(s.ft(PAYERS[0], 12 * USD, &job_msg(&job(0)), 100), Some(0));
+}
+
+/// C30: the account that created the agent (its parent) pays as self.
+#[test]
+fn c30_the_agents_ancestor_pays_as_self() {
+    let mut s = Sim::new("bot.alice.testnet", CAROL);
+    for (p, counted) in [
+        (ALICE, false),
+        (BOB, true),
+        ("lice.testnet", true),
+        ("testnet", false),
+    ] {
+        s.register(p);
+        assert_eq!(s.pay(p, 20 * USD), Some(0));
+        let ev = &events("payment")[0];
+        assert_eq!(ev["counted"], counted, "{p}: {ev}");
+    }
+    assert_eq!(events("payment").len(), 1);
+}
+
+/// C32: a frozen agent (backdoor proven) refunds new payments in full.
+#[test]
+fn c32_pay_on_a_frozen_agent_is_refunded() {
+    let mut s = translator_world();
+    s.c.m.frozen = true;
+    let gross = s.m().earnings(s.now).gross;
+    assert_eq!(s.pay(PAYERS[0], 12 * USD), Some(12 * USD));
+    assert_eq!(s.m().earnings(s.now).gross, gross);
+}

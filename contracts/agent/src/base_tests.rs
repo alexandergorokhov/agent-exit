@@ -244,8 +244,61 @@ fn a_wrong_base_address_never_signs() {
             .callback_data(&junk)
             .on_base_signed(r["auth_id"].as_u64().unwrap());
         assert_eq!(out["ok"], false);
-        assert_eq!(events("sign_failed")[0]["reason"], "BadSignResponse");
+        assert_eq!(events("sign_unverified")[0]["reason"], "BadSignResponse");
     }
+}
+
+/// C29: an unreadable success answer may still hold a valid signature, so
+/// the cap stays spent and the agent stays blocked until `valid_before`.
+#[test]
+fn c29_garbled_success_keeps_the_cap_and_the_block() {
+    let mut s = translator_world();
+    base_limits(ALICE, &mut s);
+    let r = s
+        .runner(key(ALICE_RUNNER))
+        .pay_base(SUPPLIER.into(), U128(2 * USDC), None);
+    let until = s.by(BOB).get_base_wallet()["open_auth_until"].clone();
+    assert_ne!(until, "0");
+    let out = s
+        .callback_data(&json!({"Secp256k1": {"big_r": 7}}))
+        .on_base_signed(r["auth_id"].as_u64().unwrap());
+    assert_eq!(out["ok"], false, "{out}");
+    assert_eq!(out["sign_unverified"]["released"], "0");
+    let w = s.by(BOB).get_base_wallet();
+    assert_eq!(w["spent_today"], (2 * USDC).to_string());
+    assert_eq!(w["open_auth_until"], until);
+    let e = panics(|| {
+        s.by_1y(ALICE)
+            .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    });
+    assert_eq!(e, "OpenApproval");
+    // After valid_before the agent can be listed again.
+    s.now += 601 * agent_core::NANOS_PER_SEC;
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+}
+
+/// C28: the deed cannot leave outside `buy()` while a Base authorization
+/// is pending or signed and still valid.
+#[test]
+fn c28_no_deed_transfer_while_a_base_auth_is_open() {
+    let mpc = MockMpc::default();
+    let mut s = translator_world();
+    base_limits(ALICE, &mut s);
+    assert_eq!(pay_base(&mut s, ALICE_RUNNER, USDC, &mpc)["ok"], true);
+    let e = panics(|| {
+        let mut c = s.call(ALICE);
+        c.deposit = near_sdk::NearToken::from_yoctonear(1);
+        s.env(&c);
+        s.c.nft_transfer(acc(BOB), crate::DEED_ID.into(), None, None);
+    });
+    assert_eq!(e, "OpenApproval");
+    s.now += 601 * agent_core::NANOS_PER_SEC;
+    let mut c = s.call(ALICE);
+    c.deposit = near_sdk::NearToken::from_yoctonear(1);
+    s.env(&c);
+    s.c.nft_transfer(acc(BOB), crate::DEED_ID.into(), None, None);
+    assert_eq!(s.m().owner, BOB);
 }
 
 #[test]

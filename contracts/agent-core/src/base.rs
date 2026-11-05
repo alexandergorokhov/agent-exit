@@ -336,6 +336,19 @@ impl<S: crate::Store + Default> crate::Machine<S> {
     /// On failure the reserved cap is given back (same owner and day only)
     /// and the authorization is dropped; `open_auth_until` is recomputed from
     /// what is really signed or still pending (E22).
+    /// C29: the signer answered with a result that cannot be checked. A
+    /// signature may exist anyway, so the cap stays spent and the agent stays
+    /// blocked until `valid_before`, but nothing is issued.
+    pub fn finish_base_pay_unknown(&mut self, id: u64) -> Option<BaseAuth> {
+        let auth = self.base.pending.remove(&id)?;
+        self.base.signed_until = self
+            .base
+            .signed_until
+            .max(auth.valid_before * NANOS_PER_SEC);
+        self.open_auth_until = self.open_auth_until.max(self.base.signed_until);
+        Some(auth)
+    }
+
     pub fn finish_base_pay(&mut self, id: u64, signed: bool) -> Option<BaseAuth> {
         let auth = self.base.pending.remove(&id)?;
         if signed {

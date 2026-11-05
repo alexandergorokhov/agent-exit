@@ -261,7 +261,11 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             let r = w.m.pay(payer, amount, x % 3 == 0, w.now);
             match r {
                 PayResult::Refund(_) => {
-                    prop_assert!(amount < meter::MIN_PAYMENT || amount < before.limits.price_floor);
+                    prop_assert!(
+                        before.frozen
+                            || amount < meter::MIN_PAYMENT
+                            || amount < before.limits.price_floor
+                    );
                     prop_assert_eq!(&w.m, &before);
                 }
                 PayResult::Recorded {
