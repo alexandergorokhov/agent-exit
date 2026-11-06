@@ -109,7 +109,7 @@ mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_
 judge: mcp-build ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K6) -> out/check-claims.json
 	@node mcp/dist/scripts/judge-check.js
 
-screen: ## Every offline README claim with its promised outcome, one PASS/FAIL row each (about 2 min) -> out/screen.json
+screen: ## The README's main offline claims, 7 rows with their promised outcome (1-3 min; make verify, attack and fuzz run separately) -> out/screen.json
 	@bash scripts/screen.sh
 
 .PHONY: mcp-test

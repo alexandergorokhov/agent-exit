@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# `make screen`: every offline claim in the README, run the way a screener
-# would, each with the outcome the README promises. Prints one PASS/FAIL row
+# `make screen`: the README's main offline claims (7 rows), run the way a
+# screener would, each with the outcome the README promises. Prints one PASS/FAIL row
 # per claim and writes out/screen.json. No network, no keys, no account.
 set -u
 cd "$(dirname "$0")/.."
@@ -26,5 +26,5 @@ run R5 "MCP tests pass, agent-buys-agent equals golden" 0 "output equals tests/g
 run R6 "Contract unit tests (fee, lockout, shares, C27-C32)" 0 "test result: ok" cargo test --quiet --locked --offline -p agent-exit
 run R7 ".mcp.json matches the deployed testnet world" 0 "matches" node scripts/judge-mcp-config.mjs --check
 (IFS=,; printf '{"schema":"screen.v1","money":"xUSD-FAKE","pass":%s,"rows":[%s]}\n' "$([ $fail = 0 ] && echo true || echo false)" "${rows[*]}") > out/screen.json
-[ $fail = 0 ] && echo "screen: every README claim above passes (out/screen.json)" >&2 || echo "screen: FAILED rows above; logs in out/screen/" >&2
+[ $fail = 0 ] && echo "screen: all 7 rows pass (out/screen.json)" >&2 || echo "screen: FAILED rows above; logs in out/screen/" >&2
 exit $fail

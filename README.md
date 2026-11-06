@@ -9,7 +9,7 @@
 ```bash
 make setup && make mcp-build      # once: crates, npm, the MCP server and the scan binary
 make judge                        # the MCP server from .mcp.json checks the README claims K1-K6: one PASS/FAIL row each
-make screen                       # every offline claim in this README with its promised result (about 3 min)
+make screen                       # 7 rows: judge, playground, scan, business loop, MCP tests, contract tests, .mcp.json (1-3 min)
 ```
 
 - **Claude Code** opened in this repo gets two MCP servers from [`.mcp.json`](.mcp.json): `agent-exit` (offline, results recorded from the real contract code, you act as a buyer) and `agent-exit-testnet` (read-only, the live testnet agents). Approve the project servers when Claude Code asks, then call `check_claims` first, or run the prompt `/mcp__agent-exit__judge_tour`: verify each claim with the tools, then try to break it.
@@ -58,7 +58,7 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 
 | Real (on NEAR testnet, with NearBlocks links) | Not yet |
 |---|---|
-| The contract on NEAR testnet, rebuilt bit for bit from the deployed commit (`git checkout 42a8ee3 && make build`: code hash `Aots3gb3…`, world `w2.agentexit3.testnet`); `main` adds review-5 fixes C27–C32, live after the next deploy; every link in this README resolves (`make check-links`) | Gate G2: the agent's Base wallet paying on Base Sepolia |
+| The contract on NEAR testnet, rebuilt bit for bit from the deployed commit (`git checkout 42a8ee3 && make build`: code hash `Aots3gb3…`, world `w2.agentexit3.testnet`); `main` adds the 1% protocol fee, the live deed picture with an `nft_mint` event, and review-5 fixes C27–C32, all live on testnet after the next deploy (the deployed 42a8ee3 takes no fee; offline checks such as `check_claims` K4 run main's code); every link in this README resolves (`make check-links`) | Gate G2: the agent's Base wallet paying on Base Sepolia |
 | Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale | A wallet buy button on the page (the page only reads the chain) |
 | Verified revenue (gate G6, 2026-11-04): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8)) | MCP share tools (`list_offers`, `buy_share`, `portfolio`) are built and tested offline, not yet run on testnet |
 | A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.03 ([buy tx](https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn), `out/llm-buyer-testnet.json`) | Real users and real money: everything is `xUSD-FAKE` |
@@ -243,7 +243,7 @@ Moved to [`docs/OPERATIONS.md`](docs/OPERATIONS.md): paying an agent (`storage_d
   or account; it ran on testnet on 2026-11-04 (`out/llm-buyer-testnet.json`).
 - Known issues from security review 2, not fixed yet: the deed can be
   sent to the agent's own account (after which it can never move again),
-  there is no `nft_mint` event at init, and `nft_approve` neither charges
+  and `nft_approve` neither charges
   storage nor refunds extra deposit (L3). The testnet scan reads the code
   hash, method list and status from one provider only, at possibly
   different blocks, with `open_auth_until` fixed at 0 (the contract still refuses a buy while one is open) and no sub-account
