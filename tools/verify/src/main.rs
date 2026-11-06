@@ -121,11 +121,11 @@ fn run() -> Value {
     let owner = s.c.nft_token(DEED_ID.into()).unwrap().owner_id.to_string();
     r.check(
         "S5",
-        "one buy: deed to bob, alice's runner key deleted, bob's added, alice 700.00, escrow 300.00, epoch 2",
+        "one buy: deed to bob, alice's runner key deleted, bob's added, alice 690.00 (after the 1% protocol fee), escrow 300.00, epoch 2",
         in_flight
             && batch.len() == 2
             && unused == 0
-            && payouts == vec![(ALICE.to_string(), 700 * USD)]
+            && payouts == vec![(ALICE.to_string(), 690 * USD)]
             && owner == BOB
             && keys_after == vec![key_str(BOB_RUNNER)]
             && s.m().owner_epoch == 2
@@ -227,12 +227,12 @@ fn run() -> Value {
     s.buy(BOB, 1_000 * USD, BOB_RUNNER);
     s.callback(true).on_handover(1);
     s.callback(false)
-        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(690 * USD), None);
     let cl = claim(&s, ALICE);
     r.check(
         "E6",
-        "seller payout fails: 700.00 claimable (plus the 500.00 revenue settled at the sale), solvency holds",
-        cl == 700 * USD + SELLER_REVENUE && s.m().solvent(),
+        "seller payout fails: 690.00 claimable (plus the 500.00 revenue settled at the sale), solvency holds",
+        cl == 690 * USD + SELLER_REVENUE && s.m().solvent(),
         json!({"claimable": usd(cl)}),
     );
 

@@ -383,9 +383,14 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 BuyResult::Done {
                     seller: s,
                     payout,
+                    fee,
                     seller_revenue,
+                    ref sale,
                     ..
                 } => {
+                    // The 1% fee comes out of the upfront part, never the escrow.
+                    prop_assert_eq!(fee, agent_core::money::protocol_fee(sale.price));
+                    prop_assert_eq!(payout + fee, sale.paid_now);
                     // A29: the seller's unwithdrawn revenue went to the seller.
                     prop_assert_eq!(w.m.owner_free, 0);
                     prop_assert!(w.m.claimable_of(&s) >= seller_revenue);
@@ -878,6 +883,8 @@ fn prop_invariants_random_sequences() {
     let mut r = runner();
     r.run(&prop::collection::vec(act(), 1..120), |acts| {
         let mut m = Machine::new("translator", "alice");
+        // The protocol fee is on, as in the contract.
+        m.fee_to = "fees".into();
         let deleted = m
             .set_runner_key("alice", "ed25519:alice-runner", T0)
             .unwrap();

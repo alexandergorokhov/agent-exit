@@ -15,13 +15,15 @@ Agent Exit is a way to buy and sell AI agents. It is not a marketplace with a fr
 
 `translator` asks 1,000.00. Its meter shows 500.00 paid in, but only 360.00 from 6 outside accounts; 140.00 came from the owner and the owner's sub-account and is flagged. The buyer reads a price of 2.8× counted revenue (not 2×, as the gross suggests).
 
-The buyer pays 1,000.00 in one transaction. 700.00 goes to the seller now. 300.00 is held for 30 days and released at 50% of each counted customer payment. If customers stop paying, the seller gets only the floor (20% of the held part, 60.00) and the buyer gets 240.00 back. So a seller who inflated revenue loses up to 240.00. `cheat` asks 500.00 for 500.00 of revenue that was all self-paid; its card says "Do not buy" before any money moves.
+The buyer pays 1,000.00 in one transaction. 690.00 goes to the seller now and 10.00 is the 1% protocol fee. 300.00 is held for 30 days and released at 50% of each counted customer payment. If customers stop paying, the seller gets only the floor (20% of the held part, 60.00) and the buyer gets 240.00 back. So a seller who inflated revenue loses up to 240.00. `cheat` asks 500.00 for 500.00 of revenue that was all self-paid; its card says "Do not buy" before any money moves.
 
-An investor (`dave`) paid 500.00 for 20% of `translator3`'s earnings for a year. 250.00 went to the owner and 250.00 into escrow. Five customers paid 10.00 each for NEAR AI-signed translations, and the owner's sub-account paid 20.00, flagged. dave got exactly 14.00 (20% of 70.00), paid inside the customers' own transactions.
+An investor (`dave`) paid 500.00 for 20% of `translator3`'s earnings for a year. 245.00 went to the owner, 5.00 to the protocol fee and 250.00 into escrow. Five customers paid 10.00 each for NEAR AI-signed translations, and the owner's sub-account paid 20.00, flagged. dave got exactly 14.00 (20% of 70.00), paid inside the customers' own transactions.
 
-## How it makes money (planned, not built)
+## How it makes money (built, in the contract)
 
-A protocol fee on each sale and each share buy, paid by the buyer inside the same `ft_transfer_call`. A fee of 1% to 2.5% would sit under what brokers of small online businesses charge sellers (they commonly take a percentage of the sale price). It is not in the contract today: on testnet with fake money it would prove nothing. It is a mainnet gate in [ROADMAP.md](ROADMAP.md).
+A 1% protocol fee on every sale and every share buy (`PROTOCOL_FEE_BPS = 100` in `contracts/agent-core/src/money.rs`). It comes out of the seller's upfront part, never out of the buyer's escrow, inside the same transaction, and is credited to the fee account as a claimable balance (`FEE_ACCOUNT`, compiled in; the registry admin on testnet). In the worked example: on the 1,000.00 sale the seller gets 690.00 now and the fee account 10.00; on dave's 500.00 share buy alice gets 245.00 now and the fee account 5.00. Brokers of small online businesses commonly take a percentage of the sale price; 1% sits well under that. Tests: `s5_buy_one_step`, `dave_holds` (contract), the `prop.rs` property run (fee = 1% of the price, `payout + fee = paid_now`, solvency holds).
+
+The deployed testnet contract (commit `42a8ee3`) predates the fee; it goes live with the next testnet deploy.
 
 ## Why now
 

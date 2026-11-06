@@ -69,7 +69,7 @@ try {
     const want = {
       fake: ["FLAGGED: the owner paid their own agent", "FLAGGED: paid from the owner's sub-account", "Verified (NEAR AI signature; signed with a test key here"],
       backdoor: ["scan -> blocked (full_access_key_present)", "SCAN_BLOCKED", "hidden key is still on the account", "Only the scan protects the buyer"],
-      honest: ["scan -> clean", "700.00 paid to alice now, 300.00 held as earn-out", "withdraw -> NotOwner", "AccessKeyNotFound", "earn-out closed"],
+      honest: ["scan -> clean", "690.00 paid to alice now (after the 1% protocol fee, 10.00), 300.00 held as earn-out", "withdraw -> NotOwner", "AccessKeyNotFound", "earn-out closed"],
     };
     for (const vp of [{ width: 1280, height: 900 }, { width: 375, height: 740 }]) {
       const q = await page(vp);

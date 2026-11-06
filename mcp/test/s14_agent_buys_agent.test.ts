@@ -33,7 +33,7 @@ test("S14 agent buys agent through MCP (offline, recorded contract results)", as
     assert.ok(valid("buy_agent", buy));
     assert.equal(buy.ok, true, JSON.stringify(buy.body));
     assert.equal(buy.body.owner_after, "summarizer.testnet");
-    assert.deepEqual([buy.body.paid_now, buy.body.escrow], ["700.00", "300.00"]);
+    assert.deepEqual([buy.body.paid_now, buy.body.escrow], ["690.00", "300.00"]);
     assert.deepEqual(buy.body.key_batch.map((k: { action: string }) => k.action), ["delete", "add_fc"]);
     assert.equal(buy.body.key_batch[1].key, RUNNER_PK);
     assert.equal(buy.body.listing_version, scan.body.buy_args.listing_version);

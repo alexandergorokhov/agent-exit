@@ -302,6 +302,8 @@ pub enum BuyResult {
         sale: Box<Sale>,
         seller: Account,
         payout: Amount,
+        /// Protocol fee credited to `fee_to` (claimable), out of the upfront part.
+        fee: Amount,
         unused: Amount,
         /// The seller's unwithdrawn revenue, credited to the seller (A29).
         seller_revenue: Amount,
@@ -405,6 +407,8 @@ pub struct Machine<S = MemStore> {
     pub owner_free: Amount,
     /// Tokens the contract believes it holds (excludes transfers in flight).
     pub held: Amount,
+    /// Protocol fee account (claimable balance); empty = no fee.
+    pub fee_to: Account,
     /// Accounts the agent sent tokens to (for the `round_trip` flag), with
     /// the owner epoch of the first send. Bounded (A30). Entries live in
     /// `store`; here only counters, so the blob does not grow with owner
@@ -521,6 +525,7 @@ impl<S: Store + Default> Machine<S> {
             claimable_accounts: 0,
             owner_free: 0,
             held: 0,
+            fee_to: Account::new(),
             paid_to_ever: 0,
             paid_to_this_epoch: 0,
             paid_to_dead_upto: 0,
@@ -1065,12 +1070,16 @@ impl<S: Store + Default> Machine<S> {
             paid_to_cum: self.paid_to_ever,
         };
         self.sales.push(sale.clone());
+        // The protocol fee stays held, as the fee account's claimable balance.
+        let fee = self.take_fee(l.price).min(paid_now);
+        let payout = paid_now - fee;
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
-        self.held -= unused + paid_now;
+        self.held -= unused + payout;
         Ok(BuyResult::Done {
             sale: Box::new(sale),
             seller: l.seller.clone(),
-            payout: paid_now,
+            payout,
+            fee,
             unused,
             seller_revenue,
         })
@@ -1500,6 +1509,17 @@ impl<S: Store + Default> Machine<S> {
 
     /// Pay the escrow of a slice to its seller: their revenue if they still
     /// own the agent, their claimable balance if they sold it (T9).
+    /// Credit the protocol fee on `base` to `fee_to`; 0 when no fee account.
+    fn take_fee(&mut self, base: Amount) -> Amount {
+        if self.fee_to.is_empty() {
+            return 0;
+        }
+        let fee = money::protocol_fee(base);
+        let to = self.fee_to.clone();
+        self.credit(&to, fee);
+        fee
+    }
+
     fn pay_seller(&mut self, seller: &str, amount: Amount) {
         if amount == 0 {
             return;
@@ -1692,7 +1712,8 @@ impl<S: Store + Default> Machine<S> {
         let seller = o.seller.clone();
         self.held += cost;
         self.share_escrow += escrow;
-        self.pay_seller(&seller, now_part);
+        let fee = self.take_fee(cost).min(now_part);
+        self.pay_seller(&seller, now_part - fee);
         Ok(cost)
     }
 

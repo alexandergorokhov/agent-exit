@@ -32,7 +32,7 @@
           "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
         ]
       ],
-      "verdict": "Buy at the listed terms",
+      "verdict": "Passes the buyer's checks",
       "ok": true,
       "why": "72% of its revenue comes from 6 outside accounts; the scan is clean; 30% of the price only reaches the seller if customers keep paying.",
       "run": "#run-sale"
@@ -67,7 +67,7 @@
           "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
         ]
       ],
-      "verdict": "Do not buy",
+      "verdict": "Blocked before any money moves",
       "ok": false,
       "why": "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
       "run": "#run-cheat"
@@ -106,7 +106,7 @@
           "clean: no key but the runner's, the published code, no open approval"
         ]
       ],
-      "verdict": "Invest at these terms",
+      "verdict": "Passes the investor's checks",
       "ok": true,
       "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",

@@ -792,7 +792,9 @@
                   "seller": "alice.testnet",
                   "buyer": "bob.testnet",
                   "price": "1000000000",
-                  "paid_now": "700000000",
+                  "paid_now": "690000000",
+                  "protocol_fee": "10000000",
+                  "fee_to": "admin.testnet",
                   "escrow": "300000000",
                   "overpay_refund": "0",
                   "seller_revenue_claimable": "500000000",
@@ -808,7 +810,7 @@
           "token_transfers": [
             {
               "to": "alice.testnet",
-              "amount": "700.00"
+              "amount": "690.00"
             }
           ]
         }
@@ -869,7 +871,7 @@
           "paid_to_total": 0,
           "open_sales": 1,
           "closed_sales": 0,
-          "claimable_accounts": 1,
+          "claimable_accounts": 2,
           "tracked_payers": 6,
           "empty_payer_rows": 0,
           "past_owners": 1,
@@ -881,17 +883,17 @@
           ],
           "known_keys_hash": "e98b8b036bd5bd108194574e855ac37b60f60b4e151e43ad2438691af4ff994c",
           "open_approvals": 0,
-          "held": "800000000",
+          "held": "810000000",
           "owner_free": "0",
           "treasury": "0",
           "escrow_left": "300000000",
-          "claimable_total": "500000000",
+          "claimable_total": "510000000",
           "shares_bps": 0,
           "share_escrow": "0",
           "solvent": true,
           "near_storage": {
-            "usage_bytes": 2556,
-            "staked": "25560000000000000000000",
+            "usage_bytes": 2627,
+            "staked": "26270000000000000000000",
             "balance": "10000000000000000000000000",
             "sig_entries": 0,
             "max_sig_entries": 512,
@@ -1222,7 +1224,7 @@
             "seller": "alice.testnet",
             "sale_id": 1,
             "price": "1000.00",
-            "paid_now": "700.00",
+            "paid_now": "690.00",
             "escrow": "300.00",
             "overpay_refund": "0.00",
             "listing_version": 1,

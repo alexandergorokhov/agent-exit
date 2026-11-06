@@ -168,7 +168,7 @@ fn build() -> String {
     let refund = t.callback(true).on_handover(sale_id).0;
     let sale_event = events("sale");
     t.callback(true)
-        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
+        .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(690 * USD), None);
     let probes = json!({
         "withdraw": refusal(|| { t.by_1y(ALICE).withdraw(U128(USD), None); }),
         "set_limits": refusal(|| { t.by_1y(ALICE).set_limits(demo_limits()); }),

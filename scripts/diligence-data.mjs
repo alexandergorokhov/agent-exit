@@ -52,11 +52,11 @@ function saleCard(name, e, scanScene, verdict, why, run) {
 
 const cards = [
   saleCard("translator", s3.translator, s5,
-    "Buy at the listed terms",
+    "Passes the buyer's checks",
     "72% of its revenue comes from 6 outside accounts; the scan is clean; 30% of the price only reaches the seller if customers keep paying.",
     "#run-sale"),
   saleCard("cheat", s3.cheat, s4,
-    "Do not buy",
+    "Blocked before any money moves",
     "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
     "#run-cheat"),
 ];
@@ -82,7 +82,7 @@ const cards = [
       ["Investor's money at risk", `half paid to the owner now, half (${usd(h.escrow)} left) in escrow and returned if the agent stops earning`],
       ["Keys and code", keys(s8.investor_scan).text],
     ],
-    verdict: "Invest at these terms",
+    verdict: "Passes the investor's checks",
     ok: true,
     why: "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
     run: "#run-invest",

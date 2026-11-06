@@ -27,6 +27,9 @@ fn dave_holds() -> (Sim, Value) {
         Some(100 * USD)
     );
     assert_eq!(events("share_bought")[0]["cost"], "500000000");
+    // 1% protocol fee (5.00) out of alice's upfront 250.00, claimable by the fee account.
+    assert_eq!(events("share_bought")[0]["protocol_fee"], "5000000");
+    assert_eq!(s.c.get_claimable(acc(crate::FEE_ACCOUNT)).0, 5 * USD);
     (s, o)
 }
 

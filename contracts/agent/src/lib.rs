@@ -76,6 +76,12 @@ pub const REGISTRY_ADMIN: &str = match option_env!("AGENT_EXIT_ADMIN") {
     Some(a) => a,
     None => "admin.testnet",
 };
+/// Protocol fee account (1% of each sale and share buy, claimable; see
+/// `agent_core::money::PROTOCOL_FEE_BPS`). Defaults to the registry admin.
+pub const FEE_ACCOUNT: &str = match option_env!("AGENT_EXIT_FEE_ACCOUNT") {
+    Some(a) => a,
+    None => REGISTRY_ADMIN,
+};
 pub const PAYMENT_TOKEN: &str = match option_env!("AGENT_EXIT_TOKEN") {
     Some(t) => t,
     None => "xusd.testnet",
@@ -373,6 +379,7 @@ impl AgentExit {
             owner_id.as_str(),
         );
         m.terms_min = TERMS_MIN;
+        m.fee_to = FEE_ACCOUNT.into();
         m.base.address = base_address.map(|a| norm_address(&a));
         Self {
             m,
@@ -740,7 +747,9 @@ impl AgentExit {
                         emit(
                             "share_bought",
                             json!({"offer_id": offer_id, "investor": sender_id, "part_bps": part,
-                                   "cost": amt(cost)}),
+                                   "cost": amt(cost),
+                                   "protocol_fee": amt(if self.m.fee_to.is_empty() { 0 } else { core::money::protocol_fee(cost).min(cost - cost / 2) }),
+                                   "fee_to": self.m.fee_to}),
                         );
                         PromiseOrValue::Value(U128(amount.0 - cost))
                     }
@@ -840,6 +849,7 @@ impl AgentExit {
                 sale,
                 seller,
                 payout,
+                fee,
                 unused,
                 seller_revenue,
             } => {
@@ -858,6 +868,7 @@ impl AgentExit {
                     json!({
                         "sale_id": sale.id, "seller": seller, "buyer": sale.buyer,
                         "price": amt(sale.price), "paid_now": amt(payout),
+                        "protocol_fee": amt(fee), "fee_to": self.m.fee_to,
                         "escrow": amt(sale.escrow), "overpay_refund": amt(unused),
                         "seller_revenue_claimable": amt(seller_revenue),
                         "owner_epoch": self.m.owner_epoch,

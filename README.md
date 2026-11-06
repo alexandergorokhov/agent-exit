@@ -35,7 +35,7 @@ The page's "Try it yourself" runs the contract's real state machine (`contracts/
 | Mission 1: "Pay your own agent 200" | `FLAGGED: the owner paid their own agent (not counted)`; counted revenue does not move |
 | Mission 2: hide a key, list, "Scan the agent", "Buy it" | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
 | Mission 2: "Buy without a clean scan", then "Take the agent back" | the hidden key redeploys and the seller has the agent back: the scan is the defence |
-| Mission 3: list, scan, buy, then alice tries to get back in | one transaction: owner bob, alice's key deleted, 700.00 now and 300.00 earn-out; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
+| Mission 3: list, scan, buy, then alice tries to get back in | one transaction: owner bob, alice's key deleted, 690.00 now (after the 1% protocol fee), 300.00 earn-out; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
 | Mission 4: offer 20%, "Buy the 20% slice", a customer pays, alice pays herself | dave gets `5.00 to investors` and `40.00 to investors` inside the same calls; alice can't withdraw his part; a year later `245.00 of unreleased escrow back to dave` |
 | "The same story on NEAR testnet": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
 

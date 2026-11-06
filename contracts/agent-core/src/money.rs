@@ -14,6 +14,15 @@ pub fn mul_bps(amount: Amount, bps: u16) -> Amount {
         / BPS
 }
 
+/// Protocol fee on every sale and share buy (1%), taken from the seller's
+/// upfront part and credited to the fee account (planned for mainnet; live on
+/// testnet with fake money). `fee <= now` for any terms the contract accepts.
+pub const PROTOCOL_FEE_BPS: u16 = 100;
+
+pub fn protocol_fee(amount: Amount) -> Amount {
+    mul_bps(amount, PROTOCOL_FEE_BPS)
+}
+
 /// Split a sale price into (paid to the seller now, held in earn-out escrow).
 /// The seller's part rounds down, so any rounding remainder goes to escrow
 /// and `now + escrow == price` always (E20).

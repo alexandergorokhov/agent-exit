@@ -104,7 +104,9 @@ fn p3_honest_sale_then_every_way_back_in_is_refused() {
     );
     let v = run(&mut w, r#"{"op":"buy"}"#);
     assert!(
-        last(&v).contains("700.00 paid to alice now, 300.00 held as earn-out"),
+        last(&v).contains(
+            "690.00 paid to alice now (after the 1% protocol fee, 10.00), 300.00 held as earn-out"
+        ),
         "{}",
         last(&v)
     );
@@ -148,7 +150,7 @@ fn p4_invest_investor_paid_inside_every_payment() {
     assert!(last(&v).contains("20% of every payment"), "{}", last(&v));
     let v = run(&mut w, r#"{"op":"buy_share"}"#);
     assert!(
-        last(&v).contains("paid 500.00: 250.00 to alice.testnet now, 250.00 held in escrow"),
+        last(&v).contains("paid 500.00: 245.00 to alice.testnet now (after the 1% protocol fee, 5.00), 250.00 held in escrow"),
         "{}",
         last(&v)
     );

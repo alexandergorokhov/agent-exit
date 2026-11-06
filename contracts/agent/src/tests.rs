@@ -121,8 +121,12 @@ fn s5_buy_one_step() {
     );
     // Callback after the batch succeeded.
     assert_eq!(s.callback(true).on_handover(1).0, 0);
-    assert_eq!(ft_transfers(), vec![(ALICE.to_string(), 700 * USD)]);
+    // 1% protocol fee (10.00) stays claimable for the fee account.
+    assert_eq!(ft_transfers(), vec![(ALICE.to_string(), 690 * USD)]);
     let sale = &events("sale")[0];
+    assert_eq!(sale["protocol_fee"], (10 * USD).to_string());
+    assert_eq!(sale["fee_to"], crate::FEE_ACCOUNT);
+    assert_eq!(s.by(BOB).get_claimable(acc(crate::FEE_ACCOUNT)).0, 10 * USD);
     for f in [
         "sale_id",
         "seller",
@@ -200,8 +204,8 @@ fn e3_overpay_returns_change() {
     let mut s = listed_translator();
     assert_eq!(s.buy(BOB, 1_000_500_000, BOB_RUNNER), None);
     assert_eq!(s.callback(true).on_handover(1).0, 500_000);
-    // Held: 300 escrow + 500 pre-sale revenue; the 700 payout is in flight.
-    assert_eq!(s.m().held, 800 * USD);
+    // Held: 300 escrow + 500 pre-sale revenue + the 10 fee; the 690 payout is in flight.
+    assert_eq!(s.m().held, 810 * USD);
 }
 
 #[test]

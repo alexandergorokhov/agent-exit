@@ -26,6 +26,7 @@ pub const INVESTOR: &str = "dave.testnet";
 pub const SELLER_KEY: &str = "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi";
 pub const BUYER_KEY: &str = "ed25519:8NZ8qJvTgpBmhSUt6vAaRkPZAG3JVVwrE3D25Lczz6Z5";
 pub const HIDDEN_KEY: &str = "ed25519:H1ddenBackdoorKeyXz4fS7sUuVJgq2y3QW9rNmLpTcAa";
+const FEE_ACCOUNT: &str = "fees.testnet";
 const T0: Ts = 1_768_089_600 * 1_000_000_000; // the recorded world's scan time
 const WORLD: &str = include_str!("../../../fixtures/mcp/world.json");
 
@@ -120,6 +121,8 @@ impl World {
         let template: ScanInput =
             serde_json::from_value(w["agents"][AGENT]["scan_input"].clone()).expect("scan_input");
         let mut m = Machine::new(AGENT, SELLER);
+        // The contract's 1% protocol fee, credited to the fee account.
+        m.fee_to = FEE_ACCOUNT.into();
         let old = m
             .set_runner_key(SELLER, SELLER_KEY, T0)
             .expect("runner key");
@@ -352,9 +355,10 @@ impl World {
                 match self.m.buy_share(INVESTOR, cost, o.terms(), part, self.now) {
                     Ok(c) => {
                         let (now_part, esc) = agent_core::shares::split_cost(c);
+                        let fee = agent_core::money::protocol_fee(c);
                         self.note(INVESTOR, true, format!(
-                            "buy_share({}%) -> paid {}: {} to {} now, {} held in escrow until dave is paid that much",
-                            part as f64 / 100.0, usd(c), usd(now_part), o.seller, usd(esc)))
+                            "buy_share({}%) -> paid {}: {} to {} now (after the 1% protocol fee, {}), {} held in escrow until dave is paid that much",
+                            part as f64 / 100.0, usd(c), usd(now_part - fee), o.seller, usd(fee), usd(esc)))
                     }
                     Err(e) => self.note(INVESTOR, false, format!("buy_share -> {e}")),
                 }
@@ -500,6 +504,7 @@ impl World {
             Ok(BuyResult::Done {
                 sale,
                 payout,
+                fee,
                 seller,
                 ..
             }) => {
@@ -512,8 +517,8 @@ impl World {
                     ""
                 };
                 self.note(BUYER, true, format!(
-                    "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; {} paid to alice now, {} held as earn-out.{left}",
-                    usd(sale.price), usd(sale.paid_now), usd(sale.escrow)))
+                    "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; {} paid to alice now (after the 1% protocol fee, {}), {} held as earn-out.{left}",
+                    usd(sale.price), usd(payout), usd(fee), usd(sale.escrow)))
             }
             Ok(BuyResult::RolledBack { .. }) => {
                 self.note(BUYER, false, "buy -> rolled back, full refund".into())
