@@ -11,21 +11,6 @@
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/
 - **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
 
-| Proven on NEAR testnet | Transactions |
-|---|---|
-| **Earnings are real:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8), [flagged](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
-| **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD), [claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ), [sale](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
-| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE), [relist](https://testnet.nearblocks.io/txns/3nCoTzQn5jv5wyhVHJdymEzkDRpq4R1NoSJ1b1wM3WUv), [key](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek), [limits](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx), [deed](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX), [Base wallet](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
-
-**Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
-- a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
-- function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
-- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
-- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
-- NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
-
-![The demo page](docs/img/demo.png)
-
 ## Try it in 2 minutes (do X, see Y)
 
 The page's "Try it yourself" runs the contract's real state machine (`contracts/agent-core`) and the buyer's scan (`tools/scan`), compiled to wasm from this repo (`tools/playground`).
@@ -41,6 +26,23 @@ The page's "Try it yourself" runs the contract's real state machine (`contracts/
 | "The same story on NEAR testnet": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
 
 Offline: `cargo test -p playground`. Everything else: `make setup` once, then `make demo` (offline story) and `make web` (the page at http://127.0.0.1:8080).
+
+## Proven on NEAR testnet
+
+| Proven on NEAR testnet | Transactions |
+|---|---|
+| **Earnings counted by who paid:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8), [flagged](https://testnet.nearblocks.io/txns/E8tDPSq7rZc5XHnGpioRTbnrJDxJd7FGiSeBk9ZB22X6) |
+| **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD), [claim](https://testnet.nearblocks.io/txns/hphLreQMrU3pFxS4rhFLiYVHXG2Fe4jV6Ycm36rZqKJ), [sale](https://testnet.nearblocks.io/txns/B5MfL9V3WBr1uMKs4HPt5JCbw1cyRzQ7nj15S3PDE3Xp) |
+| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/6peX6VpZmArYjN61RNFjMb25QXijcPrT1mrJMmXnJREE), [relist](https://testnet.nearblocks.io/txns/3nCoTzQn5jv5wyhVHJdymEzkDRpq4R1NoSJ1b1wM3WUv), [key](https://testnet.nearblocks.io/txns/GwJXKMmVDArhfsPVsRFiyWnYq4n5xbodAypcyCvr3bek), [limits](https://testnet.nearblocks.io/txns/4A16wgc5xGaRrD9TDfgnLX2m9n7V5sZV3xSnTfy4E1bx), [deed](https://testnet.nearblocks.io/txns/2e8b4hjL7hhrC48X2Hs21FgGqXrTnzFNRQrtyuJEgqbX), [Base wallet](https://testnet.nearblocks.io/txns/7E5tq2i5kwEYEY9QYCkR9LPBQDDRGUR2wuRgQMcBiWxq) |
+
+**Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
+- a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), so "the seller is locked out" can be read from the chain;
+- function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
+- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
+- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
+- NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
+
+![The demo page](docs/img/demo.png)
 
 ## What is real, and what is not yet
 
