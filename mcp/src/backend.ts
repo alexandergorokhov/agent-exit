@@ -136,6 +136,47 @@ export interface Backend {
   holdings(id: string, account: string): Promise<Json>;
   /** One ft_transfer_call with a buy_share message. */
   buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome>;
+  /** Testnet only: one recorded transaction's outcome as an archival node reports it. */
+  txOutcome?(hash: string, sender: string): Promise<TxOutcome>;
+}
+
+/** What the chain says about one transaction (check_claims on testnet). */
+export interface TxOutcome {
+  signer: string;
+  receiver: string;
+  method: string;
+  ok: boolean;
+  refused_inside: boolean;
+  events: string[];
+}
+
+/** Archival testnet RPCs: the README's transactions are older than a
+ * regular node keeps. Both are on the testnet allowlist (A41). */
+export const ARCHIVAL_RPC = ["https://archival-rpc.testnet.fastnear.com", "https://archival-rpc.testnet.near.org"];
+
+/** Parse an RPC `tx` result into a TxOutcome (same reading as the page's Run and verify). */
+export function txOutcomeOf(res: Json): TxOutcome {
+  const tx = res.transaction ?? {};
+  const method = ((tx.actions ?? []) as Json[]).map((a) => a?.FunctionCall?.method_name).find(Boolean) ?? "(no call)";
+  const events: string[] = [];
+  for (const o of (res.receipts_outcome ?? []) as Json[]) {
+    for (const l of (o.outcome?.logs ?? []) as string[]) {
+      if (!l.startsWith("EVENT_JSON:")) continue;
+      try {
+        events.push(String(JSON.parse(l.slice(11)).event));
+      } catch {
+        /* not ours */
+      }
+    }
+  }
+  return {
+    signer: String(tx.signer_id ?? ""),
+    receiver: String(tx.receiver_id ?? ""),
+    method: String(method),
+    ok: Boolean(res.status && "SuccessValue" in res.status),
+    refused_inside: ((res.receipts_outcome ?? []) as Json[]).some((o) => o.outcome?.status?.Failure),
+    events,
+  };
 }
 
 // ------------------------------------------------------------------ offline
@@ -647,6 +688,20 @@ export class TestnetBackend implements Backend {
 
   nowNs(): bigint {
     return BigInt(Date.now()) * 1_000_000n;
+  }
+
+  async txOutcome(hash: string, sender: string): Promise<TxOutcome> {
+    if (!/^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(hash)) throw new ToolError("BAD_INPUT", "not a transaction hash");
+    if (!sender.endsWith(".testnet")) throw new ToolError("NETWORK_REFUSED", `${sender} is not a .testnet account`);
+    let last = "";
+    for (const url of ARCHIVAL_RPC) {
+      try {
+        return txOutcomeOf(await this.rpcMethod(url, "tx", { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" }, this.cfg.rpcTimeoutMs));
+      } catch (e) {
+        last = (e as Error).message;
+      }
+    }
+    throw new ToolError("RPC_ERROR", `transaction ${hash.slice(0, 8)}… not read from the archival RPCs: ${last.slice(0, 160)}`);
   }
 
   async holdings(id: string, account: string): Promise<Json> {

@@ -7,7 +7,9 @@ import { connect, REPO } from "../src/client.js";
 
 async function main(): Promise<number> {
   const cfg = JSON.parse(readFileSync(join(REPO, ".mcp.json"), "utf8"));
-  const s = await connect(cfg.mcpServers["agent-exit"].env);
+  const testnet = process.argv.includes("--testnet");
+  const entry = testnet ? "agent-exit-testnet" : "agent-exit";
+  const s = await connect(cfg.mcpServers[entry].env);
   try {
     const tools = (await s.client.listTools()).tools.map((t) => t.name);
     const prompts = (await s.client.listPrompts()).prompts.map((p) => p.name);
@@ -18,9 +20,9 @@ async function main(): Promise<number> {
     }
     process.stderr.write(`judge: MCP server from .mcp.json: ${tools.length} tools (${tools.join(", ")}), prompt ${prompts.join(", ")}\n`);
     for (const c of r.body.claims) process.stderr.write(`${c.pass ? "PASS" : "FAIL"} ${c.id} ${c.claim}\n     ${c.observed}\n`);
-    process.stderr.write(`judge: ${r.body.passed}/${r.body.claims.length} claims pass (offline sandbox, real contract code, xUSD-FAKE)\n`);
+    process.stderr.write(`judge: ${r.body.passed}/${r.body.claims.length} claims pass (${testnet ? "live NEAR testnet, archival transactions + live reads" : "offline sandbox, real contract code"}, xUSD-FAKE)\n`);
     mkdirSync(join(REPO, "out"), { recursive: true });
-    writeFileSync(join(REPO, "out", "check-claims.json"), JSON.stringify({ tools, prompts, ...r.body }, null, 2) + "\n");
+    writeFileSync(join(REPO, "out", testnet ? "check-claims-testnet.json" : "check-claims.json"), JSON.stringify({ tools, prompts, ...r.body }, null, 2) + "\n");
     return r.body.pass ? 0 : 1;
   } finally {
     await s.close();

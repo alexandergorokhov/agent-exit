@@ -13,7 +13,7 @@ import { randomBytes } from "node:crypto";
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
-import { type Backend, type Json, OfflineBackend, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
+import { type Backend, type Json, OfflineBackend, type TxOutcome, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
 
 export const TOOL_NAMES = [
@@ -40,7 +40,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
-  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
+  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
 
@@ -393,7 +393,7 @@ export class Tools {
       case "portfolio":
         return this.portfolio(a.account);
       case "check_claims":
-        return this.checkClaims();
+        return this.backend.network === "testnet" ? this.checkClaimsTestnet() : this.checkClaims();
     }
   }
 
@@ -478,6 +478,95 @@ export class Tools {
       failed: claims.length - passed,
       pass: passed === claims.length,
       next: "Repeat any claim yourself with the calls listed. On testnet (AGENT_EXIT_NETWORK=testnet, read-only) the same tools read the live agents; the README's testnet table links every transaction on NearBlocks.",
+    };
+  }
+
+  /** check_claims on testnet: every transaction the README's testnet run
+   * recorded (web/data/testnet.json, from out/scenes) is read back from an
+   * archival node (signer, receiver, method, outcome, the contract's events),
+   * and the live agents are read now (scan, earnings, owner, lockout). */
+  private async checkClaimsTestnet(): Promise<Json> {
+    const data = JSON.parse(readFileSync(join(this.cfg.repo, "web", "data", "testnet.json"), "utf8"));
+    const root: string = data.root;
+    const read = this.backend.txOutcome?.bind(this.backend);
+    if (!read) throw new ToolError("NOT_BUILT", "this backend cannot read transactions");
+    const confirm = async (step: string, pick: (t: Json) => boolean = () => true) => {
+      const txs = ((data.steps[step]?.txs ?? []) as Json[]).filter((t) => t.tx && t.method && pick(t));
+      let ok = 0;
+      const bad: string[] = [];
+      for (const t of txs) {
+        try {
+          const o: TxOutcome = await read(t.tx, t.by);
+          const match = o.signer === t.by && o.receiver === t.receiver && o.method === t.method &&
+            (t.ok ? o.ok : !o.ok || o.refused_inside) &&
+            ((t.events ?? []) as string[]).every((e) => o.events.includes(e));
+          if (match) ok++;
+          else bad.push(`${String(t.tx).slice(0, 8)} differs`);
+        } catch (e) {
+          bad.push(`${String(t.tx).slice(0, 8)}: ${(e as Error).message.slice(0, 60)}`);
+        }
+      }
+      return { ok, n: txs.length, txs: txs.map((t: Json) => String(t.tx)), text: `${ok}/${txs.length} recorded transactions confirmed on chain${bad.length ? ` (${bad.slice(0, 2).join("; ")})` : ""}` };
+    };
+    const live = async (tool: ToolName, args: Json) => {
+      const r = await this.call(tool, args);
+      return r.ok ? r.body : { error: r.body.error?.code ?? "ERROR" };
+    };
+    const claims: Json[] = [];
+    const add = (id: string, claim: string, calls: string[], expected: string, observed: string, pass: boolean) =>
+      claims.push({ id, claim, calls: calls.slice(0, 6).map((c) => c.slice(0, 160)), expected, observed: untrusted(observed).slice(0, 300), pass });
+    const nb = (h: string[]) => h.slice(0, 2).map((x) => `tx ${x}`);
+    const a = (n: string) => `${n}.${root}`;
+
+    const inv = await confirm("invest", (t) => /pays translator3/.test(String(t.label)));
+    const e3 = await live("get_earnings", { agent: a("translator3") });
+    const q = e3.earnings ?? {};
+    add("K1", "Earnings are counted by who paid: the owner's sub-account payment is flagged, NEAR AI-signed jobs are verified (live)",
+      [`get_earnings {"agent":"${a("translator3")}"}`, ...nb(inv.txs)], "flagged > 0, verified > 0 now; the 5 customer payments and the sub-account payment confirmed with their payment events",
+      `live: counted ${q.counted ?? e3.error}, verified ${q.verified ?? "?"}, flagged ${q.flagged ?? "?"}; ${inv.text}`,
+      Number(q.flagged) > 0 && Number(q.verified) > 0 && inv.ok === inv.n && inv.n > 0);
+
+    const sc = await live("scan_agent", { agent: a("cheat") });
+    const codes = ((sc.findings ?? []) as Json[]).map((f) => f.code);
+    add("K2", "The scan blocks an agent with a hidden full-access key (live keys)", [`scan_agent {"agent":"${a("cheat")}"}`],
+      "verdict blocked, finding full_access_key_present", `live: verdict ${sc.verdict ?? sc.error}, findings ${codes.join(", ") || "none"}`,
+      sc.verdict === "blocked" && codes.includes("full_access_key_present"));
+
+    const la = await live("list_agents", {});
+    const cheat = ((la.agents ?? []) as Json[]).find((x) => x.agent === a("cheat"));
+    add("K3", "A blocked agent is never bought: the cheat still belongs to its seller", ["list_agents {}"],
+      `owner of ${a("cheat")} is ${a("alice")}`, `live: owner ${cheat?.owner ?? la.error ?? "not listed"}, status ${cheat?.status ?? "?"}`,
+      cheat?.owner === a("alice"));
+
+    const sale = await confirm("honest-sale");
+    add("K4", "One transaction sells the whole agent: deed moves, sale event, payouts", nb(sale.txs),
+      "the listing and the one ft_transfer_call buy confirmed, with settling, nft_transfer and sale events", sale.text,
+      sale.n > 0 && sale.ok === sale.n);
+
+    const brk = await confirm("break-in");
+    const lock = await live("verify_lockout", { agent: a("translator"), account: a("alice") });
+    add("K5", "After the sale the old seller is locked out: every way back in was refused, and still is (live)",
+      [`verify_lockout {"agent":"${a("translator")}","account":"${a("alice")}"}`, ...nb(brk.txs)],
+      "each break-in transaction failed as recorded; locked_out true now", `${brk.text}; live: locked_out ${lock.locked_out ?? lock.error}`,
+      brk.n > 0 && brk.ok === brk.n && lock.locked_out === true);
+
+    const shares = await confirm("invest", (t) => /^dave (buys|claims)/.test(String(t.label)));
+    add("K6", "An investor bought 20% of an agent's earnings and claimed exactly 20%", nb(shares.txs),
+      "dave's buy and claim transactions confirmed with their events", shares.text, shares.n > 0 && shares.ok === shares.n);
+
+    const g6 = await confirm("nearai-check");
+    add("K7", "A real NEAR AI Cloud signature was checked by the contract (gate G6)", nb(g6.txs),
+      "the signer registration and the verified payment confirmed", g6.text, g6.n > 0 && g6.ok === g6.n);
+
+    const passed = claims.filter((x) => x.pass).length;
+    return {
+      ...this.base("check_claims"),
+      sandbox: `live NEAR testnet, world ${String(root).slice(0, 64)} (recorded ${String(data.run).slice(0, 20)}): recorded transactions re-read from archival nodes, agents read now. Read-only; nothing is sent. All money is xUSD-FAKE.`,
+      claims,
+      passed,
+      failed: claims.length - passed,
+      pass: passed === claims.length,
+      next: "Open any transaction on https://testnet.nearblocks.io/txns/<hash>. The offline server (AGENT_EXIT_NETWORK=offline) runs the same claims through the real contract code, including the buy itself.",
     };
   }
 
