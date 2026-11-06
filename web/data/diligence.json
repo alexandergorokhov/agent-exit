@@ -20,8 +20,12 @@
           "140.00: owner self-pay 100.00, seller sub-accounts 40.00, round trips 0.00"
         ],
         [
+          "Payer age and spread",
+          "6 paying accounts over 1 day(s); 100% of counted revenue from payers first seen in the last 7 days, so it weighs 180.00 (new payers count half). Weigh it down: most of it is from payers first seen in the last 7 days; only 6 paying accounts; 1 day(s) of history"
+        ],
+        [
           "Price ÷ counted revenue",
-          "2.8× the counted revenue recorded so far"
+          "2.8× the counted revenue recorded so far (5.6× the age-weighted figure)"
         ],
         [
           "Keys and code",
@@ -34,7 +38,7 @@
       ],
       "verdict": "Passes the buyer's checks",
       "ok": true,
-      "why": "72% of its revenue comes from 6 outside accounts; the scan is clean; 30% of the price only reaches the seller if customers keep paying.",
+      "why": "72% of its revenue comes from 6 outside accounts and the scan is clean, but the customers are new, so weigh the revenue down; 30% of the price only reaches the seller if customers keep paying.",
       "run": "#run-sale"
     },
     {
@@ -53,6 +57,10 @@
         [
           "Flagged, not counted",
           "500.00: owner self-pay 300.00, seller sub-accounts 200.00, round trips 0.00"
+        ],
+        [
+          "Payer age and spread",
+          "no counted revenue to weigh"
         ],
         [
           "Price ÷ counted revenue",

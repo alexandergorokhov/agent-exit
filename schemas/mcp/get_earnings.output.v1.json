@@ -117,6 +117,55 @@
         }
       }
     },
+    "revenue_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "payer age and spread: how much of the counted revenue a buyer should trust (N3)",
+      "required": [
+        "days_of_history",
+        "counted_payers",
+        "avg_counted_per_payer",
+        "from_new_payers_pct",
+        "age_weighted_counted",
+        "rule",
+        "warnings"
+      ],
+      "properties": {
+        "days_of_history": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "counted_payers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "avg_counted_per_payer": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$"
+        },
+        "from_new_payers_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "age_weighted_counted": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{2}$"
+        },
+        "rule": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "warnings": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "maxLength": 120
+          }
+        }
+      }
+    },
     "meaning": {
       "type": "string"
     }

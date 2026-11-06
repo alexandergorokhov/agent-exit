@@ -27,6 +27,18 @@ function keys(scan) {
     : { ok: true, text: "clean: no key but the runner's, the published code, no open approval" };
 }
 
+// Payer age and spread (N3), the same rule as the MCP get_earnings
+// revenue_quality: payments from payers first seen in the last 7 days count half.
+function quality(e) {
+  const counted = Number(e.counted), fresh = Number(e.counted_from_fresh_payers ?? 0);
+  const weighted = counted - fresh / 2;
+  const warn = [];
+  if (counted && fresh * 2 > counted) warn.push("most of it is from payers first seen in the last 7 days");
+  if (e.counted_payers && e.counted_payers < 10) warn.push(`only ${e.counted_payers} paying accounts`);
+  if (e.days_total < 7) warn.push(`${e.days_total} day(s) of history`);
+  return { weighted, warn, text: `${e.counted_payers} paying accounts over ${e.days_total} day(s); ${pct(fresh, counted)}% of counted revenue from payers first seen in the last 7 days, so it weighs ${usd(weighted)} (new payers count half)${warn.length ? `. Weigh it down: ${warn.join("; ")}` : ""}` };
+}
+
 function saleCard(name, e, scanScene, verdict, why, run) {
   const l = scanScene.scan_input.listing;
   const k = keys(scanScene.scan);
@@ -39,7 +51,8 @@ function saleCard(name, e, scanScene, verdict, why, run) {
       ["Revenue paid in", `${usd(e.gross)} from ${e.payments} payments`],
       ["Counted (real customers)", `${usd(e.counted)} (${pct(e.counted, e.gross)}%) from ${e.counted_payers} paying accounts`],
       ["Flagged, not counted", `${usd(e.flagged)}: owner self-pay ${usd(e.flagged_self)}, seller sub-accounts ${usd(e.flagged_seller_subaccount)}, round trips ${usd(e.flagged_round_trip)}`],
-      ["Price ÷ counted revenue", multiple ? `${multiple}× the counted revenue recorded so far` : "no counted revenue: the price buys nothing proven"],
+      ["Payer age and spread", Number(e.counted) ? quality(e).text : "no counted revenue to weigh"],
+      ["Price ÷ counted revenue", multiple ? `${multiple}× the counted revenue recorded so far (${(Number(l.price) / quality(e).weighted).toFixed(1)}× the age-weighted figure)` : "no counted revenue: the price buys nothing proven"],
       ["Keys and code", k.text],
       ["Payment terms", terms(l)],
     ],
@@ -53,7 +66,7 @@ function saleCard(name, e, scanScene, verdict, why, run) {
 const cards = [
   saleCard("translator", s3.translator, s5,
     "Passes the buyer's checks",
-    "72% of its revenue comes from 6 outside accounts; the scan is clean; 30% of the price only reaches the seller if customers keep paying.",
+    "72% of its revenue comes from 6 outside accounts and the scan is clean, but the customers are new, so weigh the revenue down; 30% of the price only reaches the seller if customers keep paying.",
     "#run-sale"),
   saleCard("cheat", s3.cheat, s4,
     "Blocked before any money moves",

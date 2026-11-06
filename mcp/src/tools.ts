@@ -299,6 +299,31 @@ export class SpendLedger {
   }
 }
 
+/** Payer age and spread (N3): the meter cannot tell a new real customer from
+ * a fresh sybil account, so a buyer weighs new payers down. Rule: counted
+ * revenue from payers first seen in the last 7 days (the contract's
+ * counted_from_fresh_payers) counts half. */
+export function revenueQuality(e: Json): Json {
+  const counted = BigInt(e.counted ?? 0);
+  const fresh = BigInt(e.counted_from_fresh_payers ?? 0);
+  const payers = Number(e.counted_payers ?? 0);
+  const days = Number(e.days_total ?? 0);
+  const pct = (a: bigint) => (counted > 0n ? Number((a * 10_000n) / counted) / 100 : 0);
+  const warnings: string[] = [];
+  if (counted > 0n && fresh * 2n > counted) warnings.push("most counted revenue comes from payers first seen in the last 7 days");
+  if (payers > 0 && payers < 10) warnings.push(`only ${payers} paying accounts: revenue is concentrated`);
+  if (days < 7) warnings.push(`only ${days} day(s) of payment history`);
+  return {
+    days_of_history: days,
+    counted_payers: payers,
+    avg_counted_per_payer: payers > 0 ? usd(counted / BigInt(payers)) : "0.00",
+    from_new_payers_pct: pct(fresh),
+    age_weighted_counted: usd(counted - fresh / 2n),
+    rule: "payments from payers first seen in the last 7 days count half (a fresh account can be a sybil; N3)",
+    warnings,
+  };
+}
+
 export class Tools {
   private ledger: SpendLedger;
   /** Spent so far today by this account (this session when no spend file is set). */
@@ -504,6 +529,7 @@ export class Tools {
           payments: d.payments,
         })),
       },
+      revenue_quality: revenueQuality(e),
       meaning:
         "counted = paid by accounts that are not the owner, a past owner, their sub-accounts or a round trip; verified = counted payments whose NEAR AI signature the contract checked; flagged payments are shown but never counted",
     };

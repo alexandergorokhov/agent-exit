@@ -105,6 +105,17 @@
             }
           ]
         },
+        "revenue_quality": {
+          "days_of_history": 5,
+          "counted_payers": 0,
+          "avg_counted_per_payer": "0.00",
+          "from_new_payers_pct": 0,
+          "age_weighted_counted": "0.00",
+          "rule": "payments from payers first seen in the last 7 days count half (a fresh account can be a sybil; N3)",
+          "warnings": [
+            "only 5 day(s) of payment history"
+          ]
+        },
         "meaning": "counted = paid by accounts that are not the owner, a past owner, their sub-accounts or a round trip; verified = counted payments whose NEAR AI signature the contract checked; flagged payments are shown but never counted"
       }
     },
@@ -229,6 +240,18 @@
               "verified": "0.00",
               "payments": 3
             }
+          ]
+        },
+        "revenue_quality": {
+          "days_of_history": 6,
+          "counted_payers": 6,
+          "avg_counted_per_payer": "60.00",
+          "from_new_payers_pct": 0,
+          "age_weighted_counted": "360.00",
+          "rule": "payments from payers first seen in the last 7 days count half (a fresh account can be a sybil; N3)",
+          "warnings": [
+            "only 6 paying accounts: revenue is concentrated",
+            "only 6 day(s) of payment history"
           ]
         },
         "meaning": "counted = paid by accounts that are not the owner, a past owner, their sub-accounts or a round trip; verified = counted payments whose NEAR AI signature the contract checked; flagged payments are shown but never counted"
