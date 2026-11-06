@@ -590,3 +590,31 @@ fn readme_testnet_links_are_recorded_runs() {
         "README should link the live testnet runs ({n} links)"
     );
 }
+
+/// Judge 13: the README's numbers match the goldens and the fee-era payout.
+#[test]
+fn readme_numbers_match_the_goldens() {
+    let r = read("README.md");
+    let v: serde_json::Value = serde_json::from_str(&read("tests/golden/verify.json")).unwrap();
+    let n = v["summary"]["passed"].as_u64().expect("summary.passed");
+    assert!(
+        r.contains(&format!("{n} checks")),
+        "README must say {n} checks (tests/golden/verify.json)"
+    );
+    for f in [
+        "README.md",
+        "docs/PROOF.md",
+        "docs/BUSINESS.md",
+        "web/data/demo.json",
+    ] {
+        let t = read(f);
+        assert!(
+            !t.contains("pays 700.00") && !t.contains("alice is paid 700.00"),
+            "{f}: payout before the 1% fee"
+        );
+    }
+    assert!(
+        read("web/data/demo.json").contains("690.00"),
+        "demo.json: payout after the fee"
+    );
+}

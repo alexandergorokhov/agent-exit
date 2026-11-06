@@ -51,7 +51,7 @@ Set `PROP_CASES=500 make verify` for a faster pass.
   `tools/scan/src/corpus.rs`: the seeded attack corpus (20 attack families + clean controls).
 - `tools/attack/src/main.rs`: `make attack`; `tests/golden/attack.json` its expected output.
 - `web/`: the demo page (`make web`, `make web-test`); `web/data/demo.json` is recorded from the contract by `make web-data`.
-- `docs/NOT-CAUGHT.md`: what the scan does not catch, by design (N1-N6).
+- `docs/NOT-CAUGHT.md`: what the scan does not catch, by design (N1-N13; `make attack` prints N1-N6).
 
 - `contracts/agent-core/src/policy.rs`: spending limits (feature 12): price
   floor, daily cap per (owner epoch, UTC day), allowed payees, revenue split.

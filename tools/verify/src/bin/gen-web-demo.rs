@@ -302,10 +302,10 @@ fn honest_sale() -> Value {
         "id": "honest-sale",
         "title": "An honest sale in one step",
         "scenarios": ["S5", "S6", "S7", "A17"],
-        "story": "bob pays 1,000.00 in one token transfer that names the listing version and key hash his scan saw. The contract checks both, then in one key batch deletes alice's runner key and adds bob's. After the batch the deed moves to bob; alice is paid 700.00 and 300.00 stays in escrow (separate payouts, claimable afterwards), released to alice as customers keep paying (earn-out).",
+        "story": "bob pays 1,000.00 in one token transfer that names the listing version and key hash his scan saw. The contract checks both, then in one key batch deletes alice's runner key and adds bob's. After the batch the deed moves to bob; alice is paid 690.00 (700.00 less the 1% protocol fee of 10.00) and 300.00 stays in escrow (separate payouts, claimable afterwards), released to alice as customers keep paying (earn-out).",
         "headline": [
             {"label": "price", "value": "1000.00"},
-            {"label": "paid now", "value": "700.00"},
+            {"label": "paid now", "value": "690.00"},
             {"label": "escrow (earn-out)", "value": usd(s.m().escrow_left())},
             {"label": "owner after", "value": s.m().owner.clone()},
         ],

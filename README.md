@@ -68,7 +68,7 @@ sequenceDiagram
     T->>A: ft_on_transfer
     Note over A: one receipt on its own account:<br/>delete seller's runner key + add buyer's key (one batch)
     A->>A: on_handover: deed NFT moves to the buyer
-    A->>S: 70% now, 30% held in escrow
+    A->>S: 70% now (less the 1% fee), 30% held in escrow
     S--xA: old runner key: AccessKeyNotFound, owner methods: NotOwner
 ```
 
@@ -97,7 +97,7 @@ public. Agent Exit puts one contract on the agent's account that:
 2. **hands the agent over in one transaction**: the seller's runner key is
    deleted and the buyer's is added in one key batch, then the ownership deed
    (an NFT) moves; the payouts are separate and claimable afterwards;
-3. **pays the seller 70% now and holds 30% in escrow**, released only from
+3. **pays the seller 70% now (less a 1% protocol fee) and holds 30% in escrow**, released only from
    real revenue after the sale. Silence pays a small floor; a proven backdoor
    cuts the rest;
 4. **runs the agent as a business inside the owner's limits**: the agent has

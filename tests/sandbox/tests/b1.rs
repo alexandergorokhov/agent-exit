@@ -2,7 +2,7 @@
 //! mocked runtime cannot show, on a real local node.
 //!
 //! - S5: one buy moves the deed, the agent's on-chain key list goes from
-//!   [alice runner] to [bob runner], alice receives 700.00, 300.00 stays.
+//!   [alice runner] to [bob runner], alice receives 690.00 (1% protocol fee), 300.00 stays.
 //! - A17 / A21: the old runner key and the deleted setup key now fail with
 //!   the node's real error.
 //! - E5: a key batch that fails (buyer key already on the account) rolls back
@@ -293,7 +293,7 @@ async fn s5_a17_a21_buy_one_step_then_old_keys_fail() {
     let alice_bal = w
         .view(&xusd, "ft_balance_of", json!({"account_id": alice.id}))
         .await;
-    assert_eq!(alice_bal, json!((700 * USD).to_string()));
+    assert_eq!(alice_bal, json!((690 * USD).to_string()));
     let st = w.view(&agent.id, "get_status", json!({})).await;
     assert_eq!(st["escrow_left"], (300 * USD).to_string());
     assert_eq!(st["owner_epoch"], 2);
@@ -688,7 +688,7 @@ async fn a47_thousand_long_payers_then_buy_and_views() {
     let alice_bal = w
         .view(&xusd, "ft_balance_of", json!({"account_id": alice.id}))
         .await;
-    assert_eq!(alice_bal, json!((700 * USD).to_string()));
+    assert_eq!(alice_bal, json!((690 * USD).to_string()));
     let new = Acc {
         id: agent.id.clone(),
         sk: bob_runner.clone(),

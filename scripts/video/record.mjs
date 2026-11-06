@@ -95,7 +95,7 @@ await caption("The real contract logic, compiled into the page: list, scan, buy"
 await act("list", 1800);
 await act("scan", 2200);
 await act("buy", 3200);
-await caption("One transaction: bob pays, alice's keys are deleted, 70% to alice now, 30% held for the earn-out", 0);
+await caption("One transaction: bob pays, alice's keys are deleted, 70% to alice now less a 1% fee, 30% held for the earn-out", 0);
 await wait(3000);
 await caption("Now alice tries to get back in", 2000);
 await act("withdraw", 2200);

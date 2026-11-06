@@ -703,7 +703,7 @@
         "S7",
         "A17"
       ],
-      "story": "bob pays 1,000.00 in one token transfer that names the listing version and key hash his scan saw. The contract checks both, then in one key batch deletes alice's runner key and adds bob's. After the batch the deed moves to bob; alice is paid 700.00 and 300.00 stays in escrow (separate payouts, claimable afterwards), released to alice as customers keep paying (earn-out).",
+      "story": "bob pays 1,000.00 in one token transfer that names the listing version and key hash his scan saw. The contract checks both, then in one key batch deletes alice's runner key and adds bob's. After the batch the deed moves to bob; alice is paid 690.00 (700.00 less the 1% protocol fee of 10.00) and 300.00 stays in escrow (separate payouts, claimable afterwards), released to alice as customers keep paying (earn-out).",
       "headline": [
         {
           "label": "price",
@@ -711,7 +711,7 @@
         },
         {
           "label": "paid now",
-          "value": "700.00"
+          "value": "690.00"
         },
         {
           "label": "escrow (earn-out)",

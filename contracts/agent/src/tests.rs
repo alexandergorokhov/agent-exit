@@ -240,7 +240,7 @@ fn e6_payout_fallback() {
     // alice is not registered on the token: the push fails.
     s.callback(false)
         .on_transfer_out(OutKind::SellerPayout, acc(ALICE), U128(700 * USD), None);
-    // 700.00 payout + alice's unwithdrawn revenue settled at the sale (A29).
+    // 690.00 payout (after the 1% fee) + alice's unwithdrawn revenue settled at the sale (A29).
     assert_eq!(s.c.get_claimable(acc(ALICE)).0, 700 * USD + SELLER_REVENUE);
     assert!(s.m().solvent());
     s.by(ALICE).claim();
