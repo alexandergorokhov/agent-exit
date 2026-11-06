@@ -1840,6 +1840,41 @@ pub fn mpc_signature(bytes: &[u8]) -> Result<([u8; 32], [u8; 32], u8), &'static 
     ))
 }
 
+/// The deed's live picture: a data-URI SVG with the agent's counted,
+/// Verified and flagged revenue and the share of earnings pledged.
+pub fn deed_svg(
+    agent: &str,
+    counted: &str,
+    verified: &str,
+    flagged: &str,
+    shares_bps: u16,
+    frozen: bool,
+) -> String {
+    let esc = |t: &str| {
+        t.chars()
+            .filter(|c| c.is_ascii_alphanumeric() || ".-_ ".contains(*c))
+            .collect::<String>()
+    };
+    let state = if frozen { "FROZEN" } else { "active" };
+    let svg = format!(
+        "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240' viewBox='0 0 400 240'>\
+<rect width='400' height='240' rx='16' fill='%230b1510'/>\
+<text x='24' y='44' fill='%233ddc97' font-family='monospace' font-size='16'>AGENT EXIT DEED</text>\
+<text x='24' y='78' fill='white' font-family='monospace' font-size='15'>{}</text>\
+<text x='24' y='120' fill='white' font-family='monospace' font-size='14'>counted  {}</text>\
+<text x='24' y='146' fill='white' font-family='monospace' font-size='14'>verified {}</text>\
+<text x='24' y='172' fill='white' font-family='monospace' font-size='14'>flagged  {}</text>\
+<text x='24' y='210' fill='%23a0b0a8' font-family='monospace' font-size='13'>{}% to investors / {}</text></svg>",
+        esc(agent),
+        esc(counted),
+        esc(verified),
+        esc(flagged),
+        shares_bps as f64 / 100.0,
+        state
+    );
+    format!("data:image/svg+xml;utf8,{svg}")
+}
+
 /// secp256k1 group order.
 const SECP_N: [u8; 32] = [
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
@@ -2030,8 +2065,19 @@ impl AgentExit {
                        "allowed_payees": self.m.limits.allowed_payees.len(),
                        "treasury_bps": self.m.limits.treasury_bps},
             "treasury": amt(self.m.treasury),
+            "shares_bps": self.m.shares_bps(),
             "last_scan": Value::Null,
         });
+        // The deed's picture is drawn from the contract's own numbers on
+        // every view, so a wallet shows what the agent earns now.
+        let media = deed_svg(
+            &self.m.agent,
+            &usd(e.counted),
+            &usd(e.verified),
+            &usd(e.flagged),
+            self.m.shares_bps(),
+            self.m.frozen,
+        );
         Token {
             token_id: DEED_ID.into(),
             owner_id: self.owner_id(),
@@ -2041,7 +2087,7 @@ impl AgentExit {
                     "Ownership deed of an AI agent account. The holder is the owner: sets the runner key and limits, receives the revenue."
                         .into(),
                 ),
-                media: None,
+                media: Some(media),
                 media_hash: None,
                 copies: Some(1),
                 issued_at: None,

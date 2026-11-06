@@ -550,6 +550,21 @@ fn s19_dynamic_metadata() {
     assert_eq!(x["earnings"]["counted"], "360000000");
     s.pay(PAYERS[1], 10 * USD);
     assert_eq!(extra(&s)["earnings"]["counted"], "370000000");
+    // The deed's picture is drawn from the live numbers.
+    let media =
+        s.c.nft_token(DEED_ID.into())
+            .unwrap()
+            .metadata
+            .unwrap()
+            .media
+            .unwrap();
+    assert!(media.starts_with("data:image/svg+xml;utf8,<svg"), "{media}");
+    assert!(media.contains("counted  370.00"), "{media}");
+    assert!(
+        !media.contains('<') || !media.contains("<script"),
+        "no script in the SVG"
+    );
+    assert_eq!(extra(&s)["shares_bps"], 0);
     assert_eq!(s.c.nft_metadata().spec, "nft-1.0.0");
     assert_eq!(s.c.nft_total_supply().0, 1);
     assert_eq!(s.c.nft_supply_for_owner(acc(ALICE)).0, 1);

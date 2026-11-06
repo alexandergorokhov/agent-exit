@@ -1,0 +1,253 @@
+{
+  "schema": "business-loop.v1",
+  "money": "xUSD-FAKE (test token)",
+  "agent": "translator.testnet",
+  "human_calls_at_start": 3,
+  "human_calls_during_30_days": 0,
+  "customers_revenue": "1555.00",
+  "to_investor_dave": "155.50",
+  "summarizer_jobs_bought": 118,
+  "paid_to_summarizer": "236.00",
+  "earnout_released_to_old_seller": "300.00",
+  "treasury_left": "43.90",
+  "refusals": [
+    {
+      "day": 1,
+      "kind": "InsufficientFunds",
+      "what": "summarizer job 3 of the day",
+      "error": "InsufficientFunds: treasury 0.50 < 2.00"
+    },
+    {
+      "day": 2,
+      "kind": "PolicyViolation:DailyCap",
+      "what": "summarizer job 5 of the day",
+      "error": "PolicyViolation:DailyCap: 8.00 + 2.00 > daily cap 8.00"
+    },
+    {
+      "day": 10,
+      "kind": "PolicyViolation:Payee",
+      "what": "pay mallory (not an allowed payee)",
+      "error": "PolicyViolation:Payee: mallory.testnet is not an allowed payee"
+    }
+  ],
+  "checks": {
+    "dave_got_10_percent": true,
+    "supplier_paid_within_cap": true,
+    "refusals_refused": true,
+    "daily_cap_held": true,
+    "solvent": true
+  },
+  "pass": true,
+  "days": [
+    {
+      "day": 1,
+      "customers": 2,
+      "revenue": "25.00",
+      "summarizer_jobs": 2,
+      "treasury": "0.50"
+    },
+    {
+      "day": 2,
+      "customers": 3,
+      "revenue": "50.00",
+      "summarizer_jobs": 4,
+      "treasury": "1.50"
+    },
+    {
+      "day": 3,
+      "customers": 4,
+      "revenue": "78.00",
+      "summarizer_jobs": 4,
+      "treasury": "7.54"
+    },
+    {
+      "day": 4,
+      "customers": 2,
+      "revenue": "35.00",
+      "summarizer_jobs": 4,
+      "treasury": "5.84"
+    },
+    {
+      "day": 5,
+      "customers": 3,
+      "revenue": "49.00",
+      "summarizer_jobs": 4,
+      "treasury": "6.66"
+    },
+    {
+      "day": 6,
+      "customers": 4,
+      "revenue": "66.00",
+      "summarizer_jobs": 4,
+      "treasury": "10.54"
+    },
+    {
+      "day": 7,
+      "customers": 2,
+      "revenue": "45.00",
+      "summarizer_jobs": 4,
+      "treasury": "10.64"
+    },
+    {
+      "day": 8,
+      "customers": 3,
+      "revenue": "48.00",
+      "summarizer_jobs": 4,
+      "treasury": "11.28"
+    },
+    {
+      "day": 9,
+      "customers": 4,
+      "revenue": "70.00",
+      "summarizer_jobs": 4,
+      "treasury": "15.88"
+    },
+    {
+      "day": 10,
+      "customers": 2,
+      "revenue": "39.00",
+      "summarizer_jobs": 4,
+      "treasury": "14.90"
+    },
+    {
+      "day": 11,
+      "customers": 3,
+      "revenue": "47.00",
+      "summarizer_jobs": 4,
+      "treasury": "15.36"
+    },
+    {
+      "day": 12,
+      "customers": 4,
+      "revenue": "74.00",
+      "summarizer_jobs": 4,
+      "treasury": "20.68"
+    },
+    {
+      "day": 13,
+      "customers": 2,
+      "revenue": "33.00",
+      "summarizer_jobs": 4,
+      "treasury": "18.62"
+    },
+    {
+      "day": 14,
+      "customers": 3,
+      "revenue": "46.00",
+      "summarizer_jobs": 4,
+      "treasury": "18.90"
+    },
+    {
+      "day": 15,
+      "customers": 4,
+      "revenue": "62.00",
+      "summarizer_jobs": 4,
+      "treasury": "22.06"
+    },
+    {
+      "day": 16,
+      "customers": 2,
+      "revenue": "43.00",
+      "summarizer_jobs": 4,
+      "treasury": "21.80"
+    },
+    {
+      "day": 17,
+      "customers": 3,
+      "revenue": "45.00",
+      "summarizer_jobs": 4,
+      "treasury": "21.90"
+    },
+    {
+      "day": 18,
+      "customers": 4,
+      "revenue": "66.00",
+      "summarizer_jobs": 4,
+      "treasury": "25.78"
+    },
+    {
+      "day": 19,
+      "customers": 2,
+      "revenue": "37.00",
+      "summarizer_jobs": 4,
+      "treasury": "24.44"
+    },
+    {
+      "day": 20,
+      "customers": 3,
+      "revenue": "60.00",
+      "summarizer_jobs": 4,
+      "treasury": "27.24"
+    },
+    {
+      "day": 21,
+      "customers": 4,
+      "revenue": "70.00",
+      "summarizer_jobs": 4,
+      "treasury": "31.84"
+    },
+    {
+      "day": 22,
+      "customers": 2,
+      "revenue": "31.00",
+      "summarizer_jobs": 4,
+      "treasury": "29.42"
+    },
+    {
+      "day": 23,
+      "customers": 3,
+      "revenue": "59.00",
+      "summarizer_jobs": 4,
+      "treasury": "32.04"
+    },
+    {
+      "day": 24,
+      "customers": 4,
+      "revenue": "58.00",
+      "summarizer_jobs": 4,
+      "treasury": "34.48"
+    },
+    {
+      "day": 25,
+      "customers": 2,
+      "revenue": "41.00",
+      "summarizer_jobs": 4,
+      "treasury": "33.86"
+    },
+    {
+      "day": 26,
+      "customers": 3,
+      "revenue": "58.00",
+      "summarizer_jobs": 4,
+      "treasury": "36.30"
+    },
+    {
+      "day": 27,
+      "customers": 4,
+      "revenue": "62.00",
+      "summarizer_jobs": 4,
+      "treasury": "39.46"
+    },
+    {
+      "day": 28,
+      "customers": 2,
+      "revenue": "35.00",
+      "summarizer_jobs": 4,
+      "treasury": "37.76"
+    },
+    {
+      "day": 29,
+      "customers": 3,
+      "revenue": "57.00",
+      "summarizer_jobs": 4,
+      "treasury": "40.02"
+    },
+    {
+      "day": 30,
+      "customers": 4,
+      "revenue": "66.00",
+      "summarizer_jobs": 4,
+      "treasury": "43.90"
+    }
+  ]
+}

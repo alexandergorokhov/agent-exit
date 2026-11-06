@@ -43,11 +43,18 @@ verify: ## Offline rerun: tests + fixed world -> out/verify.json, compared with 
 	PROP_CASES=$(PROP_CASES) cargo test --workspace --locked --offline --quiet
 	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json
 	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
+	cargo run --quiet --locked --offline -p verify --bin business-loop -- --out $(OUT)/business-loop.json --golden tests/golden/business-loop.json
+
+.PHONY: business-loop
+business-loop: ## 30 days of the agent business with no human after the setup: customers pay, investor paid 10%, runner buys summarizer jobs inside the cap -> out/business-loop.json
+	@mkdir -p $(OUT)
+	cargo run --quiet --locked --offline -p verify --bin business-loop -- --out $(OUT)/business-loop.json --golden tests/golden/business-loop.json
 
 .PHONY: golden
 golden: ## Rewrite tests/golden/verify.json from the current code (review the diff!)
 	cargo run --quiet --locked --offline -p verify -- --json --out tests/golden/verify.json
 	cargo run --quiet --locked --offline -p attack -- --out tests/golden/attack.json > /dev/null
+	cargo run --quiet --locked --offline -p verify --bin business-loop -- --out tests/golden/business-loop.json
 
 .PHONY: mcp-golden
 mcp-golden: mcp-build ## Rewrite fixtures/mcp/world.json, tests/golden/agent-buys-agent.json and web/data/demo.json (review the diff!)

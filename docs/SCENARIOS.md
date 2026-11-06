@@ -234,6 +234,7 @@ Two reviews (off-chain: MCP, AI, web, tests; on-chain: contracts, crypto, scanne
 | C32 | A payment to a frozen agent is refunded in full (`Frozen`) | unit, property | `review4_regressions.rs::c32_pay_on_a_frozen_agent_is_refunded`, `prop.rs` | done (live after redeploy) |
 | C33 | `on_handover` fits its gas budget at maximum state size | sandbox | contract | planned |
 | F1 | **Protocol fee.** Every sale and share buy credits 1% of the price to the fee account (claimable) from the seller's upfront part; the escrow is untouched; `payout + fee = paid_now`; solvency holds in random sequences | unit, property | `tests.rs::s5_buy_one_step`, `shares_tests.rs::dave_holds`, `prop.rs` | done (live after redeploy) |
+| B1 | **Autonomous business, 30 days.** After the owner sets limits and offers 10%, no human acts: every payment pays the investor first and splits owner/treasury; the runner buys summarizer jobs from the treasury inside the daily cap; over-cap and not-allowed payees are refused; the old seller's earn-out is released by counted payments; solvency holds | offline | `make business-loop` (`tools/verify/src/bin/business-loop.rs`, golden `tests/golden/business-loop.json`) | done |
 
 ## Stress (STR-*): scale and hostile load
 
