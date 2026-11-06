@@ -27,7 +27,7 @@ use agent_core::{
 use near_contract_standards::fungible_token::core::ext_ft_core;
 use near_contract_standards::non_fungible_token::approval::ext_nft_approval_receiver;
 use near_contract_standards::non_fungible_token::core::ext_nft_receiver;
-use near_contract_standards::non_fungible_token::events::NftTransfer;
+use near_contract_standards::non_fungible_token::events::{NftMint, NftTransfer};
 use near_contract_standards::non_fungible_token::metadata::{
     NFTContractMetadata, TokenMetadata, NFT_METADATA_SPEC,
 };
@@ -381,6 +381,13 @@ impl AgentExit {
         m.terms_min = TERMS_MIN;
         m.fee_to = FEE_ACCOUNT.into();
         m.base.address = base_address.map(|a| norm_address(&a));
+        // NEP-171: the deed exists from init; indexers see its mint.
+        NftMint {
+            owner_id: &owner_id,
+            token_ids: &[DEED_ID],
+            memo: Some("agent_exit:deed"),
+        }
+        .emit();
         Self {
             m,
             token: PAYMENT_TOKEN.parse().expect("valid token"),

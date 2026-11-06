@@ -355,3 +355,7 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .dd-card dt { font-weight: 600; font-size: .85rem; margin-top: .35rem; }
 .dd-card dd { margin: 0; font-size: .9rem; overflow-wrap: anywhere; }
 .dd-verdict { margin: .7rem 0 .3rem; }
+
+.deed { margin: 1.2rem 0 0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.deed img { max-width: 100%; height: auto; border-radius: 16px; }
+.deed figcaption { max-width: 420px; }

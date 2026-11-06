@@ -437,9 +437,28 @@ fn build() -> String {
     serde_json::to_string_pretty(&doc).expect("json") + "\n"
 }
 
+/// The deed NFT's picture as the contract draws it (`nft_token` media) for
+/// translator after the sale, saved as a file the page can show (its CSP
+/// allows only same-origin images).
+fn deed_svg() -> String {
+    let s = business_world();
+    let media =
+        s.c.nft_token(DEED_ID.into())
+            .and_then(|t| t.metadata)
+            .and_then(|m| m.media)
+            .expect("deed media");
+    media
+        .strip_prefix("data:image/svg+xml;utf8,")
+        .expect("svg data uri")
+        .replace("%23", "#")
+        + "\n"
+}
+
 fn main() {
     std::panic::set_hook(Box::new(|_| {}));
     let path = format!("{ROOT}/web/data/demo.json");
+    let svg_path = format!("{ROOT}/web/media/deed-translator.svg");
+    let svg = deed_svg();
     let text = build();
     let _ = std::panic::take_hook();
     if std::env::args().any(|a| a == "--check") {
@@ -448,10 +467,16 @@ fn main() {
             eprintln!("{path} differs from what the generator makes (run make web-data)");
             std::process::exit(1);
         }
+        if std::fs::read_to_string(&svg_path).unwrap_or_default() != svg {
+            eprintln!("{svg_path} differs from the contract's deed picture (run make web-data)");
+            std::process::exit(1);
+        }
         eprintln!("{path} is reproducible");
     } else {
         std::fs::create_dir_all(format!("{ROOT}/web/data")).expect("mkdir");
         std::fs::write(&path, text).expect("write");
-        eprintln!("wrote {path}");
+        std::fs::create_dir_all(format!("{ROOT}/web/media")).expect("mkdir");
+        std::fs::write(&svg_path, svg).expect("write svg");
+        eprintln!("wrote {path} and {svg_path}");
     }
 }

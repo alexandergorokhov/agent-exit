@@ -540,6 +540,17 @@ fn a23_known_runner_key_is_not_frozen() {
 
 #[test]
 fn s19_dynamic_metadata() {
+    // NEP-171: the deed's mint is announced at init.
+    let s0 = Sim::new(AGENT, ALICE);
+    s0.env(&s0.call(AGENT));
+    let _ = crate::AgentExit::new(acc(ALICE), None);
+    assert!(
+        logs()
+            .iter()
+            .any(|l| l.contains("\"event\":\"nft_mint\"") && l.contains("\"deed\"")),
+        "{:?}",
+        logs()
+    );
     let mut s = translator_world();
     let extra = |s: &Sim| -> Value {
         let t = s.c.nft_token(DEED_ID.into()).unwrap();

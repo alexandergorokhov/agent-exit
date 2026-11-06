@@ -312,6 +312,7 @@ try {
       // M1: the buyer's due-diligence cards: two buys (one refused) and one investment.
       await vp.waitForSelector("#dd-cards .dd-card");
       assert.equal(await vp.locator("#dd-cards .dd-card").count(), 3, "M1: three cards");
+      assert.ok(await vp.locator("figure.deed img").evaluate((i) => i.complete && i.naturalWidth > 0), "the deed picture loads");
       assert.equal(await vp.locator('#dd-cards .dd-no[data-agent="cheat"]').count(), 1, "M1: the cheat card says do not buy");
       assert.ok(/100% of counted/.test(await vp.locator('#dd-cards [data-agent="translator3"]').textContent()), "M1: verified share shown");
       checks++;
