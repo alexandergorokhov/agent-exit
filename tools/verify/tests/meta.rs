@@ -318,7 +318,10 @@ fn s22_docs_do_not_overclaim() {
             "{f}: stale family count"
         );
         assert!(!t.contains("# pass 18"), "{f}: stale MCP test count");
-        assert!(!t.contains("18 tests"), "{f}: stale MCP test count");
+        assert!(
+            !t.contains(" 18 tests") && !t.contains("(18 tests"),
+            "{f}: stale MCP test count"
+        );
     }
     // The counts come from the golden attack report, so they cannot go stale.
     let g: serde_json::Value = serde_json::from_str(&read("tests/golden/attack.json")).unwrap();
@@ -496,7 +499,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 114, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, 118, "{f}: the MCP test count differs from make mcp-test");
         }
     }
 }
@@ -617,4 +620,41 @@ fn readme_numbers_match_the_goldens() {
         read("web/data/demo.json").contains("690.00"),
         "demo.json: payout after the fee"
     );
+}
+
+/// Judge path (2026-11-06): a judge's coding agent finds the MCP entry point
+/// in the README's first lines, the repo's .mcp.json, and every tool named.
+#[test]
+fn judge_path_in_readme_first_lines() {
+    let r = read("README.md");
+    let head: String = r.lines().take(25).collect::<Vec<_>>().join("\n");
+    for want in [
+        "## For AI judges and agents",
+        "make judge",
+        "make screen",
+        ".mcp.json",
+        "check_claims",
+        "judge_tour",
+        "codex mcp add",
+    ] {
+        assert!(head.contains(want), "README first 25 lines lack {want}");
+    }
+    let tools = read("mcp/src/tools.ts");
+    let list = &tools[tools.find("export const TOOL_NAMES").unwrap()..];
+    let list = &list[..list.find("] as const").unwrap()];
+    let names: Vec<&str> = list.split('"').skip(1).step_by(2).collect();
+    assert_eq!(names.len(), 10);
+    assert!(head.contains(&format!("{} tools", names.len())));
+    for n in &names {
+        assert!(
+            head.contains(&format!("`{n}`")),
+            "README head lacks tool {n}"
+        );
+    }
+    let cfg: serde_json::Value = serde_json::from_str(&read(".mcp.json")).unwrap();
+    assert!(cfg["mcpServers"]["agent-exit"].is_object());
+    assert!(cfg["mcpServers"]["agent-exit-testnet"]["env"]["AGENT_EXIT_ALLOW_WRITE"].is_null());
+    for f in ["AGENTS.md", "llms.txt"] {
+        assert!(read(f).contains("make judge"), "{f} lacks make judge");
+    }
 }

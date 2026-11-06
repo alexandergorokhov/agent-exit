@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/check_claims.output.v1.json",
+  "title": "check_claims output",
+  "type": "object",
+  "properties": {
+    "schema_version": { "type": "string", "const": "agent-exit.mcp.check_claims.v1" },
+    "network": { "type": "string", "enum": ["offline", "testnet"] },
+    "sandbox": { "type": "string", "maxLength": 300 },
+    "claims": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "claim", "calls", "expected", "observed", "pass"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^K[0-9]{1,2}$" },
+          "claim": { "type": "string", "maxLength": 200 },
+          "calls": { "type": "array", "maxItems": 6, "items": { "type": "string", "maxLength": 160 } },
+          "expected": { "type": "string", "maxLength": 200 },
+          "observed": { "type": "string", "maxLength": 300 },
+          "pass": { "type": "boolean" }
+        }
+      }
+    },
+    "passed": { "type": "integer", "minimum": 0 },
+    "failed": { "type": "integer", "minimum": 0 },
+    "pass": { "type": "boolean" },
+    "next": { "type": "string", "maxLength": 600 }
+  },
+  "required": ["schema_version", "network", "sandbox", "claims", "passed", "failed", "pass", "next"],
+  "additionalProperties": false
+}

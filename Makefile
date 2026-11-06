@@ -71,6 +71,7 @@ NODE_GLOBAL := $(shell npm root -g 2>/dev/null)
 web-testnet-data: ## Rewrite web/data/testnet.json from the recorded testnet run in out/scenes
 	node scripts/testnet-page-data.mjs
 	node scripts/diligence-data.mjs
+	node scripts/judge-mcp-config.mjs
 
 web-data: ## Rewrite web/data/demo.json from the contract (review the diff!)
 	cargo run --quiet --locked --offline -p verify --bin gen-web-demo
@@ -103,6 +104,13 @@ mcp-build: ## Build the MCP server (TypeScript) and the scan binary it calls
 .PHONY: mcp
 mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_NETWORK=testnet; never mainnet)
 	@node mcp/dist/src/server.js
+
+.PHONY: judge screen
+judge: mcp-build ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K6) -> out/check-claims.json
+	@node mcp/dist/scripts/judge-check.js
+
+screen: ## Every offline README claim with its promised outcome, one PASS/FAIL row each (about 2 min) -> out/screen.json
+	@bash scripts/screen.sh
 
 .PHONY: mcp-test
 mcp-test: mcp-build ## MCP tests offline (S14, S15, E29, E30, schemas, skill) + agent-buys-agent vs its golden

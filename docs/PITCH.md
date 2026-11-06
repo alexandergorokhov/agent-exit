@@ -36,7 +36,7 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 - **Verified revenue**: the NEAR AI Cloud signature over `model:sha(request):sha(response)` is checked with `ecrecover` against an admin-set signer list. Each job is single-use.
 - **Base wallet** through NEAR Chain Signatures. It is derived from the agent's account name, so it changes hands with the deed, and the old seller's attempt to spend from it is refused.
 - **Scanner** (`tools/scan`). It checks the code hash against a reproducible build (and hashes the code bytes itself), the methods, every access key, the pending key changes, the Base wallet, and that the money the contract says it holds is really in its token balance. It reads from two RPC providers. Any doubt blocks the buy.
-- **For AI agents**: an MCP server with 9 tools and an Agent Skill. The server, not the model, enforces `confirm`, `max_price`, a daily spend cap and an operator allowlist. Chain text is treated as data and sanitised.
+- **For AI agents**: an MCP server with 10 tools (one, `check_claims`, re-runs the README claims for a judge's agent) and an Agent Skill. The server, not the model, enforces `confirm`, `max_price`, a daily spend cap and an operator allowlist. Chain text is treated as data and sanitised.
 
 ## Why only on NEAR
 

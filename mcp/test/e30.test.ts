@@ -33,8 +33,11 @@ for (const env of envs) {
       assert.deepEqual(ro, {
         list_agents: true, get_earnings: true, scan_agent: true,
         buy_agent: false, verify_lockout: true, list_for_sale: false,
-        list_offers: true, buy_share: false, portfolio: true,
+        list_offers: true, buy_share: false, portfolio: true, check_claims: true,
       });
+      // check_claims buys only inside its own sandbox, so it works here too.
+      const k = await s.call("check_claims", {});
+      assert.equal(k.body.pass, true, JSON.stringify(k.body));
     } finally {
       await s.close();
     }

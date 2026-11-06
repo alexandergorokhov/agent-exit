@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "agent-exit": {
+      "command": "node",
+      "args": [
+        "mcp/dist/src/server.js"
+      ],
+      "env": {
+        "AGENT_EXIT_NETWORK": "offline",
+        "AGENT_EXIT_ALLOW_WRITE": "1",
+        "AGENT_EXIT_ACCOUNT_ID": "summarizer.testnet",
+        "AGENT_EXIT_RUNNER_PK": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
+      }
+    },
+    "agent-exit-testnet": {
+      "command": "node",
+      "args": [
+        "mcp/dist/src/server.js"
+      ],
+      "env": {
+        "AGENT_EXIT_NETWORK": "testnet",
+        "AGENT_EXIT_AGENTS": "translator.w2.agentexit3.testnet,translator3.w2.agentexit3.testnet,cheat.w2.agentexit3.testnet",
+        "AGENT_EXIT_TOKEN": "xusd.w2.agentexit3.testnet",
+        "AGENT_EXIT_ADMIN": "w2.agentexit3.testnet",
+        "AGENT_EXIT_CODE_HASH": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq"
+      }
+    }
+  }
+}

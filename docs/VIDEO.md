@@ -38,7 +38,7 @@ If the real AI-buyer run (`out/llm-buyer-testnet.json`) does not exist, use page
 | 0:25-0:55 | The handover: one batch on the agent's own account deletes the seller's runner key and adds the buyer's, then `on_handover` moves the deed; a failed batch refunds | `contracts/agent/src/lib.rs` buy path |
 | 0:55-1:20 | Why NEAR: deletable and scoped keys; Chain Signatures Base wallet derived from the account name; NEAR AI signatures checked on-chain with `ecrecover` | README "Why only on NEAR" |
 | 1:20-1:50 | Found on a real node: the 585-payer brick (A47), how state was split into rows, the sandbox test with 1,000 payers | README Evidence, `tests/sandbox` |
-| 1:50-2:20 | For agents: MCP server with 9 tools (incl. shares), spend caps, allowlist, untrusted chain text | `mcp/`, `AGENTS.md` |
+| 1:50-2:20 | For agents: MCP server with 10 tools (incl. shares and check_claims), spend caps, allowlist, untrusted chain text | `mcp/`, `AGENTS.md` |
 | 2:20-2:45 | Verify it: `make verify`, `make attack`; `make build` reproduces `contracts/res/SHA256SUMS` (agent_exit.wasm `91bc8a84…`, code hash `Aots3gb3…`), the same code hash NearBlocks shows for the deployed agent | Terminal |
 
 ## Rules

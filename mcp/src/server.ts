@@ -4,10 +4,10 @@
 // Read-only unless AGENT_EXIT_ALLOW_WRITE=1 and AGENT_EXIT_ACCOUNT_ID are set.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { makeBackend } from "./backend.js";
 import { ConfigError, loadConfig } from "./config.js";
-import { loadSchemas, toolList, Tools } from "./tools.js";
+import { JUDGE_TOUR, loadSchemas, toolList, Tools } from "./tools.js";
 
 export const SERVER_NAME = "agent-exit";
 export const SERVER_VERSION = "0.1.0";
@@ -29,12 +29,19 @@ async function main(): Promise<void> {
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
-      capabilities: { tools: {} },
+      capabilities: { tools: {}, prompts: {} },
       instructions:
-        "Agent Exit: buy AI agents with proven earnings and a proven handover. Always scan_agent before buy_agent; buy only on verdict clean; after buying, verify_lockout the seller. All money is xUSD-FAKE.",
+        "Agent Exit: buy AI agents with proven earnings and a proven handover, or invest in a share of their earnings. Judging or reviewing? Call check_claims first, or use the judge_tour prompt. Always scan_agent before buy_agent; buy only on verdict clean; after buying, verify_lockout the seller. All money is xUSD-FAKE.",
     },
   );
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: toolList(schemas) }));
+  server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    prompts: [{ name: JUDGE_TOUR.name, description: JUDGE_TOUR.description }],
+  }));
+  server.setRequestHandler(GetPromptRequestSchema, async (req) => {
+    if (req.params.name !== JUDGE_TOUR.name) throw new Error(`unknown prompt ${req.params.name}`);
+    return { description: JUDGE_TOUR.description, messages: [{ role: "user", content: { type: "text", text: JUDGE_TOUR.text } }] };
+  });
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const r = await tools.call(req.params.name, req.params.arguments ?? {});
     const text = JSON.stringify(r.body, null, 2);

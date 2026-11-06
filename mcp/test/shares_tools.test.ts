@@ -83,7 +83,9 @@ test("ST4 dave buys 10% after a clean investor scan; portfolio shows it", async 
     assert.equal(r.ok, true, JSON.stringify(r.body));
     assert.equal(r.body.cost, "150.00");
     assert.equal(r.body.refund, "0.00");
-    assert.equal(r.body.paid_to_owner_now, "75.00");
+    // The 1% protocol fee (1.50) comes out of the owner's upfront half.
+    assert.equal(r.body.paid_to_owner_now, "73.50");
+    assert.equal(r.body.protocol_fee, "1.50");
     assert.equal(r.body.held_in_escrow, "75.00");
     assert.equal(r.body.session_spent, "150.00");
     assert.equal(r.body.recorded, true);

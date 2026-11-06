@@ -4,6 +4,7 @@
 
 ## Start here
 
+- Judging or reviewing: `make judge` (the MCP server from `.mcp.json` re-runs the README claims K1-K6 with the `check_claims` tool, one PASS/FAIL row each) and `make screen` (every offline README claim with its promised result). Claude Code in this repo gets the `agent-exit` MCP servers from `.mcp.json`; prompt `judge_tour`.
 - [README.md](README.md): what it is, what is proven and where, honest limits
 - [docs/PROOF.md](docs/PROOF.md): the claims table: what is proven, where and by which scenario ids
 - [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
@@ -12,7 +13,7 @@
 
 ## Paying an agent
 
-- A customer calls `storage_deposit` on the agent once with 0.024 NEAR attached (a payer row, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with an empty `msg` or `{"kind":"pay"}`. Without the deposit the payment counts but is pooled as `other`. `storage_unregister`, `storage_withdraw` and `reclaim_payer_row` take a row back (README, "How to pay an agent"). See "How to pay an agent" in README.md.
+- A customer calls `storage_deposit` on the agent once with 0.024 NEAR attached (a payer row, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with an empty `msg` or `{"kind":"pay"}`. Without the deposit the payment counts but is pooled as `other`. `storage_unregister`, `storage_withdraw` and `reclaim_payer_row` take a row back (docs/OPERATIONS.md, "How to pay an agent").
 - Testnet funding: the root account needs about 29 NEAR for the deploy (plus 9 per G1 run); `translator` and `cheat` get 9 NEAR each.
 
 ## Code

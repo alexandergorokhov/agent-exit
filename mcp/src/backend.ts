@@ -42,6 +42,8 @@ export interface AgentView {
 /** One share buy as the contract settled it. */
 export interface ShareOutcome {
   cost: string;
+  /** The 1% protocol fee the contract took from the owner's upfront half (share_bought event; "0" on a contract without a fee). */
+  protocol_fee: string;
   refund: string;
   recorded: boolean;
   tx_hash?: string;
@@ -241,7 +243,7 @@ export class OfflineBackend implements Backend {
       });
     }
     this.agents.set(id, structuredClone(rec.after));
-    return { cost: String(rec.share_bought.cost), refund: String(rec.refund), recorded: true };
+    return { cost: String(rec.share_bought.cost), protocol_fee: String(rec.share_bought.protocol_fee ?? "0"), refund: String(rec.refund), recorded: true };
   }
 }
 
@@ -665,7 +667,7 @@ export class TestnetBackend implements Backend {
       });
     }
     const cost = String(bought.cost);
-    return { cost, refund: (BigInt(amount) - BigInt(cost)).toString(), recorded: false, tx_hash: txHash, explorer };
+    return { cost, protocol_fee: String(bought.protocol_fee ?? "0"), refund: (BigInt(amount) - BigInt(cost)).toString(), recorded: false, tx_hash: txHash, explorer };
   }
 }
 

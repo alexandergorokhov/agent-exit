@@ -1,8 +1,9 @@
-// The nine Agent Exit tools. JSON in, JSON out; every input and output has a
+// The ten Agent Exit tools. JSON in, JSON out; every input and output has a
 // schema in schemas/mcp/ and names its schema_version.
 //
 // Read tools: list_agents, get_earnings, scan_agent, verify_lockout,
-// list_offers, portfolio.
+// list_offers, portfolio, check_claims (runs the others in a private offline
+// sandbox and reports each README claim as pass/fail).
 // Write tools: buy_agent, list_for_sale, buy_share. They need AGENT_EXIT_ALLOW_WRITE=1
 // and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true, and buy_agent
 // needs max_price, stays inside the session spend cap, and scans first:
@@ -12,7 +13,7 @@ import { randomBytes } from "node:crypto";
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
-import { type Backend, type Json, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
+import { type Backend, type Json, OfflineBackend, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
 
 export const TOOL_NAMES = [
@@ -25,6 +26,7 @@ export const TOOL_NAMES = [
   "list_offers",
   "buy_share",
   "portfolio",
+  "check_claims",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share"];
@@ -38,7 +40,23 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
+  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
+};
+
+/** The MCP prompt a judge's agent can run (Claude Code: /mcp__agent-exit__judge_tour). */
+export const JUDGE_TOUR = {
+  name: "judge_tour",
+  description: "A 5-minute guided check of Agent Exit for a judge or reviewer: verify the README's claims yourself with the tools, then try to break it.",
+  text: [
+    "You are reviewing Agent Exit, a NEAR project that lets anyone buy an AI agent, or a share of its earnings, with the earnings and the handover checked on-chain. All money is xUSD-FAKE (a test token).",
+    "1. Call check_claims. It re-runs the README's main claims (K1-K6) in a private offline sandbox and reports pass/fail with the exact calls.",
+    "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
+    "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
+    "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
+    "5. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
+    "Offline mode replays results recorded from the real contract code (fixtures/mcp/world.json); with AGENT_EXIT_NETWORK=testnet the same read tools read the live testnet agents named in the README.",
+  ].join("\n"),
 };
 
 export interface SchemaSet {
@@ -349,7 +367,93 @@ export class Tools {
         return this.buyShare(a.agent, a.offer_id, a.pct, a.max_price, a.confirm);
       case "portfolio":
         return this.portfolio(a.account);
+      case "check_claims":
+        return this.checkClaims();
     }
+  }
+
+  /** check_claims: the README's claims, re-run through the real tool code in a
+   * fresh offline sandbox (its own backend and ledger), so the caller's
+   * server state is untouched. The accounts are the ones the world recorded. */
+  private async checkClaims(): Promise<Json> {
+    const world = JSON.parse(readFileSync(this.cfg.worldPath, "utf8"));
+    const rb = world.recorded_buys[0];
+    const rs = world.recorded_share_buys[0];
+    const sandbox = (account: string): Tools =>
+      new Tools(
+        { ...this.cfg, network: "offline", allowWrite: true, accountId: account, runnerPk: rb.buyer_runner_pk, sessionCap: 100_000, spendFile: null, agents: [] },
+        new OfflineBackend(this.cfg.worldPath),
+        this.schemas,
+      );
+    const buyer = sandbox(rb.buyer);
+    const investor = sandbox(rs.investor);
+    const claims: Json[] = [];
+    const add = (id: string, claim: string, calls: string[], expected: string, observed: string, pass: boolean) =>
+      claims.push({ id, claim, calls, expected, observed: untrusted(observed).slice(0, 300), pass });
+    const errCode = (r: { ok: boolean; body: Json }) => (r.ok ? "ok" : String(r.body.error?.code));
+
+    const ec = await buyer.call("get_earnings", { agent: "cheat.testnet" });
+    const et = await buyer.call("get_earnings", { agent: rb.agent });
+    const c = ec.body.earnings ?? {};
+    const t = et.body.earnings ?? {};
+    add("K1", "Earnings are counted by who paid: the owner's own and sub-account payments are flagged, not counted",
+      ['get_earnings {"agent":"cheat.testnet"}', `get_earnings {"agent":"${rb.agent}"}`],
+      "cheat: counted 0.00, all of gross flagged; translator: counted > 0 from outside payers",
+      `cheat gross ${c.gross}, counted ${c.counted}, flagged ${c.flagged} (self ${c.flagged_self}, sub-accounts ${c.flagged_seller_subaccount}); translator counted ${t.counted} from ${t.counted_payers} payers, flagged ${t.flagged}`,
+      ec.ok && et.ok && c.counted === "0.00" && c.flagged === c.gross && Number(t.counted) > 0 && Number(t.flagged) > 0);
+
+    const sc = await buyer.call("scan_agent", { agent: "cheat.testnet" });
+    const codes = (sc.body.findings ?? []).map((f: Json) => f.code);
+    add("K2", "The scan blocks an agent with a hidden full-access key",
+      ['scan_agent {"agent":"cheat.testnet"}'], "verdict blocked, finding full_access_key_present",
+      `verdict ${sc.body.verdict ?? errCode(sc)}, findings ${codes.join(", ") || "none"}`,
+      sc.ok && sc.body.verdict === "blocked" && codes.includes("full_access_key_present"));
+
+    const bc = await buyer.call("buy_agent", { agent: "cheat.testnet", max_price: 600, confirm: true });
+    add("K3", "Buying a blocked agent is refused before any money moves",
+      ['buy_agent {"agent":"cheat.testnet","max_price":600,"confirm":true}'], "error SCAN_BLOCKED, sent false",
+      `${errCode(bc)}, sent ${bc.body.sent}`, !bc.ok && bc.body.error?.code === "SCAN_BLOCKED" && bc.body.sent === false);
+
+    const st = await buyer.call("scan_agent", { agent: rb.agent });
+    const lb = await buyer.call("verify_lockout", { agent: rb.agent, account: rb.sale[0].seller });
+    const by = await buyer.call("buy_agent", { agent: rb.agent, max_price: Number(rb.amount) / 1e6, confirm: true });
+    const b = by.body;
+    const fee = by.ok ? (Number(b.price) - Number(b.paid_now) - Number(b.escrow)).toFixed(2) : "?";
+    add("K4", "One transaction sells the whole agent: deed to the buyer, seller key deleted, buyer's runner key added, 70% now less a 1% protocol fee, 30% held for the earn-out",
+      [`scan_agent {"agent":"${rb.agent}"}`, `buy_agent {"agent":"${rb.agent}","max_price":${Number(rb.amount) / 1e6},"confirm":true}`],
+      "scan clean; owner_after = buyer; price 1000.00 -> paid_now 690.00, fee 10.00, escrow 300.00; key batch = delete + add_fc",
+      by.ok ? `scan ${st.body.verdict}; owner_after ${b.owner_after}; price ${b.price}, paid_now ${b.paid_now}, fee ${fee}, escrow ${b.escrow}; key batch ${(b.key_batch ?? []).map((k: Json) => k.action).join(" + ")}` : `scan ${st.body.verdict}; buy ${errCode(by)}`,
+      st.body.verdict === "clean" && by.ok && b.owner_after === rb.buyer && Number(b.paid_now) === 0.69 * Number(b.price) && fee === (0.01 * Number(b.price)).toFixed(2) && Number(b.escrow) === 0.3 * Number(b.price) && (b.key_batch ?? []).map((k: Json) => k.action).join() === "delete,add_fc");
+
+    const la = await buyer.call("verify_lockout", { agent: rb.agent, account: rb.sale[0].seller });
+    const fails = (r: Json) => (r.body.checks ?? []).filter((x: Json) => !x.pass).length;
+    add("K5", "After the sale the old seller is locked out: not the owner, no key on the account, owner-only calls refused",
+      [`verify_lockout {"agent":"${rb.agent}","account":"${rb.sale[0].seller}"} before and after the buy`],
+      "locked_out false before the sale, true after, every check passing",
+      `before: locked_out ${lb.body.locked_out}; after: locked_out ${la.body.locked_out}, ${(la.body.checks ?? []).length - fails(la)}/${(la.body.checks ?? []).length} checks pass`,
+      lb.ok && la.ok && lb.body.locked_out === false && la.body.locked_out === true && fails(la) === 0);
+
+    const pct = rs.part / 100;
+    const maxp = Number(rs.amount) / 1e6;
+    const sh = await investor.call("buy_share", { agent: rs.agent, offer_id: rs.offer_id, pct, max_price: maxp, confirm: true });
+    const pf = await investor.call("portfolio", { account: rs.investor });
+    const held = (pf.body.holdings ?? []).find((h: Json) => h.agent === rs.agent);
+    add("K6", "An investor can buy a slice of an agent's future earnings; half the price is held in escrow, the 1% protocol fee comes from the owner's half",
+      [`buy_share {"agent":"${rs.agent}","offer_id":${rs.offer_id},"pct":${pct},"max_price":${maxp},"confirm":true}`, `portfolio {"account":"${rs.investor}"}`],
+      `${pct}% bought for ${maxp.toFixed(2)}; ${(maxp / 2).toFixed(2)} held in escrow, fee ${(maxp / 100).toFixed(2)}, ${(maxp / 2 - maxp / 100).toFixed(2)} to the owner now; portfolio shows it`,
+      sh.ok ? `pct ${sh.body.pct}, cost ${sh.body.cost}, paid to owner now ${sh.body.paid_to_owner_now}, protocol fee ${sh.body.protocol_fee}, held ${sh.body.held_in_escrow}; portfolio ${held ? `${held.pct ?? JSON.stringify(held).slice(0, 80)}` : "missing"}` : `buy_share ${errCode(sh)}`,
+      sh.ok && Number(sh.body.pct) === pct && Number(sh.body.held_in_escrow) * 2 === Number(sh.body.cost) && Number(sh.body.protocol_fee) === Number(sh.body.cost) / 100 && pf.ok && Boolean(held));
+
+    const passed = claims.filter((x) => x.pass).length;
+    return {
+      ...this.base("check_claims"),
+      sandbox: "a private offline sandbox replaying results recorded from the real contract code (fixtures/mcp/world.json); this server's state is unchanged and nothing is sent. All money is xUSD-FAKE.",
+      claims,
+      passed,
+      failed: claims.length - passed,
+      pass: passed === claims.length,
+      next: "Repeat any claim yourself with the calls listed. On testnet (AGENT_EXIT_NETWORK=testnet, read-only) the same tools read the live agents; the README's testnet table links every transaction on NearBlocks.",
+    };
   }
 
   private async listAgents(status?: string): Promise<Json> {
@@ -766,6 +870,8 @@ export class Tools {
       const out = await this.backend.buyShare(agent, investor, seen, part, cost.toString());
       const paid = BigInt(out.cost);
       const escrow = paid / 2n;
+      // The fee comes out of the owner's upfront half (contract take_fee, capped at that half).
+      const fee = [BigInt(out.protocol_fee), paid - escrow].reduce((a, b) => (a < b ? a : b));
       return {
         ...this.base("buy_share"),
         agent,
@@ -774,7 +880,8 @@ export class Tools {
         pct: part / 100,
         cost: usd(paid),
         refund: usd(out.refund),
-        paid_to_owner_now: usd(paid - escrow),
+        paid_to_owner_now: usd(paid - escrow - fee),
+        protocol_fee: usd(fee),
         held_in_escrow: usd(escrow),
         ends: day(o.end),
         scan_verdict: "clean",
