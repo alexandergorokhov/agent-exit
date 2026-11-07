@@ -10,6 +10,7 @@
 //   list_for_sale on testnet is not built yet and says so.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { Config, Network } from "./config.js";
 import { b58encode, NearKey, signTx } from "./nearsign.js";
 
@@ -119,6 +120,16 @@ function applyExpect(input: Json, e: ScanExpect): Json {
   return input;
 }
 
+export interface AccountFacts {
+  code_hash: string;
+  methods: string[];
+  keys: Json[];
+  /** The second provider's key list (testnet), or null offline. */
+  keys_second: Json[] | null;
+  /** Where the facts come from. */
+  source: string;
+}
+
 export interface Backend {
   network: Network;
   listAgents(): Promise<string[]>;
@@ -126,6 +137,9 @@ export interface Backend {
   scanInput(id: string, expect: ScanExpect): Promise<Json>;
   /** `deliveryPk`: the buyer's one-time X25519 key (hex) for a listing that sells a sealed config. */
   buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string, deliveryPk?: string): Promise<BuyOutcome>;
+  /** What `check_account` reads about any account: code hash, exported
+   * methods, access keys (from two providers on testnet). Null = no account. */
+  accountFacts(id: string): Promise<AccountFacts | null>;
   list(id: string, seller: string, price: string): Promise<{ listing: Json; recorded: boolean }>;
   /** Throws ALLOWANCE_LOW unless the function-call key has at least `min` yoctoNEAR of allowance (no-op offline). */
   assertAllowance(account: string, publicKey: string, min: bigint): Promise<void>;
@@ -193,7 +207,7 @@ export class OfflineBackend implements Backend {
   /** agent -> recorded buy applied (for the lockout probes). */
   private bought = new Map<string, Json>();
 
-  constructor(path: string) {
+  constructor(private path: string) {
     this.world = JSON.parse(readFileSync(path, "utf8"));
     if (this.world.schema !== "mcp-world.v1") throw new Error(`${path} is not mcp-world.v1`);
     this.agents = new Map(Object.entries(this.world.agents) as [string, RecordedAgent][]);
@@ -212,6 +226,25 @@ export class OfflineBackend implements Backend {
   async agent(id: string): Promise<AgentView> {
     return structuredClone(this.get(id));
   }
+
+  async accountFacts(id: string): Promise<AccountFacts | null> {
+    const a = this.agents.get(id) as Json | undefined;
+    if (a) {
+      const c = a.scan_input.chain;
+      return { code_hash: c.code_hash, methods: c.methods, keys: c.keys, keys_second: null, source: "offline world (recorded from the contract code)" };
+    }
+    if (!this.extra) {
+      try {
+        this.extra = JSON.parse(readFileSync(join(dirname(this.path), "accounts.json"), "utf8")).accounts;
+      } catch {
+        this.extra = {};
+      }
+    }
+    const x = (this.extra as Json)[id];
+    return x ? { code_hash: x.code_hash, methods: x.methods, keys: x.keys, keys_second: null, source: "offline illustrative fixture (fixtures/mcp/accounts.json)" } : null;
+  }
+
+  private extra: Json | null = null;
 
   async scanInput(id: string, expect: ScanExpect): Promise<Json> {
     return applyExpect(structuredClone(this.get(id).scan_input), expect);
@@ -450,6 +483,27 @@ export class TestnetBackend implements Backend {
 
   private known(id: string): void {
     if (!id.endsWith(".testnet")) throw new ToolError("NETWORK_REFUSED", `${id} is not a .testnet account`);
+  }
+
+  async accountFacts(id: string): Promise<AccountFacts | null> {
+    this.known(id);
+    let account: Json;
+    try {
+      account = await this.rpc(this.cfg.rpc[0], { request_type: "view_account", finality: "final", account_id: id });
+    } catch (e) {
+      if (/UNKNOWN_ACCOUNT|does not exist/i.test(String((e as Error).message))) return null;
+      throw e;
+    }
+    const [keys, second] = await Promise.all([
+      this.keys(this.cfg.rpc[0], id),
+      this.keys(this.cfg.rpc[1], id).catch(() => null),
+    ]);
+    let methods: string[] = [];
+    if (account.code_hash !== "11111111111111111111111111111111") {
+      const code = await this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id });
+      methods = wasmExports(Buffer.from(code.code_base64, "base64"));
+    }
+    return { code_hash: String(account.code_hash), methods, keys, keys_second: second, source: `testnet RPC (${this.cfg.rpc.join(", ")})` };
   }
 
   async agent(id: string): Promise<AgentView> {

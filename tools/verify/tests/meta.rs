@@ -499,7 +499,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 141, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, 147, "{f}: the MCP test count differs from make mcp-test");
         }
     }
 }
@@ -643,7 +643,7 @@ fn judge_path_in_readme_first_lines() {
     let list = &tools[tools.find("export const TOOL_NAMES").unwrap()..];
     let list = &list[..list.find("] as const").unwrap()];
     let names: Vec<&str> = list.split('"').skip(1).step_by(2).collect();
-    assert_eq!(names.len(), 11);
+    assert_eq!(names.len(), 12);
     assert!(head.contains(&format!("{} tools", names.len())));
     for n in &names {
         assert!(

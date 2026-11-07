@@ -21,7 +21,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 6. Attack corpus | `make attack` | stderr summary `19 attack families, each blocked by its rule; 0/50 false positives (regression suite)` (it reads the counts from `tests/golden/attack.json`: 20 families, 19 counted, in_scope 190/190; read it as 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives, 0/50 false positives on clean agents — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 checks the reproducible-build hash in `contracts/res/SHA256SUMS`), every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
 | 7. Plant your own backdoor | edit `fixtures/judge-attack.json` (e.g. add a `"FullAccess"` key), then `make attack FIXTURE=fixtures/judge-attack.json` | stderr `judge fixture ...: blocked ["full_access_key_present"]`; the `judge` section of `out/attack.json` |
 | 8. Scan one agent | `make scan FILE=fixtures/scan/cheat.json` | `scan-report.v1` JSON on stdout, `"verdict": "blocked"`; exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input |
-| 9. MCP tests | `make mcp-test` | `# pass 141`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
+| 9. MCP tests | `make mcp-test` | `# pass 147`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
 | 10. Agent buys agent | `make agent-buys-agent` | a scripted replay, not an AI model; stderr one line per MCP call; `out/agent-buys-agent.json` with `"schema": "agent-buys-agent.v1"`, `"pass": true`, `summary.seller_locked_out_after: true` |
 | 11. Demo page | `make web-test` (needs the `playwright` package with Chromium) | `web-test: N checks passed (desktop + 375px, offline + testnet flag)`; exit 0. `make web` serves it on port 8080 |
 | 12. Fuzz | `make fuzz` (`FUZZ_CASES=3000`) | `test result: ok. 4 passed`; exit 0 |
@@ -61,7 +61,7 @@ Set `PROP_CASES=500 make verify` for a faster pass.
 
 - `contracts/agent-core/src/policy.rs`: spending limits (feature 12): price
   floor, daily cap per (owner epoch, UTC day), allowed payees, revenue split.
-- `mcp/src/tools.ts`: the eleven MCP tools (six for buying, three for shares, `check_claims` for reviewers, `sandbox` for any action on the contract core compiled to wasm, `mcp/src/sandbox.ts`); `mcp/src/backend.ts`: offline
+- `mcp/src/tools.ts`: the twelve MCP tools (six for buying, three for shares, `check_claims` for reviewers, `sandbox` for any action on the contract core compiled to wasm, `mcp/src/sandbox.ts`, and `check_account` for keys and code-change methods on any NEAR account); `mcp/src/backend.ts`: offline
   (recorded) and testnet (read-only RPC) data; `mcp/test/`: S14, S15, E29,
   E30 and the rest.
 - `schemas/mcp/`: input and output JSON schemas for every tool.

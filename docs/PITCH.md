@@ -40,7 +40,7 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 - **Sealed config** (`agent-core/src/sealed.rs`). The off-chain brain (prompt, model, tools, which API keys to rotate) is committed by hash in the listing and delivered encrypted to a one-time key of the buyer. In a dispute the contract decrypts and hashes it itself: not the committed bytes, and the escrow goes back to the buyer.
 - **Born clean** (`contracts/factory`). One batch creates `name.factory`, deploys the published code and calls `new`, with no key added, so the agent never had a seller key to hide. The scan reports `born_clean`.
 - **Scanner** (`tools/scan`). It checks the code hash against a reproducible build (and hashes the code bytes itself), the methods, every access key, the pending key changes, the Base wallet, and that the money the contract says it holds is really in its token balance. It reads from two RPC providers. Any doubt blocks the buy.
-- **For AI agents**: an MCP server with 11 tools (`check_claims` re-runs the README claims for a judge's agent; `sandbox` lets it try any action on the real contract code) and an Agent Skill. The server, not the model, enforces `confirm`, `max_price`, a daily spend cap and an operator allowlist. Chain text is treated as data and sanitised.
+- **For AI agents**: an MCP server with 12 tools (`check_claims` re-runs the README claims for a judge's agent; `sandbox` lets it try any action on the real contract code; `check_account` tells who else controls any NEAR account) and an Agent Skill. The server, not the model, enforces `confirm`, `max_price`, a daily spend cap and an operator allowlist. Chain text is treated as data and sanitised.
 
 ## Why only on NEAR
 

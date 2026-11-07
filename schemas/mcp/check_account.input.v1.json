@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/check_account.input.v1.json",
+  "title": "check_account input",
+  "description": "Any NEAR account id (offline: the Agent Exit agents and the illustrative fixtures in fixtures/mcp/accounts.json).",
+  "type": "object",
+  "properties": {
+    "account": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9._-]+$", "description": "e.g. translator.testnet, or any .testnet account on testnet" }
+  },
+  "required": ["account"],
+  "additionalProperties": false
+}

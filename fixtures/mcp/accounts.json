@@ -1,0 +1,24 @@
+{
+  "schema": "mcp-accounts.v1",
+  "note": "Illustrative offline fixtures for check_account, not real accounts. The Agent Exit agents (translator, cheat, research) come from world.json.",
+  "accounts": {
+    "ordinary-wallet.testnet": {
+      "code_hash": "11111111111111111111111111111111",
+      "methods": [],
+      "keys": [{ "public_key": "ed25519:8fWHD35Rjd78yeowShh9GwhRudRtLLsGCRjZtgPjAtw9", "permission": "FullAccess" }]
+    },
+    "trading-bot.testnet": {
+      "code_hash": "7Wv5gEYTKuW9S5T5zG1E1H1ukm8W1dFRyFdzSDcuW1fS",
+      "methods": ["new", "trade", "withdraw", "upgrade", "set_owner"],
+      "keys": [
+        { "public_key": "ed25519:3HcVbMzrjWzwmyuBxeoGQDjXo3Kf3mWb2vrqvRq1fzTW", "permission": "FullAccess" },
+        { "public_key": "ed25519:9tGHfQDvH3sYHr8pYLqF9xR1uR3hXzN1o3Z7j1mWQ9Gk", "permission": { "receiver_id": "dex.testnet", "method_names": [], "allowance": null } }
+      ]
+    },
+    "locked-vault.testnet": {
+      "code_hash": "4ZQ7m1wG2JfX8bq9fTqR3oQp5Jx7c2LhC1kV8nY6sDaE",
+      "methods": ["new", "deposit", "withdraw", "get_balance"],
+      "keys": []
+    }
+  }
+}

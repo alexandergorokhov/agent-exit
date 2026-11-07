@@ -40,6 +40,8 @@
             "NOT_LISTED",
             "NOT_OWNER",
             "UNKNOWN_AGENT",
+            "UNKNOWN_ACCOUNT",
+            "SANDBOX_UNAVAILABLE",
             "BAD_INPUT",
             "OFFLINE_NO_RECORDING",
             "NOT_BUILT",

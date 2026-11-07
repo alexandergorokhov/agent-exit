@@ -30,6 +30,7 @@ export const TOOL_NAMES = [
   "portfolio",
   "check_claims",
   "sandbox",
+  "check_account",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share"];
@@ -44,6 +45,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
   check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
+  check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
   sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
@@ -59,7 +61,8 @@ export const JUDGE_TOUR = {
     "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
     "5. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
-    "6. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
+    "6. Point check_account at any NEAR account (offline: trading-bot.testnet, locked-vault.testnet): it names every key and code-change method that lets someone other than the owner move funds or swap the code.",
+    "7. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
     "Offline mode replays results recorded from the real contract code (fixtures/mcp/world.json); with AGENT_EXIT_NETWORK=testnet the same read tools read the live testnet agents named in the README.",
   ].join("\n"),
 };
@@ -137,6 +140,9 @@ export function untrusted(s: string): string {
 function statusName(s: unknown): string {
   return typeof s === "string" && STATUSES.has(s) ? s : "in an unknown state";
 }
+
+/** Method names that can change the code or keys (tools/scan UPGRADE_WORDS; meta test keeps them equal). */
+export const UPGRADE_WORDS = ["upgrade", "deploy", "migrate", "set_code", "update_contract", "add_key", "add_full_access_key", "delete_account", "stage_code"];
 
 const ACCOUNT_RE = /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 
@@ -347,6 +353,64 @@ export class Tools {
 
   private sandbox: Sandbox;
 
+  /** check_account (CA1-CA6): who can take this account, from its keys and code. */
+  private async checkAccount(account: string): Promise<Json> {
+    if (!ACCOUNT_RE.test(account)) throw new ToolError("BAD_INPUT", "not a NEAR account id");
+    const f = await this.backend.accountFacts(account);
+    if (!f) throw new ToolError("UNKNOWN_ACCOUNT", `${account} does not exist${this.backend.network === "offline" ? " in the offline fixtures (list_agents, fixtures/mcp/accounts.json)" : ""}`);
+    const hasCode = f.code_hash !== "11111111111111111111111111111111";
+    const findings: Json[] = [];
+    const keys = f.keys.map((k: Json) => {
+      const full = k.permission === "FullAccess";
+      const p = full ? null : k.permission;
+      const methods: string[] = p ? (p.method_names ?? []) : [];
+      const can = full
+        ? "everything: deploy new code, add or delete keys, send all NEAR, delete the account, without any contract code running"
+        : `call ${methods.length ? methods.join(", ") : "EVERY method"} on ${acct(p.receiver_id)}, attaching no NEAR${p.allowance === null ? ", with no gas allowance cap" : ""}`;
+      return { public_key: String(k.public_key), kind: full ? "full_access" : "function_call", ...(p ? { receiver_id: acct(p.receiver_id), method_names: methods.map((m) => untrusted(m)), allowance: p.allowance === null ? null : String(p.allowance) } : {}), can };
+    });
+    const fullKeys = keys.filter((k) => k.kind === "full_access").length;
+    if (fullKeys && hasCode) findings.push({ code: "full_access_key_on_contract", severity: "high", text: `${fullKeys} full-access key(s) on an account with a contract: whoever holds one can replace the code or drain the account, and the contract cannot see or stop it` });
+    if (fullKeys && !hasCode) findings.push({ code: "full_access_wallet", severity: "info", text: `an ordinary wallet: ${fullKeys} full-access key(s) control it; nothing limits what they do` });
+    for (const k of keys) {
+      if (k.kind !== "function_call") continue;
+      if (!(k.method_names as string[]).length) findings.push({ code: "fc_key_any_method", severity: "medium", text: `${k.public_key} may call every method of ${k.receiver_id}` });
+      if (k.allowance === null) findings.push({ code: "fc_key_no_allowance", severity: "low", text: `${k.public_key} has no gas allowance cap` });
+    }
+    const upgrade = f.methods.filter((m) => UPGRADE_WORDS.some((w) => m.includes(w)));
+    if (upgrade.length) findings.push({ code: "code_change_method", severity: "high", text: `the contract exports ${upgrade.map((m) => untrusted(m)).join(", ")}: a way to change the code or the keys later` });
+    const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
+    const isAgentExit = hasCode && published !== null && f.code_hash === published;
+    if (f.keys_second) {
+      const a = JSON.stringify([...f.keys].map((k: Json) => k.public_key).sort());
+      const b = JSON.stringify([...f.keys_second].map((k: Json) => k.public_key).sort());
+      if (a !== b) findings.push({ code: "providers_disagree", severity: "high", text: "the two RPC providers return different key lists" });
+    }
+    const verdict = !hasCode
+      ? "key_controlled"
+      : fullKeys || upgrade.length || findings.some((x) => x.code === "providers_disagree")
+        ? "backdoor_risk"
+        : "locked";
+    const summary = {
+      locked: "locked: no key can change the code or take the account; only the contract's own methods act" + (isAgentExit ? " (the published Agent Exit build)" : ""),
+      key_controlled: "key-controlled: an ordinary account; whoever holds a full-access key controls it",
+      backdoor_risk: "backdoor risk: code runs here, but a full-access key or an upgrade path can override it",
+    }[verdict];
+    return {
+      schema_version: "agent-exit.mcp.check_account.v1",
+      network: this.backend.network,
+      account,
+      verdict,
+      summary,
+      code: { deployed: hasCode, code_hash: hasCode ? f.code_hash : null, published_agent_exit_build: isAgentExit, code_change_methods: upgrade.map((m) => untrusted(m)) },
+      full_access_keys: fullKeys,
+      keys,
+      findings,
+      source: f.source,
+      read_only: true,
+    };
+  }
+
   /** For a listing with a sealed config: make the buyer's one-time X25519
    * key, store the secret in a 0600 file next to the spend ledger, and
    * return what the buyer needs later (scripts/sealed-config.mjs open). */
@@ -452,6 +516,8 @@ export class Tools {
         return this.backend.network === "testnet" ? this.checkClaimsTestnet() : this.checkClaims();
       case "sandbox":
         return Promise.resolve(this.runSandbox(a));
+      case "check_account":
+        return this.checkAccount(a.account);
     }
   }
 

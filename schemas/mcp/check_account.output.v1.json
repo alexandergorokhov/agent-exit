@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/check_account.output.v1.json",
+  "title": "check_account output",
+  "type": "object",
+  "properties": {
+    "schema_version": { "const": "agent-exit.mcp.check_account.v1" },
+    "network": { "type": "string" },
+    "account": { "type": "string" },
+    "verdict": { "enum": ["locked", "key_controlled", "backdoor_risk"] },
+    "summary": { "type": "string" },
+    "code": {
+      "type": "object",
+      "properties": {
+        "deployed": { "type": "boolean" },
+        "code_hash": { "type": ["string", "null"] },
+        "published_agent_exit_build": { "type": "boolean" },
+        "code_change_methods": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["deployed", "code_hash", "published_agent_exit_build", "code_change_methods"],
+      "additionalProperties": false
+    },
+    "full_access_keys": { "type": "integer", "minimum": 0 },
+    "keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "public_key": { "type": "string" },
+          "kind": { "enum": ["full_access", "function_call"] },
+          "receiver_id": { "type": "string" },
+          "method_names": { "type": "array", "items": { "type": "string" } },
+          "allowance": { "type": ["string", "null"] },
+          "can": { "type": "string" }
+        },
+        "required": ["public_key", "kind", "can"],
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": { "code": { "type": "string" }, "severity": { "enum": ["info", "low", "medium", "high"] }, "text": { "type": "string" } },
+        "required": ["code", "severity", "text"],
+        "additionalProperties": false
+      }
+    },
+    "source": { "type": "string" },
+    "read_only": { "const": true }
+  },
+  "required": ["schema_version", "network", "account", "verdict", "summary", "code", "full_access_keys", "keys", "findings", "source", "read_only"],
+  "additionalProperties": false
+}
