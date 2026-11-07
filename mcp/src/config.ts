@@ -42,6 +42,8 @@ export interface Config {
   minTerms: { min_earnout_bps: number; max_floor_bps: number; min_window_secs: number };
   /** Least price list_for_sale accepts, in xUSD-FAKE dollars (AGENT_EXIT_MIN_LIST_PRICE; review 5, M4). */
   minListPrice: number | null;
+  /** The born-clean factory account (testnet, AGENT_EXIT_FACTORY): scans read its birth record. */
+  factory: string | null;
   /** "prod" (published 30-day window) or "demo" (AGENT_EXIT_MIN_WINDOW_SECS shortened it). */
   termsConfig: "prod" | "demo";
 }
@@ -139,6 +141,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!Number.isInteger(maxSharesBps) || maxSharesBps < 0 || maxSharesBps > 10_000) {
     throw new ConfigError("AGENT_EXIT_MAX_SHARES_BPS must be a whole number from 0 to 10000");
   }
+  const factory = env.AGENT_EXIT_FACTORY?.trim() || null;
+  if (factory && !/^[a-z0-9._-]+\.testnet$/.test(factory)) throw new ConfigError(`AGENT_EXIT_FACTORY ${factory} is not a .testnet account`);
   const minListRaw = env.AGENT_EXIT_MIN_LIST_PRICE?.trim();
   const minListPrice = minListRaw ? Number(minListRaw) : null;
   if (minListPrice !== null && (!Number.isFinite(minListPrice) || minListPrice < 0)) throw new ConfigError("AGENT_EXIT_MIN_LIST_PRICE must be a number >= 0");
@@ -164,6 +168,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     minAllowance: BigInt(minAllowanceRaw),
     minTerms: { ...PUBLISHED_MIN_TERMS, min_window_secs: minWindow },
     minListPrice,
+    factory,
     termsConfig: minWindow >= PUBLISHED_MIN_TERMS.min_window_secs ? "prod" : "demo",
   };
 }

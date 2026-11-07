@@ -438,3 +438,82 @@ fn t8_investor_scan_keeps_key_rules_without_a_listing() {
     assert_eq!(r.verdict, "blocked");
     assert!(r.codes().contains(&"full_access_key_present"));
 }
+
+// BC12-BC15: the born-clean factory record (contracts/factory) in the scan.
+fn with_birth(record: Option<scan::BirthRecord>) -> ScanInput {
+    let mut i = judge();
+    i.agent = "translator.agentexit.testnet".into();
+    i.born = Some(scan::BornCheck {
+        factory: "agentexit.testnet".into(),
+        record,
+    });
+    i
+}
+
+fn birth(agent: &str, code: &str, state: &str) -> Option<scan::BirthRecord> {
+    Some(scan::BirthRecord {
+        agent: agent.into(),
+        code_hash: code.into(),
+        state: state.into(),
+        owner_at_birth: Some("alice.testnet".into()),
+    })
+}
+
+#[test]
+fn bc12_born_in_the_factory_with_the_published_code_is_born_clean() {
+    let code = judge().chain.code_hash;
+    let r = scan(&with_birth(birth(
+        "translator.agentexit.testnet",
+        &code,
+        "Born",
+    )));
+    assert_eq!(r.born_clean, Some(true));
+    assert!(
+        !r.codes().contains(&"birth_record_mismatch"),
+        "{:?}",
+        r.findings
+    );
+}
+
+#[test]
+fn bc13_no_record_is_a_warning_not_a_block() {
+    let r = scan(&with_birth(None));
+    assert_eq!(r.born_clean, Some(false));
+    let f = r
+        .findings
+        .iter()
+        .find(|f| f.code == "not_born_clean")
+        .unwrap();
+    assert_eq!(f.severity, "warn");
+}
+
+#[test]
+fn bc14_a_record_that_does_not_match_blocks() {
+    let code = judge().chain.code_hash;
+    for (agent, code, state) in [
+        (
+            "translator.agentexit.testnet",
+            "11111111111111111111111111111111",
+            "Born",
+        ),
+        ("translator.agentexit.testnet", code.as_str(), "Creating"),
+        ("other.agentexit.testnet", code.as_str(), "Born"),
+    ] {
+        let r = scan(&with_birth(birth(agent, code, state)));
+        assert_eq!(r.born_clean, Some(false), "{agent} {state}");
+        assert_eq!(r.verdict, "blocked");
+        assert!(r.codes().contains(&"birth_record_mismatch"));
+    }
+}
+
+#[test]
+fn bc15_an_agent_that_is_not_a_direct_child_of_the_factory_is_not_born_clean() {
+    let code = judge().chain.code_hash;
+    let mut i = with_birth(birth("x.translator.agentexit.testnet", &code, "Born"));
+    i.agent = "x.translator.agentexit.testnet".into();
+    let r = scan(&i);
+    assert_eq!(r.born_clean, Some(false));
+    // Without a birth check the report has no born_clean field (old inputs, goldens).
+    let plain = serde_json::to_value(scan(&judge())).unwrap();
+    assert!(plain.get("born_clean").is_none());
+}

@@ -209,6 +209,7 @@ build: ## Reproducible wasm build with cargo-near (Docker), testnet accounts com
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/xusd && cargo near build reproducible-wasm --out-dir ../res
+	cd contracts/factory && cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/res && sha256sum *.wasm > SHA256SUMS
 
 .PHONY: build-dev
@@ -216,6 +217,7 @@ build-dev: ## Non-reproducible wasm build with cargo-near, ABI included (no Dock
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/agent && cargo near build non-reproducible-wasm --out-dir ../../target/near
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near
 
 .PHONY: hash
 hash: ## Compare committed wasm with contracts/res/SHA256SUMS
@@ -263,11 +265,12 @@ PLAN = cargo run --quiet --locked --offline -p testnet-plan --
 # under `make -n`, which once sent a real deploy. Use DRY_RUN=1 to preview.
 SUBMAKE = $(MAKE)
 
-.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 scene-8 testnet-plan-test
-build-testnet: ## [testnet] Build both wasm with the testnet token, admin and MPC signer compiled in -> target/near-testnet
+.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 scene-8 scene-9 testnet-plan-test
+build-testnet: ## [testnet] Build the three wasm (token, agent, factory) with the testnet token, admin and MPC signer compiled in -> target/near-testnet
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
 
 testnet-setup: ## [testnet] npm install for the G2 relay (chainsig.js, viem); network once
 	cd scripts/testnet && npm install --no-audit --no-fund
@@ -326,6 +329,13 @@ ifdef DRY_RUN
 	@$(PLAN) scene-8
 else
 	$(TESTNET_RUN) scene-8
+endif
+
+scene-9: ## [testnet] Born clean: factory.ROOT creates born1 in one batch with no key (code hash pinned), the scan reports born_clean -> out/scenes/scene-9.json [DRY_RUN=1] (needs make build-testnet)
+ifdef DRY_RUN
+	@$(PLAN) scene-9
+else
+	$(TESTNET_RUN) scene-9
 endif
 
 testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network)

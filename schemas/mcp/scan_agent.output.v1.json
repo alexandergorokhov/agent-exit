@@ -97,6 +97,13 @@
         }
       ]
     },
+    "born_clean": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "true: the born-clean factory created this account with the published code and no access key, so no hidden full-access key and no pre-written state can exist; false: not born there (or the record does not match); null: not checked (no factory configured)"
+    },
     "scanner": {
       "type": "string"
     },

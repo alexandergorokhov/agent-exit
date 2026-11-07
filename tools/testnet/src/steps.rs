@@ -170,6 +170,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
             Ok(())
         }
         Command::Scene(8) => invest(&c, &env, secrets).await,
+        Command::Scene(9) => born_clean(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -980,7 +981,10 @@ async fn g6(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
     let payment = t.events("payment").first().cloned().unwrap_or(Value::Null);
     let pass = payment["verified"] == true;
     out.set("payment_event", payment);
-    out.set("refused_event", t.events("refused").first().cloned().unwrap_or(Value::Null));
+    out.set(
+        "refused_event",
+        t.events("refused").first().cloned().unwrap_or(Value::Null),
+    );
     out.set(
         "signer_stability",
         json!(proofs
@@ -1025,6 +1029,16 @@ async fn scan_agent(
     id: &str,
     quoted_version: Option<u64>,
 ) -> Res<(Value, scan::Report)> {
+    scan_agent_born(c, id, quoted_version, None).await
+}
+
+/// The same, plus the born-clean factory's record of `id` when `factory` is set.
+async fn scan_agent_born(
+    c: &Chain,
+    id: &str,
+    quoted_version: Option<u64>,
+    factory: Option<&str>,
+) -> Res<(Value, scan::Report)> {
     let (code_hash, code) = c.code(id).await?;
     let methods = crate::wasm::exports(&code)?;
     let keys = c.keys_on(&c.net, id).await?;
@@ -1059,6 +1073,17 @@ async fn scan_agent(
                    "shares_bps": listing["shares_bps"].as_u64().unwrap_or(0), "shares": listing["shares"].as_array().cloned().unwrap_or_default()})
         },
     });
+    let mut input = input;
+    if let Some(f) = factory {
+        let record = c
+            .view(f, "get_agent", json!({"account_id": id}))
+            .await
+            .unwrap_or(Value::Null);
+        input["born"] = json!({"factory": f, "record": if record.is_null() { Value::Null } else {
+            json!({"agent": record["agent"], "code_hash": record["code_hash"],
+                   "state": record["state"], "owner_at_birth": record["owner_at_birth"]})
+        }});
+    }
     let parsed: scan::ScanInput =
         serde_json::from_value(input.clone()).map_err(|e| format!("scan input: {e}"))?;
     Ok((input, scan::scan(&parsed)))
@@ -1625,7 +1650,9 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     out.set("code_hash", json!(agent_hash));
     let st = c.view(&t2, "get_status", json!({})).await?;
     if st.get("shares_bps").is_none() {
-        return Err(format!("{n} runs a build without shares: run make build (rewrites contracts/res) first"));
+        return Err(format!(
+            "{n} runs a build without shares: run make build (rewrites contracts/res) first"
+        ));
     }
 
     println!("  runner key + lock");
@@ -1843,5 +1870,172 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         Ok(())
     } else {
         Err("dave did not get exactly 20% (see out/scenes/scene-8.json)".into())
+    }
+}
+
+// ------------------------------------------------------------------ scene 9
+
+/// NEAR the factory account starts with: its own code (~3.4 for 335 KB),
+/// the stored agent wasm (~5.5) and a margin.
+const FACTORY_MILLI: u32 = 10_500;
+/// NEAR attached to create_agent: the agent's code, reserves and a margin.
+const BORN_YOCTO: u128 = 9_200 * 10u128.pow(21);
+
+async fn born_clean(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    let mut out = Out::new("out/scenes/scene-9.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(9));
+    out.set("what", json!(info(Step::Scene9BornClean).what));
+    println!("scene-9");
+    let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
+    let agent_hash = sha256_b58(&agent_wasm);
+    let factory_wasm = wasm("FACTORY_WASM", "agent_factory.wasm")?;
+    let fid = c.id("factory");
+    out.set("factory", json!(fid));
+    out.set("agent_code_hash", json!(agent_hash));
+
+    println!("  factory");
+    if !c.exists(&fid).await {
+        let t = c
+            .create(
+                &format!("create {fid}"),
+                &c.root,
+                &fid,
+                "factory",
+                FACTORY_MILLI,
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let f = c.acct("factory")?;
+    if c.view(&fid, "get_code_hash", json!({})).await.is_err() {
+        let t = c
+            .deploy(
+                "deploy the factory",
+                &f,
+                factory_wasm,
+                json!({"code_hash": agent_hash}),
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let pinned = c.view(&fid, "get_code_hash", json!({})).await?;
+    if pinned != json!(agent_hash) {
+        return Err(format!(
+            "factory pins {pinned}, the agent build is {agent_hash}"
+        ));
+    }
+    if c.view(&fid, "has_code", json!({})).await? != json!(true) {
+        let t = c
+            .call_raw(
+                "factory: store_code (the published agent wasm)",
+                &f,
+                &fid,
+                "store_code",
+                agent_wasm,
+                300,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+
+    let name = std::env::var("BORN_AGENT")
+        .ok()
+        .or_else(|| env.get("BORN_AGENT").cloned())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "born1".to_string());
+    let agent = format!("{name}.{fid}");
+    out.set("agent", json!(agent));
+    println!("  create_agent {agent}");
+    if !c.exists(&agent).await {
+        let t = c
+            .call(
+                &format!("create_agent {name} for alice (one batch, no key)"),
+                &c.root,
+                &fid,
+                "create_agent",
+                json!({"name": name, "owner_id": c.id("alice")}),
+                BORN_YOCTO,
+                300,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        if t.events("agent_born").is_empty() {
+            return Err(format!("no agent_born event: {:?}", t.logs));
+        }
+    }
+    let keys1 = c.keys_on(&c.net, &agent).await?;
+    let keys2 = c.keys_on(&c.net2, &agent).await?;
+    out.set("keys_at_birth", json!({"rpc1": keys1, "rpc2": keys2}));
+    let record = c
+        .view(&fid, "get_agent", json!({"account_id": agent}))
+        .await?;
+    out.set("birth", record.clone());
+    let (code_hash, _) = c.code(&agent).await?;
+    out.set("code_hash_on_chain", json!(code_hash));
+
+    println!("  runner key");
+    let alice = c.acct("alice")?;
+    let sk = c.keys.get_or_create(&format!("{name}-runner"))?;
+    let pk = sk.public_key().to_string();
+    let st = c.view(&agent, "get_status", json!({})).await?;
+    if !st["known_keys"]
+        .as_array()
+        .is_some_and(|k| k.contains(&json!(pk)))
+    {
+        let t = c
+            .call(
+                "alice: set_runner_key",
+                &alice,
+                &agent,
+                "set_runner_key",
+                json!({"public_key": pk}),
+                1,
+                100,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let keys_after = c.keys(&agent).await?;
+    out.set("keys_after_runner", json!(keys_after));
+
+    println!("  scans with the factory record");
+    let (_, born) = scan_agent_born(c, &agent, None, Some(&fid)).await?;
+    let (_, cheat) = scan_agent_born(c, &c.id("cheat"), None, Some(&fid)).await?;
+    out.set(
+        "scan_born",
+        json!({"born_clean": born.born_clean, "findings": born.findings}),
+    );
+    out.set(
+        "scan_cheat",
+        json!({"born_clean": cheat.born_clean, "findings": cheat.findings}),
+    );
+
+    let no_key_at_birth = keys1.is_empty() && keys2.is_empty();
+    let only_fc_after = !keys_after.is_empty() && keys_after.iter().all(|k| !k.is_full());
+    let pass = no_key_at_birth
+        && record["state"] == json!("Born")
+        && record["code_hash"] == json!(code_hash)
+        && code_hash == agent_hash
+        && only_fc_after
+        && born.born_clean == Some(true)
+        && cheat.born_clean == Some(false);
+    out.set(
+        "check",
+        json!({"no_key_at_birth": no_key_at_birth, "born_record": record["state"] == json!("Born"),
+               "published_code": code_hash == agent_hash, "only_function_call_keys_after": only_fc_after,
+               "scan_born_clean": born.born_clean, "scan_cheat_born_clean": cheat.born_clean}),
+    );
+    out.set("pass", json!(pass));
+    out.write()?;
+    if pass {
+        Ok(())
+    } else {
+        Err("scene 9 checks failed (see out/scenes/scene-9.json)".into())
     }
 }

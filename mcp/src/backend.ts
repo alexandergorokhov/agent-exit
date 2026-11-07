@@ -595,7 +595,21 @@ export class TestnetBackend implements Backend {
         ...(baseWallet ? { base_wallet: { address: baseWallet.address, path: baseWallet.path, mpc_public_key: baseWallet.mpc_public_key } } : {}),
       },
       ...(listing ? { listing: listingView(listing) } : {}),
+      ...(this.cfg.factory ? { born: await this.birth(id, this.cfg.factory) } : {}),
     }, expect);
+  }
+
+  /** The born-clean factory's record of `id` (null = not born there). An
+   * unreadable record is passed on as a record that matches nothing, so the
+   * scan blocks instead of assuming. */
+  private async birth(id: string, factory: string): Promise<Json> {
+    if (!id.endsWith(`.${factory}`)) return { factory, record: null };
+    try {
+      const r = await this.view(factory, "get_agent", { account_id: id });
+      return { factory, record: r ? { agent: String(r.agent), code_hash: String(r.code_hash), state: String(r.state), owner_at_birth: String(r.owner_at_birth) } : null };
+    } catch {
+      return { factory, record: { agent: id, code_hash: "unreadable", state: "unreadable" } };
+    }
   }
 
   /** One ft_transfer_call on the token, signed with the server's key. The

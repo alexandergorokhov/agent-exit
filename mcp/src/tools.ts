@@ -649,6 +649,7 @@ export class Tools {
       findings: findings(r),
       untrusted_notice: UNTRUSTED_NOTICE,
       buy_args: r.buy_args ?? null,
+      born_clean: typeof r.born_clean === "boolean" ? r.born_clean : null,
       scanner: "tools/scan (scan-report.v1)",
     };
   }

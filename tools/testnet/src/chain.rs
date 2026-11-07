@@ -273,6 +273,68 @@ impl Chain {
         tx
     }
 
+    /// A call whose input is raw bytes (the factory's `store_code` takes the
+    /// wasm itself). Signed by a full-access key, so no allowance check.
+    pub async fn call_raw(
+        &self,
+        label: &str,
+        who: &Acct,
+        receiver: &str,
+        method: &str,
+        bytes: Vec<u8>,
+        tgas: u64,
+    ) -> Tx {
+        let t0 = Instant::now();
+        let mut tx = Tx {
+            label: label.into(),
+            by: who.id.to_string(),
+            receiver: receiver.into(),
+            method: method.into(),
+            hash: None,
+            ok: false,
+            error: None,
+            value: Value::Null,
+            logs: vec![],
+            ms: 0,
+        };
+        let receiver_id: AccountId = match receiver.parse() {
+            Ok(r) => r,
+            Err(e) => {
+                tx.error = Some(format!("{e:?}"));
+                return tx;
+            }
+        };
+        let sent = Contract(receiver_id)
+            .call_function_raw(method, bytes)
+            .transaction()
+            .gas(NearGas::from_tgas(tgas))
+            .with_signer(who.id.clone(), who.signer.clone())
+            .send_to(&self.net)
+            .await;
+        tx.ms = t0.elapsed().as_millis();
+        match sent {
+            Err(e) => tx.error = Some(short(format!("{e:?}"))),
+            Ok(r) => match r.into_full() {
+                None => tx.error = Some("pending: no final outcome".into()),
+                Some(full) => {
+                    tx.hash = Some(full.outcome().transaction_hash.to_string());
+                    tx.logs = full.logs().iter().map(|l| l.to_string()).collect();
+                    match full.into_result() {
+                        Ok(_) => tx.ok = true,
+                        Err(f) => tx.error = Some(short(format!("{f}"))),
+                    }
+                }
+            },
+        }
+        println!(
+            "  {} {:<40} {}",
+            if tx.ok { "ok  " } else { "FAIL" },
+            label,
+            tx.error.as_deref().unwrap_or_default()
+        );
+        tx
+    }
+
     /// `Some(reason)` if `who` signs with a function-call key whose
     /// allowance is below what the node reserves for `tgas` (attached gas at
     /// a pessimistic 1e9 yocto per gas, 10x the testnet minimum price).

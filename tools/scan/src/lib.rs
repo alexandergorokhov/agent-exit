@@ -315,6 +315,62 @@ pub struct ScanInput {
     /// `get_listing` at scan time. Missing = cannot check the terms = block.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listing: Option<ListingView>,
+    /// The born-clean factory's record of this agent (`<factory>.get_agent`).
+    /// Absent = not checked (older inputs); present with no record = the
+    /// agent was not born in the factory.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub born: Option<BornCheck>,
+}
+
+/// What the factory says about the agent (contracts/factory).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BornCheck {
+    pub factory: String,
+    pub record: Option<BirthRecord>,
+}
+
+/// `agent-birth.v1`, the fields the scan checks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BirthRecord {
+    pub agent: String,
+    pub code_hash: String,
+    /// `Creating` or `Born`.
+    pub state: String,
+    #[serde(default)]
+    pub owner_at_birth: Option<String>,
+}
+
+/// Born clean: the factory created this account with the published code and
+/// no access key, so no hidden full-access key and no state written before
+/// the code can exist (N4, N12 closed by construction). `None` = not checked.
+pub fn born_clean(i: &ScanInput, f: &mut Vec<Finding>) -> Option<bool> {
+    let b = i.born.as_ref()?;
+    let Some(r) = &b.record else {
+        f.push(Finding {
+            code: "not_born_clean".into(),
+            severity: "warn".into(),
+            detail: format!(
+                "{} was not created by the factory {}: hidden keys and pre-written state are caught only by this scan",
+                i.agent, b.factory
+            ),
+        });
+        return Some(false);
+    };
+    let child = i.agent.strip_suffix(&format!(".{}", b.factory));
+    let ok = r.state == "Born"
+        && r.agent == i.agent
+        && child.is_some_and(|c| !c.is_empty() && !c.contains('.'))
+        && r.code_hash == i.chain.code_hash;
+    if !ok {
+        f.push(block(
+            "birth_record_mismatch",
+            format!(
+                "factory {} record for {} (state {}, code {}) does not match the account (code {})",
+                b.factory, r.agent, r.state, r.code_hash, i.chain.code_hash
+            ),
+        ));
+    }
+    Some(ok)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -328,6 +384,9 @@ pub struct Finding {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Report {
     pub schema: String,
+    /// Factory birth check (only when the input carried one).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub born_clean: Option<bool>,
     pub agent: String,
     /// `clean` | `blocked` | `inconclusive`
     pub verdict: String,
@@ -778,6 +837,7 @@ pub fn scan(i: &ScanInput) -> Report {
         });
     }
 
+    let born = born_clean(i, &mut f);
     let blocked = f.iter().any(|x| x.severity == "block");
     let verdict = if inconclusive {
         "inconclusive"
@@ -788,6 +848,7 @@ pub fn scan(i: &ScanInput) -> Report {
     };
     Report {
         schema: REPORT_SCHEMA.into(),
+        born_clean: born,
         agent: i.agent.clone(),
         verdict: verdict.into(),
         buy_args: (verdict == "clean").then(|| {

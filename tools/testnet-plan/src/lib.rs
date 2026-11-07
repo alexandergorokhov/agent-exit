@@ -279,6 +279,8 @@ pub enum Step {
     Scene7AiSetup,
     /// Not in `scenes`: shares of future earnings on a fresh agent.
     Scene8Invest,
+    /// Not in `scenes`: the born-clean factory creates an agent with no key.
+    Scene9BornClean,
 }
 
 pub struct StepInfo {
@@ -319,6 +321,7 @@ pub fn info(step: Step) -> StepInfo {
         Scene5Sale => ("scene-5", "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00", &[], "out/scenes/scene-5.json"),
         Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)", &[], "out/scenes/scene-6.json"),
         Scene8Invest => ("scene-8", "invest (not part of `scenes`): creates a fresh agent (INVEST_AGENT, default translator3; locked agents cannot take new code) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 translation jobs (translated and NEAR AI-signed when NEARAI_API_KEY is set; the scene fails if any job is unverified then); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims", &[], "out/scenes/scene-8.json"),
+        Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 9.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
         Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
     };
     StepInfo {
@@ -354,7 +357,7 @@ impl Command {
                 s.strip_prefix("scene-")?
                     .parse()
                     .ok()
-                    .filter(|n| (1..=8).contains(n))?,
+                    .filter(|n| (1..=9).contains(n))?,
             ),
         })
     }
@@ -372,6 +375,7 @@ pub fn scene_step(n: u8) -> Step {
         5 => Step::Scene5Sale,
         7 => Step::Scene7AiSetup,
         8 => Step::Scene8Invest,
+        9 => Step::Scene9BornClean,
         _ => Step::Scene6AgentBuysAgent,
     }
 }
@@ -628,7 +632,8 @@ mod tests {
         assert_eq!(Command::parse("scene-4"), Some(Command::Scene(4)));
         assert_eq!(Command::parse("scene-7"), Some(Command::Scene(7)));
         assert_eq!(Command::parse("scene-8"), Some(Command::Scene(8)));
-        assert_eq!(Command::parse("scene-9"), None);
+        assert_eq!(Command::parse("scene-9"), Some(Command::Scene(9)));
+        assert_eq!(Command::parse("scene-10"), None);
         let missing = &plan_json(Command::GateG6, &c, false)["steps"][0]["missing"];
         assert_eq!(missing, &json!(["NEARAI_API_KEY"]));
     }
