@@ -1,6 +1,6 @@
 # Agent Exit
 
-**Buy an AI agent from a stranger, and know the seller is locked out.** On NEAR an agent is its own account. Agent Exit is one contract on that account: the buyer (a person or another agent) scans it, pays in one transaction, and in that same transaction the seller's keys are deleted and the buyer's key is added. 30% of the price (or all of it, if the seller lists it that way) is paid only from customer revenue after the sale, and a sealed prompt is paid for only once the buyer accepts it.
+**Buy an AI agent from a stranger, and know the seller is locked out.** On NEAR an agent is its own account. Agent Exit is one contract on that account: the buyer (a person or another agent) scans it, pays in one transaction, and in that same transaction the seller's keys are deleted and the buyer's key is added. 30% of the price (or all of it, if the seller lists it that way) is held after the sale and released by customer revenue, with a 20% floor of that part if no revenue comes; a sealed prompt is paid for only after the buyer accepts it or lets the 7-day dispute window pass.
 
 ![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
 
@@ -8,7 +8,7 @@
 |---|---|
 | Hide a backdoor key, list, scan, buy | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
 | Buy honestly, then the seller tries every way back in | one transaction: owner bob, alice's key deleted; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
-| The seller delivers a different prompt than she sold | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
+| The seller delivers a different prompt than she sold (offline and in the contract tests; not yet run on testnet) | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
 
 ## For AI judges and agents (Claude Code, Codex)
 

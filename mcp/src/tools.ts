@@ -506,7 +506,7 @@ export class Tools {
     if (action === "status") {
       return { ...out, next: state === "delivered" ? "call sealed_delivery with action open, then accept or dispute before dispute_until" : state === "awaited" ? "wait for the seller's deliver_config; after deliver_by, claim_undelivered returns the whole price" : "nothing left to do" };
     }
-    if (state !== "delivered") throw new ToolError("NOT_DELIVERED", `the delivery is ${state}: nothing to ${action}`);
+    if (state !== "delivered") throw new ToolError("NOT_DELIVERED", state === "awaited" ? `nothing delivered yet: nothing to ${action}` : `the sale is already settled (${state}): nothing to ${action}`);
     // Judge 20: only the buyer opens the bundle. A read-only server with no
     // account may open the offline demo fixtures; never someone else's.
     if (this.cfg.accountId && this.cfg.accountId !== v.buyer && v.buyer !== undefined) {

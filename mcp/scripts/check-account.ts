@@ -4,7 +4,7 @@
 import { connect } from "../src/client.js";
 
 const id = process.argv[2];
-if (!id) {
+if (!id || process.argv.length > 3 || /\s/.test(id)) {
   process.stderr.write("usage: check-account <account>\n");
   process.exit(2);
 }
