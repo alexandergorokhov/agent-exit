@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/sandbox.output.v1.json",
+  "title": "sandbox output",
+  "type": "object",
+  "properties": {
+    "schema_version": { "const": "agent-exit.mcp.sandbox.v1" },
+    "network": { "type": "string" },
+    "sandbox": { "const": true, "description": "in-memory only: nothing was sent to any chain" },
+    "engine": { "type": "string", "description": "what ran: the wasm file and its sha256" },
+    "step": { "type": "integer", "minimum": 0 },
+    "action": { "type": "string" },
+    "who": { "type": "string" },
+    "ok": { "type": "boolean", "description": "false = the contract or the NEAR node refused it" },
+    "result": { "type": "string", "description": "the contract's answer, with its error name when refused" },
+    "state": { "type": "object", "description": "owner, status, keys on the account (and whether the contract knows them), listing, earnings, scan, sale, escrow, claimable balances, share slices, solvent" }
+  },
+  "required": ["schema_version", "network", "sandbox", "engine", "step", "action", "who", "ok", "result", "state"],
+  "additionalProperties": false
+}

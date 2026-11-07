@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/sandbox.input.v1.json",
+  "title": "sandbox input",
+  "description": "One action in the live sandbox: the real contract core and buyer scan compiled to wasm. Actors: alice (seller, owns the agent at the start), bob (buyer), dave (investor), customers. Any order; the contract decides.",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["reset", "view", "pay_customer", "pay_verified", "pay_self", "pay_sub", "pay_fresh", "plant_key", "remove_key", "toggle_upgrade", "list", "cancel", "scan", "buy", "withdraw", "relist", "set_key", "old_key", "hidden_key", "hidden_redeploy", "wait", "offer_share", "buy_share", "claim_share", "end_share"],
+      "description": "reset/view; payments: pay_customer (a stranger pays 25), pay_verified (with a NEAR AI signature), pay_self (the owner pays 200), pay_sub (from bot.<owner>), pay_fresh (the seller pays 200 from a wallet nothing links to them); seller tricks: plant_key (hidden full-access key), remove_key, toggle_upgrade (an upgrade method), hidden_key (run the agent with the hidden key), hidden_redeploy (take it back with the hidden key); sale: list (alice), cancel, scan (bob), buy (bob); after a sale, alice tries: withdraw, relist, set_key, old_key; wait (days pass, the earn-out closes); shares: offer_share (alice, 20% for 500), buy_share (dave), claim_share, end_share"
+    },
+    "price": { "type": "integer", "minimum": 1, "maximum": 1000000, "description": "list: price in xUSD-FAKE dollars (default 1000)" },
+    "pay_from_revenue": { "type": "boolean", "description": "list: hold the whole price; the seller is paid only by customer payments after the sale" },
+    "skip_scan": { "type": "boolean", "description": "buy: send the buy without a clean scan (the real SDK and MCP buy_agent never do)" },
+    "days": { "type": "integer", "minimum": 1, "maximum": 400, "description": "wait: days that pass (default 31)" }
+  },
+  "required": ["action"],
+  "additionalProperties": false
+}

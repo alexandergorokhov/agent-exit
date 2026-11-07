@@ -16,7 +16,8 @@ Use the `agent-exit` MCP server (stdio, `make mcp`; config in
 `mcp/mcp-config.example.json`). Tools: `list_agents`, `get_earnings`,
 `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`, and for
 shares of future earnings `list_offers`, `buy_share`, `portfolio`. Reviewing the
-project itself? `check_claims` re-runs its claims in a private sandbox. JSON in and
+project itself? `check_claims` re-runs its claims in a private sandbox, and
+`sandbox` runs any action you choose on the contract code compiled to wasm. JSON in and
 out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
 `make scan FILE=<scan-input.json>`.
 

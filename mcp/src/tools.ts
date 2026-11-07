@@ -15,6 +15,8 @@ import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, OfflineBackend, type TxOutcome, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
+import { createHash } from "node:crypto";
+import { Sandbox } from "./sandbox.js";
 
 export const TOOL_NAMES = [
   "list_agents",
@@ -27,6 +29,7 @@ export const TOOL_NAMES = [
   "buy_share",
   "portfolio",
   "check_claims",
+  "sandbox",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share"];
@@ -41,6 +44,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
   check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
+  sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
 
@@ -54,7 +58,8 @@ export const JUDGE_TOUR = {
     "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
     "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
-    "5. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
+    "5. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
+    "6. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
     "Offline mode replays results recorded from the real contract code (fixtures/mcp/world.json); with AGENT_EXIT_NETWORK=testnet the same read tools read the live testnet agents named in the README.",
   ].join("\n"),
 };
@@ -337,6 +342,39 @@ export class Tools {
     public schemas: SchemaSet,
   ) {
     this.ledger = new SpendLedger(cfg.spendFile, cfg.accountId ?? "-");
+    this.sandbox = Sandbox.forRepo(cfg.repo);
+  }
+
+  private sandbox: Sandbox;
+  private engine: string | null = null;
+
+  /** sandbox: one action through the playground wasm (see sandbox.ts). */
+  private runSandbox(a: Json): Json {
+    const action: Json = { op: a.action };
+    if (a.action === "list") {
+      if (a.price !== undefined) action.price = a.price;
+      if (a.pay_from_revenue !== undefined) action.pay_from_revenue = a.pay_from_revenue;
+    }
+    if (a.action === "buy" && a.skip_scan !== undefined) action.skip_scan = a.skip_scan;
+    if (a.action === "wait" && a.days !== undefined) action.days = a.days;
+    const { last, view } = this.sandbox.call(action);
+    if (!this.engine) {
+      const wasm = join(this.cfg.repo, "web", "playground.wasm");
+      this.engine = `web/playground.wasm sha256:${createHash("sha256").update(readFileSync(wasm)).digest("hex")} (contracts/agent-core + tools/scan, make playground-wasm)`;
+    }
+    const { log: _log, ...state } = view;
+    return {
+      schema_version: "agent-exit.mcp.sandbox.v1",
+      network: this.backend.network,
+      sandbox: true,
+      engine: this.engine,
+      step: this.sandbox.step,
+      action: a.action,
+      who: String(last.who ?? ""),
+      ok: last.ok === true,
+      result: String(last.text ?? ""),
+      state,
+    };
   }
 
   private base(tool: ToolName): Json {
@@ -394,6 +432,8 @@ export class Tools {
         return this.portfolio(a.account);
       case "check_claims":
         return this.backend.network === "testnet" ? this.checkClaimsTestnet() : this.checkClaims();
+      case "sandbox":
+        return Promise.resolve(this.runSandbox(a));
     }
   }
 
