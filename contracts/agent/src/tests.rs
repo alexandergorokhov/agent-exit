@@ -347,7 +347,7 @@ fn e21_finalize_twice_or_by_anyone() {
 #[test]
 fn e25_approval_blocks_listing_and_is_cleared_on_transfer() {
     let mut s = translator_world();
-    s.by_1y(ALICE)
+    s.by_milli(ALICE, 10)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     assert!(panics(|| {
         s.by_1y(ALICE)
@@ -364,7 +364,7 @@ fn e25_approval_blocks_listing_and_is_cleared_on_transfer() {
 #[should_panic(expected = "OpenApproval")]
 fn a8_open_approval_list_refused() {
     let mut s = translator_world();
-    s.by_1y(ALICE)
+    s.by_milli(ALICE, 10)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
@@ -636,7 +636,8 @@ fn i4_access_matrix_owner_methods() {
                 .nft_transfer(acc(MALLORY), DEED_ID.into(), None, None)
         }),
         ("nft_approve", |s, w| {
-            s.by_1y(w).nft_approve(DEED_ID.into(), acc(MALLORY), None);
+            s.by_milli(w, 10)
+                .nft_approve(DEED_ID.into(), acc(MALLORY), None);
         }),
         ("nft_revoke_all", |s, w| {
             s.by_1y(w).nft_revoke_all(DEED_ID.into())
@@ -1197,4 +1198,23 @@ fn sc12_sealed_config_fair_exchange_through_the_contract() {
         "her own earlier revenue only (A29), no part of the price"
     );
     assert!(s.m().solvent());
+}
+
+#[test]
+fn r2_nft_approve_charges_storage_and_the_deed_cannot_go_to_the_agent() {
+    let mut s = translator_world();
+    // 1 yoctoNEAR no longer pays for an approval.
+    assert!(panics(|| {
+        s.by_1y(ALICE)
+            .nft_approve(DEED_ID.into(), acc(MALLORY), None);
+    }));
+    s.by_milli(ALICE, 10)
+        .nft_approve(DEED_ID.into(), acc(MALLORY), None);
+    assert!(s.c.nft_is_approved(DEED_ID.into(), acc(MALLORY), None));
+    let agent = s.agent.clone();
+    assert!(panics(|| {
+        s.by_1y(ALICE)
+            .nft_transfer(acc(&agent), DEED_ID.into(), None, None);
+    }));
+    assert_eq!(s.m().owner, ALICE);
 }

@@ -395,6 +395,28 @@ export class Tools {
     if (upgrade.length) findings.push({ code: "code_change_method", severity: "high", text: `the contract exports ${upgrade.map((m) => untrusted(m)).join(", ")}: a way to change the code or the keys later` });
     const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
     const isAgentExit = hasCode && published !== null && f.code_hash === published;
+    // Judge 20: on the published build, every key must be one the contract
+    // itself installed (get_status known_keys), and function-call keys may
+    // only point at the account itself.
+    if (isAgentExit) {
+      let known: string[] | null = null;
+      try {
+        const st = (await this.backend.agent(account)).status;
+        known = Array.isArray(st.known_keys) ? st.known_keys.map((x: unknown) => String(x)) : null;
+      } catch {
+        known = null;
+      }
+      if (known === null) {
+        findings.push({ code: "contract_keys_unreadable", severity: "high", text: "the contract's own key list (get_status known_keys) could not be read, so stray keys cannot be ruled out" });
+      } else {
+        for (const k of f.keys) {
+          if (!known.includes(String(k?.public_key))) findings.push({ code: "key_not_issued_by_contract", severity: "high", text: `${untrusted(String(k?.public_key))} is on the account but the contract never installed it: someone added it outside the contract's rules` });
+        }
+      }
+    }
+    for (const k of keys) {
+      if (k.kind === "function_call" && k.receiver_id !== account) findings.push({ code: "fc_key_other_contract", severity: "medium", text: `${k.public_key} lets its holder spend this account's NEAR on gas calling ${k.receiver_id}` });
+    }
     if (f.keys_second) {
       // Judge 19: compare what each key may do, not only its name.
       const norm = (ks: Json[]) => JSON.stringify(ks.map((k: Json) => JSON.stringify([k?.public_key, k?.permission])).sort());
@@ -412,9 +434,9 @@ export class Tools {
     // may still change itself under another name.
     const verdict = !hasCode
       ? "key_controlled"
-      : fullKeys || upgrade.length || findings.some((x) => x.code === "providers_disagree")
+      : fullKeys || upgrade.length || findings.some((x) => ["providers_disagree", "key_not_issued_by_contract", "contract_keys_unreadable"].includes(x.code))
         ? "backdoor_risk"
-        : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key"].includes(x.code))
+        : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key", "fc_key_other_contract"].includes(x.code))
           ? "locked"
           : "no_key_unknown_code";
     const summary = {
@@ -442,7 +464,7 @@ export class Tools {
    * fixtures' demo secret, else the 0600 file buy_agent wrote (matched by
    * public key). Never returned to the caller. */
   private deliverySecret(agent: string, deliveryPk: string): Buffer {
-    const demo = this.backend.demoDeliverySecret?.();
+    const demo = this.backend.demoDeliverySecret?.(agent);
     if (demo) return Buffer.from(demo, "hex");
     const dir = this.cfg.spendFile ? dirname(this.cfg.spendFile) : join(this.cfg.repo, "out");
     let files: string[] = [];
@@ -485,6 +507,11 @@ export class Tools {
       return { ...out, next: state === "delivered" ? "call sealed_delivery with action open, then accept or dispute before dispute_until" : state === "awaited" ? "wait for the seller's deliver_config; after deliver_by, claim_undelivered returns the whole price" : "nothing left to do" };
     }
     if (state !== "delivered") throw new ToolError("NOT_DELIVERED", `the delivery is ${state}: nothing to ${action}`);
+    // Judge 20: only the buyer opens the bundle. A read-only server with no
+    // account may open the offline demo fixtures; never someone else's.
+    if (this.cfg.accountId && this.cfg.accountId !== v.buyer && v.buyer !== undefined) {
+      throw new ToolError("CONTRACT_REFUSED", `${this.cfg.accountId} is not the buyer of sale ${saleId} (NotBuyer): only the buyer holds its one-time key`, { contract_error: "NotBuyer" });
+    }
     const sk = this.deliverySecret(agent, String(v.delivery_pk));
     const { open, commitOf } = await import("./sealed.js");
     const plain = open(sk, Buffer.from(String(st.Delivered.ephemeral_pk), "hex"), Buffer.from(String(v.ciphertext ?? ""), "base64"));

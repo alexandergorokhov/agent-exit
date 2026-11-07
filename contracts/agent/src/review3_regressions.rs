@@ -605,7 +605,7 @@ fn a48_deed_move_keeps_old_owners_revenue_theirs() {
     let free = s.m().owner_free;
     assert!(free > 0);
     let _ = s
-        .by_1y(ALICE)
+        .by_milli(ALICE, 10)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     s.by_1y(MALLORY)
         .nft_transfer(acc(MALLORY), DEED_ID.into(), Some(0), None);

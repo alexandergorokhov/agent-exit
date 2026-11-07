@@ -10,11 +10,13 @@ import { commit, publicKey, seal } from "./sealed-config.mjs";
 const bundle = Buffer.from(JSON.stringify({ schema: "agent-config.v1", system_prompt: "You translate EN<->ES. Keep names and numbers exact.", model: "deepseek-v3", tools: ["glossary"], rotate_after_sale: ["NEARAI_API_KEY"] }));
 const fake = Buffer.from(bundle);
 fake[50] = "X".charCodeAt(0);
-const buyerSk = Buffer.alloc(32, 42);
-const pk = publicKey(buyerSk);
+// One demo secret per buyer (judge 20): a fixture never shares a key.
+const secretFor = (n) => Buffer.alloc(32, n);
 const T = 1_767_225_600_000_000_000n;
 const DAY = 86_400_000_000_000n;
-const entry = (b, eph) => {
+const entry = (b, eph, n) => {
+  const sk = secretFor(n);
+  const pk = publicKey(sk);
   const s = seal(Buffer.alloc(32, eph), pk, b);
   return {
     sale_id: 1, seller: "alice.testnet", buyer: "summarizer.testnet", price: "1000000000", upfront: "700000000", escrow: "300000000",
@@ -22,14 +24,14 @@ const entry = (b, eph) => {
     deliver_by: String(T + 2n * DAY), dispute_until: String(T + 8n * DAY), cleared: false,
     state: { Delivered: { ephemeral_pk: s.ephemeral_pk, cipher_hash: null, at: String(T + DAY) } },
     ciphertext: s.ciphertext.toString("base64"),
+    demo_buyer_sk: sk.toString("hex"),
   };
 };
 const out = {
   schema: "mcp-sealed.v1",
-  note: "Illustrative offline fixtures for sealed_delivery (scripts/gen-sealed-fixture.mjs). brainy.testnet delivered the committed bundle; swapped.testnet delivered a different prompt. demo_buyer_sk is a fixed demo secret for these fixtures only.",
+  note: "Illustrative offline fixtures for sealed_delivery (scripts/gen-sealed-fixture.mjs). brainy.testnet delivered the committed bundle; swapped.testnet delivered a different prompt. demo_buyer_sk is a fixed demo secret per fixture, for these fixtures only.",
   now: String(T + 2n * DAY),
-  demo_buyer_sk: buyerSk.toString("hex"),
-  agents: { "brainy.testnet": entry(bundle, 17), "swapped.testnet": entry(fake, 18) },
+  agents: { "brainy.testnet": entry(bundle, 17, 42), "swapped.testnet": entry(fake, 18, 43) },
 };
 writeFileSync(new URL("../fixtures/mcp/sealed.json", import.meta.url), JSON.stringify(out, null, 2) + "\n");
 console.log("wrote fixtures/mcp/sealed.json");

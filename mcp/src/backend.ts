@@ -160,7 +160,7 @@ export interface Backend {
   /** release_upfront or dispute_config, signed by `signer`. */
   sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome>;
   /** Offline only: the fixed demo secret of the sealed fixtures. */
-  demoDeliverySecret?(): string | null;
+  demoDeliverySecret?(id: string): string | null;
 }
 
 export interface SealedCallOutcome {
@@ -256,15 +256,16 @@ export class OfflineBackend implements Backend {
     return this.sealedFx as Json;
   }
 
-  demoDeliverySecret(): string | null {
-    return this.sealedFixtures().demo_buyer_sk ?? null;
+  demoDeliverySecret(id: string): string | null {
+    return this.sealedFixtures().agents?.[id]?.demo_buyer_sk ?? null;
   }
 
   async sealedConfig(id: string, saleId: number): Promise<Json | null> {
     const e = this.sealedFixtures().agents?.[id];
     if (!e) throw new ToolError("UNKNOWN_AGENT", `${id} has no sealed sale in the offline fixtures (fixtures/mcp/sealed.json: brainy.testnet, swapped.testnet)`);
     if (e.sale_id !== saleId) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} not found on ${id}`);
-    return structuredClone(e);
+    const { demo_buyer_sk: _secret, ...view } = e;
+    return structuredClone(view);
   }
 
   /** The same rules as agent-core release_upfront / dispute_config

@@ -41,7 +41,7 @@ test("CA3 any account: a wallet is key-controlled; a bot with an upgrade method 
   const bot = await check("trading-bot.testnet");
   assert.equal(bot.verdict, "backdoor_risk");
   const codes = bot.findings.map((f: any) => f.code).sort();
-  assert.deepEqual(codes, ["code_change_method", "fc_key_any_method", "fc_key_no_allowance", "full_access_key_on_contract"]);
+  assert.deepEqual(codes, ["code_change_method", "fc_key_any_method", "fc_key_no_allowance", "fc_key_other_contract", "full_access_key_on_contract"]);
   const vault = await check("locked-vault.testnet");
   assert.equal(vault.verdict, "no_key_unknown_code", "judge 18: locked only for a build we can check");
   assert.equal(vault.code.published_agent_exit_build, false);
@@ -175,4 +175,29 @@ test("CA11 testnet: the code hash is read from both providers, and key permissio
   const t = new Tools(cfg, new TestnetBackend(cfg, f), loadSchemas(REPO));
   const r = await t.call("check_account", { account: "someone-else.testnet" });
   assert.ok((r.body as any).findings.some((x: any) => x.code === "providers_disagree"), JSON.stringify(r.body));
+});
+
+test("CA12 the published build with a key the contract never installed, or a key aimed at another contract, is not locked", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "agent-exit-ca12-"));
+  const w = structuredClone(world);
+  const t = w.agents["translator.testnet"].scan_input.chain;
+  const runner = t.keys[0];
+  t.keys = [
+    ...t.keys,
+    { ...runner, public_key: "ed25519:Stray" },
+    { public_key: "ed25519:Dex", permission: { receiver_id: "dex.testnet", method_names: ["swap"], allowance: "1000" } },
+  ];
+  writeFileSync(join(dir, "world.json"), JSON.stringify(w));
+  const s = await connect({ AGENT_EXIT_WORLD: join(dir, "world.json") });
+  try {
+    const r = await s.call("check_account", { account: "translator.testnet" });
+    assert.ok(valid("check_account", r), JSON.stringify(r.body));
+    const b: any = r.body;
+    assert.equal(b.verdict, "backdoor_risk");
+    const codes = b.findings.map((x: any) => x.code);
+    assert.ok(codes.includes("key_not_issued_by_contract"));
+    assert.ok(codes.includes("fc_key_other_contract"));
+  } finally {
+    await s.close();
+  }
 });

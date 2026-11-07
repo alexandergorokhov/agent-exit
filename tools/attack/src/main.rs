@@ -72,7 +72,7 @@ fn contract_layer() -> Vec<Value> {
     );
 
     let mut s = translator_world();
-    s.by_1y(ALICE)
+    s.by_milli(ALICE, 10)
         .nft_approve(DEED_ID.into(), acc(MALLORY), None);
     let a8 = panics_with("OpenApproval", || {
         s.by_1y(ALICE)

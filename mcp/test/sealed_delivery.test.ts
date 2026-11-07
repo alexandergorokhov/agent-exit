@@ -3,6 +3,7 @@
 // Offline fixtures: fixtures/mcp/sealed.json (scripts/gen-sealed-fixture.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { connect } from "../src/client.js";
 import { valid, writer } from "./helpers.js";
 
@@ -95,4 +96,19 @@ test("SD6 disputing a swapped prompt returns the whole price; only the buyer may
   } finally {
     await w.close();
   }
+});
+
+test("SD7 someone who is not the buyer cannot open the bundle; each fixture has its own secret", async () => {
+  const m = await connect({ AGENT_EXIT_ACCOUNT_ID: "mallory.testnet" });
+  try {
+    const r = await m.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "open" });
+    assert.equal(r.ok, false);
+    assert.match((r.body as any).error.message, /NotBuyer/);
+    const st = await m.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "status" });
+    assert.ok(!JSON.stringify(st.body).includes("demo_buyer_sk"), "the fixture secret never leaves the backend");
+  } finally {
+    await m.close();
+  }
+  const fx = JSON.parse(readFileSync(new URL("../../../fixtures/mcp/sealed.json", import.meta.url), "utf8"));
+  assert.notEqual(fx.agents["brainy.testnet"].demo_buyer_sk, fx.agents["swapped.testnet"].demo_buyer_sk);
 });

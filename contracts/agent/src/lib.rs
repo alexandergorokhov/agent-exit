@@ -101,6 +101,8 @@ pub const TERMS_MIN: core::TermsMin = core::TermsMin {
     ..core::TermsMin::PROD
 };
 
+/// Bytes one deed approval adds to the state, besides the account id (review 2, L3).
+const APPROVAL_STORAGE_BYTES: u128 = 80;
 const fn parse_u64(s: &str) -> u64 {
     let b = s.as_bytes();
     assert!(!b.is_empty(), "AGENT_EXIT_MIN_WINDOW_SECS is empty");
@@ -1909,15 +1911,24 @@ impl AgentExit {
         msg: Option<String>,
     ) -> Option<Promise> {
         require!(token_id == DEED_ID, "UnknownToken");
+        // Review 2 (L3): the approval's storage is paid for and any extra
+        // deposit is refunded (NEP-178).
+        let need = env::storage_byte_cost()
+            .saturating_mul(APPROVAL_STORAGE_BYTES + account_id.as_str().len() as u128);
+        let paid = env::attached_deposit();
         require!(
-            env::attached_deposit() >= NearToken::from_yoctonear(1),
-            "Requires attached deposit"
+            paid >= need,
+            format!("attach {need} yoctoNEAR for the approval's storage")
         );
         let caller = env::predecessor_account_id();
         let id = self
             .m
             .approve(caller.as_str(), account_id.as_str())
             .unwrap_or_else(|e| fail(e));
+        if paid > need {
+            // Scheduled when dropped (near-sdk), after this call succeeds.
+            let _refund = Promise::new(caller.clone()).transfer(paid.saturating_sub(need));
+        }
         msg.map(|msg| {
             ext_nft_approval_receiver::ext(account_id)
                 .with_static_gas(GAS_NFT_ON_APPROVE)

@@ -124,6 +124,8 @@ pub enum Error {
     DisputeClosed,
     /// SC14: only the buyer may accept before the dispute window closes.
     DisputeOpen,
+    /// Review 2: the deed cannot be sent to the agent's own account.
+    DeedToAgent,
     /// The secret key is not the one the buy named.
     BadDeliveryKey,
     /// The delivery opens to exactly the committed bundle: no dispute.
@@ -1722,6 +1724,11 @@ impl<S: Store + Default> Machine<S> {
         }
         if receiver == self.owner {
             return Err(Error::SameOwner);
+        }
+        // Review 2: a deed held by the agent's own account could never move
+        // again (the contract has no key to sign for itself).
+        if receiver == self.agent {
+            return Err(Error::DeedToAgent);
         }
         // C28: a Base authorization signed (or being signed) by the agent's
         // wallet must not travel with the deed to a new owner.

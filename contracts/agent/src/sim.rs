@@ -183,6 +183,14 @@ impl Sim {
         &mut self.c
     }
 
+    /// Same, with `near` milliNEAR attached.
+    pub fn by_milli(&mut self, who: &str, milli: u128) -> &mut AgentExit {
+        let mut c = self.call(who);
+        c.deposit = NearToken::from_millinear(milli);
+        self.env(&c);
+        &mut self.c
+    }
+
     /// A callback on the agent itself with one promise result.
     pub fn callback(&mut self, ok: bool) -> &mut AgentExit {
         let mut c = self.call(&self.agent.clone());

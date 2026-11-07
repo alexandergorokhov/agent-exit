@@ -160,6 +160,10 @@ attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/at
 	@mkdir -p $(OUT)
 	cargo run --quiet --locked --offline -p attack -- --n $(N) --seed $(SEED) --clean $(CLEAN) $(if $(FIXTURE),--fixture $(FIXTURE)) --out $(OUT)/attack.json > /dev/null
 
+.PHONY: check-account
+check-account: mcp-build ## Who else can take any NEAR account: make check-account ID=trading-bot.testnet [NETWORK=testnet] (exit 0 locked, 1 not locked, 2 error)
+	@AGENT_EXIT_NETWORK=$(or $(NETWORK),offline) node mcp/dist/scripts/check-account.js $(ID)
+
 .PHONY: scan
 scan: ## Scan one agent: make scan FILE=fixtures/scan/cheat.json (exit 0 clean, 2 blocked, 3 inconclusive)
 	@s=0; cargo run --quiet --locked --offline -p scan -- $(FILE) || s=$$?; \

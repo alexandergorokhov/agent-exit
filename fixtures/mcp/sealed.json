@@ -1,8 +1,7 @@
 {
   "schema": "mcp-sealed.v1",
-  "note": "Illustrative offline fixtures for sealed_delivery (scripts/gen-sealed-fixture.mjs). brainy.testnet delivered the committed bundle; swapped.testnet delivered a different prompt. demo_buyer_sk is a fixed demo secret for these fixtures only.",
+  "note": "Illustrative offline fixtures for sealed_delivery (scripts/gen-sealed-fixture.mjs). brainy.testnet delivered the committed bundle; swapped.testnet delivered a different prompt. demo_buyer_sk is a fixed demo secret per fixture, for these fixtures only.",
   "now": "1767398400000000000",
-  "demo_buyer_sk": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
   "agents": {
     "brainy.testnet": {
       "sale_id": 1,
@@ -26,7 +25,8 @@
           "at": "1767312000000000000"
         }
       },
-      "ciphertext": "ogwER88383AXGPHfrJn0Nk00jJlI5G7UZMu1kjcwXwh4fh1STcrajyzyBIDndok+PT+DK6nF1ArsRxoano8R5U8JA4t1H+oSqt1LN43lDiCs0Oa/LV69G0NPBl+W4q+0MC9TlV7yt0uFbWp8CVJUnxn7wnBQvLMF3CmsxMxfpuYKvcT1i/PBNeO0F0WfNRMcnSgtBSF2HwccgvQzhdCYqNoI4KxYUVMFjYGrmHuYlhwje5d19g=="
+      "ciphertext": "ogwER88383AXGPHfrJn0Nk00jJlI5G7UZMu1kjcwXwh4fh1STcrajyzyBIDndok+PT+DK6nF1ArsRxoano8R5U8JA4t1H+oSqt1LN43lDiCs0Oa/LV69G0NPBl+W4q+0MC9TlV7yt0uFbWp8CVJUnxn7wnBQvLMF3CmsxMxfpuYKvcT1i/PBNeO0F0WfNRMcnSgtBSF2HwccgvQzhdCYqNoI4KxYUVMFjYGrmHuYlhwje5d19g==",
+      "demo_buyer_sk": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a"
     },
     "swapped.testnet": {
       "sale_id": 1,
@@ -39,7 +39,7 @@
         "hash": "27f20cdcaab3f60dc4c30037a01e3842c71d9c5d8d47dcc60ea2c986bfac9709",
         "bytes": 181
       },
-      "delivery_pk": "07aaff3e9fc167275544f4c3a6a17cd837f2ec6e78cd8a57b1e3dfb3cc035a76",
+      "delivery_pk": "45c7e0150b2d6ab9f25c8257194b1498c74222181369b5e1ff0d97a985159a53",
       "deliver_by": "1767398400000000000",
       "dispute_until": "1767916800000000000",
       "cleared": false,
@@ -50,7 +50,8 @@
           "at": "1767312000000000000"
         }
       },
-      "ciphertext": "mrRbIhhfJA9EEY9KDYuGVb1mXpv7cAm4bP9BASFuhnIvOItBE11WO68D97S2oaUOGTy/+jAGoN0iIg1enYLOXrdOgm215qFLsBdaFyl25KKloQTwm5OlmMtUYc61qht1NOGJansY73gJeKXe4N4yv0Y++ZvR1pyfX8XgVx0siXEFnykoZhC4w22VFNvgWjj3MVjP0EUT4jfVjcrC2nWS+7+Onghy7DWJQUbr/knEmB4wMfqZeg=="
+      "ciphertext": "26ugqbyS5WcF+rpvJBJ1eao+33irc8d9vsZC39lA9YkervtwOxtVPAc+vOKuU/D+uWVvxTryocd2CzP0A3Wrm9rjZsG90uvhMsAOtjBUxHE7uvXHnbLdtghtoCGVhmuAZrBgIFrJ1a4RhNsyTFgf+YomzuHjn6A1YIEu80eZeG6k3QKk4rbLOuwII0jyCuYMbmnq+tU9rzEOLUdJHP0LYyDJoeNauzWmE62cQMIwEX13L9wfDA==",
+      "demo_buyer_sk": "2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b"
     }
   }
 }
