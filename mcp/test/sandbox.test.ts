@@ -101,3 +101,38 @@ test("SB5 an unknown action is refused by the schema; sandbox is listed read-onl
     await s.close();
   }
 });
+
+test("SB6 view never fails, and a key planted after a clean scan still blocks the buy (re-scan before paying)", async () => {
+  const { s, go } = await session();
+  try {
+    await go("reset");
+    const v = await go("view");
+    assert.equal(v.ok, true);
+    assert.equal(v.state.owner, "alice.testnet");
+    await go("list");
+    assert.equal((await go("scan")).state.scan.verdict, "clean");
+    await go("plant_key");
+    const b = await go("buy");
+    assert.equal(b.ok, false);
+    assert.match(b.result, /SCAN_BLOCKED: the re-scan before paying/);
+    assert.equal(b.state.owner, "alice.testnet");
+    assert.doesNotMatch(b.result, /scan was skipped/);
+  } finally {
+    await s.close();
+  }
+});
+
+test("SB7 every sandbox action runs from reset without an internal error", async () => {
+  const { s } = await session();
+  try {
+    const schema = JSON.parse((await import("node:fs")).readFileSync(new URL("../../../schemas/mcp/sandbox.input.v1.json", import.meta.url), "utf8"));
+    for (const action of schema.properties.action.enum as string[]) {
+      await s.call("sandbox", { action: "reset" });
+      const r = await s.call("sandbox", { action });
+      assert.ok(valid("sandbox", r), `${action}: ${JSON.stringify(r.body)}`);
+      assert.equal(r.ok, true, `${action}: ${JSON.stringify(r.body)}`);
+    }
+  } finally {
+    await s.close();
+  }
+});

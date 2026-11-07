@@ -518,6 +518,19 @@ impl World {
                 }
                 _ => {}
             }
+            // Like the SDK and MCP buy_agent: scan again right before paying,
+            // so a key or code change after an earlier clean scan still blocks.
+            let fresh = scan::scan(&self.scan_input());
+            if fresh.blocks() {
+                let codes = fresh.codes().join(", ");
+                let verdict = fresh.verdict.clone();
+                self.scan = Some(fresh);
+                return self.note(
+                    BUYER,
+                    false,
+                    format!("buy -> SCAN_BLOCKED: the re-scan before paying said {verdict} ({codes}); the account changed after the earlier scan"),
+                );
+            }
         }
         let Some(l) = self.m.listing.clone() else {
             return self.note(
@@ -549,7 +562,7 @@ impl World {
                 self.m
                     .transfer_done(TransferKind::SellerPayout, &seller, None, payout, true);
                 self.scan = None;
-                let left = if self.keys.iter().any(|k| k.public_key == HIDDEN_KEY) {
+                let left = if skip_scan && self.keys.iter().any(|k| k.public_key == HIDDEN_KEY) {
                     " The hidden key is still on the account: the scan was skipped."
                 } else {
                     ""

@@ -363,6 +363,8 @@ export class Tools {
       this.engine = `web/playground.wasm sha256:${createHash("sha256").update(readFileSync(wasm)).digest("hex")} (contracts/agent-core + tools/scan, make playground-wasm)`;
     }
     const { log: _log, ...state } = view;
+    // `view` and `reset` answer with the state only.
+    const l: Json = last ?? { who: "", ok: true, text: a.action === "view" ? "the current state (nothing changed)" : "" };
     return {
       schema_version: "agent-exit.mcp.sandbox.v1",
       network: this.backend.network,
@@ -370,9 +372,9 @@ export class Tools {
       engine: this.engine,
       step: this.sandbox.step,
       action: a.action,
-      who: String(last.who ?? ""),
-      ok: last.ok === true,
-      result: String(last.text ?? ""),
+      who: String(l.who ?? ""),
+      ok: l.ok === true,
+      result: String(l.text ?? ""),
       state,
     };
   }
