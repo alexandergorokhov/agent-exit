@@ -371,7 +371,9 @@ export class TestnetBackend implements Backend {
         redirect: "error",
         signal: AbortSignal.timeout(timeoutMs),
       });
-      if (res.status !== 429 || attempt >= 2) return res;
+      // 2026-11-07: a busy public node also answers 502/503/504.
+      const busy = res.status === 429 || (res.status >= 500 && res.status <= 504);
+      if (!busy || attempt >= 2) return res;
       await new Promise((r) => setTimeout(r, RETRY_429_MS[attempt]));
     }
   }
@@ -405,8 +407,19 @@ export class TestnetBackend implements Backend {
     return body.result;
   }
 
+  /** A contract view from the first provider, or the second if the first
+   * keeps failing (RR2). Key lists the scan compares are read per provider. */
   private async view(id: string, method: string, args: Json = {}): Promise<Json> {
-    const r = await this.rpc(this.cfg.rpc[0], {
+    try {
+      return await this.viewAt(this.cfg.rpc[0], id, method, args);
+    } catch (e) {
+      if (!(e instanceof ToolError) || e.code !== "RPC_ERROR" || !/: HTTP \d+$|unreachable/.test(e.message)) throw e;
+      return this.viewAt(this.cfg.rpc[1], id, method, args);
+    }
+  }
+
+  private async viewAt(url: string, id: string, method: string, args: Json = {}): Promise<Json> {
+    const r = await this.rpc(url, {
       request_type: "call_function",
       finality: "final",
       account_id: id,
@@ -446,7 +459,10 @@ export class TestnetBackend implements Backend {
       this.view(id, "get_listing"),
       this.view(id, "get_limits"),
       this.view(id, "get_sales"),
-      this.keys(this.cfg.rpc[0], id),
+      this.keys(this.cfg.rpc[0], id).catch((e) => {
+        if (!(e instanceof ToolError) || e.code !== "RPC_ERROR") throw e;
+        return this.keys(this.cfg.rpc[1], id); // RR2: not the scan's comparison
+      }),
       this.view(id, "get_shares"),
     ]);
     return { status, earnings, listing, limits, sales, access_keys: keys, key_owners: {}, shares: Array.isArray(shares) ? shares : [] };

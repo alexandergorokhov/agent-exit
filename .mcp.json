@@ -22,7 +22,10 @@
         "AGENT_EXIT_AGENTS": "translator.w2.agentexit3.testnet,translator3.w2.agentexit3.testnet,cheat.w2.agentexit3.testnet",
         "AGENT_EXIT_TOKEN": "xusd.w2.agentexit3.testnet",
         "AGENT_EXIT_ADMIN": "w2.agentexit3.testnet",
-        "AGENT_EXIT_CODE_HASH": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq"
+        "AGENT_EXIT_CODE_HASH": "Aots3gb33Yjm2pnhgdMYaMdDDk4ZRDnTgsaUA66nDDXq",
+        "AGENT_EXIT_RPC": "https://rpc.testnet.fastnear.com",
+        "AGENT_EXIT_RPC_2": "https://test.rpc.fastnear.com",
+        "AGENT_EXIT_RUNNER_PK": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
       }
     }
   }
