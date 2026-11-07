@@ -66,8 +66,8 @@ near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
 `make verify`).
 
 Funding: the root account (`AGENT_EXIT_ROOT` in the env file, e.g. `agentexit.testnet`; the current recorded world is `w2.agentexit3.testnet`)
-needs about 29 NEAR for the deploy (`near_needed` in the dry run is
-authoritative). The two agent accounts, `translator` and `cheat`, get 9 NEAR
+needs about 30 NEAR for the deploy (`near_needed` in the dry run is
+authoritative). The two agent accounts, `translator` and `cheat`, get 9.5 NEAR
 each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 1 NEAR reserve, so the scan sees them solvent. The token gets 2.5, the people
 0.5 to 1 each, and each G1 run creates a fresh agent with 9 more. Run `make deploy-testnet DRY_RUN=1` to see the plan.

@@ -26,7 +26,7 @@ Clone into the Linux file system (`~/src/near-transparent-agent-market`), not
 
 1. Create the root account (free, sponsored by the faucet):
    `near account create-account sponsor-by-faucet-service agentexit.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create`
-2. Fund it. The deploy needs **29 NEAR** (lean plan: 27.5 for the accounts + 1
+2. Fund it. The deploy needs **30 NEAR** (lean plan: 28.5 for the accounts + 1
    for gas); gate G1 needs **9 more** per run. Use near-faucet.io or the NEAR
    docs faucet (about 2 NEAR per request), or new faucet-sponsored accounts
    deleted with `beneficiary agentexit.testnet` (about 10 NEAR each).

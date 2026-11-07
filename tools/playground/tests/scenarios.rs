@@ -226,3 +226,60 @@ fn p5_pay_from_revenue_seller_is_paid_only_by_customers() {
     assert!(last(&v).contains("earn-out closed"), "{}", last(&v));
     assert_eq!(v["view"]["solvent"], true);
 }
+
+#[test]
+fn p6_sealed_config_wrong_brain_is_proven_and_refunded() {
+    let mut w = World::new();
+    run(&mut w, r#"{"op":"commit_config"}"#);
+    run(&mut w, r#"{"op":"list","price":1000}"#);
+    run(&mut w, r#"{"op":"scan"}"#);
+    let v = run(&mut w, r#"{"op":"buy"}"#);
+    assert_eq!(v["view"]["owner"], "bob.testnet", "{}", last(&v));
+    // Before delivery nothing is released.
+    let v = run(&mut w, r#"{"op":"pay_customer"}"#);
+    assert!(!last(&v).contains("released to alice"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"deliver_fake"}"#);
+    assert!(last(&v).contains("DIFFERENT prompt"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"open_config"}"#);
+    assert!(last(&v).contains("does NOT match"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"dispute_config"}"#);
+    assert!(
+        last(&v).contains("300.00 of escrow back to bob"),
+        "{}",
+        last(&v)
+    );
+    assert_eq!(v["view"]["solvent"], true);
+}
+
+#[test]
+fn p6b_sealed_config_honest_delivery_and_no_delivery() {
+    let mut w = World::new();
+    for a in ["commit_config", "list", "scan", "buy", "deliver_config"] {
+        run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
+    }
+    let v = run(&mut w, r#"{"op":"open_config"}"#);
+    assert!(
+        last(&v).contains("opens to the committed config"),
+        "{}",
+        last(&v)
+    );
+    let v = run(&mut w, r#"{"op":"dispute_config"}"#);
+    assert!(last(&v).contains("ConfigMatches"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"pay_customer"}"#);
+    assert!(
+        last(&v).contains("12.50 of the escrow released to alice.testnet"),
+        "{}",
+        last(&v)
+    );
+    // A seller who never delivers.
+    let mut w = World::new();
+    for a in ["commit_config", "list", "scan", "buy"] {
+        run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
+    }
+    let v = run(&mut w, r#"{"op":"claim_undelivered"}"#);
+    assert!(
+        last(&v).contains("300.00 of escrow back to bob"),
+        "{}",
+        last(&v)
+    );
+}

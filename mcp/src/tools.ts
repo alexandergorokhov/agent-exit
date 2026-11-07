@@ -15,7 +15,7 @@ import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, OfflineBackend, type TxOutcome, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
-import { createHash } from "node:crypto";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import { Sandbox } from "./sandbox.js";
 
 export const TOOL_NAMES = [
@@ -346,6 +346,22 @@ export class Tools {
   }
 
   private sandbox: Sandbox;
+
+  /** For a listing with a sealed config: make the buyer's one-time X25519
+   * key, store the secret in a 0600 file next to the spend ledger, and
+   * return what the buyer needs later (scripts/sealed-config.mjs open). */
+  private deliveryKey(agent: string, listing: Json): Json | null {
+    const c = listing.config;
+    if (!c || typeof c.hash !== "string") return null;
+    const dir = this.cfg.spendFile ? dirname(this.cfg.spendFile) : join(this.cfg.repo, "out");
+    mkdirSync(dir, { recursive: true });
+    const { privateKey, publicKey } = generateKeyPairSync("x25519");
+    const sk = privateKey.export({ format: "der", type: "pkcs8" }).subarray(16).toString("hex");
+    const pkHex = publicKey.export({ format: "der", type: "spki" }).subarray(12).toString("hex");
+    const file = join(dir, `delivery-${agent}-v${Number(listing.listing_version)}.json`);
+    writeFileSync(file, JSON.stringify({ agent, listing_version: listing.listing_version, commit: c, delivery_pk: pkHex, delivery_sk: sk }), { mode: 0o600, flag: "wx" });
+    return { hash: String(c.hash), bytes: Number(c.bytes), delivery_pk: pkHex, delivery_key_file: file, next: "after the seller's deliver_config (get_sealed_config shows it): node scripts/sealed-config.mjs open <secret from delivery_key_file> <ephemeral_pk> <ciphertext> <hash>; on a mismatch call the contract's dispute_config with that secret" };
+  }
   private engine: string | null = null;
 
   /** sandbox: one action through the playground wasm (see sandbox.ts). */
@@ -787,13 +803,17 @@ export class Tools {
     // On a real node an allowance failure shows only as InvalidTransaction({}):
     // read the signing key first, and send nothing if it cannot pay for the call.
     if (this.cfg.signerPk) await this.backend.assertAllowance(buyer, this.cfg.signerPk, this.cfg.minAllowance);
-    const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash);
+    // SC: a listing that sells a sealed config needs a one-time delivery key.
+    // The secret is written (0600) before anything is sent and never returned.
+    const sealedCfg = this.deliveryKey(agent, quoted);
+    const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash, sealedCfg?.delivery_pk);
     // From here the buy was SENT (L2): never release the reservation and never
     // report sent: false. A failed read or check becomes post_read_error.
     try {
       const after = await this.backend.agent(agent);
       const body = {
         ...this.buyBody(agent, buyer, out, listing_version, known_keys_hash, t, after.status.owner),
+        ...(sealedCfg ? { sealed_config: sealedCfg } : {}),
         shares_pct: Number(quoted.shares_bps ?? 0) / 100,
         warnings,
         ...(warnings.length ? { untrusted_notice: UNTRUSTED_NOTICE } : {}),

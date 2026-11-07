@@ -1134,3 +1134,60 @@ fn pr6_pay_from_revenue_sale_sends_nothing_now() {
     assert_eq!(s.m().escrow_left(), 980 * USD);
     assert!(s.m().solvent());
 }
+
+/// SC12: the sealed config through the contract: commit, buy with a
+/// one-time delivery key, the seller delivers the wrong bundle, the buyer
+/// proves it on-chain and the escrow comes back. A buy without the key is
+/// refused (the token refunds it).
+#[test]
+fn sc12_sealed_config_fair_exchange_through_the_contract() {
+    use agent_core::sealed;
+    let bundle = br#"{"schema":"agent-config.v1","system_prompt":"Translate EN<->ES exactly.","rotate_after_sale":["NEARAI_API_KEY"]}"#;
+    let mut s = translator_world();
+    let commit = sealed::ConfigCommit::of(bundle);
+    s.by_1y(ALICE)
+        .commit_config(commit.hash.clone(), commit.bytes);
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(
+        s.by(BOB).get_listing().unwrap()["config"]["hash"],
+        commit.hash
+    );
+    // Without a delivery key: refused, all refunded.
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), Some(1_000 * USD));
+    assert!(refused("DeliveryKeyRequired"));
+    // With one.
+    let bob_sk = [5u8; 32];
+    let bob_dpk = sealed::to_hex(&sealed::public_key(&bob_sk));
+    let v = s.c.m.listing_version;
+    let h = s.c.known_keys_hash();
+    let msg = json!({"kind": "buy", "listing_version": v, "known_keys_hash": h,
+                     "buyer_runner_pk": key_str(BOB_RUNNER), "delivery_pk": bob_dpk})
+    .to_string();
+    assert_eq!(s.ft(BOB, 1_000 * USD, &msg, 300), None);
+    let sale_id = s.m().pending.as_ref().expect("settling").sale_id;
+    assert_eq!(s.callback(true).on_handover(sale_id).0, 0);
+    // alice delivers a different prompt of the same length.
+    let mut fake = bundle.to_vec();
+    fake[50] = b'Z';
+    let (eph, cipher) = sealed::seal(&[3u8; 32], &sealed::public_key(&bob_sk), &fake).unwrap();
+    let mut c = s.call(ALICE);
+    c.deposit = NearToken::from_near(1);
+    s.env(&c);
+    s.c.deliver_config(sale_id, sealed::to_hex(&eph), cipher.clone().into());
+    assert_eq!(events("config_delivered").len(), 1);
+    let view = s.by(BOB).get_sealed_config(sale_id);
+    assert_eq!(view["delivery_pk"], bob_dpk);
+    assert!(view["state"]["Delivered"].is_object(), "{view}");
+    // bob opens it off-chain, sees the wrong bundle, and disputes.
+    assert_ne!(
+        sealed::open(&bob_sk, &eph, &cipher).unwrap(),
+        bundle.to_vec()
+    );
+    s.now += DAY;
+    let before = s.by(BOB).get_claimable(acc(BOB)).0;
+    let r = s.by(BOB).dispute_config(sale_id, sealed::to_hex(&bob_sk));
+    assert_eq!(r["refund_to_buyer"], (300 * USD).to_string());
+    assert_eq!(s.by(BOB).get_claimable(acc(BOB)).0 - before, 300 * USD);
+    assert!(s.m().solvent());
+}

@@ -124,7 +124,8 @@ export interface Backend {
   listAgents(): Promise<string[]>;
   agent(id: string): Promise<AgentView>;
   scanInput(id: string, expect: ScanExpect): Promise<Json>;
-  buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome>;
+  /** `deliveryPk`: the buyer's one-time X25519 key (hex) for a listing that sells a sealed config. */
+  buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string, deliveryPk?: string): Promise<BuyOutcome>;
   list(id: string, seller: string, price: string): Promise<{ listing: Json; recorded: boolean }>;
   /** Throws ALLOWANCE_LOW unless the function-call key has at least `min` yoctoNEAR of allowance (no-op offline). */
   assertAllowance(account: string, publicKey: string, min: bigint): Promise<void>;
@@ -663,8 +664,8 @@ export class TestnetBackend implements Backend {
     return { result, txHash, explorer };
   }
 
-  async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string): Promise<BuyOutcome> {
-    const msg = JSON.stringify({ kind: "buy", listing_version: version, known_keys_hash: hash, buyer_runner_pk: pk });
+  async buy(id: string, buyer: string, pk: string, amount: string, version: number, hash: string, deliveryPk?: string): Promise<BuyOutcome> {
+    const msg = JSON.stringify({ kind: "buy", listing_version: version, known_keys_hash: hash, buyer_runner_pk: pk, ...(deliveryPk ? { delivery_pk: deliveryPk } : {}) });
     const { result, txHash, explorer } = await this.ftTransferCall(id, buyer, amount, msg, "buy");
     const sale = txEvents(result, "sale")[0];
     if (!sale) {

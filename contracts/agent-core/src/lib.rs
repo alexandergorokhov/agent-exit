@@ -11,6 +11,7 @@ pub mod base;
 pub mod meter;
 pub mod money;
 pub mod policy;
+pub mod sealed;
 pub mod shares;
 
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -104,6 +105,27 @@ pub enum Error {
     SharesOpen,
     /// `shares::MAX_OPEN_OFFERS` slices are open: close one first.
     TooManyOffers,
+    // ----- sealed agent config (sealed.rs, SC1-SC12) -----
+    /// The listing sells a sealed config: the buy must carry a one-time
+    /// X25519 delivery key.
+    DeliveryKeyRequired,
+    /// A commitment that is not 64 lowercase hex chars and 1..=8192 bytes.
+    BadConfig,
+    /// The sale has no sealed config.
+    NoSealedConfig,
+    NotSeller,
+    NotBuyer,
+    AlreadyDelivered,
+    /// The delivery deadline passed.
+    DeliveryLate,
+    /// The deadline has not passed yet.
+    DeliveryOpen,
+    /// Not delivered yet, or the dispute window closed.
+    DisputeClosed,
+    /// The secret key is not the one the buy named.
+    BadDeliveryKey,
+    /// The delivery opens to exactly the committed bundle: no dispute.
+    ConfigMatches,
 }
 
 impl core::fmt::Display for Error {
@@ -244,6 +266,9 @@ pub struct Listing {
     /// Treasury balance when listed. Spending is paused while listed, and
     /// `buy` refuses if the treasury is ever below this (A24).
     pub treasury_snapshot: Amount,
+    /// The sealed agent config this sale delivers (sealed.rs), if any.
+    #[serde(default)]
+    pub config: Option<sealed::ConfigCommit>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -269,6 +294,9 @@ pub struct Pending {
     pub prev_keys: Vec<Key>,
     /// When the buy started; `recover_sale` is allowed `RECOVER_AFTER_NS` later.
     pub started_at: Ts,
+    /// The buyer's one-time X25519 key for a sealed config (hex).
+    #[serde(default)]
+    pub delivery_pk: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -298,6 +326,9 @@ pub struct Sale {
     /// era drops exactly that many (A53).
     #[serde(default)]
     pub paid_to_cum: u64,
+    /// The sealed config's delivery (sealed.rs): releases wait for it.
+    #[serde(default)]
+    pub config: Option<sealed::SaleConfig>,
 }
 
 impl Sale {
@@ -474,6 +505,9 @@ pub struct Machine<S = MemStore> {
     /// Price escrow held for investors across all slices (SH11).
     #[serde(default)]
     pub share_escrow: Amount,
+    /// The owner's commitment to the sealed config the next listing sells.
+    #[serde(default)]
+    pub config_commit: Option<sealed::ConfigCommit>,
     /// Per-payer and per-day rows (A47). In the contract this is a handle to
     /// separate storage keys and adds nothing to the state blob.
     #[serde(skip)]
@@ -564,6 +598,7 @@ impl<S: Store + Default> Machine<S> {
             offers: Vec::new(),
             next_offer_id: 1,
             share_escrow: 0,
+            config_commit: None,
             store: S::default(),
         }
     }
@@ -894,6 +929,7 @@ impl<S: Store + Default> Machine<S> {
             code_hash: code_hash.to_string(),
             listed_at: now,
             treasury_snapshot: self.treasury,
+            config: self.config_commit.clone(),
         };
         self.listing = Some(l.clone());
         Ok(l)
@@ -924,6 +960,32 @@ impl<S: Store + Default> Machine<S> {
         listing_version: u64,
         known_keys_hash: &str,
         buyer_pk: &str,
+        gas_ok: bool,
+        now: Ts,
+    ) -> Res<BuyPlan> {
+        self.begin_buy_sealed(
+            buyer,
+            amount,
+            listing_version,
+            known_keys_hash,
+            buyer_pk,
+            None,
+            gas_ok,
+            now,
+        )
+    }
+
+    /// `begin_buy` with the buyer's one-time X25519 delivery key (hex), which
+    /// a listing with a sealed config requires (SC3).
+    #[allow(clippy::too_many_arguments)]
+    pub fn begin_buy_sealed(
+        &mut self,
+        buyer: &str,
+        amount: Amount,
+        listing_version: u64,
+        known_keys_hash: &str,
+        buyer_pk: &str,
+        delivery_pk: Option<&str>,
         gas_ok: bool,
         now: Ts,
     ) -> Res<BuyPlan> {
@@ -958,6 +1020,14 @@ impl<S: Store + Default> Machine<S> {
         if !gas_ok {
             return Err(Error::NotEnoughGas);
         }
+        let delivery_pk = match (&listing.config, delivery_pk) {
+            (Some(_), None) => return Err(Error::DeliveryKeyRequired),
+            (Some(_), Some(pk)) => match sealed::hex32(pk) {
+                Some(b) if b != [0u8; 32] => Some(hex::encode(b)),
+                _ => return Err(Error::BadDeliveryKey),
+            },
+            (None, _) => None,
+        };
         self.keys_settled()?;
         if self.known_keys.contains(buyer_pk) {
             return Err(Error::KeyAlreadyKnown);
@@ -977,6 +1047,7 @@ impl<S: Store + Default> Machine<S> {
             listing,
             prev_keys: prev_keys.clone(),
             started_at: now,
+            delivery_pk,
         });
         Ok(BuyPlan {
             sale_id,
@@ -1090,8 +1161,16 @@ impl<S: Store + Default> Machine<S> {
             finalized: false,
             cut: false,
             paid_to_cum: self.paid_to_ever,
+            config: l.config.clone().map(|commit| sealed::SaleConfig {
+                commit,
+                delivery_pk: p.delivery_pk.clone().unwrap_or_default(),
+                deliver_by: now + sealed::DELIVER_WINDOW_NS,
+                state: sealed::Delivery::Awaited,
+            }),
         };
         self.sales.push(sale.clone());
+        // The bundle was sold with this sale; a new owner commits their own.
+        self.config_commit = None;
         // The protocol fee stays held, as the fee account's claimable balance.
         // Out of the upfront part only, so never more than it (PR2): a
         // pay-from-revenue sale has no upfront part and takes no fee.
@@ -1207,7 +1286,9 @@ impl<S: Store + Default> Machine<S> {
     /// the seller (or an owner before them) held the deed. A round trip the
     /// buyer creates after the sale does not count against the seller (A31).
     pub fn releases_for(&self, payer: &str, flags: &Flags, sale: &Sale) -> bool {
-        !flags.self_pay
+        // SC4: nothing is released before the sealed config is delivered.
+        sale.config.as_ref().is_none_or(|c| c.delivered())
+            && !flags.self_pay
             && !flags.seller_subaccount
             && !self
                 .paid_to_epoch(payer)
@@ -1359,6 +1440,146 @@ impl<S: Store + Default> Machine<S> {
         Ok(spent + amount)
     }
 
+    // ----- sealed agent config (sealed.rs) ------------------------------------
+
+    /// Owner commits to the sealed config the next listing sells (`None`
+    /// clears it). Not while listed: the buyer scanned the listing (SC1).
+    pub fn commit_config(&mut self, caller: &str, commit: Option<sealed::ConfigCommit>) -> Res<()> {
+        self.only_owner(caller)?;
+        self.not_settling()?;
+        if self.status == Status::Listed {
+            return Err(Error::AlreadyListed);
+        }
+        if commit.as_ref().is_some_and(|c| !c.valid()) {
+            return Err(Error::BadConfig);
+        }
+        self.config_commit = commit;
+        Ok(())
+    }
+
+    fn sale_config(&self, sale_id: u64) -> Res<(usize, &sealed::SaleConfig)> {
+        let idx = self
+            .sales
+            .iter()
+            .position(|s| s.id == sale_id && !s.finalized)
+            .ok_or(Error::UnknownSale)?;
+        let c = self.sales[idx]
+            .config
+            .as_ref()
+            .ok_or(Error::NoSealedConfig)?;
+        Ok((idx, c))
+    }
+
+    /// The seller posts the bundle sealed to the buyer's delivery key. The
+    /// contract keeps the ciphertext; here only its hash (SC3). The
+    /// ciphertext is as long as the committed bundle.
+    pub fn deliver_config(
+        &mut self,
+        caller: &str,
+        sale_id: u64,
+        ephemeral_pk: &str,
+        cipher: &[u8],
+        now: Ts,
+    ) -> Res<()> {
+        let (idx, c) = self.sale_config(sale_id)?;
+        if caller != self.sales[idx].seller {
+            return Err(Error::NotSeller);
+        }
+        if !matches!(c.state, sealed::Delivery::Awaited) {
+            return Err(Error::AlreadyDelivered);
+        }
+        if now > c.deliver_by {
+            return Err(Error::DeliveryLate);
+        }
+        if cipher.len() as u32 != c.commit.bytes {
+            return Err(Error::BadConfig);
+        }
+        let eph = sealed::hex32(ephemeral_pk).ok_or(Error::BadConfig)?;
+        let cfg = self.sales[idx].config.as_mut().expect("checked");
+        cfg.state = sealed::Delivery::Delivered {
+            ephemeral_pk: hex::encode(eph),
+            cipher_hash: hex::encode(Sha256::digest(cipher)),
+            at: now,
+        };
+        Ok(())
+    }
+
+    /// No delivery by the deadline: the buyer takes the whole remaining
+    /// escrow back (SC5). Anyone may call; the money goes to the buyer.
+    pub fn claim_undelivered(&mut self, sale_id: u64, now: Ts) -> Res<Amount> {
+        let (idx, c) = self.sale_config(sale_id)?;
+        if !matches!(c.state, sealed::Delivery::Awaited) {
+            return Err(Error::AlreadyDelivered);
+        }
+        if now <= c.deliver_by {
+            return Err(Error::DeliveryOpen);
+        }
+        self.config_refund(idx, false).map(|(_, r)| r)
+    }
+
+    /// The buyer reveals the one-time secret key; the contract decrypts the
+    /// stored ciphertext and compares it with the commitment (SC8-SC10).
+    /// Not the committed bundle: the remaining escrow goes back to the buyer.
+    pub fn dispute_config(
+        &mut self,
+        caller: &str,
+        sale_id: u64,
+        delivery_sk: &str,
+        cipher: &[u8],
+        now: Ts,
+    ) -> Res<Amount> {
+        let (idx, c) = self.sale_config(sale_id)?;
+        if caller != self.sales[idx].buyer {
+            return Err(Error::NotBuyer);
+        }
+        let sealed::Delivery::Delivered {
+            ephemeral_pk,
+            cipher_hash,
+            ..
+        } = &c.state
+        else {
+            return Err(Error::DisputeClosed);
+        };
+        if now > c.dispute_until() {
+            return Err(Error::DisputeClosed);
+        }
+        let sk = sealed::hex32(delivery_sk).ok_or(Error::BadDeliveryKey)?;
+        if hex::encode(sealed::public_key(&sk)) != c.delivery_pk {
+            return Err(Error::BadDeliveryKey);
+        }
+        if hex::encode(Sha256::digest(cipher)) != *cipher_hash {
+            // The contract layer passes the stored ciphertext; anything else
+            // is a wiring bug, not the seller's fault.
+            return Err(Error::BadConfig);
+        }
+        let eph = sealed::hex32(ephemeral_pk).ok_or(Error::BadConfig)?;
+        if sealed::delivery_matches(&sk, &eph, cipher, &c.commit) {
+            return Err(Error::ConfigMatches);
+        }
+        self.config_refund(idx, true).map(|(_, r)| r)
+    }
+
+    /// Close sale `idx` with the remaining escrow to the buyer.
+    fn config_refund(&mut self, idx: usize, mismatch: bool) -> Res<(Sale, Amount)> {
+        let s = &mut self.sales[idx];
+        let r = s.remaining();
+        s.returned += r;
+        s.finalized = true;
+        s.cut = true;
+        if let Some(c) = s.config.as_mut() {
+            c.state = if mismatch {
+                sealed::Delivery::Mismatch { refunded: r }
+            } else {
+                sealed::Delivery::Missed { refunded: r }
+            };
+        }
+        let s = s.clone();
+        self.credit(&s.buyer, r);
+        self.close_finalized_sales();
+        self.prune_paid_to();
+        Ok((s, r))
+    }
+
     /// Close an earn-out after its window. Anyone may call; a second call is a
     /// no-op that returns the same `Sale` (E21).
     pub fn finalize_earnout(&mut self, sale_id: u64, now: Ts) -> Res<Sale> {
@@ -1368,6 +1589,16 @@ impl<S: Store + Default> Machine<S> {
         };
         if now < self.sales[idx].window_end {
             return Err(Error::WindowOpen);
+        }
+        if let Some(c) = &self.sales[idx].config {
+            // SC7: a delivery can still be disputed; SC6: an undelivered
+            // bundle earns the seller no floor.
+            if now < c.dispute_until() {
+                return Err(Error::WindowOpen);
+            }
+            if !c.delivered() {
+                return self.config_refund(idx, false).map(|(s, _)| s);
+            }
         }
         let s = &mut self.sales[idx];
         let f = money::finalize(s.escrow, s.released + s.returned, s.floor_bps);

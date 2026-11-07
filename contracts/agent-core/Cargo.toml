@@ -13,6 +13,9 @@ sha2.workspace = true
 hex.workspace = true
 # Keccak for the EIP-712 digest of Base payments (feature 5).
 sha3 = { version = "0.10", default-features = false }
+# X25519 for the sealed agent config (sealed.rs): the buyer's one-time
+# delivery key, checked on-chain only in a dispute.
+curve25519-dalek = { version = "4.1.3", default-features = false }
 
 # Schema derives for the contract ABI (`cargo near build` generates it from a
 # native build). Not compiled into the wasm.

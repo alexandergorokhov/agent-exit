@@ -136,3 +136,18 @@ test("SB7 every sandbox action runs from reset without an internal error", async
     await s.close();
   }
 });
+
+test("SB8 sealed config: a swapped prompt is proven on-chain and the escrow goes back to the buyer", async () => {
+  const { s, go } = await session();
+  try {
+    await go("reset");
+    for (const a of ["commit_config", "list", "scan", "buy", "deliver_fake"]) await go(a);
+    assert.match((await go("open_config")).result, /does NOT match/);
+    const d = await go("dispute_config");
+    assert.equal(d.ok, true);
+    assert.match(d.result, /300\.00 of escrow back to bob/);
+    assert.equal(d.state.solvent, true);
+  } finally {
+    await s.close();
+  }
+});

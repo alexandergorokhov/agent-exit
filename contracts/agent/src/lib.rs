@@ -206,6 +206,9 @@ pub enum Msg {
         listing_version: u64,
         known_keys_hash: String,
         buyer_runner_pk: PublicKey,
+        /// One-time X25519 key (hex) for a listing with a sealed config.
+        #[serde(default)]
+        delivery_pk: Option<String>,
     },
     /// Buy `part` bps of a share slice, with the terms the investor saw (T6).
     BuyShare {
@@ -329,6 +332,10 @@ fn emit(event: &str, data: Value) {
         "EVENT_JSON:{}",
         json!({"standard": "agent_exit", "version": "1.0.0", "event": event, "data": [data]})
     ));
+}
+
+fn sealed_key(sale_id: u64) -> Vec<u8> {
+    [b"sc:".as_slice(), &sale_id.to_le_bytes()].concat()
 }
 
 fn fail(e: core::Error) -> ! {
@@ -767,6 +774,7 @@ impl AgentExit {
                 listing_version,
                 known_keys_hash,
                 buyer_runner_pk,
+                delivery_pk,
             } => {
                 let left = env::prepaid_gas().saturating_sub(env::used_gas());
                 // The callback and the payout callback each read and write
@@ -776,12 +784,13 @@ impl AgentExit {
                         .saturating_add(self.state_gas())
                         .saturating_add(self.state_gas());
                 let buyer_key = String::from(&buyer_runner_pk);
-                let plan = match self.m.begin_buy(
+                let plan = match self.m.begin_buy_sealed(
                     sender_id.as_str(),
                     amount.0,
                     listing_version,
                     &known_keys_hash,
                     &buyer_key,
+                    delivery_pk.as_deref(),
                     gas_ok,
                     now,
                 ) {
@@ -959,6 +968,120 @@ impl AgentExit {
             env::panic_str("StorageReserve");
         }
         Promise::new(caller).transfer(amount)
+    }
+
+    // ------------------------------- sealed agent config (SC1-SC12, sealed.rs)
+
+    /// Owner commits to the sealed config (system prompt, tool setup, the API
+    /// keys a buyer must rotate) the next listing sells: hex sha256 of the
+    /// bundle and its length. Empty `config_hash` clears it. 1 yoctoNEAR.
+    #[payable]
+    pub fn commit_config(&mut self, config_hash: String, bytes: u32) -> Value {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        let commit = (!config_hash.is_empty()).then_some(core::sealed::ConfigCommit {
+            hash: config_hash,
+            bytes,
+        });
+        self.m
+            .commit_config(caller.as_str(), commit.clone())
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "config_committed",
+            json!({"owner": caller, "config": commit}),
+        );
+        json!({"config": commit})
+    }
+
+    /// The seller posts the bundle sealed to the buyer's one-time key
+    /// (base64 ciphertext, as long as the bundle). Attach the storage for it
+    /// (`bytes + 200` times the storage price); it stays with the agent.
+    #[payable]
+    pub fn deliver_config(
+        &mut self,
+        sale_id: u64,
+        ephemeral_pk: String,
+        ciphertext: near_sdk::json_types::Base64VecU8,
+    ) -> Value {
+        let caller = env::predecessor_account_id();
+        let cipher: Vec<u8> = ciphertext.into();
+        let need = env::storage_byte_cost().saturating_mul(cipher.len() as u128 + 200);
+        require!(
+            env::attached_deposit() >= need,
+            format!("attach {need} yoctoNEAR for the ciphertext's storage")
+        );
+        self.m
+            .deliver_config(
+                caller.as_str(),
+                sale_id,
+                &ephemeral_pk,
+                &cipher,
+                env::block_timestamp(),
+            )
+            .unwrap_or_else(|e| fail(e));
+        env::storage_write(&sealed_key(sale_id), &cipher);
+        emit(
+            "config_delivered",
+            json!({"sale_id": sale_id, "seller": caller, "ephemeral_pk": ephemeral_pk,
+                   "bytes": cipher.len(), "cipher_sha256": core::sealed::to_hex(&env::sha256(&cipher))}),
+        );
+        json!({"sale_id": sale_id, "delivered": true})
+    }
+
+    /// No delivery by the deadline: the remaining escrow is the buyer's
+    /// (claimable). Anyone may call.
+    pub fn claim_undelivered(&mut self, sale_id: u64) -> Value {
+        let r = self
+            .m
+            .claim_undelivered(sale_id, env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "config_missed",
+            json!({"sale_id": sale_id, "refund_to_buyer": amt(r)}),
+        );
+        json!({"sale_id": sale_id, "refund_to_buyer": amt(r)})
+    }
+
+    /// The buyer reveals the one-time secret key (hex). The contract decrypts
+    /// the stored ciphertext; if it is not the committed bundle the
+    /// remaining escrow is the buyer's. A matching bundle refuses the dispute.
+    pub fn dispute_config(&mut self, sale_id: u64, delivery_sk: String) -> Value {
+        let caller = env::predecessor_account_id();
+        let cipher = env::storage_read(&sealed_key(sale_id)).unwrap_or_default();
+        let r = self
+            .m
+            .dispute_config(
+                caller.as_str(),
+                sale_id,
+                &delivery_sk,
+                &cipher,
+                env::block_timestamp(),
+            )
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "config_mismatch",
+            json!({"sale_id": sale_id, "buyer": caller, "refund_to_buyer": amt(r)}),
+        );
+        json!({"sale_id": sale_id, "refund_to_buyer": amt(r)})
+    }
+
+    /// A sale's sealed config: the commitment, the buyer's delivery key,
+    /// the deadline, the state and the ciphertext (base64) once delivered.
+    pub fn get_sealed_config(&self, sale_id: u64) -> Value {
+        let s = self
+            .m
+            .sale(sale_id)
+            .unwrap_or_else(|| fail(core::Error::UnknownSale));
+        let Some(c) = s.config else {
+            return Value::Null;
+        };
+        let cipher = env::storage_read(&sealed_key(sale_id));
+        json!({
+            "schema": "sealed-config.v1", "sale_id": sale_id, "commit": c.commit,
+            "delivery_pk": c.delivery_pk, "deliver_by": U64(c.deliver_by),
+            "dispute_until": U64(c.dispute_until()), "state": c.state,
+            "ciphertext": cipher.map(near_sdk::json_types::Base64VecU8::from),
+        })
     }
 
     /// Anyone may close an earn-out after its window (idempotent, E21).
@@ -2130,6 +2253,7 @@ impl AgentExit {
             "paid_now": amt(now),
             "escrow": amt(escrow),
             "terms": l.terms,
+            "config": l.config,
             "terms_min": self.m.terms_min,
             "terms_config": self.m.terms_min.config(),
             "code_hash": l.code_hash,

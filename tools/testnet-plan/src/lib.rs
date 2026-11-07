@@ -321,7 +321,7 @@ pub fn info(step: Step) -> StepInfo {
         Scene5Sale => ("scene-5", "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00", &[], "out/scenes/scene-5.json"),
         Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)", &[], "out/scenes/scene-6.json"),
         Scene8Invest => ("scene-8", "invest (not part of `scenes`): creates a fresh agent (INVEST_AGENT, default translator3; locked agents cannot take new code) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 translation jobs (translated and NEAR AI-signed when NEARAI_API_KEY is set; the scene fails if any job is unverified then); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims", &[], "out/scenes/scene-8.json"),
-        Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 9.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
+        Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
         Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
     };
     StepInfo {
@@ -411,13 +411,13 @@ pub fn plan(cmd: Command) -> Vec<Step> {
 /// NEAR each created account gets from ROOT (agents hold their wasm's storage).
 /// NEAR each account gets at deploy, in milliNEAR. Lean, because the
 /// testnet faucet gives 2 NEAR a request. An agent account must still cover
-/// its code (~5.3 NEAR for 522 KB), the growth reserve its contract demands
+/// its code (~5.3 NEAR for 522 KB, ~5.8 with the sealed-config X25519), the growth reserve its contract demands
 /// (912 rows x 200 bytes = 1.83 NEAR) and `NEAR_RESERVE` (1 NEAR), or the
-/// scan calls it insolvent (A46): 9 NEAR leaves ~0.8 spare.
+/// scan calls it insolvent (A46): 9.5 NEAR leaves ~0.8 spare.
 pub const FUNDING: [(&str, u32); 14] = [
     ("xusd", 2_500),
-    ("translator", 9_000),
-    ("cheat", 9_000),
+    ("translator", 9_500),
+    ("cheat", 9_500),
     ("summarizer", 1_000),
     ("alice", 1_000),
     ("bob", 1_000),
@@ -432,7 +432,7 @@ pub const FUNDING: [(&str, u32); 14] = [
 ];
 
 /// The fresh agent each G1 run creates (not part of the deploy).
-pub const G1_AGENT_MILLI: u32 = 9_000;
+pub const G1_AGENT_MILLI: u32 = 9_500;
 
 /// Gas and storage the root itself spends during the deploy.
 pub const ROOT_MARGIN_MILLI: u32 = 1_000;

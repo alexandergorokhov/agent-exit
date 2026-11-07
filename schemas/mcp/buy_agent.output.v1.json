@@ -190,6 +190,35 @@
     },
     "untrusted_notice": {
       "type": "string"
+    },
+    "sealed_config": {
+      "type": "object",
+      "description": "the listing sold a sealed config (prompt, tools, keys to rotate): its commitment and the one-time delivery key (the secret is only in delivery_key_file, mode 0600)",
+      "properties": {
+        "hash": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "delivery_pk": {
+          "type": "string"
+        },
+        "delivery_key_file": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "hash",
+        "bytes",
+        "delivery_pk",
+        "delivery_key_file",
+        "next"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

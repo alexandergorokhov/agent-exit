@@ -15,6 +15,7 @@ export const SANDBOX_ACTIONS = [
   "list", "cancel", "scan", "buy",
   "withdraw", "relist", "set_key", "old_key", "hidden_key", "hidden_redeploy",
   "wait", "offer_share", "buy_share", "claim_share", "end_share",
+  "commit_config", "deliver_config", "deliver_fake", "open_config", "dispute_config", "claim_undelivered",
 ] as const;
 
 interface Exports {

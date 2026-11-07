@@ -61,7 +61,7 @@ fn callback(f: &mut Factory, agent: &str, ok: bool) -> PromiseOrValue<bool> {
 #[test]
 fn bc1_one_batch_creates_funds_uses_published_code_and_inits_with_no_key() {
     let mut f = factory();
-    ctx(ALICE, NearToken::from_near(9));
+    ctx(ALICE, NearToken::from_near(10));
     let _ = f.create_agent("translator".into(), None, None);
     let receipts = get_created_receipts();
     let r = receipts
@@ -73,7 +73,7 @@ fn bc1_one_batch_creates_funds_uses_published_code_and_inits_with_no_key() {
         match a {
             MockAction::CreateAccount { .. } => saw.0 = true,
             MockAction::Transfer { deposit, .. } => {
-                assert_eq!(*deposit, NearToken::from_near(9));
+                assert_eq!(*deposit, NearToken::from_near(10));
                 saw.1 = true;
             }
             MockAction::DeployContract { code, .. } => {
@@ -149,7 +149,7 @@ fn bc3_failure_forgets_the_name_and_refunds_the_caller() {
 
 #[test]
 #[should_panic(expected = "DepositTooSmall")]
-fn bc4_needs_nine_near() {
+fn bc4_needs_ten_near() {
     let mut f = factory();
     ctx(ALICE, NearToken::from_millinear(8999));
     let _ = f.create_agent("translator".into(), None, None);
@@ -159,9 +159,9 @@ fn bc4_needs_nine_near() {
 #[should_panic(expected = "NameTaken")]
 fn bc5_a_name_is_born_once() {
     let mut f = factory();
-    ctx(ALICE, NearToken::from_near(9));
+    ctx(ALICE, NearToken::from_near(10));
     let _ = f.create_agent("translator".into(), None, None);
-    ctx("mallory.testnet", NearToken::from_near(9));
+    ctx("mallory.testnet", NearToken::from_near(10));
     let _ = f.create_agent("translator".into(), None, None);
 }
 
@@ -187,7 +187,7 @@ fn bc6_names_are_one_level_and_plain() {
 #[should_panic(expected = "Method on_created is private")]
 fn bc7_only_the_factory_can_record_a_birth() {
     let mut f = factory();
-    ctx(ALICE, NearToken::from_near(9));
+    ctx(ALICE, NearToken::from_near(10));
     let _ = f.create_agent("translator".into(), None, None);
     ctx(ALICE, NearToken::from_near(0));
     let _ = f.on_created("translator.agentexit.testnet".parse().unwrap());
@@ -197,7 +197,7 @@ fn bc7_only_the_factory_can_record_a_birth() {
 fn bc8_list_pages() {
     let mut f = factory();
     for i in 0..5 {
-        ctx(ALICE, NearToken::from_near(9));
+        ctx(ALICE, NearToken::from_near(10));
         let name = format!("agent{i}");
         let _ = f.create_agent(name.clone(), None, None);
         let _ = callback(&mut f, &format!("{name}.agentexit.testnet"), true);
@@ -227,14 +227,14 @@ fn bc9_only_the_published_build_is_stored() {
 fn bc10_no_agent_before_the_code_is_stored() {
     ctx(FACTORY, NearToken::from_near(0));
     let mut f = Factory::new(env::sha256_array(CODE).into());
-    ctx(ALICE, NearToken::from_near(9));
+    ctx(ALICE, NearToken::from_near(10));
     let _ = f.create_agent("translator".into(), None, None);
 }
 
 #[test]
 fn bc11_a_platform_can_create_an_agent_for_someone_else() {
     let mut f = factory();
-    ctx(FACTORY, NearToken::from_near(9));
+    ctx(FACTORY, NearToken::from_near(10));
     let _ = f.create_agent("gift".into(), Some(ALICE.parse().unwrap()), None);
     let new = call_args_new();
     assert_eq!(new["owner_id"], ALICE);

@@ -43,6 +43,8 @@ pub struct World {
     pub scan: Option<Report>,
     log: Vec<Value>,
     template: ScanInput,
+    /// The last sealed delivery (ephemeral key, ciphertext).
+    cipher: Option<([u8; 32], Vec<u8>)>,
 }
 
 #[derive(Deserialize)]
@@ -86,7 +88,24 @@ enum Action {
     ClaimShare,
     /// A year passes; anyone closes the slice; dave gets his escrow back.
     EndShare,
+    /// alice commits to the agent's sealed config (prompt, tools, keys to rotate).
+    CommitConfig,
+    /// alice delivers the committed config, sealed to bob's one-time key.
+    DeliverConfig,
+    /// alice delivers a different prompt of the same length.
+    DeliverFake,
+    /// bob opens what alice delivered and checks it against the commitment.
+    OpenConfig,
+    /// bob reveals his one-time key; the contract decrypts and compares.
+    DisputeConfig,
+    /// Three days pass with no delivery; bob takes the escrow back.
+    ClaimUndelivered,
 }
+
+/// The sealed config in the playground (sealed.rs): what alice sells with the agent.
+const BUNDLE: &[u8] = br#"{"schema":"agent-config.v1","system_prompt":"You translate EN<->ES. Keep names and numbers exact.","model":"deepseek-v3","tools":["glossary"],"rotate_after_sale":["NEARAI_API_KEY"]}"#;
+const BOB_DELIVERY_SK: [u8; 32] = [42u8; 32];
+const ALICE_EPH_SK: [u8; 32] = [17u8; 32];
 
 fn usd(a: u128) -> String {
     let whole = a / USD;
@@ -139,6 +158,7 @@ impl World {
             now: T0,
             payer_n: 0,
             scan: None,
+            cipher: None,
             log: Vec::new(),
             template,
         };
@@ -405,6 +425,93 @@ impl World {
                 Ok(a) => self.note(INVESTOR, true, format!("claim -> {} sent to dave", usd(a))),
                 Err(e) => self.note(INVESTOR, false, format!("claim -> {e}")),
             },
+            Action::CommitConfig => {
+                let c = agent_core::sealed::ConfigCommit::of(BUNDLE);
+                match self.m.commit_config(s, Some(c.clone())) {
+                    Ok(()) => self.note(s, true, format!(
+                        "commit_config(sha256 {}..., {} bytes) -> the next listing sells this exact prompt and tool setup, sealed", &c.hash[..12], c.bytes)),
+                    Err(e) => self.note(s, false, format!("commit_config -> {e}")),
+                }
+            }
+            Action::DeliverConfig | Action::DeliverFake => {
+                let fake = matches!(a, Action::DeliverFake);
+                let mut bundle = BUNDLE.to_vec();
+                if fake {
+                    // "translate" -> "Translate": a different prompt, same length.
+                    bundle[50] = b'X';
+                }
+                let Some(sale) = self.m.sales.last().cloned() else {
+                    return self.note(SELLER, false, "deliver_config -> UnknownSale".into());
+                };
+                let bob_pk = agent_core::sealed::public_key(&BOB_DELIVERY_SK);
+                let (eph, cipher) =
+                    agent_core::sealed::seal(&ALICE_EPH_SK, &bob_pk, &bundle).expect("valid key");
+                match self.m.deliver_config(
+                    SELLER,
+                    sale.id,
+                    &agent_core::sealed::to_hex(&eph),
+                    &cipher,
+                    self.now,
+                ) {
+                    Ok(()) => {
+                        self.cipher = Some((eph, cipher));
+                        let what = if fake {
+                            "a DIFFERENT prompt of the same length"
+                        } else {
+                            "the committed config"
+                        };
+                        self.note(SELLER, true, format!("deliver_config -> {} bytes sealed to bob's one-time key ({what}); releases to alice can start", BUNDLE.len()))
+                    }
+                    Err(e) => self.note(SELLER, false, format!("deliver_config -> {e}")),
+                }
+            }
+            Action::OpenConfig => {
+                let Some((eph, cipher)) = self.cipher.clone() else {
+                    return self.note(BUYER, false, "open -> nothing delivered yet".into());
+                };
+                let plain =
+                    agent_core::sealed::open(&BOB_DELIVERY_SK, &eph, &cipher).unwrap_or_default();
+                let ok = agent_core::sealed::ConfigCommit::of(&plain)
+                    == agent_core::sealed::ConfigCommit::of(BUNDLE);
+                let text = String::from_utf8_lossy(&plain)
+                    .chars()
+                    .take(90)
+                    .collect::<String>();
+                self.note(BUYER, ok, if ok {
+                    format!("opens to the committed config (sha256 matches): {text}... Now rotate NEARAI_API_KEY")
+                } else {
+                    format!("does NOT match the commitment: {text}...")
+                })
+            }
+            Action::DisputeConfig => {
+                let Some(sale) = self.m.sales.last().cloned() else {
+                    return self.note(BUYER, false, "dispute_config -> UnknownSale".into());
+                };
+                let cipher = self.cipher.clone().map(|c| c.1).unwrap_or_default();
+                self.now += 3_600 * 1_000_000_000;
+                match self.m.dispute_config(BUYER, sale.id, &agent_core::sealed::to_hex(&BOB_DELIVERY_SK), &cipher, self.now) {
+                    Ok(r) => self.note(BUYER, true, format!(
+                        "dispute_config -> the contract decrypted the delivery on-chain: not the committed bytes; {} of escrow back to bob", usd(r))),
+                    Err(e) => self.note(BUYER, false, format!("dispute_config -> {e}")),
+                }
+            }
+            Action::ClaimUndelivered => {
+                let Some(sale) = self.m.sales.last().cloned() else {
+                    return self.note(BUYER, false, "claim_undelivered -> UnknownSale".into());
+                };
+                self.now += 3 * DAY_NS;
+                match self.m.claim_undelivered(sale.id, self.now) {
+                    Ok(r) => self.note(
+                        BUYER,
+                        true,
+                        format!(
+                            "3 days, no delivery: claim_undelivered -> {} of escrow back to bob",
+                            usd(r)
+                        ),
+                    ),
+                    Err(e) => self.note(BUYER, false, format!("claim_undelivered -> {e}")),
+                }
+            }
             Action::EndShare => {
                 let Some(o) = self.m.offers.first().cloned() else {
                     return self.note(INVESTOR, false, "close_share -> no slice".into());
@@ -540,10 +647,18 @@ impl World {
             );
         };
         let hash = self.m.known_keys_hash();
-        let plan = match self
-            .m
-            .begin_buy(BUYER, l.price, l.version, &hash, BUYER_KEY, true, self.now)
-        {
+        let plan = match self.m.begin_buy_sealed(
+            BUYER,
+            l.price,
+            l.version,
+            &hash,
+            BUYER_KEY,
+            Some(&agent_core::sealed::to_hex(
+                &agent_core::sealed::public_key(&BOB_DELIVERY_SK),
+            )),
+            true,
+            self.now,
+        ) {
             Ok(p) => p,
             Err(e) => return self.note(BUYER, false, format!("buy -> {e}")),
         };
@@ -612,6 +727,8 @@ impl World {
             "taken_over": self.taken_over,
             "scan": self.scan,
             "sale": sale,
+            "sealed_config": self.m.sales.last().and_then(|s| s.config.as_ref()).map(|c| json!({"commit": c.commit, "state": c.state}))
+                .or_else(|| self.m.config_commit.as_ref().map(|c| json!({"commit": c, "state": "committed"}))),
             "escrow_left": usd(self.m.escrow_left()),
             "claimable": {"alice": usd(self.m.claimable_of(SELLER)), "bob": usd(self.m.claimable_of(BUYER)),
                           "dave": usd(self.m.claimable_of(INVESTOR))},

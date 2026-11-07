@@ -1590,7 +1590,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     let t2 = c.id(n);
 
     println!("  accounts");
-    for (name, milli) in [(n, 9_000u32), ("dave", 500)] {
+    for (name, milli) in [(n, 9_500u32), ("dave", 500)] {
         let id = c.id(name);
         if !c.exists(&id).await {
             let t = c
@@ -1877,9 +1877,9 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
 
 /// NEAR the factory account starts with: its own code (~3.4 for 335 KB),
 /// the stored agent wasm (~5.5) and a margin.
-const FACTORY_MILLI: u32 = 10_500;
+const FACTORY_MILLI: u32 = 11_500;
 /// NEAR attached to create_agent: the agent's code, reserves and a margin.
-const BORN_YOCTO: u128 = 9_200 * 10u128.pow(21);
+const BORN_YOCTO: u128 = 10_200 * 10u128.pow(21);
 
 async fn born_clean(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
     let mut out = Out::new("out/scenes/scene-9.json", secrets);

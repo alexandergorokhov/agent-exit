@@ -29,9 +29,9 @@ use near_sdk::{
 };
 use serde_json::json;
 
-/// Least NEAR a new agent starts with: its code (~5.3 for 550 KB), the
+/// Least NEAR a new agent starts with: its code (~5.3-6 for 550-600 KB), the
 /// growth reserve its contract demands (about 1.83) and the 1 NEAR reserve.
-pub const MIN_AGENT_NEAR: NearToken = NearToken::from_near(9);
+pub const MIN_AGENT_NEAR: NearToken = NearToken::from_near(10);
 const CODE_KEY: &[u8] = b"code";
 const GAS_INIT: Gas = Gas::from_tgas(60);
 const GAS_ON_CREATED: Gas = Gas::from_tgas(15);
@@ -139,7 +139,7 @@ impl Factory {
         let deposit = env::attached_deposit();
         require!(
             deposit >= MIN_AGENT_NEAR,
-            "DepositTooSmall: attach at least 9 NEAR"
+            "DepositTooSmall: attach at least 10 NEAR"
         );
         let code = env::storage_read(CODE_KEY)
             .unwrap_or_else(|| env::panic_str("NoCode: store_code first"));

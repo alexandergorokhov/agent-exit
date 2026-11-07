@@ -829,6 +829,7 @@
           "floor_bps": 2000,
           "window_secs": 2592000
         },
+        "config": null,
         "terms_min": {
           "min_earnout_bps": 3000,
           "max_floor_bps": 5000,
