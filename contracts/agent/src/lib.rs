@@ -1065,6 +1065,23 @@ impl AgentExit {
         json!({"sale_id": sale_id, "refund_to_buyer": amt(r)})
     }
 
+    /// SC14: the buyer accepts the delivered bundle, or anyone calls once
+    /// the dispute window closed undisputed. The held upfront part (less the
+    /// 1% fee) becomes the seller's claimable balance and earn-out releases
+    /// start.
+    pub fn release_upfront(&mut self, sale_id: u64) -> Value {
+        let caller = env::predecessor_account_id();
+        let p = self
+            .m
+            .release_upfront(caller.as_str(), sale_id, env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "config_accepted",
+            json!({"sale_id": sale_id, "by": caller, "to_seller": amt(p)}),
+        );
+        json!({"sale_id": sale_id, "to_seller": amt(p)})
+    }
+
     /// A sale's sealed config: the commitment, the buyer's delivery key,
     /// the deadline, the state and the ciphertext (base64) once delivered.
     pub fn get_sealed_config(&self, sale_id: u64) -> Value {

@@ -30,7 +30,7 @@ pub const BUILD_EXPORTS: [&str; 2] = ["__contract_abi", "contract_source_metadat
 /// Every public method of the published agent contract. A deployed contract
 /// exposing anything else is not the published code. A test keeps this list
 /// equal to the `#[near] impl` in `contracts/agent/src/lib.rs`.
-pub const PUBLISHED_METHODS: [&str; 64] = [
+pub const PUBLISHED_METHODS: [&str; 65] = [
     "add_signer",
     "cancel_listing",
     "cancel_offer",
@@ -85,6 +85,7 @@ pub const PUBLISHED_METHODS: [&str; 64] = [
     "reclaim_payer_row",
     "recover_keys",
     "recover_sale",
+    "release_upfront",
     "remove_signer",
     "set_limits",
     "set_runner_key",

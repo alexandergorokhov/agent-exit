@@ -92,6 +92,15 @@ pub struct SaleConfig {
     pub delivery_pk: String,
     pub deliver_by: Ts,
     pub state: Delivery,
+    /// SC14: the upfront part of the price (`Sale::paid_now`), held until the
+    /// buyer accepts the delivery or the dispute window closes. A missed or
+    /// disproved delivery sends it back to the buyer with the escrow.
+    #[serde(default)]
+    pub upfront_held: Amount,
+    /// Accepted by the buyer, or undisputed when the window closed: the
+    /// upfront part went to the seller and earn-out releases may start.
+    #[serde(default)]
+    pub cleared: bool,
 }
 
 impl SaleConfig {

@@ -122,6 +122,8 @@ pub enum Error {
     DeliveryOpen,
     /// Not delivered yet, or the dispute window closed.
     DisputeClosed,
+    /// SC14: only the buyer may accept before the dispute window closes.
+    DisputeOpen,
     /// The secret key is not the one the buy named.
     BadDeliveryKey,
     /// The delivery opens to exactly the committed bundle: no dispute.
@@ -1166,6 +1168,8 @@ impl<S: Store + Default> Machine<S> {
                 delivery_pk: p.delivery_pk.clone().unwrap_or_default(),
                 deliver_by: now + sealed::DELIVER_WINDOW_NS,
                 state: sealed::Delivery::Awaited,
+                upfront_held: paid_now,
+                cleared: false,
             }),
         };
         self.sales.push(sale.clone());
@@ -1174,8 +1178,14 @@ impl<S: Store + Default> Machine<S> {
         // The protocol fee stays held, as the fee account's claimable balance.
         // Out of the upfront part only, so never more than it (PR2): a
         // pay-from-revenue sale has no upfront part and takes no fee.
-        let fee = self.take_fee(l.price, paid_now);
-        let payout = paid_now - fee;
+        // SC14: a sealed sale pays nothing now; the upfront part (and its
+        // fee) waits for the delivery to be accepted.
+        let (fee, payout) = if l.config.is_some() {
+            (0, 0)
+        } else {
+            let fee = self.take_fee(l.price, paid_now);
+            (fee, paid_now - fee)
+        };
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
         self.held -= unused + payout;
         Ok(BuyResult::Done {
@@ -1286,8 +1296,9 @@ impl<S: Store + Default> Machine<S> {
     /// the seller (or an owner before them) held the deed. A round trip the
     /// buyer creates after the sale does not count against the seller (A31).
     pub fn releases_for(&self, payer: &str, flags: &Flags, sale: &Sale) -> bool {
-        // SC4: nothing is released before the sealed config is delivered.
-        sale.config.as_ref().is_none_or(|c| c.delivered())
+        // SC4/SC14: nothing is released before the sealed config is
+        // delivered and accepted (or the dispute window closed undisputed).
+        sale.config.as_ref().is_none_or(|c| c.cleared)
             && !flags.self_pay
             && !flags.seller_subaccount
             && !self
@@ -1540,7 +1551,7 @@ impl<S: Store + Default> Machine<S> {
         else {
             return Err(Error::DisputeClosed);
         };
-        if now > c.dispute_until() {
+        if c.cleared || now > c.dispute_until() {
             return Err(Error::DisputeClosed);
         }
         let sk = sealed::hex32(delivery_sk).ok_or(Error::BadDeliveryKey)?;
@@ -1559,11 +1570,45 @@ impl<S: Store + Default> Machine<S> {
         self.config_refund(idx, true).map(|(_, r)| r)
     }
 
-    /// Close sale `idx` with the remaining escrow to the buyer.
+    /// SC14: the buyer accepts the delivered bundle, or anyone calls after
+    /// the dispute window closed undisputed. The held upfront part (less the
+    /// 1% fee) goes to the seller and earn-out releases start. Returns the
+    /// seller's payout.
+    pub fn release_upfront(&mut self, caller: &str, sale_id: u64, now: Ts) -> Res<Amount> {
+        let (idx, c) = self.sale_config(sale_id)?;
+        if c.cleared {
+            return Ok(0);
+        }
+        if !c.delivered() {
+            return Err(Error::DeliveryOpen);
+        }
+        if caller != self.sales[idx].buyer && now <= c.dispute_until() {
+            return Err(Error::DisputeOpen);
+        }
+        Ok(self.clear_upfront(idx))
+    }
+
+    fn clear_upfront(&mut self, idx: usize) -> Amount {
+        let price = self.sales[idx].price;
+        let seller = self.sales[idx].seller.clone();
+        let c = self.sales[idx].config.as_mut().expect("sealed sale");
+        let upfront = std::mem::take(&mut c.upfront_held);
+        c.cleared = true;
+        let fee = self.take_fee(price, upfront);
+        self.pay_seller(&seller, upfront - fee);
+        upfront - fee
+    }
+
+    /// Close sale `idx` with the remaining escrow, and the held upfront
+    /// part (SC14), to the buyer.
     fn config_refund(&mut self, idx: usize, mismatch: bool) -> Res<(Sale, Amount)> {
         let s = &mut self.sales[idx];
-        let r = s.remaining();
-        s.returned += r;
+        let rest = s.remaining();
+        s.returned += rest;
+        let r = rest
+            + s.config
+                .as_mut()
+                .map_or(0, |c| std::mem::take(&mut c.upfront_held));
         s.finalized = true;
         s.cut = true;
         if let Some(c) = s.config.as_mut() {
@@ -1598,6 +1643,9 @@ impl<S: Store + Default> Machine<S> {
             }
             if !c.delivered() {
                 return self.config_refund(idx, false).map(|(s, _)| s);
+            }
+            if !c.cleared {
+                self.clear_upfront(idx);
             }
         }
         let s = &mut self.sales[idx];

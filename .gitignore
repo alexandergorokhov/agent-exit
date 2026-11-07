@@ -5,6 +5,8 @@ node_modules/
 # Run outputs; the testnet records and sandbox logs are kept (no secrets:
 # the runner refuses to write one).
 out/*
+# One-time sealed-config delivery secrets (MCP buy_agent), wherever they land.
+delivery-*.json
 !out/gates/
 !out/scenes/
 !out/testnet/

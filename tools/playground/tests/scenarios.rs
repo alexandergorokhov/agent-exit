@@ -235,6 +235,7 @@ fn p6_sealed_config_wrong_brain_is_proven_and_refunded() {
     run(&mut w, r#"{"op":"scan"}"#);
     let v = run(&mut w, r#"{"op":"buy"}"#);
     assert_eq!(v["view"]["owner"], "bob.testnet", "{}", last(&v));
+    let alice_after_buy = v["view"]["claimable"]["alice"].clone();
     // Before delivery nothing is released.
     let v = run(&mut w, r#"{"op":"pay_customer"}"#);
     assert!(!last(&v).contains("released to alice"), "{}", last(&v));
@@ -244,9 +245,13 @@ fn p6_sealed_config_wrong_brain_is_proven_and_refunded() {
     assert!(last(&v).contains("does NOT match"), "{}", last(&v));
     let v = run(&mut w, r#"{"op":"dispute_config"}"#);
     assert!(
-        last(&v).contains("300.00 of escrow back to bob"),
+        last(&v).contains("1,000.00 back to bob (the whole price"),
         "{}",
         last(&v)
+    );
+    assert_eq!(
+        v["view"]["claimable"]["alice"], alice_after_buy,
+        "SC14: only her own pre-sale revenue, no part of the price"
     );
     assert_eq!(v["view"]["solvent"], true);
 }
@@ -267,6 +272,14 @@ fn p6b_sealed_config_honest_delivery_and_no_delivery() {
     assert!(last(&v).contains("ConfigMatches"), "{}", last(&v));
     let v = run(&mut w, r#"{"op":"pay_customer"}"#);
     assert!(
+        !last(&v).contains("released to alice"),
+        "SC14: {}",
+        last(&v)
+    );
+    let v = run(&mut w, r#"{"op":"accept_config"}"#);
+    assert!(last(&v).contains("690.00 paid to alice"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"pay_customer"}"#);
+    assert!(
         last(&v).contains("12.50 of the escrow released to alice.testnet"),
         "{}",
         last(&v)
@@ -278,8 +291,33 @@ fn p6b_sealed_config_honest_delivery_and_no_delivery() {
     }
     let v = run(&mut w, r#"{"op":"claim_undelivered"}"#);
     assert!(
-        last(&v).contains("300.00 of escrow back to bob"),
+        last(&v).contains("1,000.00 back to bob (the whole price)"),
         "{}",
         last(&v)
     );
+}
+
+#[test]
+fn p7_after_a_hidden_redeploy_the_contract_promises_nothing() {
+    let mut w = World::new();
+    for a in ["plant_key", "list"] {
+        run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
+    }
+    run(&mut w, r#"{"op":"buy","skip_scan":true}"#);
+    let v = run(&mut w, r#"{"op":"hidden_redeploy"}"#);
+    assert_eq!(v["view"]["taken_over"], true);
+    for a in [
+        "pay_customer",
+        "wait",
+        "dispute_config",
+        "claim_undelivered",
+        "withdraw",
+    ] {
+        let v = run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
+        assert!(
+            last(&v).contains("the Agent Exit contract is gone"),
+            "{a}: {}",
+            last(&v)
+        );
+    }
 }

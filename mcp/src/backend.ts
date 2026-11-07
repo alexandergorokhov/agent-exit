@@ -482,7 +482,9 @@ export class TestnetBackend implements Backend {
   }
 
   private known(id: string): void {
-    if (!id.endsWith(".testnet")) throw new ToolError("NETWORK_REFUSED", `${id} is not a .testnet account`);
+    // Implicit accounts (64 hex, or 0x + 40 hex) exist on every network; on
+    // this testnet RPC they are testnet accounts. Named ones must be .testnet.
+    if (!id.endsWith(".testnet") && !/^([0-9a-f]{64}|0x[0-9a-f]{40})$/.test(id)) throw new ToolError("NETWORK_REFUSED", `${id} is neither a .testnet account nor an implicit account`);
   }
 
   async accountFacts(id: string): Promise<AccountFacts | null> {

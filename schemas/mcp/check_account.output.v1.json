@@ -7,7 +7,7 @@
     "schema_version": { "const": "agent-exit.mcp.check_account.v1" },
     "network": { "type": "string" },
     "account": { "type": "string" },
-    "verdict": { "enum": ["locked", "key_controlled", "backdoor_risk"] },
+    "verdict": { "enum": ["locked", "no_key_unknown_code", "key_controlled", "backdoor_risk"] },
     "summary": { "type": "string" },
     "code": {
       "type": "object",

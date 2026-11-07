@@ -100,6 +100,8 @@ enum Action {
     DisputeConfig,
     /// Three days pass with no delivery; bob takes the escrow back.
     ClaimUndelivered,
+    /// bob accepts the delivered config: the held upfront part goes to alice.
+    AcceptConfig,
 }
 
 /// The sealed config in the playground (sealed.rs): what alice sells with the agent.
@@ -268,6 +270,12 @@ impl World {
 
     fn act(&mut self, a: Action) -> Value {
         let s = SELLER;
+        // After a hidden-key redeploy the account runs alice's code: the
+        // Agent Exit contract and everything it promised (escrow, releases,
+        // disputes, shares) are gone. Only a reset helps.
+        if self.taken_over && !matches!(a, Action::Reset | Action::View | Action::Scan) {
+            return self.note(SELLER, false, "-> the account now runs alice's own code: the Agent Exit contract is gone, so no escrow, release, dispute or refund can run. bob lost the price. Only the scan protects the buyer (reset to try again).".into());
+        }
         match a {
             Action::Reset => {
                 *self = World::new();
@@ -460,7 +468,7 @@ impl World {
                         } else {
                             "the committed config"
                         };
-                        self.note(SELLER, true, format!("deliver_config -> {} bytes sealed to bob's one-time key ({what}); releases to alice can start", BUNDLE.len()))
+                        self.note(SELLER, true, format!("deliver_config -> {} bytes sealed to bob's one-time key ({what}); alice is paid when bob accepts it, or after 7 days with no dispute", BUNDLE.len()))
                     }
                     Err(e) => self.note(SELLER, false, format!("deliver_config -> {e}")),
                 }
@@ -491,7 +499,7 @@ impl World {
                 self.now += 3_600 * 1_000_000_000;
                 match self.m.dispute_config(BUYER, sale.id, &agent_core::sealed::to_hex(&BOB_DELIVERY_SK), &cipher, self.now) {
                     Ok(r) => self.note(BUYER, true, format!(
-                        "dispute_config -> the contract decrypted the delivery on-chain: not the committed bytes; {} of escrow back to bob", usd(r))),
+                        "dispute_config -> the contract decrypted the delivery on-chain: not the committed bytes; {} back to bob (the whole price: nothing was paid to alice before acceptance)", usd(r))),
                     Err(e) => self.note(BUYER, false, format!("dispute_config -> {e}")),
                 }
             }
@@ -505,11 +513,21 @@ impl World {
                         BUYER,
                         true,
                         format!(
-                            "3 days, no delivery: claim_undelivered -> {} of escrow back to bob",
+                            "3 days, no delivery: claim_undelivered -> {} back to bob (the whole price)",
                             usd(r)
                         ),
                     ),
                     Err(e) => self.note(BUYER, false, format!("claim_undelivered -> {e}")),
+                }
+            }
+            Action::AcceptConfig => {
+                let Some(sale) = self.m.sales.last().cloned() else {
+                    return self.note(BUYER, false, "release_upfront -> UnknownSale".into());
+                };
+                match self.m.release_upfront(BUYER, sale.id, self.now) {
+                    Ok(p) => self.note(BUYER, true, format!(
+                        "release_upfront -> bob accepts the config: {} paid to alice (after the 1% fee); disputes are closed and earn-out releases start", usd(p))),
+                    Err(e) => self.note(BUYER, false, format!("release_upfront -> {e}")),
                 }
             }
             Action::EndShare => {
@@ -682,6 +700,11 @@ impl World {
                 } else {
                     ""
                 };
+                if sale.config.is_some() {
+                    return self.note(BUYER, true, format!(
+                        "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; 0.00 paid to alice now: the {} upfront part and the {} earn-out are held until alice delivers the committed config and bob accepts it (or 7 days pass with no dispute).{left}",
+                        usd(sale.price), usd(sale.paid_now), usd(sale.escrow)));
+                }
                 if sale.paid_now == 0 {
                     return self.note(BUYER, true, format!(
                         "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; 0.00 paid to alice now: all {} is held and reaches her only from customer payments after the sale (pay from revenue).{left}",
@@ -708,7 +731,9 @@ impl World {
         };
         let sale = self.m.sales.last().map(|s| {
             json!({
-                "price": usd(s.price), "paid_now": usd(s.paid_now), "escrow": usd(s.escrow),
+                "price": usd(s.price), "upfront": usd(s.paid_now),
+                "upfront_held": usd(s.config.as_ref().map_or(0, |c| c.upfront_held)),
+                "escrow": usd(s.escrow),
                 "released": usd(s.released), "returned": usd(s.returned), "finalized": s.finalized,
             })
         });

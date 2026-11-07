@@ -144,6 +144,10 @@ function statusName(s: unknown): string {
 /** Method names that can change the code or keys (tools/scan UPGRADE_WORDS; meta test keeps them equal). */
 export const UPGRADE_WORDS = ["upgrade", "deploy", "migrate", "set_code", "update_contract", "add_key", "add_full_access_key", "delete_account", "stage_code"];
 
+/** check_account only: more method names that may change the code or keys
+ * (judge 18). Not in the scan list, so "locked" never rests on names alone. */
+const MORE_CODE_WORDS = ["wasm", "self_update", "replace_code", "set_contract", "update_code", "redeploy", "set_owner_key"];
+
 const ACCOUNT_RE = /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 
 /** An account id read from the chain, shown only if it is a valid NEAR id. */
@@ -363,11 +367,13 @@ export class Tools {
     const keys = f.keys.map((k: Json) => {
       const full = k.permission === "FullAccess";
       const p = full ? null : k.permission;
-      const methods: string[] = p ? (p.method_names ?? []) : [];
+      // Judge 18: every chain-derived string is cleaned, not only method names.
+      const methods: string[] = p ? (Array.isArray(p.method_names) ? p.method_names : []).map((m: unknown) => untrusted(String(m))) : [];
+      const allowance = !p || p.allowance === null || p.allowance === undefined ? null : /^\d{1,40}$/.test(String(p.allowance)) ? String(p.allowance) : "unreadable";
       const can = full
         ? "everything: deploy new code, add or delete keys, send all NEAR, delete the account, without any contract code running"
-        : `call ${methods.length ? methods.join(", ") : "EVERY method"} on ${acct(p.receiver_id)}, attaching no NEAR${p.allowance === null ? ", with no gas allowance cap" : ""}`;
-      return { public_key: String(k.public_key), kind: full ? "full_access" : "function_call", ...(p ? { receiver_id: acct(p.receiver_id), method_names: methods.map((m) => untrusted(m)), allowance: p.allowance === null ? null : String(p.allowance) } : {}), can };
+        : `call ${methods.length ? methods.join(", ") : "EVERY method"} on ${acct(p.receiver_id)}, attaching no NEAR${allowance === null ? ", with no gas allowance cap" : ""}`;
+      return { public_key: untrusted(String(k.public_key)), kind: full ? "full_access" : "function_call", ...(p ? { receiver_id: acct(p.receiver_id), method_names: methods, allowance } : {}), can };
     });
     const fullKeys = keys.filter((k) => k.kind === "full_access").length;
     if (fullKeys && hasCode) findings.push({ code: "full_access_key_on_contract", severity: "high", text: `${fullKeys} full-access key(s) on an account with a contract: whoever holds one can replace the code or drain the account, and the contract cannot see or stop it` });
@@ -377,7 +383,7 @@ export class Tools {
       if (!(k.method_names as string[]).length) findings.push({ code: "fc_key_any_method", severity: "medium", text: `${k.public_key} may call every method of ${k.receiver_id}` });
       if (k.allowance === null) findings.push({ code: "fc_key_no_allowance", severity: "low", text: `${k.public_key} has no gas allowance cap` });
     }
-    const upgrade = f.methods.filter((m) => UPGRADE_WORDS.some((w) => m.includes(w)));
+    const upgrade = f.methods.filter((m) => [...UPGRADE_WORDS, ...MORE_CODE_WORDS].some((w) => m.toLowerCase().includes(w)));
     if (upgrade.length) findings.push({ code: "code_change_method", severity: "high", text: `the contract exports ${upgrade.map((m) => untrusted(m)).join(", ")}: a way to change the code or the keys later` });
     const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
     const isAgentExit = hasCode && published !== null && f.code_hash === published;
@@ -385,14 +391,22 @@ export class Tools {
       const a = JSON.stringify([...f.keys].map((k: Json) => k.public_key).sort());
       const b = JSON.stringify([...f.keys_second].map((k: Json) => k.public_key).sort());
       if (a !== b) findings.push({ code: "providers_disagree", severity: "high", text: "the two RPC providers return different key lists" });
+    } else if (this.backend.network === "testnet") {
+      findings.push({ code: "second_provider_unavailable", severity: "medium", text: "only one RPC provider answered: the key list is not cross-checked" });
     }
+    // Judge 18: "locked" only for a build whose code we know (the published
+    // Agent Exit build). Other code with no key and no upgrade-named method
+    // may still change itself under another name.
     const verdict = !hasCode
       ? "key_controlled"
       : fullKeys || upgrade.length || findings.some((x) => x.code === "providers_disagree")
         ? "backdoor_risk"
-        : "locked";
+        : isAgentExit && !findings.some((x) => x.code === "second_provider_unavailable")
+          ? "locked"
+          : "no_key_unknown_code";
     const summary = {
-      locked: "locked: no key can change the code or take the account; only the contract's own methods act" + (isAgentExit ? " (the published Agent Exit build)" : ""),
+      no_key_unknown_code: "no full-access key and no method named like an upgrade, but the code is not a build we can check: a method with another name could still change it. Read the source, or use the published build",
+      locked: "locked: no key can change the code or take the account, and the code is the published Agent Exit build (no upgrade method); only its own methods act",
       key_controlled: "key-controlled: an ordinary account; whoever holds a full-access key controls it",
       backdoor_risk: "backdoor risk: code runs here, but a full-access key or an upgrade path can override it",
     }[verdict];
@@ -423,8 +437,22 @@ export class Tools {
     const sk = privateKey.export({ format: "der", type: "pkcs8" }).subarray(16).toString("hex");
     const pkHex = publicKey.export({ format: "der", type: "spki" }).subarray(12).toString("hex");
     const file = join(dir, `delivery-${agent}-v${Number(listing.listing_version)}.json`);
-    writeFileSync(file, JSON.stringify({ agent, listing_version: listing.listing_version, commit: c, delivery_pk: pkHex, delivery_sk: sk }), { mode: 0o600, flag: "wx" });
-    return { hash: String(c.hash), bytes: Number(c.bytes), delivery_pk: pkHex, delivery_key_file: file, next: "after the seller's deliver_config (get_sealed_config shows it): node scripts/sealed-config.mjs open <secret from delivery_key_file> <ephemeral_pk> <ciphertext> <hash>; on a mismatch call the contract's dispute_config with that secret" };
+    // A retry of a buy that was refused or never sent reuses the key for the
+    // same listing version and commitment: only one buy per version can
+    // succeed (a sale bumps the version), so one key per version is enough.
+    let delivery_pk = pkHex;
+    let prior: Json | null = null;
+    try {
+      prior = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      prior = null;
+    }
+    if (prior && prior.agent === agent && Number(prior.listing_version) === Number(listing.listing_version) && prior.commit?.hash === c.hash && typeof prior.delivery_pk === "string") {
+      delivery_pk = prior.delivery_pk;
+    } else {
+      writeFileSync(file, JSON.stringify({ agent, listing_version: listing.listing_version, commit: c, delivery_pk: pkHex, delivery_sk: sk }), { mode: 0o600, flag: "w" });
+    }
+    return { hash: String(c.hash), bytes: Number(c.bytes), delivery_pk, delivery_key_file: file, next: "after the seller's deliver_config (get_sealed_config shows it): node scripts/sealed-config.mjs open <secret from delivery_key_file> <ephemeral_pk> <ciphertext> <hash>; on a mismatch call the contract's dispute_config with that secret" };
   }
   private engine: string | null = null;
 

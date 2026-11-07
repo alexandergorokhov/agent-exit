@@ -102,7 +102,13 @@ fn sc4_no_release_before_delivery() {
     );
     deliver(&mut m, BUNDLE, T0 + DAY_NS);
     m.pay("c2", 100 * USD, false, T0 + DAY_NS + 1);
+    assert_eq!(m.sale(1).unwrap().released, 0, "SC14: held until accepted");
+    assert_eq!(m.claimable_of("alice"), 0, "SC14: nothing paid up front");
+    assert_eq!(m.release_upfront("bob", 1, T0 + DAY_NS + 2), Ok(700 * USD));
+    assert_eq!(m.claimable_of("alice"), 700 * USD);
+    m.pay("c3", 100 * USD, false, T0 + DAY_NS + 3);
     assert_eq!(m.sale(1).unwrap().released, 50 * USD);
+    assert!(m.solvent());
 }
 
 #[test]
@@ -110,8 +116,13 @@ fn sc5_no_delivery_by_the_deadline_returns_the_escrow_to_the_buyer() {
     let mut m = sold_sealed();
     let by = config(&m).deliver_by;
     assert_eq!(m.claim_undelivered(1, by), Err(Error::DeliveryOpen));
-    assert_eq!(m.claim_undelivered(1, by + 1), Ok(300 * USD));
-    assert_eq!(m.claimable_of("bob"), 300 * USD);
+    assert_eq!(
+        m.claim_undelivered(1, by + 1),
+        Ok(1_000 * USD),
+        "SC14: the whole price, upfront part included"
+    );
+    assert_eq!(m.claimable_of("bob"), 1_000 * USD);
+    assert_eq!(m.claimable_of("alice"), 0);
     let (eph, c) = sealed::seal(
         &SELLER_EPH_SK,
         &sealed::hex32(&bob_delivery_pk()).unwrap(),
@@ -133,7 +144,7 @@ fn sc6_undelivered_at_window_end_earns_no_floor() {
     assert_eq!(s.returned, 300 * USD);
     assert_eq!(s.released, 0, "no floor for an undelivered bundle");
     assert_eq!(m.claimable_of("alice"), 0);
-    assert_eq!(m.claimable_of("bob"), 300 * USD);
+    assert_eq!(m.claimable_of("bob"), 1_000 * USD);
 }
 
 #[test]
@@ -154,9 +165,10 @@ fn sc8_a_wrong_bundle_is_proven_on_chain_and_refunded() {
     );
     assert_eq!(
         m.dispute_config("bob", 1, &sk, &cipher, T0 + 2 * DAY_NS),
-        Ok(300 * USD)
+        Ok(1_000 * USD)
     );
-    assert_eq!(m.claimable_of("bob"), 300 * USD);
+    assert_eq!(m.claimable_of("bob"), 1_000 * USD, "SC14: the whole price");
+    assert_eq!(m.claimable_of("alice"), 0);
     let s = m.sale(1).unwrap();
     assert!(s.cut && s.finalized);
     assert!(matches!(
@@ -189,7 +201,72 @@ fn sc9_a_frivolous_dispute_is_refused() {
     assert_eq!(
         s.released,
         60 * USD,
-        "50 released + 10 floor top-up (20% of 300 = 60)"
+        "SC14: no release inside the dispute window; the floor is 20% of 300"
+    );
+    assert_eq!(m.claimable_of("alice"), 760 * USD, "700 upfront + 60");
+    assert!(m.solvent());
+}
+
+#[test]
+fn sc14_the_upfront_part_waits_for_acceptance() {
+    let mut m = sold_sealed();
+    assert_eq!(
+        m.release_upfront("bob", 1, T0 + 1),
+        Err(Error::DeliveryOpen),
+        "nothing to accept yet"
+    );
+    let mut fake = BUNDLE.to_vec();
+    fake[60] = b'X';
+    let cipher = deliver(&mut m, &fake, T0 + DAY_NS);
+    // Customers pay during the dispute window: nothing goes to alice.
+    m.pay("c1", 100 * USD, false, T0 + 2 * DAY_NS);
+    m.pay("c2", 100 * USD, false, T0 + 2 * DAY_NS);
+    assert_eq!(
+        m.release_upfront("alice", 1, T0 + 2 * DAY_NS),
+        Err(Error::DisputeOpen),
+        "the seller cannot clear it early"
+    );
+    assert_eq!(m.claimable_of("alice"), 0);
+    let sk = hex::encode(BOB_DELIVERY_SK);
+    assert_eq!(
+        m.dispute_config("bob", 1, &sk, &cipher, T0 + 3 * DAY_NS),
+        Ok(1_000 * USD),
+        "the judge-18 attack: alice keeps nothing"
+    );
+    assert_eq!(m.claimable_of("alice"), 0);
+    assert!(m.solvent());
+}
+
+#[test]
+fn sc14b_accepted_or_undisputed_pays_the_seller_and_closes_disputes() {
+    let mut m = sold_sealed();
+    let cipher = deliver(&mut m, BUNDLE, T0 + DAY_NS);
+    let until = config(&m).dispute_until();
+    assert_eq!(
+        m.release_upfront("carol", 1, until),
+        Err(Error::DisputeOpen)
+    );
+    assert_eq!(m.release_upfront("carol", 1, until + 1), Ok(700 * USD));
+    assert_eq!(
+        m.release_upfront("carol", 1, until + 2),
+        Ok(0),
+        "idempotent"
+    );
+    assert_eq!(m.claimable_of("alice"), 700 * USD);
+    // Accepted by the buyer early: the dispute is closed too.
+    let mut m = sold_sealed();
+    let cipher2 = deliver(&mut m, BUNDLE, T0 + DAY_NS);
+    assert_eq!(cipher, cipher2);
+    m.release_upfront("bob", 1, T0 + DAY_NS + 1).unwrap();
+    assert_eq!(
+        m.dispute_config(
+            "bob",
+            1,
+            &hex::encode(BOB_DELIVERY_SK),
+            &cipher2,
+            T0 + 2 * DAY_NS
+        ),
+        Err(Error::DisputeClosed)
     );
     assert!(m.solvent());
 }

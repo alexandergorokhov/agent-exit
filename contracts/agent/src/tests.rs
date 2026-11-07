@@ -1186,8 +1186,15 @@ fn sc12_sealed_config_fair_exchange_through_the_contract() {
     );
     s.now += DAY;
     let before = s.by(BOB).get_claimable(acc(BOB)).0;
+    let alice_before = s.by(BOB).get_claimable(acc(ALICE)).0;
     let r = s.by(BOB).dispute_config(sale_id, sealed::to_hex(&bob_sk));
-    assert_eq!(r["refund_to_buyer"], (300 * USD).to_string());
-    assert_eq!(s.by(BOB).get_claimable(acc(BOB)).0 - before, 300 * USD);
+    // SC14: the whole price comes back; alice was paid nothing up front.
+    assert_eq!(r["refund_to_buyer"], (1_000 * USD).to_string());
+    assert_eq!(s.by(BOB).get_claimable(acc(BOB)).0 - before, 1_000 * USD);
+    assert_eq!(
+        s.by(BOB).get_claimable(acc(ALICE)).0,
+        alice_before,
+        "her own earlier revenue only (A29), no part of the price"
+    );
     assert!(s.m().solvent());
 }

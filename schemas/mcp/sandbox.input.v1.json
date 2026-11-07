@@ -38,9 +38,10 @@
         "deliver_fake",
         "open_config",
         "dispute_config",
-        "claim_undelivered"
+        "claim_undelivered",
+        "accept_config"
       ],
-      "description": "reset/view; payments: pay_customer (a stranger pays 25), pay_verified (with a NEAR AI signature), pay_self (the owner pays 200), pay_sub (from bot.<owner>), pay_fresh (the seller pays 200 from a wallet nothing links to them); seller tricks: plant_key (hidden full-access key), remove_key, toggle_upgrade (an upgrade method), hidden_key (run the agent with the hidden key), hidden_redeploy (take it back with the hidden key); sale: list (alice), cancel, scan (bob), buy (bob); after a sale, alice tries: withdraw, relist, set_key, old_key; wait (days pass, the earn-out closes); shares: offer_share (alice, 20% for 500), buy_share (dave), claim_share, end_share; sealed config (the agent's off-chain brain): commit_config (alice commits to the prompt bundle before listing), deliver_config / deliver_fake (alice delivers it, or a different prompt, sealed to bob's one-time key), open_config (bob decrypts and checks), dispute_config (bob proves a mismatch on-chain and gets the escrow back), claim_undelivered (no delivery in 2 days)"
+      "description": "reset/view; payments: pay_customer (a stranger pays 25), pay_verified (with a NEAR AI signature), pay_self (the owner pays 200), pay_sub (from bot.<owner>), pay_fresh (the seller pays 200 from a wallet nothing links to them); seller tricks: plant_key (hidden full-access key), remove_key, toggle_upgrade (an upgrade method), hidden_key (run the agent with the hidden key), hidden_redeploy (take it back with the hidden key); sale: list (alice), cancel, scan (bob), buy (bob); after a sale, alice tries: withdraw, relist, set_key, old_key; wait (days pass, the earn-out closes); shares: offer_share (alice, 20% for 500), buy_share (dave), claim_share, end_share; sealed config (the agent's off-chain brain): commit_config (alice commits to the prompt bundle before listing), deliver_config / deliver_fake (alice delivers it, or a different prompt, sealed to bob's one-time key), open_config (bob decrypts and checks), dispute_config (bob proves a mismatch on-chain and gets the whole price back), claim_undelivered (no delivery in 2 days: the whole price back), accept_config (bob accepts: the held upfront part goes to alice and releases start)"
     },
     "price": {
       "type": "integer",
