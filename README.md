@@ -1,6 +1,6 @@
 # Agent Exit
 
-**Buy an AI agent from a stranger, and know the seller is locked out.** On NEAR an agent is its own account. Agent Exit is one contract on that account: the buyer (a person or another agent) scans it, pays in one transaction, and in that same transaction the seller's keys are deleted and the buyer's key is added. Money the seller could fake, and the agent's prompt the seller could swap, are paid for only once they are proven.
+**Buy an AI agent from a stranger, and know the seller is locked out.** On NEAR an agent is its own account. Agent Exit is one contract on that account: the buyer (a person or another agent) scans it, pays in one transaction, and in that same transaction the seller's keys are deleted and the buyer's key is added. 30% of the price (or all of it, if the seller lists it that way) is paid only from customer revenue after the sale, and a sealed prompt is paid for only once the buyer accepts it.
 
 ![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
 
