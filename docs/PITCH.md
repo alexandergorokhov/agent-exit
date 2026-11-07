@@ -6,6 +6,8 @@ All money is `xUSD-FAKE` on NEAR testnet. Every claim below links to a test or a
 
 ## One line
 
+**Sold means locked out.** (The picture: `docs/img/sold-means-locked-out.svg`.)
+
 Agent Exit turns an AI agent into a business you can trust: its earnings are proven on-chain, you can buy a share of them, and you can buy the whole agent without the seller keeping a way back in.
 
 ## 30 seconds

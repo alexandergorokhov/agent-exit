@@ -1,6 +1,8 @@
 # Agent Exit
 
-**Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.**
+**Sold means locked out.** Agent Exit lets anyone buy an AI agent, or a share of its earnings, from a stranger: the agent is its own NEAR account, one transaction moves its deed and deletes the seller's keys, and 30% of the price is paid only by customer revenue after the sale.
+
+![Sold means locked out: before, the one-transaction sale, and seven ways back in, all refused](docs/img/sold-means-locked-out.svg)
 
 **The problem:** AI agents that earn money will be bought, sold and invested in, but a buyer can trust neither the numbers (an owner can pay their own agent) nor the handover (a seller can keep a spare key). **What it does:** one NEAR contract on the agent's own account counts earnings by who paid, sells a share of future earnings or the whole agent in one transaction, deletes the seller's keys in that same transaction, and keeps 30% of the price in an earn-out paid only by real revenue.
 

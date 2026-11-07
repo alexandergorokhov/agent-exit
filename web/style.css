@@ -359,3 +359,6 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .deed { margin: 1.2rem 0 0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 .deed img { max-width: 100%; height: auto; border-radius: 16px; }
 .deed figcaption { max-width: 420px; }
+
+.story { margin: 1rem 0 0; }
+.story img { width: 100%; height: auto; border-radius: 14px; display: block; }

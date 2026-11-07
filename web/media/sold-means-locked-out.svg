@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" role="img" aria-label="Sold means locked out: before the sale the seller holds the key; one transaction moves the deed and deletes the seller's key; after the sale six ways back in are refused on NEAR testnet">
+  <rect width="1200" height="420" fill="#0b1510"/>
+  <text x="600" y="46" fill="#ffffff" font-size="30" font-weight="800" text-anchor="middle">Sold means locked out</text>
+  <text x="600" y="76" fill="#9fb8ab" font-size="16" text-anchor="middle">An AI agent that is its own NEAR account, sold in one transaction. All money is xUSD-FAKE (testnet).</text>
+  <g>
+    <rect x="30" y="100" width="360" height="290" rx="14" fill="#13241b" stroke="#2c4a3a"/>
+    <text x="56" y="136" fill="#3ddc97" font-size="15" font-weight="700">1. BEFORE</text>
+    <text x="56" y="168" fill="#ffffff" font-size="20" font-weight="700">alice owns translator</text>
+    <text x="56" y="204" fill="#cfe0d6" font-size="15">deed NFT: alice</text>
+    <text x="56" y="230" fill="#cfe0d6" font-size="15">runner key: alice's (function-call only)</text>
+    <text x="56" y="256" fill="#cfe0d6" font-size="15">earnings: 360.00 counted, by who paid</text>
+    <text x="56" y="282" fill="#cfe0d6" font-size="15">self-payments: flagged, not counted</text>
+    <text x="56" y="330" fill="#f5b400" font-size="15" font-weight="600">bob's scan: keys, code hash, terms</text>
+    <text x="56" y="354" fill="#f5b400" font-size="15" font-weight="600">clean, so bob can buy</text>
+  </g>
+  <path d="M398 245 h24" stroke="#3ddc97" stroke-width="4"/><path d="M420 235 l12 10 l-12 10z" fill="#3ddc97"/>
+  <g>
+    <rect x="440" y="100" width="320" height="290" rx="14" fill="#13241b" stroke="#3ddc97" stroke-width="2"/>
+    <text x="466" y="136" fill="#3ddc97" font-size="15" font-weight="700">2. ONE TRANSACTION</text>
+    <text x="466" y="168" fill="#ffffff" font-size="20" font-weight="700">bob pays 1,000.00</text>
+    <text x="466" y="204" fill="#cfe0d6" font-size="15">alice's key deleted, bob's added</text>
+    <text x="466" y="230" fill="#cfe0d6" font-size="15">(one key batch on the agent's</text>
+    <text x="466" y="252" fill="#cfe0d6" font-size="15">own account)</text>
+    <text x="466" y="278" fill="#cfe0d6" font-size="15">deed NFT moves to bob</text>
+    <text x="466" y="318" fill="#ffffff" font-size="15" font-weight="600">690.00 to alice now (after 1% fee)</text>
+    <text x="466" y="342" fill="#ffffff" font-size="15" font-weight="600">300.00 held: paid only by</text>
+    <text x="466" y="364" fill="#ffffff" font-size="15" font-weight="600">customer payments after the sale</text>
+  </g>
+  <path d="M768 245 h24" stroke="#3ddc97" stroke-width="4"/><path d="M790 235 l12 10 l-12 10z" fill="#3ddc97"/>
+  <g>
+    <rect x="810" y="100" width="360" height="290" rx="14" fill="#13241b" stroke="#2c4a3a"/>
+    <text x="836" y="136" fill="#3ddc97" font-size="15" font-weight="700">3. AFTER: alice tries to get back in</text>
+    <text x="836" y="172" fill="#cfe0d6" font-size="15">withdraw the treasury</text><text x="1144" y="172" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotOwner</text>
+    <text x="836" y="200" fill="#cfe0d6" font-size="15">add her own runner key</text><text x="1144" y="200" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotOwner</text>
+    <text x="836" y="228" fill="#cfe0d6" font-size="15">change the spending limits</text><text x="1144" y="228" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotOwner</text>
+    <text x="836" y="256" fill="#cfe0d6" font-size="15">move the deed to herself</text><text x="1144" y="256" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotOwner</text>
+    <text x="836" y="284" fill="#cfe0d6" font-size="15">relist the agent</text><text x="1144" y="284" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotOwner</text>
+    <text x="836" y="312" fill="#cfe0d6" font-size="15">spend from its Base wallet</text><text x="1144" y="312" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">NotRunner</text>
+    <text x="836" y="340" fill="#cfe0d6" font-size="15">use her old runner key</text><text x="1144" y="340" fill="#ff6b6b" font-size="15" font-weight="700" text-anchor="end">key gone</text>
+    <text x="836" y="372" fill="#3ddc97" font-size="15" font-weight="700">every attempt refused on NEAR testnet</text>
+  </g>
+</svg>
