@@ -141,3 +141,38 @@ test("CA9 testnet: a missing second provider is reported, not silently skipped",
   assert.ok(valid("check_account", r), JSON.stringify(r.body));
   assert.ok((r.body as any).findings.some((x: any) => x.code === "second_provider_unavailable"));
 });
+
+test("CA10 the published build is not locked when a key has no gas cap or any-method rights; a null permission is treated as full access", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "agent-exit-ca10-"));
+  const w = structuredClone(world);
+  const t = w.agents["translator.testnet"].scan_input.chain;
+  t.keys = [...t.keys, { public_key: "ed25519:Unknown", permission: { receiver_id: "evil.testnet", method_names: ["drain"], allowance: null } }];
+  writeFileSync(join(dir, "world.json"), JSON.stringify(w));
+  writeFileSync(join(dir, "accounts.json"), JSON.stringify({ accounts: { "nullperm.testnet": { code_hash: "11111111111111111111111111111111", methods: [], keys: [{ public_key: "ed25519:N", permission: null }] } } }));
+  const s = await connect({ AGENT_EXIT_WORLD: join(dir, "world.json") });
+  try {
+    const r: any = (await s.call("check_account", { account: "translator.testnet" })).body;
+    assert.notEqual(r.verdict, "locked");
+    const n = await s.call("check_account", { account: "nullperm.testnet" });
+    assert.ok(n.ok && valid("check_account", n), JSON.stringify(n.body));
+    assert.ok((n.body as any).findings.some((x: any) => x.code === "unreadable_key"));
+  } finally {
+    await s.close();
+  }
+});
+
+test("CA11 testnet: the code hash is read from both providers, and key permissions are compared, not only names", async () => {
+  const f = (async (url: string, init?: RequestInit) => {
+    const p = JSON.parse(String(init?.body)).params;
+    const second = url.includes("fastnear");
+    let result: unknown;
+    if (p.request_type === "view_account") result = { code_hash: "11111111111111111111111111111111" };
+    else if (p.request_type === "view_access_key_list") result = { keys: [{ public_key: "ed25519:A", access_key: { permission: second ? "FullAccess" : { FunctionCall: { receiver_id: "x.testnet", method_names: [], allowance: "1" } } } }] };
+    else result = {};
+    return new Response(JSON.stringify({ result }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet" });
+  const t = new Tools(cfg, new TestnetBackend(cfg, f), loadSchemas(REPO));
+  const r = await t.call("check_account", { account: "someone-else.testnet" });
+  assert.ok((r.body as any).findings.some((x: any) => x.code === "providers_disagree"), JSON.stringify(r.body));
+});

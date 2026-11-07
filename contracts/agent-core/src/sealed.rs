@@ -101,6 +101,10 @@ pub struct SaleConfig {
     /// upfront part went to the seller and earn-out releases may start.
     #[serde(default)]
     pub cleared: bool,
+    /// The held upfront part that went back to the buyer (missed or
+    /// disproved delivery); `Sale::returned` counts the escrow only.
+    #[serde(default)]
+    pub upfront_returned: Amount,
 }
 
 impl SaleConfig {
@@ -130,6 +134,14 @@ pub fn hex32(s: &str) -> Option<[u8; 32]> {
 /// The X25519 public key of a secret key (clamped, RFC 7748).
 pub fn public_key(sk: &[u8; 32]) -> [u8; 32] {
     MontgomeryPoint::mul_base_clamped(*sk).to_bytes()
+}
+
+/// Can anything be sealed to `pk`? Not a low-order point: every clamped
+/// scalar is a multiple of the cofactor, so one test multiplication finds
+/// them all (judge 19: a buyer key the seller cannot seal to would let the
+/// buyer claim the price back as "undelivered").
+pub fn usable_key(pk: &[u8; 32]) -> bool {
+    shared(&[9u8; 32], pk).is_some()
 }
 
 fn shared(sk: &[u8; 32], pk: &[u8; 32]) -> Option<[u8; 32]> {

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-exit/mcp/sealed_delivery.input.v1.json",
+  "title": "sealed_delivery input",
+  "description": "After buying an agent that sold its sealed config (its prompt and tool setup): read the delivery, open it with your one-time key, then accept it (the seller is paid) or dispute it on-chain (the whole price back). Offline: brainy.testnet (honest delivery) and swapped.testnet (a different prompt), sale 1.",
+  "type": "object",
+  "properties": {
+    "agent": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9._-]+$" },
+    "sale_id": { "type": "integer", "minimum": 0 },
+    "action": { "enum": ["status", "open", "accept", "dispute"], "description": "status: read the delivery state; open: decrypt locally and compare with the commitment (read-only); accept: release_upfront, pays the seller (WRITE, needs confirm, refused if the bundle does not match); dispute: dispute_config, reveals the one-time key on-chain so the contract proves the mismatch (WRITE, needs confirm, refused before sending if the bundle matches)" },
+    "confirm": { "type": "boolean" }
+  },
+  "required": ["agent", "sale_id", "action"],
+  "additionalProperties": false
+}

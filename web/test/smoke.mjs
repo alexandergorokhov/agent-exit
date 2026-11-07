@@ -156,7 +156,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("151 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("159 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();

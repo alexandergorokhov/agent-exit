@@ -344,3 +344,52 @@ fn sc11_listings_without_a_config_are_unchanged() {
     m.pay("c1", 100 * USD, false, T0 + 1);
     assert_eq!(m.sale(1).unwrap().released, 50 * USD);
 }
+
+#[test]
+fn sc15_a_low_order_delivery_key_is_refused_at_the_buy() {
+    let mut m = Machine::new("translator", "alice");
+    let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
+    m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
+    m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
+        .unwrap();
+    let l = m
+        .list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    let h = m.known_keys_hash();
+    // u = 1 and u = 0 are low-order: nothing can be sealed to them, so a
+    // buyer could otherwise force "undelivered" and take the price back.
+    let mut one = [0u8; 32];
+    one[0] = 1;
+    for bad in [hex::encode(one), hex::encode([0u8; 32])] {
+        assert_eq!(
+            m.begin_buy_sealed(
+                "bob",
+                1_000 * USD,
+                l.version,
+                &h,
+                BOB_PK,
+                Some(&bad),
+                true,
+                T0
+            ),
+            Err(Error::BadDeliveryKey),
+            "{bad}"
+        );
+    }
+    assert!(sealed::usable_key(&sealed::public_key(&BOB_DELIVERY_SK)));
+}
+
+#[test]
+fn sc16_finalize_waits_for_the_delivery_deadline_and_reports_the_whole_refund() {
+    let mut m = sold_sealed();
+    let by = config(&m).deliver_by;
+    // A short earn-out window (demo builds) must not cut the delivery window.
+    m.sales[0].window_end = T0 + 600 * NANOS_PER_SEC;
+    assert_eq!(
+        m.finalize_earnout(1, T0 + 660 * NANOS_PER_SEC),
+        Err(Error::DeliveryOpen)
+    );
+    let s = m.finalize_earnout(1, by + 1).unwrap();
+    assert_eq!(s.returned, 300 * USD, "the escrow part");
+    assert_eq!(s.back_to_buyer(), 1_000 * USD, "the whole price");
+}

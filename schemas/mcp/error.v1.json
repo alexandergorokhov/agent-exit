@@ -29,6 +29,12 @@
         "code": {
           "type": "string",
           "enum": [
+            "CONTRACT_REFUSED",
+            "UNKNOWN_SALE",
+            "NO_DELIVERY_KEY",
+            "CONFIG_MATCHES",
+            "CONFIG_MISMATCH",
+            "NOT_DELIVERED",
             "WRITE_DISABLED",
             "CONFIRM_REQUIRED",
             "OVER_MAX_PRICE",

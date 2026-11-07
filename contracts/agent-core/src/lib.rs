@@ -337,6 +337,12 @@ impl Sale {
     pub fn remaining(&self) -> Amount {
         self.escrow - self.released - self.returned
     }
+
+    /// Everything the buyer got back: the escrow returned plus, for a sealed
+    /// sale whose delivery was missed or disproved, the held upfront part.
+    pub fn back_to_buyer(&self) -> Amount {
+        self.returned + self.config.as_ref().map_or(0, |c| c.upfront_returned)
+    }
 }
 
 /// What the contract must do after `begin_buy` succeeds.
@@ -1025,7 +1031,7 @@ impl<S: Store + Default> Machine<S> {
         let delivery_pk = match (&listing.config, delivery_pk) {
             (Some(_), None) => return Err(Error::DeliveryKeyRequired),
             (Some(_), Some(pk)) => match sealed::hex32(pk) {
-                Some(b) if b != [0u8; 32] => Some(hex::encode(b)),
+                Some(b) if sealed::usable_key(&b) => Some(hex::encode(b)),
                 _ => return Err(Error::BadDeliveryKey),
             },
             (None, _) => None,
@@ -1170,6 +1176,7 @@ impl<S: Store + Default> Machine<S> {
                 state: sealed::Delivery::Awaited,
                 upfront_held: paid_now,
                 cleared: false,
+                upfront_returned: 0,
             }),
         };
         self.sales.push(sale.clone());
@@ -1605,10 +1612,12 @@ impl<S: Store + Default> Machine<S> {
         let s = &mut self.sales[idx];
         let rest = s.remaining();
         s.returned += rest;
-        let r = rest
-            + s.config
-                .as_mut()
-                .map_or(0, |c| std::mem::take(&mut c.upfront_held));
+        let upfront = s.config.as_mut().map_or(0, |c| {
+            let u = std::mem::take(&mut c.upfront_held);
+            c.upfront_returned += u;
+            u
+        });
+        let r = rest + upfront;
         s.finalized = true;
         s.cut = true;
         if let Some(c) = s.config.as_mut() {
@@ -1642,6 +1651,11 @@ impl<S: Store + Default> Machine<S> {
                 return Err(Error::WindowOpen);
             }
             if !c.delivered() {
+                // Judge 19: the seller keeps the full delivery window even
+                // when the earn-out window is shorter.
+                if now <= c.deliver_by {
+                    return Err(Error::DeliveryOpen);
+                }
                 return self.config_refund(idx, false).map(|(s, _)| s);
             }
             if !c.cleared {

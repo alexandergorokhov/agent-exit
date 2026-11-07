@@ -10,7 +10,7 @@
 // any finding refuses the buy before anything is sent.
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, OfflineBackend, type TxOutcome, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
@@ -31,9 +31,10 @@ export const TOOL_NAMES = [
   "check_claims",
   "sandbox",
   "check_account",
+  "sealed_delivery",
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
-export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share"];
+export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share", "sealed_delivery"];
 
 const DESCRIPTIONS: Record<ToolName, string> = {
   list_agents: "List agents with owner, status, price and meter totals (counted = real customers; flagged = self, sub-account or round-trip payments). Read-only. All money is xUSD-FAKE.",
@@ -47,6 +48,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
   check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
   sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
+  sealed_delivery: "After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
 
@@ -62,7 +64,8 @@ export const JUDGE_TOUR = {
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
     "5. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
     "6. Point check_account at any NEAR account (offline: trading-bot.testnet, locked-vault.testnet): it names every key and code-change method that lets someone other than the owner move funds or swap the code.",
-    "7. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
+    "7. The sealed prompt, after a buy: sealed_delivery on swapped.testnet sale 1 (open, then dispute with confirm in write mode) and brainy.testnet (open, accept); or the sandbox actions commit_config, list, scan, buy, deliver_fake, dispute_config.",
+    "8. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
     "Offline mode replays results recorded from the real contract code (fixtures/mcp/world.json); with AGENT_EXIT_NETWORK=testnet the same read tools read the live testnet agents named in the README.",
   ].join("\n"),
 };
@@ -365,7 +368,12 @@ export class Tools {
     const hasCode = f.code_hash !== "11111111111111111111111111111111";
     const findings: Json[] = [];
     const keys = f.keys.map((k: Json) => {
-      const full = k.permission === "FullAccess";
+      const full = k?.permission === "FullAccess";
+      // Judge 19: an unreadable permission is treated like a full-access key.
+      if (!full && (k?.permission === null || typeof k?.permission !== "object")) {
+        findings.push({ code: "unreadable_key", severity: "high", text: `a key whose permission cannot be read (${untrusted(String(k?.public_key))}): treated as full access` });
+        return { public_key: untrusted(String(k?.public_key)), kind: "full_access", can: "unknown: its permission could not be read, so assume everything" };
+      }
       const p = full ? null : k.permission;
       // Judge 18: every chain-derived string is cleaned, not only method names.
       const methods: string[] = p ? (Array.isArray(p.method_names) ? p.method_names : []).map((m: unknown) => untrusted(String(m))) : [];
@@ -388,9 +396,14 @@ export class Tools {
     const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
     const isAgentExit = hasCode && published !== null && f.code_hash === published;
     if (f.keys_second) {
-      const a = JSON.stringify([...f.keys].map((k: Json) => k.public_key).sort());
-      const b = JSON.stringify([...f.keys_second].map((k: Json) => k.public_key).sort());
+      // Judge 19: compare what each key may do, not only its name.
+      const norm = (ks: Json[]) => JSON.stringify(ks.map((k: Json) => JSON.stringify([k?.public_key, k?.permission])).sort());
+      const a = norm(f.keys);
+      const b = norm(f.keys_second);
       if (a !== b) findings.push({ code: "providers_disagree", severity: "high", text: "the two RPC providers return different key lists" });
+      if (f.code_hash_second !== undefined && f.code_hash_second !== null && f.code_hash_second !== f.code_hash) {
+        findings.push({ code: "providers_disagree", severity: "high", text: "the two RPC providers return different code hashes" });
+      }
     } else if (this.backend.network === "testnet") {
       findings.push({ code: "second_provider_unavailable", severity: "medium", text: "only one RPC provider answered: the key list is not cross-checked" });
     }
@@ -401,7 +414,7 @@ export class Tools {
       ? "key_controlled"
       : fullKeys || upgrade.length || findings.some((x) => x.code === "providers_disagree")
         ? "backdoor_risk"
-        : isAgentExit && !findings.some((x) => x.code === "second_provider_unavailable")
+        : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key"].includes(x.code))
           ? "locked"
           : "no_key_unknown_code";
     const summary = {
@@ -422,6 +435,88 @@ export class Tools {
       findings,
       source: f.source,
       read_only: true,
+    };
+  }
+
+  /** The buyer's one-time secret for a sale's delivery key: offline the
+   * fixtures' demo secret, else the 0600 file buy_agent wrote (matched by
+   * public key). Never returned to the caller. */
+  private deliverySecret(agent: string, deliveryPk: string): Buffer {
+    const demo = this.backend.demoDeliverySecret?.();
+    if (demo) return Buffer.from(demo, "hex");
+    const dir = this.cfg.spendFile ? dirname(this.cfg.spendFile) : join(this.cfg.repo, "out");
+    let files: string[] = [];
+    try {
+      files = readdirSync(dir).filter((n) => n.startsWith(`delivery-${agent}-v`) && n.endsWith(".json"));
+    } catch {
+      files = [];
+    }
+    for (const n of files) {
+      try {
+        const k = JSON.parse(readFileSync(join(dir, n), "utf8"));
+        if (k.delivery_pk === deliveryPk && /^[0-9a-f]{64}$/.test(k.delivery_sk)) return Buffer.from(k.delivery_sk, "hex");
+      } catch {
+        // not a key file
+      }
+    }
+    throw new ToolError("NO_DELIVERY_KEY", `no one-time key for ${agent} with public key ${deliveryPk.slice(0, 12)}... in ${dir} (buy_agent writes it there)`);
+  }
+
+  /** sealed_delivery (SD1-SD6): read, open, accept or dispute a sealed config. */
+  private async sealedDelivery(agent: string, saleId: number, action: "status" | "open" | "accept" | "dispute", confirm?: boolean): Promise<Json> {
+    const v = await this.backend.sealedConfig(agent, saleId);
+    if (!v) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} on ${agent} sold no sealed config`);
+    const st = v.state ?? {};
+    const state = v.cleared ? "accepted" : st.Delivered ? "delivered" : st === "Awaited" || st.Awaited !== undefined ? "awaited" : st.Missed ? "missed" : st.Mismatch ? "mismatch" : "unknown";
+    const commit = { hash: untrusted(String(v.commit?.hash ?? "")), bytes: Number(v.commit?.bytes ?? 0) };
+    const out: Json = {
+      ...this.base("sealed_delivery"),
+      agent,
+      sale_id: saleId,
+      action,
+      state,
+      deliver_by: v.deliver_by === undefined ? null : String(v.deliver_by),
+      dispute_until: v.dispute_until === undefined ? null : String(v.dispute_until),
+      commit,
+      matches: null,
+      sent: false,
+    };
+    if (action === "status") {
+      return { ...out, next: state === "delivered" ? "call sealed_delivery with action open, then accept or dispute before dispute_until" : state === "awaited" ? "wait for the seller's deliver_config; after deliver_by, claim_undelivered returns the whole price" : "nothing left to do" };
+    }
+    if (state !== "delivered") throw new ToolError("NOT_DELIVERED", `the delivery is ${state}: nothing to ${action}`);
+    const sk = this.deliverySecret(agent, String(v.delivery_pk));
+    const { open, commitOf } = await import("./sealed.js");
+    const plain = open(sk, Buffer.from(String(st.Delivered.ephemeral_pk), "hex"), Buffer.from(String(v.ciphertext ?? ""), "base64"));
+    const matches = commitOf(plain).hash === String(v.commit?.hash);
+    let rotate: string[] = [];
+    try {
+      const j = JSON.parse(plain.toString("utf8"));
+      if (Array.isArray(j.rotate_after_sale)) rotate = j.rotate_after_sale.slice(0, 20).map((x: unknown) => untrusted(String(x)));
+    } catch {
+      rotate = [];
+    }
+    const opened = { ...out, matches, untrusted_preview: untrusted(plain.toString("utf8")), untrusted_rotate_after_sale: rotate, untrusted_notice: UNTRUSTED_NOTICE };
+    if (action === "open") {
+      return { ...opened, next: matches ? `it is the committed bundle: rotate ${rotate.join(", ") || "the keys it names"}, then accept (confirm: true)` : "NOT the committed bundle: dispute (confirm: true) before dispute_until to get the whole price back" };
+    }
+    const buyer = this.writeGate();
+    if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", `sealed_delivery ${action} needs confirm: true`);
+    if (action === "accept" && !matches) throw new ToolError("CONFIG_MISMATCH", "refused before sending: the delivery is not the committed bundle; dispute it instead");
+    if (action === "dispute" && matches) throw new ToolError("CONFIG_MATCHES", "refused before sending: the delivery matches the commitment, the contract would refuse the dispute and your one-time key would be public");
+    const r = action === "accept"
+      ? await this.backend.sealedCall(agent, buyer, "release_upfront", { sale_id: saleId })
+      : await this.backend.sealedCall(agent, buyer, "dispute_config", { sale_id: saleId, delivery_sk: sk.toString("hex") });
+    return {
+      ...opened,
+      state: action === "accept" ? "accepted" : "mismatch",
+      sent: !r.recorded,
+      to_seller: r.value.to_seller === undefined ? null : usd(r.value.to_seller),
+      refund_to_buyer: r.value.refund_to_buyer === undefined ? null : usd(r.value.refund_to_buyer),
+      recorded: r.recorded,
+      tx_hash: r.tx_hash ?? null,
+      explorer: r.explorer ?? null,
+      next: action === "accept" ? "done: the seller is paid, earn-out releases start; disputes are closed" : "done: the whole price is your claimable balance (withdraw it); you keep the agent account too",
     };
   }
 
@@ -546,6 +641,8 @@ export class Tools {
         return Promise.resolve(this.runSandbox(a));
       case "check_account":
         return this.checkAccount(a.account);
+      case "sealed_delivery":
+        return this.sealedDelivery(a.agent, a.sale_id, a.action, a.confirm);
     }
   }
 

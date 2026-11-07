@@ -1,0 +1,56 @@
+{
+  "schema": "mcp-sealed.v1",
+  "note": "Illustrative offline fixtures for sealed_delivery (scripts/gen-sealed-fixture.mjs). brainy.testnet delivered the committed bundle; swapped.testnet delivered a different prompt. demo_buyer_sk is a fixed demo secret for these fixtures only.",
+  "now": "1767398400000000000",
+  "demo_buyer_sk": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
+  "agents": {
+    "brainy.testnet": {
+      "sale_id": 1,
+      "seller": "alice.testnet",
+      "buyer": "summarizer.testnet",
+      "price": "1000000000",
+      "upfront": "700000000",
+      "escrow": "300000000",
+      "commit": {
+        "hash": "27f20cdcaab3f60dc4c30037a01e3842c71d9c5d8d47dcc60ea2c986bfac9709",
+        "bytes": 181
+      },
+      "delivery_pk": "07aaff3e9fc167275544f4c3a6a17cd837f2ec6e78cd8a57b1e3dfb3cc035a76",
+      "deliver_by": "1767398400000000000",
+      "dispute_until": "1767916800000000000",
+      "cleared": false,
+      "state": {
+        "Delivered": {
+          "ephemeral_pk": "7b4e909bbe7ffe44c465a220037d608ee35897d31ef972f07f74892cb0f73f13",
+          "cipher_hash": null,
+          "at": "1767312000000000000"
+        }
+      },
+      "ciphertext": "ogwER88383AXGPHfrJn0Nk00jJlI5G7UZMu1kjcwXwh4fh1STcrajyzyBIDndok+PT+DK6nF1ArsRxoano8R5U8JA4t1H+oSqt1LN43lDiCs0Oa/LV69G0NPBl+W4q+0MC9TlV7yt0uFbWp8CVJUnxn7wnBQvLMF3CmsxMxfpuYKvcT1i/PBNeO0F0WfNRMcnSgtBSF2HwccgvQzhdCYqNoI4KxYUVMFjYGrmHuYlhwje5d19g=="
+    },
+    "swapped.testnet": {
+      "sale_id": 1,
+      "seller": "alice.testnet",
+      "buyer": "summarizer.testnet",
+      "price": "1000000000",
+      "upfront": "700000000",
+      "escrow": "300000000",
+      "commit": {
+        "hash": "27f20cdcaab3f60dc4c30037a01e3842c71d9c5d8d47dcc60ea2c986bfac9709",
+        "bytes": 181
+      },
+      "delivery_pk": "07aaff3e9fc167275544f4c3a6a17cd837f2ec6e78cd8a57b1e3dfb3cc035a76",
+      "deliver_by": "1767398400000000000",
+      "dispute_until": "1767916800000000000",
+      "cleared": false,
+      "state": {
+        "Delivered": {
+          "ephemeral_pk": "052a50773ac8d91773f2dc9662e12f0defe915e415b8a1c8e20a5a3d6ab2b843",
+          "cipher_hash": null,
+          "at": "1767312000000000000"
+        }
+      },
+      "ciphertext": "mrRbIhhfJA9EEY9KDYuGVb1mXpv7cAm4bP9BASFuhnIvOItBE11WO68D97S2oaUOGTy/+jAGoN0iIg1enYLOXrdOgm215qFLsBdaFyl25KKloQTwm5OlmMtUYc61qht1NOGJansY73gJeKXe4N4yv0Y++ZvR1pyfX8XgVx0siXEFnykoZhC4w22VFNvgWjj3MVjP0EUT4jfVjcrC2nWS+7+Onghy7DWJQUbr/knEmB4wMfqZeg=="
+    }
+  }
+}

@@ -445,7 +445,7 @@ impl World {
                 let fake = matches!(a, Action::DeliverFake);
                 let mut bundle = BUNDLE.to_vec();
                 if fake {
-                    // "translate" -> "Translate": a different prompt, same length.
+                    // One byte changed: a different prompt of the same length.
                     bundle[50] = b'X';
                 }
                 let Some(sale) = self.m.sales.last().cloned() else {
@@ -596,7 +596,7 @@ impl World {
                         t.push_str(&format!(
                             "; earn-out closed: {} released to the seller, {} back to the buyer",
                             usd(sale.released),
-                            usd(sale.returned)
+                            usd(sale.back_to_buyer())
                         ));
                     }
                 }

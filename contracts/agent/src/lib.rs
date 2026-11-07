@@ -1097,6 +1097,7 @@ impl AgentExit {
             "schema": "sealed-config.v1", "sale_id": sale_id, "commit": c.commit,
             "delivery_pk": c.delivery_pk, "deliver_by": U64(c.deliver_by),
             "dispute_until": U64(c.dispute_until()), "state": c.state,
+            "upfront_held": amt(c.upfront_held), "cleared": c.cleared,
             "ciphertext": cipher.map(near_sdk::json_types::Base64VecU8::from),
         })
     }
@@ -1109,7 +1110,7 @@ impl AgentExit {
             .unwrap_or_else(|e| fail(e));
         emit(
             "earnout_finalized",
-            json!({"sale_id": s.id, "seller_total": amt(s.released), "buyer_refund": amt(s.returned)}),
+            json!({"sale_id": s.id, "seller_total": amt(s.released), "buyer_refund": amt(s.back_to_buyer())}),
         );
         self.sale_json(&s)
     }

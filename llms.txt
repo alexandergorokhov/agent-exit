@@ -34,7 +34,7 @@
 - [tools/testnet/src/steps.rs](tools/testnet/src/steps.rs): testnet runner: deploy, gates G1/G2/G6, scenes 1-6
 - [scripts/testnet/g2-relay.mjs](scripts/testnet/g2-relay.mjs): G2 relay (chainsig.js + viem) on Base Sepolia
 - [contracts/agent/src/fuzz_tests.rs](contracts/agent/src/fuzz_tests.rs): `make fuzz` targets
-- [mcp/src/tools.ts](mcp/src/tools.ts): MCP tools list_agents, get_earnings, scan_agent, buy_agent, verify_lockout, list_for_sale, list_offers, buy_share, portfolio, check_claims, sandbox, check_account
+- [mcp/src/tools.ts](mcp/src/tools.ts): MCP tools list_agents, get_earnings, scan_agent, buy_agent, verify_lockout, list_for_sale, list_offers, buy_share, portfolio, check_claims, sandbox, check_account, sealed_delivery
 - [mcp/src/sandbox.ts](mcp/src/sandbox.ts): the `sandbox` tool: any action on the contract core and scan compiled to wasm (web/playground.wasm)
 - [mcp/src/backend.ts](mcp/src/backend.ts): offline (recorded) and testnet (read-only) data for the MCP server
 - [mcp/src/server.ts](mcp/src/server.ts): MCP stdio server

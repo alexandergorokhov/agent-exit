@@ -126,6 +126,8 @@ export interface AccountFacts {
   keys: Json[];
   /** The second provider's key list (testnet), or null offline. */
   keys_second: Json[] | null;
+  /** The second provider's code hash (testnet), or null when unread. */
+  code_hash_second?: string | null;
   /** Where the facts come from. */
   source: string;
 }
@@ -153,6 +155,20 @@ export interface Backend {
   buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome>;
   /** Testnet only: one recorded transaction's outcome as an archival node reports it. */
   txOutcome?(hash: string, sender: string): Promise<TxOutcome>;
+  /** get_sealed_config of one sale (null: the sale sold no sealed config). */
+  sealedConfig(id: string, saleId: number): Promise<Json | null>;
+  /** release_upfront or dispute_config, signed by `signer`. */
+  sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome>;
+  /** Offline only: the fixed demo secret of the sealed fixtures. */
+  demoDeliverySecret?(): string | null;
+}
+
+export interface SealedCallOutcome {
+  /** The contract's return value: to_seller (release_upfront) or refund_to_buyer (dispute_config). */
+  value: Json;
+  recorded: boolean;
+  tx_hash?: string;
+  explorer?: string;
 }
 
 /** What the chain says about one transaction (check_claims on testnet). */
@@ -225,6 +241,58 @@ export class OfflineBackend implements Backend {
 
   async agent(id: string): Promise<AgentView> {
     return structuredClone(this.get(id));
+  }
+
+  private sealedFx: Json | null = null;
+
+  private sealedFixtures(): Json {
+    if (!this.sealedFx) {
+      try {
+        this.sealedFx = JSON.parse(readFileSync(join(dirname(this.path), "sealed.json"), "utf8"));
+      } catch {
+        this.sealedFx = { agents: {} };
+      }
+    }
+    return this.sealedFx as Json;
+  }
+
+  demoDeliverySecret(): string | null {
+    return this.sealedFixtures().demo_buyer_sk ?? null;
+  }
+
+  async sealedConfig(id: string, saleId: number): Promise<Json | null> {
+    const e = this.sealedFixtures().agents?.[id];
+    if (!e) throw new ToolError("UNKNOWN_AGENT", `${id} has no sealed sale in the offline fixtures (fixtures/mcp/sealed.json: brainy.testnet, swapped.testnet)`);
+    if (e.sale_id !== saleId) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} not found on ${id}`);
+    return structuredClone(e);
+  }
+
+  /** The same rules as agent-core release_upfront / dispute_config
+   * (SC8-SC14), on the illustrative fixture; the contract code itself runs
+   * in the sandbox tool (accept_config, dispute_config). */
+  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome> {
+    const e = this.sealedFixtures().agents?.[id];
+    if (!e || e.sale_id !== args.sale_id) throw new ToolError("UNKNOWN_SALE", `sale ${args.sale_id} not found on ${id}`);
+    const refused = (code: string) => new ToolError("CONTRACT_REFUSED", `the contract refused ${method}: ${code}; nothing changed`, { contract_error: code });
+    if (!e.state?.Delivered) throw refused("DisputeClosed");
+    const now = BigInt(this.sealedFixtures().now);
+    if (method === "release_upfront") {
+      if (e.cleared) return { value: { sale_id: e.sale_id, to_seller: "0" }, recorded: true };
+      if (signer !== e.buyer && now <= BigInt(e.dispute_until)) throw refused("DisputeOpen");
+      e.cleared = true;
+      const fee = BigInt(e.price) / 100n;
+      return { value: { sale_id: e.sale_id, to_seller: String(BigInt(e.upfront) - fee) }, recorded: true };
+    }
+    if (signer !== e.buyer) throw refused("NotBuyer");
+    if (e.cleared || now > BigInt(e.dispute_until)) throw refused("DisputeClosed");
+    const { open, publicKey, commitOf } = await import("./sealed.js");
+    const sk = Buffer.from(String(args.delivery_sk), "hex");
+    if (sk.length !== 32 || publicKey(sk).toString("hex") !== e.delivery_pk) throw refused("BadDeliveryKey");
+    const plain = open(sk, Buffer.from(e.state.Delivered.ephemeral_pk, "hex"), Buffer.from(e.ciphertext, "base64"));
+    if (commitOf(plain).hash === e.commit.hash) throw refused("ConfigMatches");
+    const refund = BigInt(e.upfront) + BigInt(e.escrow);
+    e.state = { Mismatch: { refunded: String(refund) } };
+    return { value: { sale_id: e.sale_id, refund_to_buyer: String(refund) }, recorded: true };
   }
 
   async accountFacts(id: string): Promise<AccountFacts | null> {
@@ -496,16 +564,17 @@ export class TestnetBackend implements Backend {
       if (/UNKNOWN_ACCOUNT|does not exist/i.test(String((e as Error).message))) return null;
       throw e;
     }
-    const [keys, second] = await Promise.all([
+    const [keys, second, account2] = await Promise.all([
       this.keys(this.cfg.rpc[0], id),
       this.keys(this.cfg.rpc[1], id).catch(() => null),
+      this.rpc(this.cfg.rpc[1], { request_type: "view_account", finality: "final", account_id: id }).catch(() => null),
     ]);
     let methods: string[] = [];
     if (account.code_hash !== "11111111111111111111111111111111") {
       const code = await this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id });
       methods = wasmExports(Buffer.from(code.code_base64, "base64"));
     }
-    return { code_hash: String(account.code_hash), methods, keys, keys_second: second, source: `testnet RPC (${this.cfg.rpc.join(", ")})` };
+    return { code_hash: String(account.code_hash), code_hash_second: account2 ? String(account2.code_hash) : null, methods, keys, keys_second: second, source: `testnet RPC (${this.cfg.rpc.join(", ")})` };
   }
 
   async agent(id: string): Promise<AgentView> {
@@ -676,10 +745,15 @@ export class TestnetBackend implements Backend {
    * key and waited on to FINAL. `what` names the call in errors. */
   private async ftTransferCall(id: string, signer: string, amount: string, msg: string, what: string): Promise<{ result: Json; txHash: string; explorer: string }> {
     this.known(id);
-    this.known(signer);
-    if (!this.secret) throw new ToolError("WRITE_DISABLED", "testnet writes need AGENT_EXIT_PRIVATE_KEY in the server env; nothing was sent");
     const token = this.cfg.expectedToken;
     if (!token) throw new ToolError("WRITE_DISABLED", `testnet ${what} needs AGENT_EXIT_TOKEN (the published xUSD-FAKE token); nothing was sent`);
+    return this.send(token, signer, "ft_transfer_call", { receiver_id: id, amount, msg }, 1n, what);
+  }
+
+  /** One signed FunctionCall from `signer` to `receiver`, sent and awaited. */
+  private async send(receiver: string, signer: string, methodName: string, args: Json, deposit: bigint, what: string): Promise<{ result: Json; txHash: string; explorer: string }> {
+    this.known(signer);
+    if (!this.secret) throw new ToolError("WRITE_DISABLED", "testnet writes need AGENT_EXIT_PRIVATE_KEY in the server env; nothing was sent");
     let key: NearKey;
     try {
       key = new NearKey(this.secret);
@@ -700,12 +774,12 @@ export class TestnetBackend implements Backend {
         signerId: signer,
         publicKey: key.publicKey,
         nonce: BigInt(ak.nonce) + 1n,
-        receiverId: token,
+        receiverId: receiver,
         blockHash: b58(ak.block_hash),
-        methodName: "ft_transfer_call",
-        args: Buffer.from(JSON.stringify({ receiver_id: id, amount, msg })),
+        methodName,
+        args: Buffer.from(JSON.stringify(args)),
         gas: 300_000_000_000_000n,
-        deposit: 1n,
+        deposit,
       },
       key,
     );
@@ -794,6 +868,28 @@ export class TestnetBackend implements Backend {
   async holdings(id: string, account: string): Promise<Json> {
     this.known(id);
     return this.view(id, "get_holdings", { account_id: account });
+  }
+
+  async sealedConfig(id: string, saleId: number): Promise<Json | null> {
+    this.known(id);
+    return this.view(id, "get_sealed_config", { sale_id: saleId });
+  }
+
+  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome> {
+    this.known(id);
+    const { result, txHash, explorer } = await this.send(id, signer, method, args, 0n, method);
+    const ok = result?.status?.SuccessValue;
+    if (ok === undefined) {
+      const failure = result?.status?.Failure ? JSON.stringify(result.status.Failure).slice(0, 300) : "no outcome";
+      throw new ToolError("CONTRACT_REFUSED", `${method} failed: ${failure} (${explorer})`, { tx_hash: txHash, explorer });
+    }
+    let value: Json = {};
+    try {
+      value = JSON.parse(Buffer.from(String(ok), "base64").toString("utf8"));
+    } catch {
+      value = {};
+    }
+    return { value, recorded: false, tx_hash: txHash, explorer };
   }
 
   async buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome> {
