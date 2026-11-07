@@ -17,7 +17,24 @@ const s3 = scene(3), s4 = scene(4), s5 = scene(5), s8 = scene(8);
 
 function terms(l) {
   const t = l.terms;
+  if (t.earnout_bps === 10_000) return `pay from revenue: nothing to the seller now; the whole price is held for ${t.window_secs / 86400} days and released by counted customer payments (${t.share_bps / 100}% of each); after that the buyer gets the rest back, except a floor of ${t.floor_bps / 100}% of the held part`;
   return `${100 - t.earnout_bps / 100}% to the seller now; ${t.earnout_bps / 100}% held for ${t.window_secs / 86400} days and released by counted customer payments (${t.share_bps / 100}% of each); after that the buyer gets the rest back, except a floor of ${t.floor_bps / 100}% of the held part`;
+}
+
+// What faking this revenue would have cost the seller (S10, PR5). Before a
+// sale, payments from wallets the meter cannot link come back to the seller
+// as revenue: almost free. After the sale each 1.00 of escrow they pull out
+// with such payments costs 10000/share_bps (2.00 at 50%), so it never pays;
+// with the whole price held ("pay from revenue") nothing at all is paid on
+// the strength of the history.
+function costToFake(l) {
+  const t = l.terms;
+  const per = (10_000 / t.share_bps).toFixed(2);
+  const now = (100 - t.earnout_bps / 100);
+  const base = `before the sale: about 0 (payments from unlinked wallets come back to the seller as revenue, so weigh new payers down); after the sale: ${per} paid in for each 1.00 of escrow released, so faking then always loses money`;
+  return now === 0
+    ? `${base}. Pay from revenue: the whole price is held, so a faked history earns the seller nothing up front`
+    : `${base}. Only the ${now}% paid now (${usd(Number(l.price) * now / 100)}) rests on the history alone; listing with the whole price held removes even that`;
 }
 
 function keys(scan) {
@@ -55,6 +72,7 @@ function saleCard(name, e, scanScene, verdict, why, run) {
       ["Price ÷ counted revenue", multiple ? `${multiple}× the counted revenue recorded so far (${(Number(l.price) / quality(e).weighted).toFixed(1)}× the age-weighted figure)` : "no counted revenue: the price buys nothing proven"],
       ["Keys and code", k.text],
       ["Payment terms", terms(l)],
+      ["Cost to fake this revenue", costToFake(l)],
     ],
     verdict,
     ok: k.ok && Number(e.counted) > 0,

@@ -10,6 +10,7 @@ Agent Exit is a testnet prototype with fake money (`xUSD-FAKE`). Mainnet waits o
 | Q1 2027 | External security audit of `contracts/agent` and `contracts/agent-core`; public bug bounty on testnet | Planned |
 | Nov 2026 | Payer age and spread on the due-diligence card and in MCP `get_earnings` (`revenue_quality`): revenue from payers first seen in the last 7 days counts half (part of N3) | Built |
 | Nov 2026 | Born-clean factory (`contracts/factory`): agents created in one batch with no access key and the published code, so N4 and N12 cannot happen to them; the scan reports `born_clean` | Built; testnet scene 9 after the next deploy |
+| Nov 2026 | Pay from revenue: a listing may hold the whole price, so the seller is paid only by customer payments after the sale; the due-diligence card shows the cost to fake the revenue | Built; live on testnet after the next deploy |
 | Q1 2027 | Code-change history check in the scan (closes N12 for agents not born in the factory); account age from an indexer for older sybil accounts (rest of N3) | Planned |
 | Q2 2027 | Mainnet with a real stablecoin, the mainnet MPC signer and NEAR AI signers; a cap on sale size until the audit has run for a quarter | Planned |
 | Q2 2027 | A listing page and wallet buy button (today the page only reads the chain) | Planned |

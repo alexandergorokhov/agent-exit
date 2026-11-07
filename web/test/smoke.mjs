@@ -69,6 +69,7 @@ try {
     const want = {
       fake: ["FLAGGED: the owner paid their own agent", "FLAGGED: paid from the owner's sub-account", "Verified (NEAR AI signature; signed with a test key here"],
       backdoor: ["scan -> blocked (full_access_key_present)", "SCAN_BLOCKED", "hidden key is still on the account", "Only the scan protects the buyer"],
+      revenue: ["0.00 paid to alice now: all 1,000.00 is held", "paid 200.00 and got 100.00 back: faking revenue cost 100.00", "earn-out closed"],
       honest: ["scan -> clean", "690.00 paid to alice now (after the 1% protocol fee, 10.00), 300.00 held as earn-out", "withdraw -> NotOwner", "AccessKeyNotFound", "earn-out closed"],
     };
     for (const vp of [{ width: 1280, height: 900 }, { width: 375, height: 740 }]) {
@@ -154,7 +155,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("131 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("132 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();

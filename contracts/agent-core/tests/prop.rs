@@ -326,8 +326,18 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             }
         }
         Act::List(c, p) => {
-            let r =
-                w.m.list(ACTORS[c], p as Amount * USD, Terms::default(), "h", w.now);
+            // Every third price lists "pay from revenue" (PR1-PR4): the whole
+            // price held, nothing to the seller now, no floor.
+            let terms = if p % 3 == 0 {
+                Terms {
+                    earnout_bps: MAX_EARNOUT_BPS,
+                    floor_bps: 0,
+                    ..Terms::default()
+                }
+            } else {
+                Terms::default()
+            };
+            let r = w.m.list(ACTORS[c], p as Amount * USD, terms, "h", w.now);
             check_owner_only(ACTORS[c], &owner, settling, r.is_ok(), &before, &w.m)?;
         }
         Act::Cancel(c) => {
@@ -388,8 +398,12 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     ref sale,
                     ..
                 } => {
-                    // The 1% fee comes out of the upfront part, never the escrow.
-                    prop_assert_eq!(fee, agent_core::money::protocol_fee(sale.price));
+                    // The 1% fee comes out of the upfront part, never the
+                    // escrow, so it is at most that part (PR2).
+                    prop_assert_eq!(
+                        fee,
+                        agent_core::money::protocol_fee(sale.price).min(sale.paid_now)
+                    );
                     prop_assert_eq!(payout + fee, sale.paid_now);
                     // A29: the seller's unwithdrawn revenue went to the seller.
                     prop_assert_eq!(w.m.owner_free, 0);

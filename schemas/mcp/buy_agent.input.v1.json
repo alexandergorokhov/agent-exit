@@ -25,8 +25,8 @@
     "min_escrow_pct": {
       "type": "number",
       "minimum": 0,
-      "maximum": 50,
-      "description": "refuse unless at least this % of the price is held in escrow; can only tighten the server minimum (30%)"
+      "maximum": 100,
+      "description": "refuse unless at least this % of the price is held in escrow; can only tighten the server minimum (30%). 100 = pay from revenue only: nothing to the seller at the sale"
     },
     "max_floor_pct": {
       "type": "number",

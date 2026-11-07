@@ -1098,3 +1098,39 @@ fn a24_payments_while_listed_still_fill_the_treasury() {
     assert_eq!(s.m().treasury, 65 * USD);
     assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
 }
+
+/// PR6: a pay-from-revenue sale (the whole price held) sends the seller
+/// nothing at the sale, takes no fee, and pays the seller from the first
+/// customer payment.
+#[test]
+fn pr6_pay_from_revenue_sale_sends_nothing_now() {
+    let mut s = translator_world();
+    let t = agent_core::Terms {
+        earnout_bps: agent_core::MAX_EARNOUT_BPS,
+        floor_bps: 0,
+        ..Default::default()
+    };
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), Some(t));
+    assert_eq!(s.buy(BOB, 1_000 * USD, BOB_RUNNER), None);
+    let sale_id = s.m().pending.as_ref().expect("settling").sale_id;
+    assert_eq!(s.callback(true).on_handover(sale_id).0, 0);
+    assert!(ft_transfers().is_empty(), "no zero payout transfer");
+    let sale = &events("sale")[0];
+    assert_eq!(sale["paid_now"], "0");
+    assert_eq!(sale["protocol_fee"], "0");
+    assert_eq!(sale["escrow"], (1_000 * USD).to_string());
+    assert_eq!(
+        s.c.nft_token(DEED_ID.into()).unwrap().owner_id.as_str(),
+        BOB
+    );
+    assert_eq!(s.c.known_keys(), vec![key_str(BOB_RUNNER)]);
+    // A customer pays 40.00: alice gets 20.00 from the escrow (on top of
+    // her unwithdrawn pre-sale revenue, A29).
+    let before = s.by(BOB).get_claimable(acc(ALICE)).0;
+    s.now += DAY;
+    assert_eq!(s.pay("p1.testnet", 40 * USD), Some(0));
+    assert_eq!(s.by(BOB).get_claimable(acc(ALICE)).0 - before, 20 * USD);
+    assert_eq!(s.m().escrow_left(), 980 * USD);
+    assert!(s.m().solvent());
+}

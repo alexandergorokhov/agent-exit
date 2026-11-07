@@ -34,6 +34,10 @@
         [
           "Payment terms",
           "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
+        ],
+        [
+          "Cost to fake this revenue",
+          "before the sale: about 0 (payments from unlinked wallets come back to the seller as revenue, so weigh new payers down); after the sale: 2.00 paid in for each 1.00 of escrow released, so faking then always loses money. Only the 70% paid now (700.00) rests on the history alone; listing with the whole price held removes even that"
         ]
       ],
       "verdict": "Passes the buyer's checks",
@@ -73,6 +77,10 @@
         [
           "Payment terms",
           "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
+        ],
+        [
+          "Cost to fake this revenue",
+          "before the sale: about 0 (payments from unlinked wallets come back to the seller as revenue, so weigh new payers down); after the sale: 2.00 paid in for each 1.00 of escrow released, so faking then always loses money. Only the 70% paid now (350.00) rests on the history alone; listing with the whole price held removes even that"
         ]
       ],
       "verdict": "Blocked before any money moves",

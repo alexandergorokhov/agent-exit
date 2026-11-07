@@ -101,3 +101,16 @@ test("A32 the bought terms are reported and labelled prod or demo", async () => 
     await demo.close();
   }
 });
+
+test("PR7 a buyer's agent can demand pay from revenue (min_escrow_pct 100): a 30% listing is refused", async () => {
+  const s = await writer();
+  try {
+    const r = await s.call("buy_agent", buy({ min_escrow_pct: 100 }));
+    assert.ok(valid("buy_agent", r));
+    assert.equal(r.body.error.code, "TERMS_BELOW_MINIMUM");
+    assert.equal(r.body.sent, false);
+    assert.equal(r.body.error.details.minimum.min_earnout_bps, 10_000);
+  } finally {
+    await s.close();
+  }
+});

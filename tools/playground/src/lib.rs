@@ -59,7 +59,11 @@ enum Action {
     ToggleUpgrade,
     List {
         price: Option<u64>,
+        /// The whole price held, paid to the seller only from revenue (PR1).
+        pay_from_revenue: Option<bool>,
     },
+    /// The owner pays 200 from a fresh wallet the meter cannot link to them.
+    PayFresh,
     Cancel,
     Scan,
     Buy {
@@ -265,6 +269,28 @@ impl World {
                 let r = self.pay(&owner, 200 * USD, false);
                 self.note(&owner, true, format!("pays own agent 200.00: {r}"))
             }
+            Action::PayFresh => {
+                let Some(seller) = self.m.sales.last().map(|x| x.seller.clone()) else {
+                    let r = self.pay("fresh-wallet-7.testnet", 200 * USD, false);
+                    return self.note(
+                        "fresh-wallet-7.testnet",
+                        true,
+                        format!("alice's fresh wallet pays 200.00: {r}. Before a sale the money comes back to alice as revenue, so this costs her nothing: that is why the buyer's card weighs payers first seen in the last 7 days at half"),
+                    );
+                };
+                let before = self.m.claimable_of(&seller);
+                let r = self.pay("fresh-wallet-7.testnet", 200 * USD, false);
+                let got = self.m.claimable_of(&seller) - before;
+                self.note(
+                    "fresh-wallet-7.testnet",
+                    true,
+                    format!(
+                        "{seller}'s fresh wallet pays 200.00: {r}. {seller} paid 200.00 and got {} back: faking revenue cost {}",
+                        usd(got),
+                        usd(200 * USD - got)
+                    ),
+                )
+            }
             Action::PaySub => {
                 let payer = format!("bot.{}", self.m.owner);
                 let r = self.pay(&payer, 200 * USD, false);
@@ -292,11 +318,23 @@ impl World {
                 };
                 self.note(s, true, t.into())
             }
-            Action::List { price } => {
+            Action::List {
+                price,
+                pay_from_revenue,
+            } => {
                 let p = price.unwrap_or(1_000) as u128 * USD;
+                let terms = if pay_from_revenue.unwrap_or(false) {
+                    Terms {
+                        earnout_bps: agent_core::MAX_EARNOUT_BPS,
+                        floor_bps: 0,
+                        ..Terms::default()
+                    }
+                } else {
+                    Terms::default()
+                };
                 let r = self
                     .m
-                    .list(s, p, Terms::default(), "fixture-release-hash-v1", self.now);
+                    .list(s, p, terms, "fixture-release-hash-v1", self.now);
                 self.scan = None;
                 match r {
                     Ok(l) => self.note(
@@ -516,6 +554,11 @@ impl World {
                 } else {
                     ""
                 };
+                if sale.paid_now == 0 {
+                    return self.note(BUYER, true, format!(
+                        "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; 0.00 paid to alice now: all {} is held and reaches her only from customer payments after the sale (pay from revenue).{left}",
+                        usd(sale.price), usd(sale.escrow)));
+                }
                 self.note(BUYER, true, format!(
                     "buy {} -> one transaction: owner is now bob, alice's key deleted, bob's key added; {} paid to alice now (after the 1% protocol fee, {}), {} held as earn-out.{left}",
                     usd(sale.price), usd(payout), usd(fee), usd(sale.escrow)))

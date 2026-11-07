@@ -883,7 +883,11 @@ impl AgentExit {
                         "known_keys": self.m.known_keys,
                     }),
                 );
-                self.send(OutKind::SellerPayout, &seller, payout).detach();
+                // A pay-from-revenue sale has no upfront payout (PR1); a
+                // zero ft_transfer would only fail at the token.
+                if payout > 0 {
+                    self.send(OutKind::SellerPayout, &seller, payout).detach();
+                }
                 U128(unused)
             }
         }

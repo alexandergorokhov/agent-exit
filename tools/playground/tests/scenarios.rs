@@ -188,3 +188,41 @@ fn p4b_no_shares_while_listed() {
     assert_eq!(v["last"]["ok"], false);
     assert!(last(&v).contains("AlreadyListed"));
 }
+
+#[test]
+fn p5_pay_from_revenue_seller_is_paid_only_by_customers() {
+    let mut w = World::new();
+    run(
+        &mut w,
+        r#"{"op":"list","price":1000,"pay_from_revenue":true}"#,
+    );
+    let v = run(&mut w, r#"{"op":"scan"}"#);
+    assert_eq!(
+        v["view"]["scan"]["verdict"], "clean",
+        "{}",
+        v["view"]["scan"]
+    );
+    let v = run(&mut w, r#"{"op":"buy"}"#);
+    assert!(
+        last(&v).contains("0.00 paid to alice now: all 1,000.00 is held"),
+        "{}",
+        last(&v)
+    );
+    // Faking revenue after the sale: alice pays 200 from a fresh wallet the
+    // meter cannot link to her and gets 100 back. She is 100 down.
+    let v = run(&mut w, r#"{"op":"pay_fresh"}"#);
+    assert!(
+        last(&v).contains("paid 200.00 and got 100.00 back: faking revenue cost 100.00"),
+        "{}",
+        last(&v)
+    );
+    let v = run(&mut w, r#"{"op":"pay_customer"}"#);
+    assert!(
+        last(&v).contains("12.50 of the escrow released to alice.testnet"),
+        "{}",
+        last(&v)
+    );
+    let v = run(&mut w, r#"{"op":"wait","days":31}"#);
+    assert!(last(&v).contains("earn-out closed"), "{}", last(&v));
+    assert_eq!(v["view"]["solvent"], true);
+}

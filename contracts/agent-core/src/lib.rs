@@ -137,6 +137,26 @@ pub struct Terms {
     pub window_secs: u64,
 }
 
+/// The whole price may be held: the seller is then paid only from revenue.
+pub const MAX_EARNOUT_BPS: u16 = 10_000;
+
+impl Terms {
+    /// "Pay from revenue": nothing is paid to the seller at the sale.
+    pub fn pay_from_revenue(&self) -> bool {
+        self.earnout_bps == MAX_EARNOUT_BPS
+    }
+
+    /// What a seller must pay in through other wallets, after the sale, to
+    /// pull `released` out of the escrow: `released / share_bps`. They lose
+    /// the difference, so faking revenue after a sale never pays (S10).
+    pub fn cost_to_fake_release(&self, released: Amount) -> Amount {
+        if self.share_bps == 0 {
+            return Amount::MAX;
+        }
+        released.saturating_mul(money::BPS) / self.share_bps as Amount
+    }
+}
+
 impl Default for Terms {
     fn default() -> Self {
         Terms {
@@ -194,9 +214,11 @@ impl Default for TermsMin {
 
 impl Terms {
     /// Shape and buyer minimum. `share_bps <= 50%` is what makes wash-paying
-    /// lose money (S10); `min` is the buyer protection (A32).
+    /// lose money (S10); `min` is the buyer protection (A32). The held part
+    /// can be the whole price (`earnout_bps` 10000, "pay from revenue", PR1):
+    /// then the seller is paid only by customer payments after the sale.
     pub fn check(&self, min: &TermsMin) -> Res<()> {
-        let ok = (min.min_earnout_bps.max(1)..=5_000).contains(&self.earnout_bps)
+        let ok = (min.min_earnout_bps.max(1)..=MAX_EARNOUT_BPS).contains(&self.earnout_bps)
             && (1..=5_000).contains(&self.share_bps)
             && self.floor_bps <= min.max_floor_bps.min(10_000)
             && (min.min_window_secs.max(60)..=365 * 86_400).contains(&self.window_secs);
@@ -1071,7 +1093,9 @@ impl<S: Store + Default> Machine<S> {
         };
         self.sales.push(sale.clone());
         // The protocol fee stays held, as the fee account's claimable balance.
-        let fee = self.take_fee(l.price).min(paid_now);
+        // Out of the upfront part only, so never more than it (PR2): a
+        // pay-from-revenue sale has no upfront part and takes no fee.
+        let fee = self.take_fee(l.price, paid_now);
         let payout = paid_now - fee;
         // The overpay goes back through ft_resolve_transfer; the payout leaves now.
         self.held -= unused + payout;
@@ -1509,12 +1533,17 @@ impl<S: Store + Default> Machine<S> {
 
     /// Pay the escrow of a slice to its seller: their revenue if they still
     /// own the agent, their claimable balance if they sold it (T9).
-    /// Credit the protocol fee on `base` to `fee_to`; 0 when no fee account.
-    fn take_fee(&mut self, base: Amount) -> Amount {
+    /// Credit the protocol fee on `base`, at most `cap` (the part it comes
+    /// out of), to `fee_to`; 0 when no fee account. What is credited is
+    /// exactly what is returned, so the ledger stays whole.
+    fn take_fee(&mut self, base: Amount, cap: Amount) -> Amount {
         if self.fee_to.is_empty() {
             return 0;
         }
-        let fee = money::protocol_fee(base);
+        let fee = money::protocol_fee(base).min(cap);
+        if fee == 0 {
+            return 0;
+        }
         let to = self.fee_to.clone();
         self.credit(&to, fee);
         fee
@@ -1712,7 +1741,7 @@ impl<S: Store + Default> Machine<S> {
         let seller = o.seller.clone();
         self.held += cost;
         self.share_escrow += escrow;
-        let fee = self.take_fee(cost).min(now_part);
+        let fee = self.take_fee(cost, now_part);
         self.pay_seller(&seller, now_part - fee);
         Ok(cost)
     }
