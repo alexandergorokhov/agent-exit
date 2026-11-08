@@ -7,7 +7,7 @@ export const UPSTREAMS = ["https://rpc.testnet.fastnear.com", "https://rpc.testn
 // Regular nodes forget transactions after a few days; "tx" falls back to an archival node.
 export const ARCHIVAL = "https://archival-rpc.testnet.fastnear.com";
 export const VIEW_METHODS = ["get_status", "get_listing", "get_earnings"];
-const ACCOUNT = /^[a-z0-9_-]+(\.[a-z0-9_-]+)*\.testnet$/;
+const ACCOUNT = /^([a-z0-9_-]+(\.[a-z0-9_-]+)*\.testnet|[0-9a-f]{64})$/;
 export const MAX_BODY = 2048;
 
 /** Returns null if the JSON-RPC body is an allowed read, else the reason. */
@@ -20,7 +20,7 @@ export function refuse(body) {
     if (!p || typeof p !== "object" || Array.isArray(p)) return "tx params must be an object";
     if (Object.keys(p).sort().join(",") !== "sender_account_id,tx_hash,wait_until") return "unexpected params";
     if (typeof p.tx_hash !== "string" || !TX_HASH.test(p.tx_hash)) return "tx_hash must be base58";
-    if (typeof p.sender_account_id !== "string" || p.sender_account_id.length > 64 || !ACCOUNT.test(p.sender_account_id)) return "sender_account_id must be a .testnet account";
+    if (typeof p.sender_account_id !== "string" || p.sender_account_id.length > 64 || !/^[a-z0-9_-]+(\.[a-z0-9_-]+)*\.testnet$/.test(p.sender_account_id)) return "sender_account_id must be a .testnet account";
     if (p.wait_until !== "NONE") return "wait_until must be 'NONE' (finished transactions only)";
     return null;
   }
@@ -29,7 +29,8 @@ export function refuse(body) {
   if (!p || typeof p !== "object" || p.finality !== "final") return "params.finality must be 'final'";
   if (typeof p.account_id !== "string" || p.account_id.length > 64 || !ACCOUNT.test(p.account_id)) return "account_id must be a .testnet account";
   const keys = Object.keys(p).sort().join(",");
-  if (p.request_type === "view_account" || p.request_type === "view_access_key_list") {
+  // view_code: the "Check any NEAR account" box lists the contract's methods.
+  if (p.request_type === "view_account" || p.request_type === "view_access_key_list" || p.request_type === "view_code") {
     return keys === "account_id,finality,request_type" ? null : "unexpected params";
   }
   if (p.request_type === "call_function") {

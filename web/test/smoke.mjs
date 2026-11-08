@@ -156,7 +156,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("161 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("162 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
@@ -270,6 +270,45 @@ try {
     for (const want of [`translator.${R}`, `owner bob.${R}`, "1 access keys, 0 full-access", "2 access keys, 1 full-access", "same as the recorded run"]) { assert.ok(live.includes(want), `L7: live box lacks "${want}"`); checks++; }
     await noHorizontalScroll(lp, "live box at 375px");
     assert.deepEqual([...seenHosts], [new URL(base).host], "L7: the page contacts only its own origin");
+    checks++;
+    await ctx.close();
+  }
+
+  // C1-C2: "Check any NEAR account" reads keys and code through the relay and
+  // gives the same verdicts as the MCP tool check_account.
+  {
+    const world = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    const wasm = Buffer.from("0061736d0100000001040160000003020100070b01077570677261646500000a040102000b", "hex") /* a module exporting one function, "upgrade" */;
+    const ctx = await browser.newContext({ viewport: { width: 375, height: 740 } });
+    const seen = new Set();
+    await ctx.route("**/*", async (route) => {
+      const u = route.request().url();
+      seen.add(new URL(u).host);
+      if (!u.startsWith(base)) return route.abort();
+      if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+      const b = JSON.parse(route.request().postData());
+      const acc = b.params.account_id;
+      const bot = acc === "bot.testnet";
+      const rt = b.params.request_type;
+      const result = rt === "view_account" ? { code_hash: bot ? "Bot1111111111111111111111111111111111111111" : world.agent_code_hash }
+        : rt === "view_access_key_list" ? { keys: bot ? [{ public_key: "ed25519:Full", access_key: { permission: "FullAccess" } }] : [{ public_key: "ed25519:Runner", access_key: { permission: { FunctionCall: { receiver_id: acc, method_names: ["heartbeat"], allowance: "5000" } } } }] }
+          : rt === "view_code" ? { code_base64: (bot ? wasm : Buffer.from("0061736d0100000001040160000003020100070d010968656172746265617400000a040102000b", "hex") /* exports only "heartbeat" */).toString("base64") }
+            : { result: [...new TextEncoder().encode(JSON.stringify({ known_keys: ["ed25519:Runner"] }))] };
+      return route.fulfill({ contentType: "application/json", body: JSON.stringify({ jsonrpc: "2.0", id: b.id, result }) });
+    });
+    const cp = await ctx.newPage();
+    cp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+    await cp.goto(base);
+    for (const [acc, want, more] of [["bot.testnet", "backdoor_risk", "code_change_method"], [`agent.${world.root}`, "locked", "Locked"]]) {
+      await cp.fill("#check-account", acc);
+      await cp.click("#check-form button");
+      await cp.waitForFunction((w) => document.querySelector("#check-out .badge")?.textContent === w, want);
+      const t = await cp.textContent("#check-out");
+      assert.ok(t.includes(more), `C1: ${acc} lacks "${more}": ${t}`);
+      checks++;
+    }
+    await noHorizontalScroll(cp, "check box at 375px");
+    assert.deepEqual([...seen], [new URL(base).host], "C2: the check box contacts only its own origin");
     checks++;
     await ctx.close();
   }

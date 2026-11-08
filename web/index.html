@@ -10,6 +10,7 @@
   <script type="module" src="app.js"></script>
   <script type="module" src="playground.js"></script>
   <script type="module" src="scenarios.js"></script>
+  <script type="module" src="account.js"></script>
 </head>
 <body>
   <header class="hero">
@@ -90,6 +91,17 @@
       <p class="muted small">Under each result in the playground, open <b>How this works for real</b> to see the Rust function that ran, the NEAR call it corresponds to, and the same call on testnet when one was recorded.</p>
     </section>
 
+    <section id="check" class="play">
+      <h2>Check any NEAR account</h2>
+      <p>Who else can take it? Paste any testnet account (an AI agent's wallet, a bot, a vault). The page reads its access keys and code from NEAR testnet now and names every key or method that lets someone other than its owner move the money or swap the code. Read-only.</p>
+      <form id="check-form" class="check-form">
+        <label for="check-account">Account</label>
+        <input id="check-account" name="account" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="64" placeholder="translator.w2.agentexit3.testnet" required>
+        <button type="submit">Check</button>
+      </form>
+      <div id="check-out" aria-live="polite"></div>
+    </section>
+
     <section id="play" class="play">
       <div class="play-head">
         <h2>Try it yourself</h2>
@@ -151,7 +163,7 @@
         <a href="#play"><b>Design</b><span>Four missions you play in two minutes, against the real contract code. Each result says what the contract checked.</span></a>
         <a href="#concept"><b>Impact</b><span>AI agents are becoming businesses. Agent Exit makes them sellable: real revenue, a clean handover.</span></a>
         <a href="#why-near"><b>Originality</b><span>The agent is its own NEAR account. Selling it deletes the seller's keys on-chain, and the earn-out pays only from real customers.</span></a>
-        <a href="#backend"><b>Sustainability</b><span>Standard NEPs (NEP-141 token, NEP-171 deed), an MCP server any AI agent can use, MIT licence, 250+ Rust tests and 161 MCP tests.</span></a>
+        <a href="#backend"><b>Sustainability</b><span>Standard NEPs (NEP-141 token, NEP-171 deed), an MCP server any AI agent can use, MIT licence, 250+ Rust tests and 162 MCP tests.</span></a>
       </div>
       <p class="tracks"><span class="muted small">Tracks:</span>
         <span class="track">Autonomous Business: checked earnings, earn-out, shares of future earnings</span>
@@ -167,7 +179,7 @@
     <details>
       <summary>Data and evidence</summary>
       <p id="source" class="muted"></p>
-      <p id="evidence" class="muted">The attack suite is a regression suite, not independent evidence (we wrote both the attacks and the rules): 20 attack families, 19 counted, each blocked by its rule; 0 of 50 clean agents wrongly blocked; 161 MCP tests. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
+      <p id="evidence" class="muted">The attack suite is a regression suite, not independent evidence (we wrote both the attacks and the rules): 20 attack families, 19 counted, each blocked by its rule; 0 of 50 clean agents wrongly blocked; 162 MCP tests. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
     </details>
   </footer>
 </body>

@@ -362,3 +362,11 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 
 .story { margin: 1rem 0 0; }
 .story img { width: 100%; height: auto; border-radius: 14px; display: block; }
+
+/* "Check any NEAR account" box */
+.check-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.check-form input { flex: 1 1 260px; min-width: 0; padding: 8px 10px; font: inherit; border: 1px solid var(--line, #ccc); border-radius: 6px; background: var(--card, #fff); color: inherit; }
+#check-out ul.find li { overflow-wrap: anywhere; }
+#check-out, #check-out code { overflow-wrap: anywhere; word-break: break-word; }
+#check-out code { white-space: normal; }
+.check-form button { flex: 0 0 auto; }

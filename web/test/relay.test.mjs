@@ -82,3 +82,10 @@ test("W5 the relay's own error text never echoes upstream bodies", async () => {
   assert.equal(r.status, 502);
   assert.ok(r.json.error.message.length <= 300, r.json.error.message.length);
 });
+
+test("W6 the check box's reads are relayed: view_code and implicit accounts; still no writes", () => {
+  assert.equal(refuse({ ...Q, params: { ...Q.params, request_type: "view_code" } }), null);
+  assert.equal(refuse({ ...Q, params: { ...Q.params, account_id: "a".repeat(64) } }), null);
+  assert.ok(refuse({ ...Q, params: { ...Q.params, account_id: "someone.near" } }));
+  assert.ok(refuse({ ...Q, params: { ...Q.params, request_type: "view_state" } }));
+});

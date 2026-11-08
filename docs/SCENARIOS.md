@@ -257,6 +257,7 @@ Two reviews (off-chain: MCP, AI, web, tests; on-chain: contracts, crypto, scanne
 | CA12 | `check_account` on the published build compares every key with the contract's own list (`get_status known_keys`): a key the contract never installed is `key_not_issued_by_contract` (backdoor risk), a function-call key aimed at another contract is `fc_key_other_contract`; `make check-account ID=...` runs it from the command line | ts | `mcp/test/check_account.test.ts` | done |
 | SD7 | `sealed_delivery`: someone who is not the buyer cannot open the bundle (`NotBuyer`); each fixture has its own demo secret, never returned | ts | `mcp/test/sealed_delivery.test.ts` | done |
 | R2-L3 | Review 2 leftovers: `nft_transfer` to the agent's own account is refused (`DeedToAgent`); `nft_approve` charges the approval's storage and refunds extra deposit | unit | `tests.rs::r2_nft_approve_charges_storage_and_the_deed_cannot_go_to_the_agent` | done |
+| CA13-C2 | The demo page's "Check any NEAR account" box (`web/account.js`, rules in `web/account-check.mjs`) reads keys, code and the contract's own key list through the read-only relay (now also `view_code` and implicit accounts) and gives the same verdict as `check_account` on every offline account; in the browser a backdoored bot is `backdoor_risk` and the published agent with only its own runner key is `locked`; it contacts only its own origin and fits 375 px | ts, browser | `mcp/test/account_parity.test.ts`, `web/test/smoke.mjs` (C1-C2), `web/test/relay.test.mjs` (W6) | done |
 
 ## Stress (STR-*): scale and hostile load
 
