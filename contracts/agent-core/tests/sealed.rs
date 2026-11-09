@@ -393,3 +393,59 @@ fn sc16_finalize_waits_for_the_delivery_deadline_and_reports_the_whole_refund() 
     assert_eq!(s.returned, 300 * USD, "the escrow part");
     assert_eq!(s.back_to_buyer(), 1_000 * USD, "the whole price");
 }
+
+/// SC17 (review 4 H1): a backdoor proven after a sealed sale, before the
+/// delivery clears, returns the held upfront part to the buyer too.
+#[test]
+fn sc17_backdoor_after_sealed_sale_refunds_upfront_too() {
+    let mut m = sold_sealed();
+    assert_eq!(m.held, 1_000 * USD);
+    let r = m.runner_guard("translator", "ed25519:hidden").unwrap();
+    assert!(matches!(r, RunnerCheck::BackdoorProven { .. }));
+    assert_eq!(m.claimable_of("bob"), 1_000 * USD, "the whole price back");
+    assert_eq!(m.claimable_of("alice"), 0);
+    assert_eq!(m.upfront_held_total(), 0);
+    assert_eq!(
+        m.held,
+        m.escrow_left()
+            + m.upfront_held_total()
+            + m.claimable_total()
+            + m.owner_free
+            + m.treasury
+            + m.share_escrow,
+        "every token in a bucket"
+    );
+    assert!(m.solvent());
+}
+
+/// SC18 (review 4 H2): a low-order ephemeral key is refused at delivery, so
+/// a seller cannot post a bundle no client can open or dispute.
+#[test]
+fn sc18_low_order_ephemeral_key_refused() {
+    let mut m = sold_sealed();
+    let cipher = vec![0u8; BUNDLE.len()];
+    for bad in ["00".repeat(32), format!("01{}", "00".repeat(31))] {
+        assert_eq!(
+            m.deliver_config("alice", 1, &bad, &cipher, T0 + DAY_NS),
+            Err(Error::BadConfig)
+        );
+    }
+    assert!(!config(&m).delivered());
+}
+
+/// SC19 (review 4 M1): the held upfront part is in the exact ledger and in
+/// solvency while a sealed sale waits.
+#[test]
+fn sc19_upfront_held_is_in_the_ledger() {
+    let m = sold_sealed();
+    assert_eq!(m.upfront_held_total(), 700 * USD);
+    assert_eq!(
+        m.held,
+        m.escrow_left()
+            + m.upfront_held_total()
+            + m.claimable_total()
+            + m.owner_free
+            + m.treasury
+            + m.share_escrow
+    );
+}

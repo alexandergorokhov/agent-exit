@@ -514,8 +514,18 @@ export class Tools {
     }
     const sk = this.deliverySecret(agent, String(v.delivery_pk));
     const { open, commitOf } = await import("./sealed.js");
-    const plain = open(sk, Buffer.from(String(st.Delivered.ephemeral_pk), "hex"), Buffer.from(String(v.ciphertext ?? ""), "base64"));
-    const matches = commitOf(plain).hash === String(v.commit?.hash);
+    // Review 4 H2: a delivery that cannot be opened (a low-order ephemeral
+    // key: Node's X25519 throws) is not the committed bundle; the contract
+    // counts it as a mismatch, so the buyer must still be able to dispute.
+    let plain: Buffer;
+    let unopenable = false;
+    try {
+      plain = open(sk, Buffer.from(String(st.Delivered.ephemeral_pk), "hex"), Buffer.from(String(v.ciphertext ?? ""), "base64"));
+    } catch {
+      plain = Buffer.alloc(0);
+      unopenable = true;
+    }
+    const matches = !unopenable && commitOf(plain).hash === String(v.commit?.hash);
     let rotate: string[] = [];
     try {
       const j = JSON.parse(plain.toString("utf8"));
@@ -523,12 +533,21 @@ export class Tools {
     } catch {
       rotate = [];
     }
-    const opened = { ...out, matches, untrusted_preview: untrusted(plain.toString("utf8")), untrusted_rotate_after_sale: rotate, untrusted_notice: UNTRUSTED_NOTICE };
+    const opened = { ...out, matches, ...(unopenable ? { unopenable: true } : {}), untrusted_preview: untrusted(plain.toString("utf8")), untrusted_rotate_after_sale: rotate, untrusted_notice: UNTRUSTED_NOTICE };
     if (action === "open") {
       return { ...opened, next: matches ? `it is the committed bundle: rotate ${rotate.join(", ") || "the keys it names"}, then accept (confirm: true)` : "NOT the committed bundle: dispute (confirm: true) before dispute_until to get the whole price back" };
     }
     const buyer = this.writeGate();
     if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", `sealed_delivery ${action} needs confirm: true`);
+    // Review 4 L4: the operator's allowlist bounds testnet writes here too.
+    if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
+      throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet sealed_delivery writes only to agents the operator named`);
+    }
+    // Review 4 L3: a dispute after the window fails on-chain and still
+    // publishes the one-time key; refuse it before sending.
+    if (action === "dispute" && v.dispute_until !== undefined && BigInt(String(v.now_ns ?? this.backend.nowNs())) > BigInt(String(v.dispute_until))) {
+      throw new ToolError("DISPUTE_CLOSED", `the dispute window closed at ${String(v.dispute_until)} (ns): refused before sending, your one-time key stays private`);
+    }
     if (action === "accept" && !matches) throw new ToolError("CONFIG_MISMATCH", "refused before sending: the delivery is not the committed bundle; dispute it instead");
     if (action === "dispute" && matches) throw new ToolError("CONFIG_MATCHES", "refused before sending: the delivery matches the commitment, the contract would refuse the dispute and your one-time key would be public");
     const r = action === "accept"

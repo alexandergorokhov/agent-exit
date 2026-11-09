@@ -3,7 +3,9 @@
 // Offline fixtures: fixtures/mcp/sealed.json (scripts/gen-sealed-fixture.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { connect } from "../src/client.js";
 import { valid, writer } from "./helpers.js";
 
@@ -111,4 +113,47 @@ test("SD7 someone who is not the buyer cannot open the bundle; each fixture has 
   }
   const fx = JSON.parse(readFileSync(new URL("../../../fixtures/mcp/sealed.json", import.meta.url), "utf8"));
   assert.notEqual(fx.agents["brainy.testnet"].demo_buyer_sk, fx.agents["swapped.testnet"].demo_buyer_sk);
+});
+
+/** A copy of the offline fixtures with one sealed sale changed. */
+function fixtureWith(change: (e: any, fx: any) => void): string {
+  const src = new URL("../../../fixtures/mcp/", import.meta.url);
+  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  copyFileSync(new URL("world.json", src), join(dir, "world.json"));
+  const fx = JSON.parse(readFileSync(new URL("sealed.json", src), "utf8"));
+  change(fx.agents["swapped.testnet"], fx);
+  writeFileSync(join(dir, "sealed.json"), JSON.stringify(fx));
+  return join(dir, "world.json");
+}
+
+test("SD8 (review 4 H2) a delivery that cannot be opened is a mismatch the buyer can still dispute", async () => {
+  const world = fixtureWith((e) => {
+    e.state.Delivered.ephemeral_pk = "00".repeat(32);
+  });
+  const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: world });
+  try {
+    const o: any = (await s.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "open" })).body;
+    assert.equal(o.matches, false, JSON.stringify(o));
+    assert.equal(o.unopenable, true);
+    const d = await s.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "dispute", confirm: true });
+    assert.ok(valid("sealed_delivery", d), JSON.stringify(d.body));
+    assert.equal((d.body as any).state, "mismatch");
+    assert.ok((d.body as any).refund_to_buyer, JSON.stringify(d.body));
+  } finally {
+    await s.close();
+  }
+});
+
+test("SD9 (review 4 L3) a dispute after the window is refused before sending, the key stays private", async () => {
+  const world = fixtureWith((e, fx) => {
+    fx.now = String(BigInt(e.dispute_until) + 1n);
+  });
+  const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: world });
+  try {
+    const d = await s.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "dispute", confirm: true });
+    assert.equal(d.ok, false);
+    assert.equal((d.body as any).error.code, "DISPUTE_CLOSED", JSON.stringify(d.body));
+  } finally {
+    await s.close();
+  }
 });

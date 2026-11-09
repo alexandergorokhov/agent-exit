@@ -19,7 +19,12 @@ fn agent() -> Machine {
 fn conserved(m: &Machine) {
     assert_eq!(
         m.held,
-        m.escrow_left() + m.claimable_total() + m.owner_free + m.treasury + m.share_escrow,
+        m.escrow_left()
+            + m.upfront_held_total()
+            + m.claimable_total()
+            + m.owner_free
+            + m.treasury
+            + m.share_escrow,
         "conservation"
     );
     assert!(m.solvent());

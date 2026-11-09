@@ -1096,7 +1096,7 @@ impl AgentExit {
         };
         let cipher = env::storage_read(&sealed_key(sale_id));
         json!({
-            "schema": "sealed-config.v1", "sale_id": sale_id, "commit": c.commit,
+            "schema": "sealed-config.v1", "sale_id": sale_id, "buyer": s.buyer, "commit": c.commit,
             "delivery_pk": c.delivery_pk, "deliver_by": U64(c.deliver_by),
             "dispute_until": U64(c.dispute_until()), "state": c.state,
             "upfront_held": amt(c.upfront_held), "cleared": c.cleared,
@@ -1706,6 +1706,7 @@ impl AgentExit {
             "owner_free": amt(self.m.owner_free),
             "treasury": amt(self.m.treasury),
             "escrow_left": amt(self.m.escrow_left()),
+            "upfront_held": amt(self.m.upfront_held_total()),
             "claimable_total": amt(self.m.claimable_total()),
             "shares_bps": self.m.shares_bps(),
             "share_escrow": amt(self.m.share_escrow),

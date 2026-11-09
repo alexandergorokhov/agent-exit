@@ -26,6 +26,13 @@ static FROZEN_ROLLBACKS: AtomicUsize = AtomicUsize::new(0);
 static SHARE_BUYS: AtomicUsize = AtomicUsize::new(0);
 static SHARE_PAYS: AtomicUsize = AtomicUsize::new(0);
 static SHARE_CLOSES: AtomicUsize = AtomicUsize::new(0);
+static SEALED_SALES: AtomicUsize = AtomicUsize::new(0);
+static SEALED_ENDS: AtomicUsize = AtomicUsize::new(0);
+
+/// Sealed config (SC14, review 4 M1): the committed bundle and the buyer's
+/// one-time delivery key.
+const BUNDLE: &[u8] = b"{\"system_prompt\":\"translate\"}";
+const DELIVERY_SK: [u8; 32] = [42u8; 32];
 
 const ACTORS: [&str; 9] = [
     "alice",
@@ -88,6 +95,9 @@ enum Act {
     CloseShare(usize),
     /// ACTORS[caller] cancels slice i.
     CancelOffer(usize, usize),
+    /// On the oldest open sealed sale: 0 honest delivery, 1 fake delivery,
+    /// 2 buyer disputes, 3 release_upfront by ACTORS[caller], 4 claim_undelivered.
+    Sealed(u8, usize),
 }
 
 /// A key batch waiting for its callback.
@@ -134,6 +144,7 @@ fn act() -> impl Strategy<Value = Act> {
             .prop_map(|(b, i, part, extra, good)| Act::BuyShare(b, i, part, extra, good)),
         1 => (0usize..3).prop_map(Act::CloseShare),
         1 => (a.clone(), 0usize..3).prop_map(|(c, i)| Act::CancelOffer(c, i)),
+        10 => (0u8..5, a.clone()).prop_map(|(op, c)| Act::Sealed(op, c)),
     ]
 }
 
@@ -149,6 +160,8 @@ struct World {
     key_batches: Vec<KeyBatch>,
     /// The pending buy's callback failed and will never run.
     handover_dropped: bool,
+    /// Ciphertext each sealed sale was delivered with (the contract stores it).
+    ciphers: std::collections::BTreeMap<u64, Vec<u8>>,
 }
 
 fn pending_amount(m: &Machine) -> Amount {
@@ -162,6 +175,7 @@ fn check_invariants(w: &World) -> Result<(), TestCaseError> {
     prop_assert_eq!(
         m.held,
         m.escrow_left()
+            + m.upfront_held_total()
             + m.claimable_total()
             + m.owner_free
             + m.treasury
@@ -337,7 +351,16 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             } else {
                 Terms::default()
             };
+            // Every odd price sells a sealed config (SC14).
+            let prev = w.m.config_commit.clone();
+            if p % 2 == 1 && ACTORS[c] == owner && !settling {
+                let _ =
+                    w.m.commit_config(ACTORS[c], Some(sealed::ConfigCommit::of(BUNDLE)));
+            }
             let r = w.m.list(ACTORS[c], p as Amount * USD, terms, "h", w.now);
+            if r.is_err() {
+                w.m.config_commit = prev;
+            }
             check_owner_only(ACTORS[c], &owner, settling, r.is_ok(), &before, &w.m)?;
         }
         Act::Cancel(c) => {
@@ -366,8 +389,13 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
             };
             w.key_counter += 1;
             let pk = format!("ed25519:buyer-{}", w.key_counter);
-            let r =
-                w.m.begin_buy(ACTORS[buyer], amount, v, &h, &pk, gas_ok, w.now);
+            let sealed_listing = w.m.listing.as_ref().is_some_and(|l| l.config.is_some());
+            let dpk = hex::encode(sealed::public_key(&DELIVERY_SK));
+            let r = if sealed_listing {
+                w.m.begin_buy_sealed(ACTORS[buyer], amount, v, &h, &pk, Some(&dpk), gas_ok, w.now)
+            } else {
+                w.m.begin_buy(ACTORS[buyer], amount, v, &h, &pk, gas_ok, w.now)
+            };
             if settling {
                 // I5: no second buy while settling.
                 prop_assert_eq!(r.clone().unwrap_err(), Error::SaleInProgress);
@@ -400,11 +428,17 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 } => {
                     // The 1% fee comes out of the upfront part, never the
                     // escrow, so it is at most that part (PR2).
-                    prop_assert_eq!(
-                        fee,
-                        agent_core::money::protocol_fee(sale.price).min(sale.paid_now)
-                    );
-                    prop_assert_eq!(payout + fee, sale.paid_now);
+                    if sale.config.is_some() {
+                        // SC14: a sealed sale pays nothing until it clears.
+                        SEALED_SALES.fetch_add(1, Relaxed);
+                        prop_assert_eq!((fee, payout), (0, 0));
+                    } else {
+                        prop_assert_eq!(
+                            fee,
+                            agent_core::money::protocol_fee(sale.price).min(sale.paid_now)
+                        );
+                        prop_assert_eq!(payout + fee, sale.paid_now);
+                    }
                     // A29: the seller's unwithdrawn revenue went to the seller.
                     prop_assert_eq!(w.m.owner_free, 0);
                     prop_assert!(w.m.claimable_of(&s) >= seller_revenue);
@@ -469,6 +503,10 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                     expect.claimable_sum = w.m.claimable_sum;
                     expect.claimable_accounts = w.m.claimable_accounts;
                     expect.sales = w.m.sales.clone();
+                    // An unsold share offer may be cancelled while settling,
+                    // and payments while settling release share escrow.
+                    expect.share_escrow = w.m.share_escrow;
+                    expect.offers = w.m.offers.clone();
                     prop_assert!(w.m.sales.iter().all(|s| s.id != p.sale_id));
                     prop_assert!(!w.m.frozen);
                     prop_assert_eq!(&w.m, &expect);
@@ -850,6 +888,68 @@ fn step(w: &mut World, a: &Act) -> Result<(), TestCaseError> {
                 }
             }
         }
+        Act::Sealed(op, c) => {
+            let Some(s) =
+                w.m.sales
+                    .iter()
+                    .find(|s| !s.finalized && s.config.is_some())
+                    .cloned()
+            else {
+                return check_invariants(w);
+            };
+            let cfg = s.config.clone().unwrap();
+            let id = s.id;
+            let held_before = cfg.upfront_held + s.remaining();
+            let r: Result<Amount, Error> = match op {
+                0 | 1 => {
+                    let bundle: Vec<u8> = if op == 0 {
+                        BUNDLE.to_vec()
+                    } else {
+                        vec![b'x'; BUNDLE.len()]
+                    };
+                    let pk = sealed::hex32(&cfg.delivery_pk).unwrap();
+                    let (eph, cipher) = sealed::seal(&[17u8; 32], &pk, &bundle).unwrap();
+                    w.ciphers.insert(id, cipher.clone());
+                    let d =
+                        w.m.deliver_config(&s.seller, id, &hex::encode(eph), &cipher, w.now);
+                    if op == 1 && d.is_ok() {
+                        // The buyer disputes the fake at once: it must refund.
+                        let r = w.m.dispute_config(
+                            &s.buyer,
+                            id,
+                            &hex::encode(DELIVERY_SK),
+                            &cipher,
+                            w.now,
+                        );
+                        prop_assert!(r.is_ok(), "fake delivery not refunded: {:?}", r);
+                        r
+                    } else {
+                        d.map(|_| 0)
+                    }
+                }
+                2 => {
+                    let cipher = w.ciphers.get(&id).cloned().unwrap_or_default();
+                    w.m.dispute_config(&s.buyer, id, &hex::encode(DELIVERY_SK), &cipher, w.now)
+                }
+                3 => w.m.release_upfront(ACTORS[c], id, w.now),
+                _ => w.m.claim_undelivered(id, w.now),
+            };
+            match (op, r) {
+                (1 | 2 | 4, Ok(back)) => {
+                    // SC14: a disproved or missed delivery returns all that
+                    // was still held: the escrow left and the upfront part.
+                    SEALED_ENDS.fetch_add(1, Relaxed);
+                    prop_assert_eq!(back, held_before);
+                    prop_assert!(w.m.sale(id).unwrap().finalized);
+                }
+                (_, Err(_)) => {
+                    let mut expect = before.clone();
+                    expect.frozen = w.m.frozen;
+                    prop_assert_eq!(&w.m, &expect);
+                }
+                _ => {}
+            }
+        }
     }
     check_invariants(w)
 }
@@ -917,6 +1017,7 @@ fn prop_invariants_random_sequences() {
             cap_day: (0, 0),
             key_batches: vec![],
             handover_dropped: false,
+            ciphers: Default::default(),
         };
         for a in &acts {
             step(&mut w, a)?;
@@ -957,6 +1058,8 @@ fn prop_invariants_random_sequences() {
         ("share buys", &SHARE_BUYS),
         ("payments to investors", &SHARE_PAYS),
         ("share slices closed", &SHARE_CLOSES),
+        ("sealed sales", &SEALED_SALES),
+        ("sealed disputes or misses refunded", &SEALED_ENDS),
     ] {
         let n = c.load(Relaxed);
         eprintln!("coverage {name}: {n}");

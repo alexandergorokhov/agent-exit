@@ -888,6 +888,7 @@
           "owner_free": "0",
           "treasury": "0",
           "escrow_left": "300000000",
+          "upfront_held": "0",
           "claimable_total": "510000000",
           "shares_bps": 0,
           "share_escrow": "0",

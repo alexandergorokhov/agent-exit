@@ -1005,7 +1005,7 @@ fn str11_scan_with_many_keys() {
 fn books(s: &Sim, what: &str) {
     let m = s.m();
     assert!(m.solvent(), "{what}: not solvent");
-    let owed = m.escrow_left() + m.claimable_total() + m.owner_free + m.treasury;
+    let owed = m.escrow_left() + m.upfront_held_total() + m.claimable_total() + m.owner_free + m.treasury;
     assert_eq!(m.held, owed, "{what}: held {} != buckets {owed}", m.held);
 }
 

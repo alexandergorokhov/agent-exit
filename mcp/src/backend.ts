@@ -265,7 +265,8 @@ export class OfflineBackend implements Backend {
     if (!e) throw new ToolError("UNKNOWN_AGENT", `${id} has no sealed sale in the offline fixtures (fixtures/mcp/sealed.json: brainy.testnet, swapped.testnet)`);
     if (e.sale_id !== saleId) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} not found on ${id}`);
     const { demo_buyer_sk: _secret, ...view } = e;
-    return structuredClone(view);
+    // The fixture's own clock (its deadlines are relative to it).
+    return structuredClone({ ...view, now_ns: String(this.sealedFixtures().now) });
   }
 
   /** The same rules as agent-core release_upfront / dispute_config
@@ -289,8 +290,14 @@ export class OfflineBackend implements Backend {
     const { open, publicKey, commitOf } = await import("./sealed.js");
     const sk = Buffer.from(String(args.delivery_sk), "hex");
     if (sk.length !== 32 || publicKey(sk).toString("hex") !== e.delivery_pk) throw refused("BadDeliveryKey");
-    const plain = open(sk, Buffer.from(e.state.Delivered.ephemeral_pk, "hex"), Buffer.from(e.ciphertext, "base64"));
-    if (commitOf(plain).hash === e.commit.hash) throw refused("ConfigMatches");
+    // As the contract: a delivery that cannot be opened is a mismatch.
+    let plain: Buffer | null = null;
+    try {
+      plain = open(sk, Buffer.from(e.state.Delivered.ephemeral_pk, "hex"), Buffer.from(e.ciphertext, "base64"));
+    } catch {
+      plain = null;
+    }
+    if (plain && commitOf(plain).hash === e.commit.hash) throw refused("ConfigMatches");
     const refund = BigInt(e.upfront) + BigInt(e.escrow);
     e.state = { Mismatch: { refunded: String(refund) } };
     return { value: { sale_id: e.sale_id, refund_to_buyer: String(refund) }, recorded: true };

@@ -647,6 +647,16 @@ impl<S: Store + Default> Machine<S> {
         self.sales.iter().map(Sale::remaining).sum()
     }
 
+    /// SC14: upfront parts of sealed sales held until the delivery clears
+    /// (review 4 M1: counted in solvency and the exact ledger).
+    pub fn upfront_held_total(&self) -> Amount {
+        self.sales
+            .iter()
+            .filter_map(|s| s.config.as_ref())
+            .map(|c| c.upfront_held)
+            .sum()
+    }
+
     pub fn claimable_total(&self) -> Amount {
         self.claimable_sum
     }
@@ -1514,7 +1524,11 @@ impl<S: Store + Default> Machine<S> {
         if cipher.len() as u32 != c.commit.bytes {
             return Err(Error::BadConfig);
         }
-        let eph = sealed::hex32(ephemeral_pk).ok_or(Error::BadConfig)?;
+        // Review 4 H2: a low-order ephemeral key opens to nothing in any
+        // client (Node's X25519 throws), so the buyer could not dispute it.
+        let eph = sealed::hex32(ephemeral_pk)
+            .filter(sealed::usable_key)
+            .ok_or(Error::BadConfig)?;
         let cfg = self.sales[idx].config.as_mut().expect("checked");
         cfg.state = sealed::Delivery::Delivered {
             ephemeral_pk: hex::encode(eph),
@@ -1780,8 +1794,15 @@ impl<S: Store + Default> Machine<S> {
             self.frozen = true;
             let mut returned = Vec::new();
             for s in self.sales.iter_mut().filter(|s| !s.finalized) {
-                let r = s.remaining();
-                s.returned += r;
+                // SC14 (review 4 H1): a sealed sale not yet accepted still
+                // holds its upfront part; it goes back to the buyer too.
+                let upfront = s.config.as_mut().map_or(0, |c| {
+                    let u = std::mem::take(&mut c.upfront_held);
+                    c.upfront_returned += u;
+                    u
+                });
+                let r = s.remaining() + upfront;
+                s.returned += r - upfront;
                 s.finalized = true;
                 s.cut = true;
                 returned.push((s.id, s.buyer.clone(), r));
@@ -1806,6 +1827,7 @@ impl<S: Store + Default> Machine<S> {
     pub fn solvent(&self) -> bool {
         self.held
             >= self.escrow_left()
+                + self.upfront_held_total()
                 + self.claimable_total()
                 + self.owner_free
                 + self.treasury

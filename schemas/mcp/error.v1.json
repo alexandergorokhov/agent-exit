@@ -35,6 +35,7 @@
             "CONFIG_MATCHES",
             "CONFIG_MISMATCH",
             "NOT_DELIVERED",
+            "DISPUTE_CLOSED",
             "WRITE_DISABLED",
             "CONFIRM_REQUIRED",
             "OVER_MAX_PRICE",
