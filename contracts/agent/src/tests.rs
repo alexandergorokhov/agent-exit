@@ -1245,14 +1245,18 @@ fn sc22_preview_through_the_contract() {
     let no_deposit = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         s.by(BOB).request_preview();
     }));
-    assert!(no_deposit.is_err(), "a preview without 0.01 NEAR is refused");
+    assert!(
+        no_deposit.is_err(),
+        "a preview without 0.01 NEAR is refused"
+    );
     let r = s.by_milli(BOB, 10).request_preview();
     let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
     assert_eq!(idx.len(), 2);
     assert_eq!(events("preview_requested").len(), 1);
     for (n, i) in idx.iter().enumerate() {
         let (chunk, proof) = sealed::chunk_proof(&bundle, *i).unwrap();
-        let out = s.by_1y(ALICE)
+        let out = s
+            .by_1y(ALICE)
             .answer_preview(BOB.parse().unwrap(), *i, chunk.into(), proof);
         assert_eq!(out["complete"], json!(n == 1));
     }

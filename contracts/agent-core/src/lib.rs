@@ -1586,7 +1586,10 @@ impl<S: Store + Default> Machine<S> {
         let Some(v) = self.listing.as_ref().map(|l| l.version) else {
             return Vec::new();
         };
-        self.previews.iter().filter(|p| p.listing_version == v).collect()
+        self.previews
+            .iter()
+            .filter(|p| p.listing_version == v)
+            .collect()
     }
 
     /// `requester`'s preview for the current listing, if any.

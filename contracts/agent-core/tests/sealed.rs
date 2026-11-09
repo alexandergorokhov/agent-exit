@@ -564,7 +564,10 @@ fn sc22_preview_random_chunks_proven_by_the_seller() {
         m.answer_preview("alice", "bob", idx[0], &fake, &p0),
         Err(Error::BadChunk)
     );
-    assert_eq!(m.answer_preview("alice", "bob", idx[0], &c0, &p0), Ok(false));
+    assert_eq!(
+        m.answer_preview("alice", "bob", idx[0], &c0, &p0),
+        Ok(false)
+    );
     assert_eq!(
         m.answer_preview("alice", "bob", idx[0], &c0, &p0),
         Err(Error::NotRequested)
@@ -662,7 +665,10 @@ fn sc25_preview_never_gives_the_config_away() {
     assert_eq!(sealed::preview_size(8_192), sealed::PREVIEW_CHUNKS);
     let small: Vec<u8> = BUNDLE.iter().cycle().take(1_000).cloned().collect();
     let mut m = listed_with(ConfigCommit::of(&small));
-    assert_eq!(m.request_preview("bob", &[7; 32], T0), Err(Error::NoPreview));
+    assert_eq!(
+        m.request_preview("bob", &[7; 32], T0),
+        Err(Error::NoPreview)
+    );
     let one: Vec<u8> = BUNDLE.iter().cycle().take(1_100).cloned().collect();
     let mut m = listed_with(ConfigCommit::of(&one));
     assert_eq!(m.request_preview("bob", &[7; 32], T0).unwrap().len(), 1);
