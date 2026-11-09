@@ -1763,6 +1763,9 @@ impl<S: Store + Default> Machine<S> {
         self.add_past_owner(&old);
         self.owner = receiver.to_string();
         self.trim_unsold_offers();
+        // Review 4 L2: as in a sale, a sealed-config commitment does not pass
+        // with the deed; the new owner commits their own bundle.
+        self.config_commit = None;
         self.owner_epoch += 1;
         self.paid_to_this_epoch = 0;
         // The keys stay `retiring` until `keys_deleted` confirms (A25).

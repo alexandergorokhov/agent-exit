@@ -449,3 +449,14 @@ fn sc19_upfront_held_is_in_the_ledger() {
             + m.share_escrow
     );
 }
+
+/// SC20 (review 4 L2): a commitment does not pass with the deed.
+#[test]
+fn sc20_commitment_does_not_pass_with_the_deed() {
+    let mut m = Machine::new("translator", "alice");
+    let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
+    m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
+    m.commit_config("alice", Some(ConfigCommit::of(BUNDLE))).unwrap();
+    m.transfer_deed("alice", "bob", None, T0).unwrap();
+    assert_eq!(m.config_commit, None, "bob commits his own bundle");
+}

@@ -16,7 +16,7 @@ test("CA13 the page's checker and check_account agree on every offline account",
     const c = a.scan_input.chain;
     facts[id] = { account: id, code_hash: c.code_hash, methods: c.methods, keys: c.keys, known_keys: a.status.known_keys };
   }
-  for (const [id, a] of Object.entries<any>(extra)) facts[id] = { account: id, code_hash: a.code_hash, methods: a.methods, keys: a.keys, known_keys: null };
+  for (const [id, a] of Object.entries<any>(extra)) facts[id] = { account: id, code_hash: a.code_hash, methods: a.methods, keys: a.keys, known_keys: null, global_contract_account_id: a.global_contract_account_id ?? null, global_contract_hash: a.global_contract_hash ?? null };
   const s = await connect({});
   try {
     for (const [id, f] of Object.entries(facts)) {

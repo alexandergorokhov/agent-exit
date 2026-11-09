@@ -21,7 +21,7 @@ export async function readFacts(account) {
   const list = await query({ request_type: "view_access_key_list", account_id: account });
   const keys = (list.keys || []).map((k) => ({ public_key: k.public_key, permission: perm(k.access_key && k.access_key.permission) }));
   let methods = [];
-  if (acc.code_hash !== EMPTY_CODE) {
+  if (acc.code_hash !== EMPTY_CODE && !acc.global_contract_account_id) {
     try {
       const c = await query({ request_type: "view_code", account_id: account });
       methods = wasmExports(Uint8Array.from(atob(c.code_base64), (ch) => ch.charCodeAt(0)));
@@ -29,7 +29,7 @@ export async function readFacts(account) {
       methods = null;
     }
   }
-  return { account, code_hash: acc.code_hash, methods, keys };
+  return { account, code_hash: acc.code_hash, methods, keys, global_contract_account_id: acc.global_contract_account_id || null, global_contract_hash: acc.global_contract_hash || null };
 }
 
 async function knownKeys(account) {

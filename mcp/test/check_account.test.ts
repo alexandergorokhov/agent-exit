@@ -201,3 +201,17 @@ test("CA12 the published build with a key the contract never installed, or a key
     await s.close();
   }
 });
+
+test("CA14 (review 4 M2) an account running a global contract by account id is a backdoor risk, not an ordinary wallet", async () => {
+  const s = await connect({});
+  try {
+    const r = await s.call("check_account", { account: "global-swap.testnet" });
+    assert.ok(valid("check_account", r), JSON.stringify(r.body));
+    const b: any = r.body;
+    assert.equal(b.verdict, "backdoor_risk");
+    assert.ok(b.findings.some((x: any) => x.code === "global_contract_by_account" && /vendor\.testnet/.test(x.text)));
+    assert.equal(b.code.deployed, true);
+  } finally {
+    await s.close();
+  }
+});

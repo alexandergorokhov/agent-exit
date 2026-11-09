@@ -59,7 +59,10 @@ export function wasmExports(code) {
  */
 export function assess(facts, opts = {}) {
   const findings = [];
-  const hasCode = facts.code_hash !== EMPTY_CODE;
+  // Review 4 M2: a NEAR global contract by owner account id can be swapped by that owner.
+  const globalBy = facts.global_contract_account_id || null;
+  const hasCode = facts.code_hash !== EMPTY_CODE || !!globalBy || !!facts.global_contract_hash;
+  if (globalBy) findings.push({ code: "global_contract_by_account", severity: "high", text: `runs the global contract of ${clean(globalBy)}: that account can replace the code at any time` });
   const keys = facts.keys.map((k) => {
     const pk = clean(k?.public_key);
     if (k?.permission === "FullAccess") return { public_key: pk, full: true, can: "everything: new code, new keys, all NEAR, without the contract seeing it" };
@@ -88,7 +91,7 @@ export function assess(facts, opts = {}) {
   }
   const has = (...c) => findings.some((f) => c.includes(f.code));
   const verdict = !hasCode ? "key_controlled"
-    : full || upgrade.length || has("key_not_issued_by_contract", "contract_keys_unreadable") ? "backdoor_risk"
+    : full || upgrade.length || has("key_not_issued_by_contract", "contract_keys_unreadable", "global_contract_by_account") ? "backdoor_risk"
       : published && !has("fc_key_any_method", "fc_key_no_allowance", "unreadable_key", "fc_key_other_contract", "code_unreadable") ? "locked"
         : "no_key_unknown_code";
   const summary = {

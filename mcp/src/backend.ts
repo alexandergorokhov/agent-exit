@@ -130,6 +130,9 @@ export interface AccountFacts {
   code_hash_second?: string | null;
   /** Where the facts come from. */
   source: string;
+  /** NEAR global contract the account runs, by owner account id (its owner can swap the code) or by hash. */
+  global_contract_account_id?: string | null;
+  global_contract_hash?: string | null;
 }
 
 export interface Backend {
@@ -317,7 +320,7 @@ export class OfflineBackend implements Backend {
       }
     }
     const x = (this.extra as Json)[id];
-    return x ? { code_hash: x.code_hash, methods: x.methods, keys: x.keys, keys_second: null, source: "offline illustrative fixture (fixtures/mcp/accounts.json)" } : null;
+    return x ? { code_hash: x.code_hash, methods: x.methods, keys: x.keys, keys_second: null, global_contract_account_id: x.global_contract_account_id ?? null, global_contract_hash: x.global_contract_hash ?? null, source: "offline illustrative fixture (fixtures/mcp/accounts.json)" } : null;
   }
 
   private extra: Json | null = null;
@@ -582,7 +585,9 @@ export class TestnetBackend implements Backend {
       const code = await this.rpc(this.cfg.rpc[0], { request_type: "view_code", finality: "final", account_id: id });
       methods = wasmExports(Buffer.from(code.code_base64, "base64"));
     }
-    return { code_hash: String(account.code_hash), code_hash_second: account2 ? String(account2.code_hash) : null, methods, keys, keys_second: second, source: `testnet RPC (${this.cfg.rpc.join(", ")})` };
+    const gid = account.global_contract_account_id ? String(account.global_contract_account_id) : null;
+    const ghash = account.global_contract_hash ? String(account.global_contract_hash) : null;
+    return { code_hash: String(account.code_hash), code_hash_second: account2 ? String(account2.code_hash) : null, methods, keys, keys_second: second, global_contract_account_id: gid, global_contract_hash: ghash, source: `testnet RPC (${this.cfg.rpc.join(", ")})` };
   }
 
   async agent(id: string): Promise<AgentView> {

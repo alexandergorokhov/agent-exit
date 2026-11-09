@@ -59,8 +59,13 @@ function cached(body) {
   return { ...hit.json, id: body.id };
 }
 
+// Review 4 L6: contract code can be megabytes; refuse big answers and never
+// cache code, so 500 entries cannot exhaust the function's memory.
+const MAX_CODE_B64 = 1_400_000;
+
 function remember(body, json) {
   if (!json || json.error || json.result === undefined) return;
+  if (body.params && body.params.request_type === "view_code") return;
   if (CACHE.size >= CACHE_MAX) CACHE.delete(CACHE.keys().next().value);
   CACHE.set(cacheKey(body), { json, expires: body.method === "tx" ? 0 : Date.now() + QUERY_TTL_MS });
 }
@@ -82,6 +87,9 @@ export async function relay(body, upstreams = UPSTREAMS, fetchImpl = fetch) {
         const j = await r.json();
         const unknown = body.method === "tx" && j && j.error && /UNKNOWN_TRANSACTION|doesn't exist|garbage/i.test(JSON.stringify(j.error));
         if (unknown && url !== urls[urls.length - 1]) { last = `${new URL(url).host}: not on this node`; continue; }
+        if (body.params && body.params.request_type === "view_code" && j && j.result && String(j.result.code_base64 || "").length > MAX_CODE_B64) {
+          return { status: 413, json: { jsonrpc: "2.0", id: body.id, error: { message: "refused by relay: contract code over 1 MB" } } };
+        }
         remember(body, j);
         return { status: 200, json: j };
       }

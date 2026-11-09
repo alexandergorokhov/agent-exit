@@ -93,15 +93,15 @@ const CODE = {
   relist: { code: [CORE, 914, "pub fn list("], near: "agent.list_for_sale(), signed by alice", tx: "alice: list_for_sale 1.00" },
   set_key: { code: [CORE, 750, "pub fn set_runner_key("], near: "agent.set_runner_key(), signed by alice", tx: "alice: set_runner_key (her own key)" },
   old_key: { code: null, near: "any transaction signed with the deleted key: the NEAR node refuses it (AccessKeyNotFound)", tx: "alice's old runner key: heartbeat" },
-  hidden_key: { code: [CORE, 1781, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
+  hidden_key: { code: [CORE, 1784, "pub fn runner_guard("], near: "agent.heartbeat() signed by a key the contract never added", tx: null, note: "Proved on a real node in the sandbox test A23 (tests/sandbox)." },
   hidden_redeploy: { code: null, near: "a transaction with DeployContract and DeleteKey actions signed by the hidden full-access key: plain NEAR protocol, no contract code runs", tx: null, note: "Listed in docs/NOT-CAUGHT.md as N4: the scan is the defence." },
   wait: { code: [CORE, 1655, "pub fn finalize_earnout("], near: "agent.finalize_earnout() after the 30-day window", tx: null },
-  offer_share: { code: [CORE, 1929, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
-  buy_share: { code: [CORE, 2001, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
-  pay_customer_inv: { code: [CORE, 1890, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
-  pay_self_inv: { code: [CORE, 1890, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
+  offer_share: { code: [CORE, 1932, "pub fn offer_share("], near: "agent.offer_share(bps, price, end), signed by the owner with 1 yoctoNEAR", tx: null, note: "Rules SH1-SH11 and threats T1-T17: docs/PLAN-shares.md; tests in contracts/agent-core/tests/shares.rs." },
+  buy_share: { code: [CORE, 2004, "pub fn buy_share("], near: "xusd.ft_transfer_call(agent, cost, {kind: buy_share, offer_id, bps, price, end, part})", tx: null },
+  pay_customer_inv: { code: [CORE, 1893, "fn pay_investors("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay); events split.to_investors and share_paid", tx: null },
+  pay_self_inv: { code: [CORE, 1893, "fn pay_investors("], near: "ft_transfer_call from the owner's own account", tx: null },
   claim_share: { code: [CORE, 1251, "pub fn claim("], near: "agent.claim(), signed by dave", tx: null },
-  end_share: { code: [CORE, 2073, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
+  end_share: { code: [CORE, 2076, "pub fn close_share("], near: "agent.close_share(offer_id), anyone, after the end date", tx: null },
 };
 
 let testnetTxs = [];

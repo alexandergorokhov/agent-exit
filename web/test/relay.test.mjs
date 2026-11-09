@@ -89,3 +89,16 @@ test("W6 the check box's reads are relayed: view_code and implicit accounts; sti
   assert.ok(refuse({ ...Q, params: { ...Q.params, account_id: "someone.near" } }));
   assert.ok(refuse({ ...Q, params: { ...Q.params, request_type: "view_state" } }));
 });
+
+test("W7 (review 4 L6) contract code is never cached and code over 1 MB is refused", async () => {
+  clearCache();
+  const C = { ...Q, params: { ...Q.params, request_type: "view_code" } };
+  const small = mock(() => ok({ code_base64: "AGFzbQ==", hash: "x" }));
+  await relay(C, ["https://a.example"], small.f);
+  await relay(C, ["https://a.example"], small.f);
+  assert.equal(small.calls.length, 2, "view_code goes upstream each time");
+  const big = mock(() => ok({ code_base64: "A".repeat(1_400_001), hash: "x" }));
+  const r = await relay(C, ["https://a.example"], big.f);
+  assert.equal(r.status, 413);
+  assert.match(r.json.error.message, /over 1 MB/);
+});

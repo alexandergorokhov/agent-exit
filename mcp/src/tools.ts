@@ -365,8 +365,12 @@ export class Tools {
     if (!ACCOUNT_RE.test(account)) throw new ToolError("BAD_INPUT", "not a NEAR account id");
     const f = await this.backend.accountFacts(account);
     if (!f) throw new ToolError("UNKNOWN_ACCOUNT", `${account} does not exist${this.backend.network === "offline" ? " in the offline fixtures (list_agents, fixtures/mcp/accounts.json)" : ""}`);
-    const hasCode = f.code_hash !== "11111111111111111111111111111111";
+    // Review 4 M2: an account running a NEAR global contract shows the empty
+    // code hash. By owner account id, that owner can swap the code at will.
+    const globalBy = f.global_contract_account_id ?? null;
+    const hasCode = f.code_hash !== "11111111111111111111111111111111" || !!globalBy || !!f.global_contract_hash;
     const findings: Json[] = [];
+    if (globalBy) findings.push({ code: "global_contract_by_account", severity: "high", text: `runs the global contract of ${untrusted(globalBy)}: that account can replace the code at any time` });
     const keys = f.keys.map((k: Json) => {
       const full = k?.permission === "FullAccess";
       // Judge 19: an unreadable permission is treated like a full-access key.
@@ -434,7 +438,7 @@ export class Tools {
     // may still change itself under another name.
     const verdict = !hasCode
       ? "key_controlled"
-      : fullKeys || upgrade.length || findings.some((x) => ["providers_disagree", "key_not_issued_by_contract", "contract_keys_unreadable"].includes(x.code))
+      : fullKeys || upgrade.length || findings.some((x) => ["providers_disagree", "key_not_issued_by_contract", "contract_keys_unreadable", "global_contract_by_account"].includes(x.code))
         ? "backdoor_risk"
         : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key", "fc_key_other_contract"].includes(x.code))
           ? "locked"
