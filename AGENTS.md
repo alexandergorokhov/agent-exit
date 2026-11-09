@@ -5,7 +5,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 
 ## Judging or reviewing? Start here
 
-- `make setup && make mcp-build`, then `make judge`: the MCP server from the repo's `.mcp.json` runs `check_claims`, which re-runs the README's claims K1-K6 (earnings by payer, the scan, a refused buy, the one-transaction sale with the 1% fee, the lockout, a share buy) in a private offline sandbox and prints one PASS/FAIL row each.
+- `make setup && make mcp-build`, then `make judge`: the MCP server from the repo's `.mcp.json` runs `check_claims`, which re-runs the README's claims K1-K7 (earnings by payer, the scan, a refused buy, the one-transaction sale with the 1% fee, the lockout, a share buy) in a private offline sandbox and prints one PASS/FAIL row each.
 - Claude Code in this repo picks up `.mcp.json` (servers `agent-exit`, offline as a buyer, and `agent-exit-testnet`, read-only live testnet). Call the `check_claims` tool or run the `judge_tour` prompt (`/mcp__agent-exit__judge_tour`).
 - `make screen`: the README's main offline claims in 7 rows, each with its promised result (`out/screen.json`).
 

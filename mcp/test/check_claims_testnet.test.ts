@@ -56,7 +56,7 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   const body: any = r.body;
   assert.equal(schemas.validateOutput.check_claims(body), true, JSON.stringify(schemas.validateOutput.check_claims.errors));
   const by = Object.fromEntries(body.claims.map((c: any) => [c.id, c]));
-  for (const id of ["K4", "K6", "K7"]) assert.equal(by[id].pass, true, `${id}: ${by[id].observed}`);
+  for (const id of ["K4", "K6", "K8"]) assert.equal(by[id].pass, true, `${id}: ${by[id].observed}`);
   assert.match(by.K4.observed, /^2\/2 recorded transactions confirmed on chain$/);
   // The live reads were refused by the mock, so the live claims fail honestly.
   for (const id of ["K1", "K2", "K3", "K5"]) assert.equal(by[id].pass, false, id);

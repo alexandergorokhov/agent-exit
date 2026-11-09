@@ -8,15 +8,15 @@ import { join } from "node:path";
 import { connect } from "../src/client.js";
 import { REPO, valid, writer } from "./helpers.js";
 
-test("J1 check_claims: K1-K6 pass, schema-valid, every claim names its calls", async () => {
+test("J1 check_claims: K1-K7 pass, schema-valid, every claim names its calls", async () => {
   const s = await connect({});
   try {
     const r = await s.call("check_claims", {});
     assert.ok(valid("check_claims", r), JSON.stringify(r.body));
     assert.equal(r.ok, true);
-    assert.deepEqual(r.body.claims.map((c: { id: string }) => c.id), ["K1", "K2", "K3", "K4", "K5", "K6"]);
+    assert.deepEqual(r.body.claims.map((c: { id: string }) => c.id), ["K1", "K2", "K3", "K4", "K5", "K6", "K7"]);
     for (const c of r.body.claims) assert.equal(c.pass, true, `${c.id}: ${c.observed}`);
-    assert.equal(r.body.passed, 6);
+    assert.equal(r.body.passed, 7);
     assert.equal(r.body.failed, 0);
     assert.equal(r.body.pass, true);
     const k4 = r.body.claims.find((c: { id: string }) => c.id === "K4");

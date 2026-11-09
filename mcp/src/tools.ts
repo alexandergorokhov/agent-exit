@@ -58,7 +58,7 @@ export const JUDGE_TOUR = {
   description: "A 5-minute guided check of Agent Exit for a judge or reviewer: verify the README's claims yourself with the tools, then try to break it.",
   text: [
     "You are reviewing Agent Exit, a NEAR project that lets anyone buy an AI agent, or a share of its earnings, with the earnings and the handover checked on-chain. All money is xUSD-FAKE (a test token).",
-    "1. Call check_claims. It re-runs the README's main claims (K1-K6) in a private offline sandbox and reports pass/fail with the exact calls.",
+    "1. Call check_claims. It re-runs the README's main claims (K1-K7) in a private offline sandbox and reports pass/fail with the exact calls.",
     "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
     "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
@@ -813,6 +813,33 @@ export class Tools {
       sh.ok ? `pct ${sh.body.pct}, cost ${sh.body.cost}, paid to owner now ${sh.body.paid_to_owner_now}, protocol fee ${sh.body.protocol_fee}, held ${sh.body.held_in_escrow}; portfolio ${held ? `${held.pct ?? JSON.stringify(held).slice(0, 80)}` : "missing"}` : `buy_share ${errCode(sh)}`,
       sh.ok && Number(sh.body.pct) === pct && Number(sh.body.held_in_escrow) * 2 === Number(sh.body.cost) && Number(sh.body.protocol_fee) === Number(sh.body.cost) / 100 && pf.ok && Boolean(held));
 
+    // K7: the sealed prompt, in a fresh sandbox of the real contract core
+    // (web/playground.wasm): a swapped prompt is decrypted and refunded in
+    // full; an honest one cannot be disputed.
+    const sx = Sandbox.forRepo(this.cfg.repo);
+    const run = (ops: string[]) => {
+      sx.call({ op: "reset" });
+      let alice = "";
+      const out: Json[] = [];
+      for (const op of ops) {
+        const r = sx.call({ op });
+        if (op === "buy") alice = String(r.view.claimable?.alice ?? "");
+        out.push({ op, ok: r.last?.ok === true, text: String(r.last?.text ?? ""), view: r.view });
+      }
+      return { out, alice };
+    };
+    const head = ["commit_config", "list", "scan", "buy"];
+    const fake = run([...head, "deliver_fake", "open_config", "dispute_config"]);
+    const fd = fake.out.at(-1) as Json;
+    const fo = fake.out.find((x) => x.op === "open_config") as Json;
+    const honest = run([...head, "deliver_config", "dispute_config"]);
+    const hd = honest.out.at(-1) as Json;
+    add("K7", "A seller who delivers a different prompt than she committed to gets nothing: the contract decrypts the delivery and the buyer gets the whole price back; an honest delivery cannot be disputed",
+      [`sandbox actions: reset, ${[...head, "deliver_fake", "open_config", "dispute_config"].join(", ")}`, `sandbox actions: reset, ${[...head, "deliver_config", "dispute_config"].join(", ")}`],
+      "fake: open_config does not match, dispute_config ok, bob can claim 1,000.00, alice's claimable unchanged from the buy; honest: dispute_config refused (ConfigMatches)",
+      `fake: open ${fo.ok ? "matches" : "does not match"}, dispute ${fd.ok ? "ok" : "refused"}, bob claimable ${fd.view.claimable?.bob}, alice ${fake.alice} -> ${fd.view.claimable?.alice}; honest: dispute ${hd.ok ? "ok" : `refused: ${hd.text.slice(0, 60)}`}`,
+      !fo.ok && fd.ok && fd.view.claimable?.bob === "1,000.00" && fd.view.claimable?.alice === fake.alice && !hd.ok && /ConfigMatches/.test(hd.text));
+
     const passed = claims.filter((x) => x.pass).length;
     return {
       ...this.base("check_claims"),
@@ -898,8 +925,17 @@ export class Tools {
     add("K6", "An investor bought 20% of an agent's earnings and claimed exactly 20%", nb(shares.txs),
       "dave's buy and claim transactions confirmed with their events", shares.text, shares.n > 0 && shares.ok === shares.n);
 
+    // K7 (scene 10): shown once the sealed-prompt scene is recorded.
+    if (data.steps["sealed-prompt"]) {
+      const sp = await confirm("sealed-prompt");
+      const disp = ((data.steps["sealed-prompt"].txs ?? []) as Json[]).find((t) => t.method === "dispute_config");
+      add("K7", "A seller who delivered a different prompt got nothing: the contract decrypted it and refunded the whole price (scene 10)", nb(sp.txs),
+        "every scene-10 transaction confirmed as recorded, including the dispute_config refund and the refused late release", `${sp.text}; dispute ${disp?.ok ? "accepted" : "missing"}`,
+        sp.n > 0 && sp.ok === sp.n && disp?.ok === true);
+    }
+
     const g6 = await confirm("nearai-check");
-    add("K7", "A real NEAR AI Cloud signature was checked by the contract (gate G6)", nb(g6.txs),
+    add("K8", "A real NEAR AI Cloud signature was checked by the contract (gate G6)", nb(g6.txs),
       "the signer registration and the verified payment confirmed", g6.text, g6.n > 0 && g6.ok === g6.n);
 
     const passed = claims.filter((x) => x.pass).length;

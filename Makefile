@@ -106,7 +106,7 @@ mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_
 	@node mcp/dist/src/server.js
 
 .PHONY: judge judge-testnet screen
-judge: mcp-build ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K6) -> out/check-claims.json
+judge: mcp-build ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K7) -> out/check-claims.json
 	@node mcp/dist/scripts/judge-check.js
 
 judge-testnet: mcp-build ## [testnet, read-only, no key] The same from the agent-exit-testnet entry: every recorded transaction re-read from archival nodes + live agents -> out/check-claims-testnet.json

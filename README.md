@@ -14,7 +14,7 @@
 
 ```bash
 make setup && make mcp-build      # once: crates, npm, the MCP server and the scan binary
-make judge                        # the MCP server from .mcp.json checks the README claims K1-K6: one PASS/FAIL row each
+make judge                        # the MCP server from .mcp.json checks the README claims K1-K7: one PASS/FAIL row each
 make screen                       # 7 rows: judge, playground, scan, business loop, MCP tests, contract tests, .mcp.json (1-3 min)
 ```
 

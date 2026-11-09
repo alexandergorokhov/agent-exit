@@ -4,7 +4,7 @@
 
 ## Start here
 
-- Judging or reviewing: `make judge` (the MCP server from `.mcp.json` re-runs the README claims K1-K6 with the `check_claims` tool, one PASS/FAIL row each) and `make screen` (every offline README claim with its promised result). Claude Code in this repo gets the `agent-exit` MCP servers from `.mcp.json`; prompt `judge_tour`.
+- Judging or reviewing: `make judge` (the MCP server from `.mcp.json` re-runs the README claims K1-K7 with the `check_claims` tool, one PASS/FAIL row each) and `make screen` (every offline README claim with its promised result). Claude Code in this repo gets the `agent-exit` MCP servers from `.mcp.json`; prompt `judge_tour`.
 - [README.md](README.md): what it is, what is proven and where, honest limits
 - [docs/PROOF.md](docs/PROOF.md): the claims table: what is proven, where and by which scenario ids
 - [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
