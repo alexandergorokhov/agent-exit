@@ -370,6 +370,11 @@ try {
       for (const id of ["invest", "nearai", "aibuyer"]) {
         assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), 1, `V4: scenario ${id} is listed`);
       }
+      // V7: scenes 9-10 (born clean, sealed prompt) appear once recorded; never as an empty card.
+      for (const id of ["born", "sealed"]) {
+        const want = id === "born" ? rec.steps["born-clean"] : rec.steps["sealed-prompt"];
+        assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), want ? 1 : 0, `V7: scenario ${id} shown only when recorded`);
+      }
       checks++;
       for (const id of ["sale", "cheat"]) {
         await vp.click(`[data-scenario="${id}"] > summary`);

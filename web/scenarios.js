@@ -28,6 +28,10 @@ const SCENARIOS = [
     intro: "summarizer, itself an agent account, scans translator and buys it from bob through the same contract." },
   { id: "invest", title: "Invest in an agent: 20% of its earnings", steps: ["invest"],
     intro: "alice offers 20% of translator3's earnings for a year; dave scans it and buys. Five customers pay for real NEAR AI translations, each signature checked by the contract; the owner's own sub-account pays too and is flagged. dave gets exactly 20% of every payment and claims it." },
+  { id: "born", title: "Born clean: an agent no one ever held a key to", steps: ["born-clean"],
+    intro: "The factory creates the agent account and deploys the published code in one transaction, so no seller key ever existed. The buyer's scan reads the factory's record." },
+  { id: "sealed", title: "The seller swaps the prompt: the whole price comes back", steps: ["sealed-prompt"],
+    intro: "alice commits to the agent's prompt bundle by hash and Merkle root. bob sees two random chunks proven against it, then buys with a one-time key. alice delivers a different bundle; bob reveals the key, the contract decrypts and hashes it on-chain, and bob gets the whole price back. alice is paid nothing." },
   { id: "nearai", title: "Verified revenue: a NEAR AI signature checked on-chain", steps: ["nearai-check"],
     intro: "A payment carries NEAR AI Cloud's TEE signature over the request and the answer. The contract recovers the signer and marks the payment verified." },
   { id: "aibuyer", title: "A real AI model buys an agent through MCP", steps: ["ai-buyer"],
@@ -217,7 +221,9 @@ async function main() {
   const r = await fetch("data/testnet.json");
   if (!r.ok) return;
   const data = await r.json();
-  box.replaceChildren(...SCENARIOS.map((sc) => scenarioCard(sc, data)));
+  // A scenario shows only once its testnet scene is recorded (scenes 9-10
+  // after the redeploy): never an empty card.
+  box.replaceChildren(...SCENARIOS.filter((sc) => stagesFor(data, sc.steps).length > 0).map((sc) => scenarioCard(sc, data)));
   box.dataset.ready = "1";
   // Review 5: a link to #run-<id> (the hero button) opens that scenario and runs it.
   const autorun = () => {
