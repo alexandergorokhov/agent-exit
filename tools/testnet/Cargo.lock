@@ -7,6 +7,7 @@ name = "agent-core"
 version = "0.1.0"
 dependencies = [
  "borsh",
+ "curve25519-dalek",
  "hex",
  "schemars 0.8.22",
  "serde",

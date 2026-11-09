@@ -171,6 +171,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
         }
         Command::Scene(8) => invest(&c, &env, secrets).await,
         Command::Scene(9) => born_clean(&c, &env, secrets).await,
+        Command::Scene(10) => sealed(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -2037,5 +2038,279 @@ async fn born_clean(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         Ok(())
     } else {
         Err("scene 9 checks failed (see out/scenes/scene-9.json)".into())
+    }
+}
+
+// ------------------------------------------------------------------ scene 10
+
+/// What a sealed bundle looks like: the prompt, tool setup and the API keys
+/// the buyer must rotate. Demo text only; no real key is in it.
+fn sealed_bundle(tag: &str) -> Vec<u8> {
+    let mut b = format!(
+        "{{\"system_prompt\":\"You translate contracts into {tag}. Keep defined terms.\",\
+         \"tools\":[\"glossary\",\"nearai\"],\"rotate\":[\"NEARAI_API_KEY\"],\"pad\":\""
+    )
+    .into_bytes();
+    b.resize(1_998, b'.');
+    b.extend_from_slice(b"\"}");
+    b
+}
+
+/// Scene 10: the sealed prompt. A fresh agent (SEALED_AGENT, default
+/// sealed1) sells with a committed config; the seller posts a FAKE bundle;
+/// the buyer reveals the one-time key and the contract decrypts it
+/// on-chain: the whole price goes back to the buyer.
+async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    use agent_core::sealed::{public_key, seal, to_hex, ConfigCommit};
+    use base64::Engine;
+    use sha2::{Digest, Sha256};
+    const PRICE: u128 = 100 * USD;
+    let mut out = Out::new("out/scenes/scene-10.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(10));
+    out.set("what", json!(info(Step::Scene10Sealed).what));
+    println!("scene-10");
+    let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
+    let agent_hash = sha256_b58(&agent_wasm);
+    let name = std::env::var("SEALED_AGENT")
+        .ok()
+        .or_else(|| env.get("SEALED_AGENT").cloned())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "sealed1".to_string());
+    let n = name.as_str();
+    let ag = c.id(n);
+
+    println!("  account + deploy {n}");
+    if !c.exists(&ag).await {
+        let t = c
+            .create(&format!("create {ag}"), &c.root, &ag, n, 9_500)
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    for (who, want) in [(n, 0), ("bob", PRICE)] {
+        let id = c.id(who);
+        let registered = c
+            .view(
+                &c.id("xusd"),
+                "storage_balance_of",
+                json!({"account_id": id}),
+            )
+            .await
+            .map(|v| !v.is_null())
+            .unwrap_or(false);
+        let bal = balance(c, who).await;
+        if registered && bal >= want {
+            continue;
+        }
+        let t = c
+            .call(
+                &format!("mint {id}"),
+                &c.root,
+                &c.id("xusd"),
+                "mint",
+                json!({"account_id": id, "amount": want.saturating_sub(bal).to_string()}),
+                0,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    if c.code(&ag).await.map(|(h, _)| h).ok().as_deref() != Some(agent_hash.as_str()) {
+        let t = c
+            .deploy(
+                &format!("deploy {n}"),
+                &c.acct(n)?,
+                agent_wasm.clone(),
+                json!({"owner_id": c.id("alice")}),
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    out.set("code_hash", json!(agent_hash));
+    let st = c.view(&ag, "get_status", json!({})).await?;
+    if st["owner"] != json!(c.id("alice")) {
+        return Err(format!(
+            "{ag} is owned by {}: a played world; set SEALED_AGENT to a new name",
+            st["owner"]
+        ));
+    }
+    let alice = c.acct("alice")?;
+    let sk = c.keys.get_or_create(&format!("{n}-alice-runner"))?;
+    let pk = sk.public_key().to_string();
+    if !st["known_keys"]
+        .as_array()
+        .is_some_and(|k| k.contains(&json!(pk)))
+    {
+        let t = c
+            .call(
+                &format!("{n}: alice sets her runner key"),
+                &alice,
+                &ag,
+                "set_runner_key",
+                json!({"public_key": pk}),
+                1,
+                100,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let me = c.acct(n)?;
+    if c.keys(&ag).await?.iter().any(|k| k.public_key == me.pk) {
+        let t = c
+            .delete_key(&format!("{n}: delete setup key"), &me, &me.pk.clone())
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+
+    println!("  commit + list");
+    let honest = sealed_bundle("Spanish");
+    let commit = ConfigCommit::of(&honest);
+    out.set("commit", json!(commit));
+    if c.view(&ag, "get_status", json!({})).await?["status"] != "Listed" {
+        let t = c
+            .call(
+                "alice commits to the sealed config (sha256 + length)",
+                &alice,
+                &ag,
+                "commit_config",
+                json!({"config_hash": commit.hash, "bytes": commit.bytes}),
+                1,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        list(c, &mut out, "alice", n, PRICE).await?;
+    }
+
+    println!("  buy with a one-time delivery key");
+    let (input, report) = scan_agent(c, &ag, None).await?;
+    out.set("scan_input", input);
+    out.set("scan", serde_json::to_value(&report).unwrap_or_default());
+    if report.blocks() {
+        return Err(format!(
+            "bob's scan of {n}: {} {:?}",
+            report.verdict,
+            report.codes()
+        ));
+    }
+    // One-time X25519 key: revealed on-chain in the dispute, used for nothing else.
+    let seed = near_api::signer::generate_secret_key().map_err(|e| format!("{e:?}"))?;
+    let dsk: [u8; 32] =
+        Sha256::digest([seed.to_string().as_bytes(), b"agent-exit/delivery-key"].concat()).into();
+    let bob_runner = c.keys.get_or_create(&format!("{n}-bob-runner"))?;
+    let st = c.view(&ag, "get_status", json!({})).await?;
+    let msg = json!({"kind": "buy", "listing_version": st["listing_version"],
+        "known_keys_hash": st["known_keys_hash"], "buyer_runner_pk": bob_runner.public_key().to_string(),
+        "delivery_pk": to_hex(&public_key(&dsk))});
+    let alice0 = balance(c, "alice").await;
+    let bob0 = balance(c, "bob").await;
+    let t = c
+        .call(
+            &format!("bob buys {n} at {}.00 with a delivery key", PRICE / USD),
+            &c.acct("bob")?,
+            &c.id("xusd"),
+            "ft_transfer_call",
+            json!({"receiver_id": ag, "amount": PRICE.to_string(), "msg": msg.to_string()}),
+            1,
+            300,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    let sales = c.view(&ag, "get_sales", json!({})).await?;
+    let sale_id = sales
+        .as_array()
+        .and_then(|a| a.last())
+        .and_then(|s| s["sale_id"].as_u64())
+        .ok_or("no sale after the buy")?;
+    out.set("sale_id", json!(sale_id));
+
+    println!("  seller posts a FAKE bundle");
+    let fake = sealed_bundle("gibberish");
+    let eph: [u8; 32] = Sha256::digest([&dsk[..], b"seller-ephemeral"].concat()).into();
+    let (eph_pk, cipher) = seal(&eph, &public_key(&dsk), &fake).ok_or("low-order key")?;
+    let t = c
+        .call(
+            "alice delivers a bundle that is NOT the committed one",
+            &alice,
+            &ag,
+            "deliver_config",
+            json!({"sale_id": sale_id, "ephemeral_pk": to_hex(&eph_pk),
+                   "ciphertext": base64::engine::general_purpose::STANDARD.encode(&cipher)}),
+            10u128.pow(19) * (cipher.len() as u128 + 200),
+            50,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+
+    println!("  bob disputes: the contract decrypts on-chain");
+    let t = c
+        .call(
+            "bob reveals the one-time key; the contract decrypts and compares",
+            &c.acct("bob")?,
+            &ag,
+            "dispute_config",
+            json!({"sale_id": sale_id, "delivery_sk": to_hex(&dsk)}),
+            0,
+            100,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    out.set("dispute", t.value.clone());
+    let t = c
+        .call(
+            "bob claims the refund",
+            &c.acct("bob")?,
+            &ag,
+            "claim",
+            json!({}),
+            0,
+            100,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    let bob1 = balance(c, "bob").await;
+    let alice1 = balance(c, "alice").await;
+    let sc = c
+        .view(&ag, "get_sealed_config", json!({"sale_id": sale_id}))
+        .await?;
+    let late = c
+        .call(
+            "alice tries to release the upfront part after the dispute",
+            &alice,
+            &ag,
+            "release_upfront",
+            json!({"sale_id": sale_id}),
+            0,
+            30,
+        )
+        .await;
+    out.tx(&late);
+    let check = json!({
+        "bob_refunded_in_full": bob1 == bob0,
+        "seller_got_nothing": alice1 == alice0,
+        "state_mismatch": sc["state"].to_string().contains("Mismatch"),
+        "late_release_refused": !late.ok,
+    });
+    let pass = check
+        .as_object()
+        .is_some_and(|m| m.values().all(|v| v == &json!(true)));
+    out.set("sealed_config", sc);
+    out.set("check", check);
+    out.set("pass", json!(pass));
+    out.write()?;
+    if pass {
+        Ok(())
+    } else {
+        Err("scene 10 checks failed (see out/scenes/scene-10.json)".into())
     }
 }
