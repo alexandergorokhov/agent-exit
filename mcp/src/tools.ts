@@ -48,7 +48,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
   check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
   sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
-  sealed_delivery: "After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
+  sealed_delivery: "Before a buy, action preview shows (or, with confirm, requests) random chunks of the listed sealed config that the seller must prove against the committed Merkle root; buy_agent refuses a listing with a root until its preview is proven. After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
 
@@ -488,6 +488,47 @@ export class Tools {
     throw new ToolError("NO_DELIVERY_KEY", `no one-time key for ${agent} with public key ${deliveryPk.slice(0, 12)}... in ${dir} (buy_agent writes it there)`);
   }
 
+  /** sealed_delivery action preview (SP1-SP3, SC21): BEFORE a buy, see the
+   * random chunks of the listed sealed config the seller proved against the
+   * committed root; with confirm, ask for them (request_preview). */
+  private async sealedPreview(agent: string, saleId: number, confirm?: boolean): Promise<Json> {
+    const v = await this.backend.agent(agent);
+    const commit = v.listing?.config;
+    const base = {
+      ...this.base("sealed_delivery"),
+      agent,
+      sale_id: saleId,
+      action: "preview",
+      commit: { hash: untrusted(String(commit?.hash ?? "")), bytes: Number(commit?.bytes ?? 0) },
+      matches: null,
+      sent: false,
+    };
+    if (!commit) throw new ToolError("NOT_LISTED", `${agent} is not listed with a sealed config: nothing to preview`);
+    if (!commit.root) return { ...base, state: "no_preview", preview: null, next: "this listing commits no chunk root: no preview is possible; buy_agent still checks the whole bundle after the buy" };
+    let p = await this.backend.preview(agent);
+    if (!p && confirm === true) {
+      const buyer = this.writeGate();
+      if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
+        throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet sealed_delivery writes only to agents the operator named`);
+      }
+      await this.backend.sealedCall(agent, buyer, "request_preview", {});
+      p = await this.backend.preview(agent);
+      return { ...base, state: "preview_requested", sent: this.backend.network !== "offline", preview: this.previewBody(p), next: "wait for the seller to prove the chunks (answer_preview), then call preview again" };
+    }
+    if (!p) return { ...base, state: "no_preview", preview: null, next: "call sealed_delivery action preview with confirm: true to ask for random chunks (the block's seed picks them; the seller cannot)" };
+    return { ...base, state: p.complete ? "preview_complete" : "preview_requested", preview: this.previewBody(p), next: p.complete ? "the chunks are part of the committed bundle (the contract checked each Merkle proof); judge them, then buy_agent" : "the seller has not proven every requested chunk yet: buy_agent refuses until then" };
+  }
+
+  private previewBody(p: Json | null): Json | null {
+    if (!p) return null;
+    return {
+      chunks: (Array.isArray(p.chunks) ? p.chunks : []).map((x: unknown) => Number(x)),
+      complete: p.complete === true,
+      untrusted_proven: (Array.isArray(p.proven) ? p.proven : []).slice(0, 8).map((c: Json) => ({ index: Number(c.index), untrusted_text: untrusted(Buffer.from(String(c.chunk ?? ""), "base64").toString("utf8")) })),
+      untrusted_notice: UNTRUSTED_NOTICE,
+    };
+  }
+
   /** sealed_delivery (SD1-SD6): read, open, accept or dispute a sealed config. */
   private async sealedDelivery(agent: string, saleId: number, action: "status" | "open" | "accept" | "dispute", confirm?: boolean): Promise<Json> {
     const v = await this.backend.sealedConfig(agent, saleId);
@@ -692,7 +733,7 @@ export class Tools {
       case "check_account":
         return this.checkAccount(a.account);
       case "sealed_delivery":
-        return this.sealedDelivery(a.agent, a.sale_id, a.action, a.confirm);
+        return a.action === "preview" ? this.sealedPreview(a.agent, a.sale_id, a.confirm) : this.sealedDelivery(a.agent, a.sale_id, a.action, a.confirm);
     }
   }
 
@@ -1046,6 +1087,15 @@ export class Tools {
     if (this.cfg.signerPk) await this.backend.assertAllowance(buyer, this.cfg.signerPk, this.cfg.minAllowance);
     // SC: a listing that sells a sealed config needs a one-time delivery key.
     // The secret is written (0600) before anything is sent and never returned.
+    // SC21: a listing that commits a chunk root is bought only after its
+    // random preview is proven (sealed_delivery action preview).
+    // A bundle under 4 chunks (1 KB) has no preview: it would give it away.
+    if (quoted.config?.root && Math.ceil(Number(quoted.config.bytes ?? 0) / 256) >= 4) {
+      const p = await this.backend.preview(agent);
+      if (!p || p.complete !== true || String(p.listing_version) !== String(quoted.listing_version)) {
+        throw new ToolError("PREVIEW_INCOMPLETE", `${agent} sells a sealed config with a chunk root, and its random preview is ${p ? "not proven yet" : "not requested"}: call sealed_delivery action preview (confirm: true), wait for the seller's proof, then buy`);
+      }
+    }
     const sealedCfg = this.deliveryKey(agent, quoted);
     const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash, sealedCfg?.delivery_pk);
     // From here the buy was SENT (L2): never release the reservation and never

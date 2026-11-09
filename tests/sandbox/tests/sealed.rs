@@ -225,7 +225,7 @@ async fn sold(
         &alice,
         &agent.id,
         "commit_config",
-        json!({"config_hash": c.hash, "bytes": c.bytes}),
+        json!({"config_hash": c.hash, "bytes": c.bytes, "chunks_root": c.root}),
         1,
     )
     .await;
@@ -238,6 +238,34 @@ async fn sold(
     )
     .await;
 
+    // SC21: bob asks for random chunks; the block seed picks them; alice
+    // proves each against the committed root before bob buys.
+    let r = w.ok(&bob, &agent.id, "request_preview", json!({}), 0).await;
+    let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
+    assert_eq!(idx.len(), 2, "{r}");
+    for i in &idx {
+        let (chunk, proof) = agent_core::sealed::chunk_proof(honest, *i).unwrap();
+        w.ok(
+            &alice,
+            &agent.id,
+            "answer_preview",
+            json!({"index": i, "chunk": b64(&chunk), "proof": proof}),
+            1,
+        )
+        .await;
+    }
+    let pv = w.view(&agent.id, "get_preview", json!({})).await;
+    assert_eq!(pv["complete"], json!(true), "{pv}");
+    let (bad, _) = w
+        .call(
+            &alice,
+            &agent.id,
+            "answer_preview",
+            json!({"index": idx[0], "chunk": b64(b"forged"), "proof": []}),
+            1,
+        )
+        .await;
+    assert!(bad.is_err(), "a forged chunk is refused");
     let st = w.view(&agent.id, "get_status", json!({})).await;
     let buyer_runner = generate_secret_key().unwrap();
     let msg = json!({"kind": "buy", "listing_version": st["listing_version"],

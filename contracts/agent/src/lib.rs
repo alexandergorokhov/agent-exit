@@ -976,14 +976,22 @@ impl AgentExit {
 
     /// Owner commits to the sealed config (system prompt, tool setup, the API
     /// keys a buyer must rotate) the next listing sells: hex sha256 of the
-    /// bundle and its length. Empty `config_hash` clears it. 1 yoctoNEAR.
+    /// bundle and its length, and (SC21) the Merkle root of its 256-byte
+    /// chunks so buyers can ask for a random preview. Empty `config_hash`
+    /// clears it. 1 yoctoNEAR.
     #[payable]
-    pub fn commit_config(&mut self, config_hash: String, bytes: u32) -> Value {
+    pub fn commit_config(
+        &mut self,
+        config_hash: String,
+        bytes: u32,
+        chunks_root: Option<String>,
+    ) -> Value {
         near_sdk::assert_one_yocto();
         let caller = env::predecessor_account_id();
         let commit = (!config_hash.is_empty()).then_some(core::sealed::ConfigCommit {
             hash: config_hash,
             bytes,
+            root: chunks_root.filter(|r| !r.is_empty()),
         });
         self.m
             .commit_config(caller.as_str(), commit.clone())
@@ -993,6 +1001,64 @@ impl AgentExit {
             json!({"owner": caller, "config": commit}),
         );
         json!({"config": commit})
+    }
+
+    /// SC21: anyone but the owner asks to see random chunks of the listed
+    /// sealed config; the block's random seed picks them. One per listing.
+    pub fn request_preview(&mut self) -> Value {
+        let caller = env::predecessor_account_id();
+        let seed = env::random_seed_array();
+        let indices = self
+            .m
+            .request_preview(caller.as_str(), &seed, env::block_timestamp())
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "preview_requested",
+            json!({"by": caller, "listing_version": self.m.listing_version, "chunks": indices}),
+        );
+        json!({"listing_version": self.m.listing_version, "chunks": indices})
+    }
+
+    /// SC21: the owner reveals a requested chunk (base64) with its Merkle
+    /// path (hex siblings, leaf first). The contract checks it against the
+    /// committed root. 1 yoctoNEAR.
+    #[payable]
+    pub fn answer_preview(
+        &mut self,
+        index: u32,
+        chunk: near_sdk::json_types::Base64VecU8,
+        proof: Vec<String>,
+    ) -> Value {
+        near_sdk::assert_one_yocto();
+        let caller = env::predecessor_account_id();
+        let bytes: Vec<u8> = chunk.into();
+        require!(proof.len() <= 32, "proof too long");
+        let complete = self
+            .m
+            .answer_preview(caller.as_str(), index, &bytes, &proof)
+            .unwrap_or_else(|e| fail(e));
+        emit(
+            "preview_chunk",
+            json!({"index": index, "bytes": bytes.len(), "complete": complete}),
+        );
+        json!({"index": index, "complete": complete})
+    }
+
+    /// SC21: the current listing's preview: the chunks asked for and the
+    /// ones proven (base64), or null.
+    pub fn get_preview(&self) -> Value {
+        let Some(p) = self.m.current_preview() else {
+            return Value::Null;
+        };
+        json!({
+            "schema": "sealed-preview.v1",
+            "listing_version": U64(p.listing_version),
+            "requested_by": p.requested_by,
+            "requested_at": U64(p.requested_at),
+            "chunks": p.indices,
+            "proven": p.proven.iter().map(|(i, c)| json!({"index": i, "chunk": near_sdk::json_types::Base64VecU8::from(c.clone())})).collect::<Vec<_>>(),
+            "complete": p.complete(),
+        })
     }
 
     /// The seller posts the bundle sealed to the buyer's one-time key

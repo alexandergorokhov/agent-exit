@@ -281,11 +281,13 @@ fn sc10_commitment_rules() {
     let bad = ConfigCommit {
         hash: "ab".into(),
         bytes: 3,
+        root: None,
     };
     assert_eq!(m.commit_config("alice", Some(bad)), Err(Error::BadConfig));
     let big = ConfigCommit {
         hash: "a".repeat(64),
         bytes: sealed::MAX_CONFIG_BYTES + 1,
+        root: None,
     };
     assert_eq!(m.commit_config("alice", Some(big)), Err(Error::BadConfig));
     m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
@@ -456,7 +458,204 @@ fn sc20_commitment_does_not_pass_with_the_deed() {
     let mut m = Machine::new("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
-    m.commit_config("alice", Some(ConfigCommit::of(BUNDLE))).unwrap();
+    m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
+        .unwrap();
     m.transfer_deed("alice", "bob", None, T0).unwrap();
     assert_eq!(m.config_commit, None, "bob commits his own bundle");
+}
+
+// ------------------------------------------------ SC21-SC24: chunk preview
+
+/// SC21: every chunk of bundles of awkward sizes proves against the root;
+/// a changed chunk, a changed proof or the wrong index does not.
+#[test]
+fn sc21_chunk_proofs() {
+    for len in [1usize, 255, 256, 257, 700, 1_024, 2_049, 8_192] {
+        let b: Vec<u8> = (0..len).map(|i| (i * 7 + len) as u8).collect();
+        let c = ConfigCommit::of(&b);
+        assert_eq!(c.chunks(), (len as u32).div_ceil(sealed::CHUNK));
+        for i in 0..c.chunks() {
+            let (chunk, proof) = sealed::chunk_proof(&b, i).unwrap();
+            assert!(
+                sealed::verify_chunk(&c, i, &chunk, &proof),
+                "len {len} chunk {i}"
+            );
+            let mut bad = chunk.clone();
+            bad[0] ^= 1;
+            assert!(!sealed::verify_chunk(&c, i, &bad, &proof));
+            if c.chunks() > 1 {
+                assert!(!sealed::verify_chunk(
+                    &c,
+                    (i + 1) % c.chunks(),
+                    &chunk,
+                    &proof
+                ));
+                let mut p2 = proof.clone();
+                p2[0] = "00".repeat(32);
+                assert!(!sealed::verify_chunk(&c, i, &chunk, &p2));
+                let mut p3 = proof.clone();
+                p3.push("00".repeat(32));
+                assert!(
+                    !sealed::verify_chunk(&c, i, &chunk, &p3),
+                    "an extra proof step"
+                );
+            }
+        }
+        assert!(!sealed::verify_chunk(&c, c.chunks(), &[], &[]));
+        assert!(!sealed::verify_chunk(
+            &ConfigCommit::without_root(&b),
+            0,
+            &b[..b.len().min(256)],
+            &[]
+        ));
+    }
+}
+
+fn listed_with(commit: ConfigCommit) -> Machine {
+    let mut m = Machine::new("translator", "alice");
+    let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
+    m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
+    m.commit_config("alice", Some(commit)).unwrap();
+    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    m
+}
+
+/// SC22: bob asks for random chunks; the seller cannot ask, cannot pick,
+/// and must prove each one against the committed root.
+#[test]
+fn sc22_preview_random_chunks_proven_by_the_seller() {
+    let big: Vec<u8> = BUNDLE.iter().cycle().take(2_000).cloned().collect();
+    let mut m = listed_with(ConfigCommit::of(&big));
+    assert_eq!(
+        m.request_preview("alice", &[7; 32], T0),
+        Err(Error::NotBuyer)
+    );
+    let idx = m.request_preview("bob", &[7; 32], T0).unwrap();
+    assert_eq!(idx.len(), sealed::PREVIEW_CHUNKS as usize);
+    assert!(idx[0] < idx[1] && idx[1] < 8, "distinct, in range: {idx:?}");
+    assert_eq!(
+        idx,
+        sealed::preview_indices(&[7; 32], 8),
+        "fixed by the seed"
+    );
+    assert_eq!(
+        m.request_preview("carol", &[9; 32], T0),
+        Err(Error::PreviewTaken)
+    );
+    let other = (0..8).find(|i| !idx.contains(i)).unwrap();
+    let (c, p) = sealed::chunk_proof(&big, other).unwrap();
+    assert_eq!(
+        m.answer_preview("alice", other, &c, &p),
+        Err(Error::NotRequested)
+    );
+    let (c0, p0) = sealed::chunk_proof(&big, idx[0]).unwrap();
+    assert_eq!(
+        m.answer_preview("bob", idx[0], &c0, &p0),
+        Err(Error::NotOwner)
+    );
+    let mut fake = c0.clone();
+    fake[3] ^= 0x20;
+    assert_eq!(
+        m.answer_preview("alice", idx[0], &fake, &p0),
+        Err(Error::BadChunk)
+    );
+    assert_eq!(m.answer_preview("alice", idx[0], &c0, &p0), Ok(false));
+    assert_eq!(
+        m.answer_preview("alice", idx[0], &c0, &p0),
+        Err(Error::NotRequested)
+    );
+    let (c1, p1) = sealed::chunk_proof(&big, idx[1]).unwrap();
+    assert_eq!(m.answer_preview("alice", idx[1], &c1, &p1), Ok(true));
+    let pv = m.current_preview().unwrap();
+    assert!(pv.complete());
+    assert_eq!(pv.proven[0], (idx[0], c0));
+    // A relist is a new version: a new request draws new chunks.
+    m.cancel_listing("alice").unwrap();
+    m.list("alice", 900 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    assert!(m.current_preview().is_none());
+    assert!(m.request_preview("bob", &[8; 32], T0).is_ok());
+}
+
+/// SC23: a seller who commits a hash of one bundle and a root of another
+/// loses the sale whichever one she delivers.
+#[test]
+fn sc23_hash_and_root_must_name_the_same_bundle() {
+    let shown: Vec<u8> = vec![b'A'; BUNDLE.len()];
+    for deliver_shown in [false, true] {
+        let commit = ConfigCommit {
+            root: ConfigCommit::of(&shown).root,
+            ..ConfigCommit::of(BUNDLE)
+        };
+        let mut m = listed_with(commit);
+        let h = m.known_keys_hash();
+        let v = m.listing_version;
+        let plan = m
+            .begin_buy_sealed(
+                "bob",
+                1_000 * USD,
+                v,
+                &h,
+                BOB_PK,
+                Some(&bob_delivery_pk()),
+                true,
+                T0,
+            )
+            .unwrap();
+        m.finish_buy(plan.sale_id, true, T0).unwrap();
+        let what: &[u8] = if deliver_shown { &shown } else { BUNDLE };
+        let cipher = deliver(&mut m, what, T0 + DAY_NS);
+        let r = m.dispute_config(
+            "bob",
+            1,
+            &hex::encode(BOB_DELIVERY_SK),
+            &cipher,
+            T0 + 2 * DAY_NS,
+        );
+        assert_eq!(r, Ok(1_000 * USD), "deliver_shown {deliver_shown}");
+    }
+}
+
+/// SC24: a commitment without a root sells as before, with no preview.
+#[test]
+fn sc24_no_root_no_preview() {
+    let mut m = listed_with(ConfigCommit::without_root(BUNDLE));
+    assert_eq!(
+        m.request_preview("bob", &[1; 32], T0),
+        Err(Error::NoPreview)
+    );
+}
+
+/// SC21b: the Node tool (`scripts/sealed-config.mjs proof`) builds the same
+/// tree: a 700-byte vector, its root and the path of chunk 2.
+#[test]
+fn sc21b_chunk_tree_matches_the_node_tool() {
+    let b: Vec<u8> = (0..700usize).map(|i| ((i * 7 + 700) % 256) as u8).collect();
+    assert_eq!(
+        hex::encode(sealed::chunk_root(&b)),
+        "a98742ba87c21191996689eaac90d759a3f5ceca67a802a36bb9254a4e170ff4"
+    );
+    let (_, proof) = sealed::chunk_proof(&b, 2).unwrap();
+    assert_eq!(
+        proof,
+        vec!["e24e296c32e9a9d8e849b85d7532deafae3c0d936a1b116a620b254dcd56f99f".to_string()]
+    );
+}
+
+/// SC25: a preview never shows more than a quarter of the bundle, so a small
+/// config (under 4 chunks) cannot be previewed at all.
+#[test]
+fn sc25_preview_never_gives_the_config_away() {
+    assert_eq!(sealed::preview_size(1), 0);
+    assert_eq!(sealed::preview_size(3), 0);
+    assert_eq!(sealed::preview_size(4), 1);
+    assert_eq!(sealed::preview_size(8), sealed::PREVIEW_CHUNKS);
+    assert_eq!(sealed::preview_size(32), sealed::PREVIEW_CHUNKS);
+    let small: Vec<u8> = BUNDLE.iter().cycle().take(700).cloned().collect();
+    let mut m = listed_with(ConfigCommit::of(&small));
+    assert_eq!(m.request_preview("bob", &[7; 32], T0), Err(Error::NoPreview));
+    let four: Vec<u8> = BUNDLE.iter().cycle().take(1_000).cloned().collect();
+    let mut m = listed_with(ConfigCommit::of(&four));
+    assert_eq!(m.request_preview("bob", &[7; 32], T0).unwrap().len(), 1);
 }

@@ -2,7 +2,8 @@
 // Sealed agent config tools (contracts/agent-core/src/sealed.rs, the same
 // cipher): X25519 + a SHA-256 keystream. No dependencies beyond Node.
 //
-//   node scripts/sealed-config.mjs commit <bundle-file>              -> {hash, bytes} for commit_config
+//   node scripts/sealed-config.mjs commit <bundle-file>              -> {hash, bytes, root} for commit_config
+//   node scripts/sealed-config.mjs proof <bundle-file> <index>       -> {index, chunk (base64), proof} for answer_preview (SC21)
 //   node scripts/sealed-config.mjs keygen                            -> a one-time delivery key pair (hex)
 //   node scripts/sealed-config.mjs seal <bundle-file> <buyer-pk-hex> -> {ephemeral_pk, ciphertext (base64)} for deliver_config
 //   node scripts/sealed-config.mjs open <sk-hex> <ephemeral-pk-hex> <ciphertext-base64> [<hash>]
@@ -37,8 +38,44 @@ function shared(sk, pk) {
   return s;
 }
 
+// SC21: Merkle tree over 256-byte chunks (the same as sealed.rs chunk_root).
+export const CHUNK = 256;
+const LEAF = Buffer.from("agent-exit/sealed-chunk/v1");
+const u32 = (i) => { const b = Buffer.alloc(4); b.writeUInt32LE(i); return b; };
+const leaf = (i, c) => sha(LEAF, u32(i), c);
+const node = (l, r) => sha(Buffer.from([1]), l, r);
+
+function levels(bundle) {
+  let level = [];
+  for (let i = 0; i * CHUNK < bundle.length; i++) level.push(leaf(i, bundle.subarray(i * CHUNK, (i + 1) * CHUNK)));
+  if (!level.length) level.push(leaf(0, Buffer.alloc(0)));
+  const out = [level];
+  while (level.length > 1) {
+    const next = [];
+    for (let i = 0; i < level.length; i += 2) next.push(i + 1 < level.length ? node(level[i], level[i + 1]) : level[i]);
+    level = next;
+    out.push(level);
+  }
+  return out;
+}
+
+export const chunkRoot = (bundle) => levels(bundle).at(-1)[0];
+
+/** The chunk at `index` and its sibling path (hex), for answer_preview. */
+export function chunkProof(bundle, index) {
+  const chunk = bundle.subarray(index * CHUNK, (index + 1) * CHUNK);
+  const proof = [];
+  let i = index;
+  for (const level of levels(bundle)) {
+    if (level.length <= 1) break;
+    if ((i ^ 1) < level.length) proof.push(level[i ^ 1].toString("hex"));
+    i >>= 1;
+  }
+  return { index, chunk: Buffer.from(chunk).toString("base64"), proof };
+}
+
 export function commit(bundle) {
-  return { hash: sha(bundle).toString("hex"), bytes: bundle.length };
+  return { hash: sha(bundle).toString("hex"), bytes: bundle.length, root: chunkRoot(bundle).toString("hex") };
 }
 
 export function seal(ephSk, recipientPk, bundle) {
@@ -56,6 +93,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const [cmd, ...a] = process.argv.slice(2);
   const hex = (s) => Buffer.from(s, "hex");
   if (cmd === "commit") console.log(JSON.stringify(commit(readFileSync(a[0]))));
+  else if (cmd === "proof") console.log(JSON.stringify(chunkProof(readFileSync(a[0]), Number(a[1]))));
   else if (cmd === "keygen") {
     const sk = randomBytes(32);
     console.log(JSON.stringify({ delivery_pk: publicKey(sk).toString("hex"), delivery_sk: sk.toString("hex") }));
@@ -67,7 +105,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const c = commit(plain);
     console.log(JSON.stringify({ ...c, matches: a[3] ? c.hash === a[3] : null, bundle: plain.toString("utf8") }));
   } else {
-    console.error("usage: sealed-config.mjs commit|keygen|seal|open ...");
+    console.error("usage: sealed-config.mjs commit|proof|keygen|seal|open ...");
     process.exit(2);
   }
 }

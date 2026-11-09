@@ -46,23 +46,55 @@ pub struct ConfigCommit {
     /// Hex sha256 of the bundle's bytes.
     pub hash: String,
     pub bytes: u32,
+    /// SC21: Merkle root (hex) over the bundle's `CHUNK`-byte chunks, so a
+    /// buyer can check random chunks before paying (`Preview`). Optional:
+    /// a commitment without it sells as before, with no preview.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root: Option<String>,
 }
 
 impl ConfigCommit {
     pub fn valid(&self) -> bool {
+        let hex64 = |h: &str| {
+            h.len() == 64
+                && h.bytes()
+                    .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+        };
         (1..=MAX_CONFIG_BYTES).contains(&self.bytes)
-            && self.hash.len() == 64
-            && self
-                .hash
-                .bytes()
-                .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+            && hex64(&self.hash)
+            && self.root.as_deref().is_none_or(hex64)
     }
 
+    /// The commitment to `bundle`, with its chunk root (SC21).
     pub fn of(bundle: &[u8]) -> ConfigCommit {
         ConfigCommit {
             hash: hex::encode(Sha256::digest(bundle)),
             bytes: bundle.len() as u32,
+            root: Some(hex::encode(chunk_root(bundle))),
         }
+    }
+
+    /// The same without a chunk root (no preview possible).
+    pub fn without_root(bundle: &[u8]) -> ConfigCommit {
+        ConfigCommit {
+            root: None,
+            ..ConfigCommit::of(bundle)
+        }
+    }
+
+    /// Do these bytes match every part of the commitment?
+    pub fn matches(&self, plain: &[u8]) -> bool {
+        plain.len() as u32 == self.bytes
+            && hex::encode(Sha256::digest(plain)) == self.hash
+            && self
+                .root
+                .as_deref()
+                .is_none_or(|r| r == hex::encode(chunk_root(plain)))
+    }
+
+    /// Number of chunks the bundle has.
+    pub fn chunks(&self) -> u32 {
+        self.bytes.div_ceil(CHUNK)
     }
 }
 
@@ -119,6 +151,156 @@ impl SaleConfig {
             Delivery::Delivered { at, .. } => at + DISPUTE_WINDOW_NS,
             _ => 0,
         }
+    }
+}
+
+// ------------------------------------------------- SC21: chunk preview
+
+/// Chunk size for the preview Merkle tree.
+pub const CHUNK: u32 = 256;
+/// Chunks a preview asks for (fewer if the bundle is smaller).
+pub const PREVIEW_CHUNKS: u32 = 2;
+const LEAF: &[u8] = b"agent-exit/sealed-chunk/v1";
+
+fn leaf(index: u32, chunk: &[u8]) -> [u8; 32] {
+    Sha256::digest([LEAF, &index.to_le_bytes()[..], chunk].concat()).into()
+}
+
+fn node(l: &[u8; 32], r: &[u8; 32]) -> [u8; 32] {
+    Sha256::digest([&[1u8][..], l, r].concat()).into()
+}
+
+fn levels(bundle: &[u8]) -> Vec<Vec<[u8; 32]>> {
+    let mut level: Vec<[u8; 32]> = bundle
+        .chunks(CHUNK as usize)
+        .enumerate()
+        .map(|(i, c)| leaf(i as u32, c))
+        .collect();
+    if level.is_empty() {
+        level.push(leaf(0, &[]));
+    }
+    let mut out = vec![level.clone()];
+    while level.len() > 1 {
+        // An odd last node moves up unchanged.
+        level = level
+            .chunks(2)
+            .map(|p| {
+                if p.len() == 2 {
+                    node(&p[0], &p[1])
+                } else {
+                    p[0]
+                }
+            })
+            .collect();
+        out.push(level.clone());
+    }
+    out
+}
+
+/// Merkle root over the bundle's 256-byte chunks (leaf = sha256(domain ||
+/// index LE || chunk), node = sha256(0x01 || left || right)).
+pub fn chunk_root(bundle: &[u8]) -> [u8; 32] {
+    *levels(bundle)
+        .last()
+        .and_then(|l| l.first())
+        .expect("non-empty")
+}
+
+/// The chunk at `index` and its sibling path (hex), for `answer_preview`.
+pub fn chunk_proof(bundle: &[u8], index: u32) -> Option<(Vec<u8>, Vec<String>)> {
+    let chunk = bundle.chunks(CHUNK as usize).nth(index as usize)?.to_vec();
+    let mut proof = Vec::new();
+    let mut i = index as usize;
+    for level in levels(bundle).iter().take_while(|l| l.len() > 1) {
+        let sib = i ^ 1;
+        if sib < level.len() {
+            proof.push(hex::encode(level[sib]));
+        }
+        i /= 2;
+    }
+    Some((chunk, proof))
+}
+
+/// Check one revealed chunk against the committed root. The tree shape
+/// follows from `bytes`, so a proof of the wrong length is refused.
+pub fn verify_chunk(commit: &ConfigCommit, index: u32, chunk: &[u8], proof: &[String]) -> bool {
+    let Some(root) = commit.root.as_deref().and_then(hex32) else {
+        return false;
+    };
+    let n = commit.chunks();
+    if index >= n {
+        return false;
+    }
+    let want = if index + 1 == n {
+        commit.bytes - index * CHUNK
+    } else {
+        CHUNK
+    };
+    if chunk.len() as u32 != want {
+        return false;
+    }
+    let mut h = leaf(index, chunk);
+    let (mut i, mut width, mut used) = (index as usize, n as usize, 0usize);
+    while width > 1 {
+        let sib = i ^ 1;
+        if sib < width {
+            let Some(s) = proof.get(used).and_then(|p| hex32(p)) else {
+                return false;
+            };
+            used += 1;
+            h = if i % 2 == 0 {
+                node(&h, &s)
+            } else {
+                node(&s, &h)
+            };
+        }
+        i /= 2;
+        width = width.div_ceil(2);
+    }
+    used == proof.len() && h == root
+}
+
+/// How many chunks a preview of a `chunks`-chunk bundle shows: at most
+/// `PREVIEW_CHUNKS`, and never more than a quarter of the bundle, so a
+/// preview cannot give the config away. Zero (no preview) under 4 chunks.
+pub fn preview_size(chunks: u32) -> u32 {
+    PREVIEW_CHUNKS.min(chunks / 4)
+}
+
+/// Which chunks a preview asks for: `preview_size` distinct indices
+/// drawn from `seed` (the block's random seed, so the seller cannot pick).
+pub fn preview_indices(seed: &[u8; 32], chunks: u32) -> Vec<u32> {
+    let want = preview_size(chunks);
+    let mut out: Vec<u32> = Vec::new();
+    let mut ctr = 0u32;
+    while (out.len() as u32) < want {
+        let h = Sha256::digest([&seed[..], &ctr.to_le_bytes()[..]].concat());
+        let i = u32::from_le_bytes([h[0], h[1], h[2], h[3]]) % chunks;
+        if !out.contains(&i) {
+            out.push(i);
+        }
+        ctr += 1;
+    }
+    out.sort();
+    out
+}
+
+/// SC21: a buyer's request to see random chunks of the listed bundle, and
+/// the chunks the seller proved against the committed root.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(borsh::BorshSchema))]
+pub struct Preview {
+    pub listing_version: u64,
+    pub requested_by: String,
+    pub requested_at: Ts,
+    pub indices: Vec<u32>,
+    /// (index, chunk bytes) proven against the root.
+    pub proven: Vec<(u32, Vec<u8>)>,
+}
+
+impl Preview {
+    pub fn complete(&self) -> bool {
+        self.proven.len() == self.indices.len()
     }
 }
 
@@ -202,10 +384,10 @@ pub fn delivery_matches(
     cipher: &[u8],
     commit: &ConfigCommit,
 ) -> bool {
+    // SC21: the delivered bytes must match the hash AND the chunk root, so
+    // a preview of one bundle cannot sell another.
     match open(sk, eph_pk, cipher) {
-        Some(plain) => {
-            plain.len() as u32 == commit.bytes && ConfigCommit::of(&plain).hash == commit.hash
-        }
+        Some(plain) => commit.matches(&plain),
         None => false,
     }
 }

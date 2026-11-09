@@ -1147,7 +1147,7 @@ fn sc12_sealed_config_fair_exchange_through_the_contract() {
     let mut s = translator_world();
     let commit = sealed::ConfigCommit::of(bundle);
     s.by_1y(ALICE)
-        .commit_config(commit.hash.clone(), commit.bytes);
+        .commit_config(commit.hash.clone(), commit.bytes, commit.root.clone());
     s.by_1y(ALICE)
         .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
     assert_eq!(
@@ -1217,4 +1217,40 @@ fn r2_nft_approve_charges_storage_and_the_deed_cannot_go_to_the_agent() {
             .nft_transfer(acc(&agent), DEED_ID.into(), None, None);
     }));
     assert_eq!(s.m().owner, ALICE);
+}
+
+/// SC22 through the contract: bob requests a preview (the block seed picks
+/// the chunks), alice proves them, get_preview shows the plain chunks.
+#[test]
+fn sc22_preview_through_the_contract() {
+    use agent_core::sealed;
+    let bundle: Vec<u8> = b"You translate EN<->ES. Keep defined terms. "
+        .iter()
+        .cycle()
+        .take(2_000)
+        .cloned()
+        .collect();
+    let mut s = translator_world();
+    let commit = sealed::ConfigCommit::of(&bundle);
+    s.by_1y(ALICE)
+        .commit_config(commit.hash.clone(), commit.bytes, commit.root.clone());
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    assert_eq!(
+        s.by(BOB).get_listing().unwrap()["config"]["root"],
+        json!(commit.root)
+    );
+    assert!(s.by(BOB).get_preview().is_null());
+    let r = s.by(BOB).request_preview();
+    let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
+    assert_eq!(idx.len(), 2);
+    assert_eq!(events("preview_requested").len(), 1);
+    for (n, i) in idx.iter().enumerate() {
+        let (chunk, proof) = sealed::chunk_proof(&bundle, *i).unwrap();
+        let out = s.by_1y(ALICE).answer_preview(*i, chunk.into(), proof);
+        assert_eq!(out["complete"], json!(n == 1));
+    }
+    let v = s.by(BOB).get_preview();
+    assert_eq!(v["complete"], json!(true), "{v}");
+    assert_eq!(v["proven"].as_array().unwrap().len(), 2);
 }

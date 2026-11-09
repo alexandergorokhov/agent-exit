@@ -5,11 +5,34 @@
   "description": "After buying an agent that sold its sealed config (its prompt and tool setup): read the delivery, open it with your one-time key, then accept it (the seller is paid) or dispute it on-chain (the whole price back). Offline: brainy.testnet (honest delivery) and swapped.testnet (a different prompt), sale 1.",
   "type": "object",
   "properties": {
-    "agent": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9._-]+$" },
-    "sale_id": { "type": "integer", "minimum": 0 },
-    "action": { "enum": ["status", "open", "accept", "dispute"], "description": "status: read the delivery state; open: decrypt locally and compare with the commitment (read-only); accept: release_upfront, pays the seller (WRITE, needs confirm, refused if the bundle does not match); dispute: dispute_config, reveals the one-time key on-chain so the contract proves the mismatch (WRITE, needs confirm, refused before sending if the bundle matches)" },
-    "confirm": { "type": "boolean" }
+    "agent": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "sale_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "action": {
+      "enum": [
+        "status",
+        "open",
+        "accept",
+        "dispute",
+        "preview"
+      ],
+      "description": "status: read the delivery state; open: decrypt locally and compare with the commitment (read-only); accept: release_upfront, pays the seller (WRITE, needs confirm, refused if the bundle does not match); dispute: dispute_config, reveals the one-time key on-chain so the contract proves the mismatch (WRITE, needs confirm, refused before sending if the bundle matches); preview (before a buy, sale_id 0): read the random chunks the seller proved against the committed root, or with confirm request them (WRITE)"
+    },
+    "confirm": {
+      "type": "boolean"
+    }
   },
-  "required": ["agent", "sale_id", "action"],
+  "required": [
+    "agent",
+    "sale_id",
+    "action"
+  ],
   "additionalProperties": false
 }

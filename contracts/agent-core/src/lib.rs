@@ -130,6 +130,15 @@ pub enum Error {
     BadDeliveryKey,
     /// The delivery opens to exactly the committed bundle: no dispute.
     ConfigMatches,
+    // ----- SC21 preview -----
+    /// Not listed, or the listed commitment has no chunk root.
+    NoPreview,
+    /// A preview was already requested for this listing version.
+    PreviewTaken,
+    /// The chunk is not one the preview asked for, or already proven.
+    NotRequested,
+    /// The chunk or its proof does not match the committed root.
+    BadChunk,
 }
 
 impl core::fmt::Display for Error {
@@ -518,6 +527,9 @@ pub struct Machine<S = MemStore> {
     /// The owner's commitment to the sealed config the next listing sells.
     #[serde(default)]
     pub config_commit: Option<sealed::ConfigCommit>,
+    /// SC21: the preview of the listed sealed config (random chunks).
+    #[serde(default)]
+    pub preview: Option<sealed::Preview>,
     /// Per-payer and per-day rows (A47). In the contract this is a handle to
     /// separate storage keys and adds nothing to the state blob.
     #[serde(skip)]
@@ -609,6 +621,7 @@ impl<S: Store + Default> Machine<S> {
             next_offer_id: 1,
             share_escrow: 0,
             config_commit: None,
+            preview: None,
             store: S::default(),
         }
     }
@@ -1194,6 +1207,7 @@ impl<S: Store + Default> Machine<S> {
         self.sales.push(sale.clone());
         // The bundle was sold with this sale; a new owner commits their own.
         self.config_commit = None;
+        self.preview = None;
         // The protocol fee stays held, as the fee account's claimable balance.
         // Out of the upfront part only, so never more than it (PR2): a
         // pay-from-revenue sale has no upfront part and takes no fee.
@@ -1487,6 +1501,75 @@ impl<S: Store + Default> Machine<S> {
         Ok(())
     }
 
+    /// SC21: anyone but the owner asks to see random chunks of the listed
+    /// sealed config. `seed` is the block's random seed, so the seller cannot
+    /// pick which chunks are shown. One request per listing version.
+    pub fn request_preview(&mut self, caller: &str, seed: &[u8; 32], now: Ts) -> Res<Vec<u32>> {
+        let l = self.listing.as_ref().ok_or(Error::NoPreview)?;
+        if self.status != Status::Listed {
+            return Err(Error::NoPreview);
+        }
+        let commit = l
+            .config
+            .as_ref()
+            .filter(|c| c.root.is_some() && sealed::preview_size(c.chunks()) > 0)
+            .ok_or(Error::NoPreview)?;
+        if caller == self.owner {
+            return Err(Error::NotBuyer);
+        }
+        if self
+            .preview
+            .as_ref()
+            .is_some_and(|p| p.listing_version == l.version)
+        {
+            return Err(Error::PreviewTaken);
+        }
+        let indices = sealed::preview_indices(seed, commit.chunks());
+        self.preview = Some(sealed::Preview {
+            listing_version: l.version,
+            requested_by: caller.to_string(),
+            requested_at: now,
+            indices: indices.clone(),
+            proven: Vec::new(),
+        });
+        Ok(indices)
+    }
+
+    /// SC21: the owner reveals one requested chunk with its Merkle path.
+    /// Returns whether the preview is now complete.
+    pub fn answer_preview(
+        &mut self,
+        caller: &str,
+        index: u32,
+        chunk: &[u8],
+        proof: &[String],
+    ) -> Res<bool> {
+        self.only_owner(caller)?;
+        let l = self.listing.as_ref().ok_or(Error::NoPreview)?;
+        let commit = l.config.clone().ok_or(Error::NoPreview)?;
+        let version = l.version;
+        let p = self
+            .preview
+            .as_mut()
+            .filter(|p| p.listing_version == version)
+            .ok_or(Error::NotRequested)?;
+        if !p.indices.contains(&index) || p.proven.iter().any(|(i, _)| *i == index) {
+            return Err(Error::NotRequested);
+        }
+        if !sealed::verify_chunk(&commit, index, chunk, proof) {
+            return Err(Error::BadChunk);
+        }
+        p.proven.push((index, chunk.to_vec()));
+        p.proven.sort();
+        Ok(p.complete())
+    }
+
+    /// The preview for the current listing, if any.
+    pub fn current_preview(&self) -> Option<&sealed::Preview> {
+        let v = self.listing.as_ref()?.version;
+        self.preview.as_ref().filter(|p| p.listing_version == v)
+    }
+
     fn sale_config(&self, sale_id: u64) -> Res<(usize, &sealed::SaleConfig)> {
         let idx = self
             .sales
@@ -1766,6 +1849,7 @@ impl<S: Store + Default> Machine<S> {
         // Review 4 L2: as in a sale, a sealed-config commitment does not pass
         // with the deed; the new owner commits their own bundle.
         self.config_commit = None;
+        self.preview = None;
         self.owner_epoch += 1;
         self.paid_to_this_epoch = 0;
         // The keys stay `retiring` until `keys_deleted` confirms (A25).

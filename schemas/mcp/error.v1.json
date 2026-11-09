@@ -36,6 +36,7 @@
             "CONFIG_MISMATCH",
             "NOT_DELIVERED",
             "DISPUTE_CLOSED",
+            "PREVIEW_INCOMPLETE",
             "WRITE_DISABLED",
             "CONFIRM_REQUIRED",
             "OVER_MAX_PRICE",

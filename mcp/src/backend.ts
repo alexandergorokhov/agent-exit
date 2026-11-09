@@ -161,7 +161,9 @@ export interface Backend {
   /** get_sealed_config of one sale (null: the sale sold no sealed config). */
   sealedConfig(id: string, saleId: number): Promise<Json | null>;
   /** release_upfront or dispute_config, signed by `signer`. */
-  sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome>;
+  sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config" | "request_preview", args: Json): Promise<SealedCallOutcome>;
+  /** SC21: the current listing's preview (get_preview), or null. */
+  preview(id: string): Promise<Json | null>;
   /** Offline only: the fixed demo secret of the sealed fixtures. */
   demoDeliverySecret?(id: string): string | null;
 }
@@ -275,7 +277,19 @@ export class OfflineBackend implements Backend {
   /** The same rules as agent-core release_upfront / dispute_config
    * (SC8-SC14), on the illustrative fixture; the contract code itself runs
    * in the sandbox tool (accept_config, dispute_config). */
-  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome> {
+  async preview(id: string): Promise<Json | null> {
+    return structuredClone((this.get(id) as Json).preview ?? null);
+  }
+
+  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config" | "request_preview", args: Json): Promise<SealedCallOutcome> {
+    if (method === "request_preview") {
+      // Offline: the recorded preview stands in for the block's random seed.
+      const a = this.get(id) as Json;
+      if (!a.listing?.config?.root) throw new ToolError("CONTRACT_REFUSED", "the contract refused request_preview: NoPreview; nothing changed", { contract_error: "NoPreview" });
+      if (a.preview) throw new ToolError("CONTRACT_REFUSED", "the contract refused request_preview: PreviewTaken; nothing changed", { contract_error: "PreviewTaken" });
+      a.preview = { schema: "sealed-preview.v1", listing_version: String(a.listing.version), requested_by: signer, chunks: [0], proven: [], complete: false };
+      return { value: { listing_version: a.listing.version, chunks: [0] }, recorded: true };
+    }
     const e = this.sealedFixtures().agents?.[id];
     if (!e || e.sale_id !== args.sale_id) throw new ToolError("UNKNOWN_SALE", `sale ${args.sale_id} not found on ${id}`);
     const refused = (code: string) => new ToolError("CONTRACT_REFUSED", `the contract refused ${method}: ${code}; nothing changed`, { contract_error: code });
@@ -888,7 +902,12 @@ export class TestnetBackend implements Backend {
     return this.view(id, "get_sealed_config", { sale_id: saleId });
   }
 
-  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config", args: Json): Promise<SealedCallOutcome> {
+  async preview(id: string): Promise<Json | null> {
+    this.known(id);
+    return this.view(id, "get_preview");
+  }
+
+  async sealedCall(id: string, signer: string, method: "release_upfront" | "dispute_config" | "request_preview", args: Json): Promise<SealedCallOutcome> {
     this.known(id);
     const { result, txHash, explorer } = await this.send(id, signer, method, args, 0n, method);
     const ok = result?.status?.SuccessValue;

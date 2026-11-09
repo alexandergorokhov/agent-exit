@@ -2178,7 +2178,7 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
                 &alice,
                 &ag,
                 "commit_config",
-                json!({"config_hash": commit.hash, "bytes": commit.bytes}),
+                json!({"config_hash": commit.hash, "bytes": commit.bytes, "chunks_root": commit.root}),
                 1,
                 30,
             )
@@ -2187,6 +2187,49 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         ok(&t)?;
         list(c, &mut out, "alice", n, PRICE).await?;
     }
+
+    println!("  preview: random chunks proven before the buy (SC21)");
+    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    if pv.is_null() {
+        let t = c
+            .call(
+                "bob asks for a random preview (the block seed picks the chunks)",
+                &c.acct("bob")?,
+                &ag,
+                "request_preview",
+                json!({}),
+                0,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    let asked: Vec<u32> = serde_json::from_value(pv["chunks"].clone()).unwrap_or_default();
+    let proven: Vec<u64> = pv["proven"]
+        .as_array()
+        .map(|a| a.iter().filter_map(|p| p["index"].as_u64()).collect())
+        .unwrap_or_default();
+    for i in asked.iter().filter(|i| !proven.contains(&(**i as u64))) {
+        let (chunk, proof) =
+            agent_core::sealed::chunk_proof(&honest, *i).ok_or("chunk out of range")?;
+        let t = c
+            .call(
+                &format!("alice proves chunk {i} against the committed root"),
+                &alice,
+                &ag,
+                "answer_preview",
+                json!({"index": i, "chunk": base64::engine::general_purpose::STANDARD.encode(&chunk), "proof": proof}),
+                1,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    out.set("preview", pv.clone());
 
     println!("  buy with a one-time delivery key");
     let (input, report) = scan_agent(c, &ag, None).await?;
@@ -2296,6 +2339,7 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         .await;
     out.tx(&late);
     let check = json!({
+        "preview_complete": pv["complete"] == json!(true),
         "bob_refunded_in_full": bob1 == bob0,
         "seller_got_nothing": alice1 == alice0,
         "state_mismatch": sc["state"].to_string().contains("Mismatch"),
