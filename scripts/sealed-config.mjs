@@ -6,7 +6,7 @@
 //   node scripts/sealed-config.mjs proof <bundle-file> <index>       -> {index, chunk (base64), proof} for answer_preview (SC21)
 //   node scripts/sealed-config.mjs keygen                            -> a one-time delivery key pair (hex)
 //   node scripts/sealed-config.mjs seal <bundle-file> <buyer-pk-hex> -> {ephemeral_pk, ciphertext (base64)} for deliver_config
-//   node scripts/sealed-config.mjs open <sk-hex> <ephemeral-pk-hex> <ciphertext-base64> [<hash>]
+//   node scripts/sealed-config.mjs open <sk-hex> <ephemeral-pk-hex> <ciphertext-base64> [<hash> [<root>]]
 //                                                                    -> the bundle, and whether it matches the commitment
 // Secret keys are printed only by keygen; keep them in a 0600 file, never in a chat or commit.
 import { createHash, createPrivateKey, createPublicKey, diffieHellman, randomBytes } from "node:crypto";
@@ -63,6 +63,7 @@ export const chunkRoot = (bundle) => levels(bundle).at(-1)[0];
 
 /** The chunk at `index` and its sibling path (hex), for answer_preview. */
 export function chunkProof(bundle, index) {
+  if (!Number.isInteger(index) || index < 0 || index * CHUNK >= Math.max(bundle.length, 1)) throw new Error(`chunk ${index} is out of range`);
   const chunk = bundle.subarray(index * CHUNK, (index + 1) * CHUNK);
   const proof = [];
   let i = index;
@@ -103,7 +104,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   } else if (cmd === "open") {
     const plain = open(hex(a[0]), hex(a[1]), Buffer.from(a[2], "base64"));
     const c = commit(plain);
-    console.log(JSON.stringify({ ...c, matches: a[3] ? c.hash === a[3] : null, bundle: plain.toString("utf8") }));
+    // Review 5 P1: the contract checks hash AND root; so does this.
+    const matches = a[3] ? c.hash === a[3] && (!a[4] || c.root === a[4]) : null;
+    console.log(JSON.stringify({ ...c, matches, bundle: plain.toString("utf8") }));
   } else {
     console.error("usage: sealed-config.mjs commit|proof|keygen|seal|open ...");
     process.exit(2);

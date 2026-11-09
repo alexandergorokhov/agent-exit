@@ -2189,7 +2189,8 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     }
 
     println!("  preview: random chunks proven before the buy (SC21)");
-    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    let bob_id = c.acct("bob")?.id.to_string();
+    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
     if pv.is_null() {
         let t = c
             .call(
@@ -2198,14 +2199,14 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
                 &ag,
                 "request_preview",
                 json!({}),
-                0,
+                10u128.pow(22),
                 30,
             )
             .await;
         out.tx(&t);
         ok(&t)?;
     }
-    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
     let asked: Vec<u32> = serde_json::from_value(pv["chunks"].clone()).unwrap_or_default();
     let proven: Vec<u64> = pv["proven"]
         .as_array()
@@ -2220,7 +2221,7 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
                 &alice,
                 &ag,
                 "answer_preview",
-                json!({"index": i, "chunk": base64::engine::general_purpose::STANDARD.encode(&chunk), "proof": proof}),
+                json!({"requester": bob_id, "index": i, "chunk": base64::engine::general_purpose::STANDARD.encode(&chunk), "proof": proof}),
                 1,
                 30,
             )
@@ -2228,7 +2229,7 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let pv = c.view(&ag, "get_preview", json!({})).await?;
+    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
     out.set("preview", pv.clone());
 
     println!("  buy with a one-time delivery key");

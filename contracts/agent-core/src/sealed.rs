@@ -260,17 +260,22 @@ pub fn verify_chunk(commit: &ConfigCommit, index: u32, chunk: &[u8], proof: &[St
     used == proof.len() && h == root
 }
 
-/// How many chunks a preview of a `chunks`-chunk bundle shows: at most
-/// `PREVIEW_CHUNKS`, and never more than a quarter of the bundle, so a
-/// preview cannot give the config away. Zero (no preview) under 4 chunks.
-pub fn preview_size(chunks: u32) -> u32 {
-    PREVIEW_CHUNKS.min(chunks / 4)
+/// Previews kept per listing version: one per buyer, at most this many.
+pub const MAX_PREVIEWS: usize = 4;
+
+/// How many chunks a preview of a `bytes`-byte bundle shows: at most
+/// `PREVIEW_CHUNKS`, and never more than a quarter of its bytes (review 5
+/// P3: counted in bytes, not chunks), so a preview cannot give the config
+/// away. Zero (no preview) under 1 KB.
+pub fn preview_size(bytes: u32) -> u32 {
+    PREVIEW_CHUNKS.min(bytes / (4 * CHUNK))
 }
 
-/// Which chunks a preview asks for: `preview_size` distinct indices
+/// Which chunks a preview asks for: `preview_size(bytes)` distinct indices
 /// drawn from `seed` (the block's random seed, so the seller cannot pick).
-pub fn preview_indices(seed: &[u8; 32], chunks: u32) -> Vec<u32> {
-    let want = preview_size(chunks);
+pub fn preview_indices(seed: &[u8; 32], bytes: u32) -> Vec<u32> {
+    let want = preview_size(bytes);
+    let chunks = bytes.div_ceil(CHUNK).max(1);
     let mut out: Vec<u32> = Vec::new();
     let mut ctr = 0u32;
     while (out.len() as u32) < want {

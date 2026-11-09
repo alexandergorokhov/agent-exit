@@ -499,20 +499,23 @@ export class Tools {
       agent,
       sale_id: saleId,
       action: "preview",
-      commit: { hash: untrusted(String(commit?.hash ?? "")), bytes: Number(commit?.bytes ?? 0) },
+      commit: { hash: untrusted(String(commit?.hash ?? "")), bytes: Number(commit?.bytes ?? 0), ...(commit?.root ? { root: untrusted(String(commit.root)) } : {}) },
       matches: null,
       sent: false,
     };
     if (!commit) throw new ToolError("NOT_LISTED", `${agent} is not listed with a sealed config: nothing to preview`);
     if (!commit.root) return { ...base, state: "no_preview", preview: null, next: "this listing commits no chunk root: no preview is possible; buy_agent still checks the whole bundle after the buy" };
-    let p = await this.backend.preview(agent);
+    // Review 5 P2: only the caller's own draw counts (a seller's sock draw
+    // or a stranger's does not), and draws counts every redraw.
+    const me = this.cfg.accountId ?? "";
+    let p = await this.backend.preview(agent, me);
     if (!p && confirm === true) {
       const buyer = this.writeGate();
       if (this.cfg.network === "testnet" && !this.cfg.agents.includes(agent)) {
         throw new ToolError("UNKNOWN_AGENT", `${agent} is not in AGENT_EXIT_AGENTS: testnet sealed_delivery writes only to agents the operator named`);
       }
       await this.backend.sealedCall(agent, buyer, "request_preview", {});
-      p = await this.backend.preview(agent);
+      p = await this.backend.preview(agent, buyer);
       return { ...base, state: "preview_requested", sent: this.backend.network !== "offline", preview: this.previewBody(p), next: "wait for the seller to prove the chunks (answer_preview), then call preview again" };
     }
     if (!p) return { ...base, state: "no_preview", preview: null, next: "call sealed_delivery action preview with confirm: true to ask for random chunks (the block's seed picks them; the seller cannot)" };
@@ -525,6 +528,7 @@ export class Tools {
       chunks: (Array.isArray(p.chunks) ? p.chunks : []).map((x: unknown) => Number(x)),
       complete: p.complete === true,
       untrusted_proven: (Array.isArray(p.proven) ? p.proven : []).slice(0, 8).map((c: Json) => ({ index: Number(c.index), untrusted_text: untrusted(Buffer.from(String(c.chunk ?? ""), "base64").toString("utf8")) })),
+      ...(p.draws !== undefined ? { draws: Number(p.draws) } : {}),
       untrusted_notice: UNTRUSTED_NOTICE,
     };
   }
@@ -535,7 +539,7 @@ export class Tools {
     if (!v) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} on ${agent} sold no sealed config`);
     const st = v.state ?? {};
     const state = v.cleared ? "accepted" : st.Delivered ? "delivered" : st === "Awaited" || st.Awaited !== undefined ? "awaited" : st.Missed ? "missed" : st.Mismatch ? "mismatch" : "unknown";
-    const commit = { hash: untrusted(String(v.commit?.hash ?? "")), bytes: Number(v.commit?.bytes ?? 0) };
+    const commit = { hash: untrusted(String(v.commit?.hash ?? "")), bytes: Number(v.commit?.bytes ?? 0), ...(v.commit?.root ? { root: untrusted(String(v.commit.root)) } : {}) };
     const out: Json = {
       ...this.base("sealed_delivery"),
       agent,
@@ -558,7 +562,7 @@ export class Tools {
       throw new ToolError("CONTRACT_REFUSED", `${this.cfg.accountId} is not the buyer of sale ${saleId} (NotBuyer): only the buyer holds its one-time key`, { contract_error: "NotBuyer" });
     }
     const sk = this.deliverySecret(agent, String(v.delivery_pk));
-    const { open, commitOf } = await import("./sealed.js");
+    const { open, matchesCommit } = await import("./sealed.js");
     // Review 4 H2: a delivery that cannot be opened (a low-order ephemeral
     // key: Node's X25519 throws) is not the committed bundle; the contract
     // counts it as a mismatch, so the buyer must still be able to dispute.
@@ -570,7 +574,7 @@ export class Tools {
       plain = Buffer.alloc(0);
       unopenable = true;
     }
-    const matches = !unopenable && commitOf(plain).hash === String(v.commit?.hash);
+    const matches = !unopenable && matchesCommit(plain, v.commit);
     let rotate: string[] = [];
     try {
       const j = JSON.parse(plain.toString("utf8"));
@@ -1089,10 +1093,11 @@ export class Tools {
     // The secret is written (0600) before anything is sent and never returned.
     // SC21: a listing that commits a chunk root is bought only after its
     // random preview is proven (sealed_delivery action preview).
-    // A bundle under 4 chunks (1 KB) has no preview: it would give it away.
-    if (quoted.config?.root && Math.ceil(Number(quoted.config.bytes ?? 0) / 256) >= 4) {
-      const p = await this.backend.preview(agent);
-      if (!p || p.complete !== true || String(p.listing_version) !== String(quoted.listing_version)) {
+    // A bundle under 1 KB has no preview: it would give it away (SC25).
+    // Review 5 P2: the preview must be the buyer's own draw.
+    if (quoted.config?.root && Number(quoted.config.bytes ?? 0) >= 1024) {
+      const p = await this.backend.preview(agent, buyer);
+      if (!p || p.complete !== true || p.requested_by !== buyer || String(p.listing_version) !== String(quoted.listing_version)) {
         throw new ToolError("PREVIEW_INCOMPLETE", `${agent} sells a sealed config with a chunk root, and its random preview is ${p ? "not proven yet" : "not requested"}: call sealed_delivery action preview (confirm: true), wait for the seller's proof, then buy`);
       }
     }

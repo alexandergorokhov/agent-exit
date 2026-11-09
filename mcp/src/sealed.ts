@@ -30,8 +30,38 @@ function shared(sk: Buffer, pk: Buffer): Buffer {
   return s;
 }
 
-export function commitOf(bundle: Buffer): { hash: string; bytes: number } {
-  return { hash: sha(bundle).toString("hex"), bytes: bundle.length };
+// SC21: Merkle root over 256-byte chunks (the same as sealed.rs chunk_root
+// and scripts/sealed-config.mjs; SC21b pins the vector).
+const CHUNK = 256;
+const LEAF = Buffer.from("agent-exit/sealed-chunk/v1");
+export function chunkRoot(bundle: Buffer): Buffer {
+  let level: Buffer[] = [];
+  for (let i = 0; i * CHUNK < bundle.length; i++) {
+    const idx = Buffer.alloc(4);
+    idx.writeUInt32LE(i);
+    level.push(sha(LEAF, idx, bundle.subarray(i * CHUNK, (i + 1) * CHUNK)));
+  }
+  if (!level.length) level.push(sha(LEAF, Buffer.alloc(4), Buffer.alloc(0)));
+  while (level.length > 1) {
+    const next: Buffer[] = [];
+    for (let i = 0; i < level.length; i += 2) next.push(i + 1 < level.length ? sha(Buffer.from([1]), level[i], level[i + 1]) : level[i]);
+    level = next;
+  }
+  return level[0];
+}
+
+export function commitOf(bundle: Buffer): { hash: string; bytes: number; root: string } {
+  return { hash: sha(bundle).toString("hex"), bytes: bundle.length, root: chunkRoot(bundle).toString("hex") };
+}
+
+/** Review 5 P1: the contract checks length, hash AND chunk root (SC23), so
+ *  the buyer's local check must too, or a seller who committed one bundle's
+ *  hash and another's root is paid for the wrong one. */
+export function matchesCommit(plain: Buffer, commit: { hash?: unknown; bytes?: unknown; root?: unknown } | undefined): boolean {
+  if (!commit) return false;
+  const c = commitOf(plain);
+  if (c.hash !== String(commit.hash ?? "") || c.bytes !== Number(commit.bytes)) return false;
+  return commit.root === undefined || commit.root === null || c.root === String(commit.root);
 }
 
 export function seal(ephSk: Buffer, recipientPk: Buffer, bundle: Buffer): { ephemeral_pk: string; ciphertext: Buffer } {

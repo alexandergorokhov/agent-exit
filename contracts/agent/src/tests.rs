@@ -1227,7 +1227,7 @@ fn sc22_preview_through_the_contract() {
     let bundle: Vec<u8> = b"You translate EN<->ES. Keep defined terms. "
         .iter()
         .cycle()
-        .take(2_000)
+        .take(2_048)
         .cloned()
         .collect();
     let mut s = translator_world();
@@ -1240,17 +1240,24 @@ fn sc22_preview_through_the_contract() {
         s.by(BOB).get_listing().unwrap()["config"]["root"],
         json!(commit.root)
     );
-    assert!(s.by(BOB).get_preview().is_null());
-    let r = s.by(BOB).request_preview();
+    assert!(s.by(BOB).get_preview(BOB.parse().unwrap()).is_null());
+    // Review 5 P2: a request pays its storage.
+    let no_deposit = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        s.by(BOB).request_preview();
+    }));
+    assert!(no_deposit.is_err(), "a preview without 0.01 NEAR is refused");
+    let r = s.by_milli(BOB, 10).request_preview();
     let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
     assert_eq!(idx.len(), 2);
     assert_eq!(events("preview_requested").len(), 1);
     for (n, i) in idx.iter().enumerate() {
         let (chunk, proof) = sealed::chunk_proof(&bundle, *i).unwrap();
-        let out = s.by_1y(ALICE).answer_preview(*i, chunk.into(), proof);
+        let out = s.by_1y(ALICE)
+            .answer_preview(BOB.parse().unwrap(), *i, chunk.into(), proof);
         assert_eq!(out["complete"], json!(n == 1));
     }
-    let v = s.by(BOB).get_preview();
+    let v = s.by(BOB).get_preview(BOB.parse().unwrap());
     assert_eq!(v["complete"], json!(true), "{v}");
     assert_eq!(v["proven"].as_array().unwrap().len(), 2);
+    assert_eq!(v["draws"], json!("1"));
 }

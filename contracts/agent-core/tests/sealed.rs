@@ -525,7 +525,7 @@ fn listed_with(commit: ConfigCommit) -> Machine {
 /// and must prove each one against the committed root.
 #[test]
 fn sc22_preview_random_chunks_proven_by_the_seller() {
-    let big: Vec<u8> = BUNDLE.iter().cycle().take(2_000).cloned().collect();
+    let big: Vec<u8> = BUNDLE.iter().cycle().take(2_048).cloned().collect();
     let mut m = listed_with(ConfigCommit::of(&big));
     assert_eq!(
         m.request_preview("alice", &[7; 32], T0),
@@ -536,45 +536,50 @@ fn sc22_preview_random_chunks_proven_by_the_seller() {
     assert!(idx[0] < idx[1] && idx[1] < 8, "distinct, in range: {idx:?}");
     assert_eq!(
         idx,
-        sealed::preview_indices(&[7; 32], 8),
+        sealed::preview_indices(&[7; 32], 2_048),
         "fixed by the seed"
     );
     assert_eq!(
-        m.request_preview("carol", &[9; 32], T0),
-        Err(Error::PreviewTaken)
+        m.request_preview("bob", &[9; 32], T0),
+        Err(Error::PreviewTaken),
+        "one draw per buyer per listing version"
     );
+    // Review 5 P2: a stranger's draw does not block bob's, and is not his.
+    assert!(m.request_preview("carol", &[9; 32], T0).is_ok());
+    assert!(m.current_preview("carol").is_some());
     let other = (0..8).find(|i| !idx.contains(i)).unwrap();
     let (c, p) = sealed::chunk_proof(&big, other).unwrap();
     assert_eq!(
-        m.answer_preview("alice", other, &c, &p),
+        m.answer_preview("alice", "bob", other, &c, &p),
         Err(Error::NotRequested)
     );
     let (c0, p0) = sealed::chunk_proof(&big, idx[0]).unwrap();
     assert_eq!(
-        m.answer_preview("bob", idx[0], &c0, &p0),
+        m.answer_preview("bob", "bob", idx[0], &c0, &p0),
         Err(Error::NotOwner)
     );
     let mut fake = c0.clone();
     fake[3] ^= 0x20;
     assert_eq!(
-        m.answer_preview("alice", idx[0], &fake, &p0),
+        m.answer_preview("alice", "bob", idx[0], &fake, &p0),
         Err(Error::BadChunk)
     );
-    assert_eq!(m.answer_preview("alice", idx[0], &c0, &p0), Ok(false));
+    assert_eq!(m.answer_preview("alice", "bob", idx[0], &c0, &p0), Ok(false));
     assert_eq!(
-        m.answer_preview("alice", idx[0], &c0, &p0),
+        m.answer_preview("alice", "bob", idx[0], &c0, &p0),
         Err(Error::NotRequested)
     );
     let (c1, p1) = sealed::chunk_proof(&big, idx[1]).unwrap();
-    assert_eq!(m.answer_preview("alice", idx[1], &c1, &p1), Ok(true));
-    let pv = m.current_preview().unwrap();
+    assert_eq!(m.answer_preview("alice", "bob", idx[1], &c1, &p1), Ok(true));
+    let pv = m.current_preview("bob").unwrap();
     assert!(pv.complete());
     assert_eq!(pv.proven[0], (idx[0], c0));
     // A relist is a new version: a new request draws new chunks.
     m.cancel_listing("alice").unwrap();
     m.list("alice", 900 * USD, Terms::default(), "hash", T0)
         .unwrap();
-    assert!(m.current_preview().is_none());
+    assert!(m.current_preview("bob").is_none());
+    assert_eq!(m.preview_draws, 2, "draws are never forgotten");
     assert!(m.request_preview("bob", &[8; 32], T0).is_ok());
 }
 
@@ -647,15 +652,52 @@ fn sc21b_chunk_tree_matches_the_node_tool() {
 /// config (under 4 chunks) cannot be previewed at all.
 #[test]
 fn sc25_preview_never_gives_the_config_away() {
-    assert_eq!(sealed::preview_size(1), 0);
-    assert_eq!(sealed::preview_size(3), 0);
-    assert_eq!(sealed::preview_size(4), 1);
-    assert_eq!(sealed::preview_size(8), sealed::PREVIEW_CHUNKS);
-    assert_eq!(sealed::preview_size(32), sealed::PREVIEW_CHUNKS);
-    let small: Vec<u8> = BUNDLE.iter().cycle().take(700).cloned().collect();
+    // Counted in bytes (review 5 P3): 769 bytes would be 33% in one chunk.
+    assert_eq!(sealed::preview_size(256), 0);
+    assert_eq!(sealed::preview_size(769), 0);
+    assert_eq!(sealed::preview_size(1_023), 0);
+    assert_eq!(sealed::preview_size(1_024), 1);
+    assert_eq!(sealed::preview_size(2_047), 1);
+    assert_eq!(sealed::preview_size(2_048), sealed::PREVIEW_CHUNKS);
+    assert_eq!(sealed::preview_size(8_192), sealed::PREVIEW_CHUNKS);
+    let small: Vec<u8> = BUNDLE.iter().cycle().take(1_000).cloned().collect();
     let mut m = listed_with(ConfigCommit::of(&small));
     assert_eq!(m.request_preview("bob", &[7; 32], T0), Err(Error::NoPreview));
-    let four: Vec<u8> = BUNDLE.iter().cycle().take(1_000).cloned().collect();
-    let mut m = listed_with(ConfigCommit::of(&four));
+    let one: Vec<u8> = BUNDLE.iter().cycle().take(1_100).cloned().collect();
+    let mut m = listed_with(ConfigCommit::of(&one));
     assert_eq!(m.request_preview("bob", &[7; 32], T0).unwrap().len(), 1);
+}
+
+/// SC26 (review 5 P2): previews are per buyer and capped; the seller cannot
+/// answer while not listed; every draw counts.
+#[test]
+fn sc26_previews_are_per_buyer_and_capped() {
+    let big: Vec<u8> = BUNDLE.iter().cycle().take(4_096).cloned().collect();
+    let mut m = listed_with(ConfigCommit::of(&big));
+    for (n, who) in ["b1", "b2", "b3", "b4"].iter().enumerate() {
+        m.request_preview(who, &[n as u8; 32], T0).unwrap();
+    }
+    assert_eq!(
+        m.request_preview("b5", &[9; 32], T0),
+        Err(Error::PreviewsFull)
+    );
+    assert_eq!(m.current_previews().len(), sealed::MAX_PREVIEWS);
+    let idx = m.current_preview("b2").unwrap().indices.clone();
+    let (c, p) = sealed::chunk_proof(&big, idx[0]).unwrap();
+    assert_eq!(
+        m.answer_preview("alice", "nobody", idx[0], &c, &p),
+        Err(Error::NotRequested)
+    );
+    // A relist is a new version: old draws are dropped, the count stays.
+    m.cancel_listing("alice").unwrap();
+    assert_eq!(
+        m.answer_preview("alice", "b2", idx[0], &c, &p),
+        Err(Error::NoPreview),
+        "not listed"
+    );
+    m.list("alice", 900 * USD, Terms::default(), "hash", T0)
+        .unwrap();
+    assert!(m.request_preview("b5", &[9; 32], T0).is_ok());
+    assert_eq!(m.current_previews().len(), 1);
+    assert_eq!(m.preview_draws, 5);
 }

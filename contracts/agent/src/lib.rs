@@ -103,6 +103,8 @@ pub const TERMS_MIN: core::TermsMin = core::TermsMin {
 
 /// Bytes one deed approval adds to the state, besides the account id (review 2, L3).
 const APPROVAL_STORAGE_BYTES: u128 = 80;
+/// Review 5 P2: a preview request pays its own storage (about 600 bytes).
+pub const PREVIEW_DEPOSIT: u128 = 10_000_000_000_000_000_000_000;
 const fn parse_u64(s: &str) -> u64 {
     let b = s.as_bytes();
     assert!(!b.is_empty(), "AGENT_EXIT_MIN_WINDOW_SECS is empty");
@@ -1004,8 +1006,15 @@ impl AgentExit {
     }
 
     /// SC21: anyone but the owner asks to see random chunks of the listed
-    /// sealed config; the block's random seed picks them. One per listing.
+    /// sealed config; the block's random seed picks them. One per buyer per
+    /// listing version, at most 4 (review 5 P2). Attach 0.01 NEAR: it pays
+    /// the preview's storage and stays with the agent.
+    #[payable]
     pub fn request_preview(&mut self) -> Value {
+        require!(
+            env::attached_deposit().as_yoctonear() >= PREVIEW_DEPOSIT,
+            "attach 0.01 NEAR for the preview's storage"
+        );
         let caller = env::predecessor_account_id();
         let seed = env::random_seed_array();
         let indices = self
@@ -1014,17 +1023,18 @@ impl AgentExit {
             .unwrap_or_else(|e| fail(e));
         emit(
             "preview_requested",
-            json!({"by": caller, "listing_version": self.m.listing_version, "chunks": indices}),
+            json!({"by": caller, "listing_version": self.m.listing_version, "chunks": indices, "draws": self.m.preview_draws}),
         );
         json!({"listing_version": self.m.listing_version, "chunks": indices})
     }
 
-    /// SC21: the owner reveals a requested chunk (base64) with its Merkle
-    /// path (hex siblings, leaf first). The contract checks it against the
-    /// committed root. 1 yoctoNEAR.
+    /// SC21: the owner reveals a chunk `requester` asked for (base64) with
+    /// its Merkle path (hex siblings, leaf first). The contract checks it
+    /// against the committed root. 1 yoctoNEAR.
     #[payable]
     pub fn answer_preview(
         &mut self,
+        requester: AccountId,
         index: u32,
         chunk: near_sdk::json_types::Base64VecU8,
         proof: Vec<String>,
@@ -1035,19 +1045,21 @@ impl AgentExit {
         require!(proof.len() <= 32, "proof too long");
         let complete = self
             .m
-            .answer_preview(caller.as_str(), index, &bytes, &proof)
+            .answer_preview(caller.as_str(), requester.as_str(), index, &bytes, &proof)
             .unwrap_or_else(|e| fail(e));
         emit(
             "preview_chunk",
-            json!({"index": index, "bytes": bytes.len(), "complete": complete}),
+            json!({"requester": requester, "index": index, "bytes": bytes.len(), "complete": complete}),
         );
         json!({"index": index, "complete": complete})
     }
 
-    /// SC21: the current listing's preview: the chunks asked for and the
-    /// ones proven (base64), or null.
-    pub fn get_preview(&self) -> Value {
-        let Some(p) = self.m.current_preview() else {
+    /// SC21: `requester`'s preview of the current listing: the chunks asked
+    /// for and the ones proven (base64), or null. `draws` counts every
+    /// preview ever drawn on this agent (a seller who relists to redraw
+    /// shows up there).
+    pub fn get_preview(&self, requester: AccountId) -> Value {
+        let Some(p) = self.m.current_preview(requester.as_str()) else {
             return Value::Null;
         };
         json!({
@@ -1058,6 +1070,8 @@ impl AgentExit {
             "chunks": p.indices,
             "proven": p.proven.iter().map(|(i, c)| json!({"index": i, "chunk": near_sdk::json_types::Base64VecU8::from(c.clone())})).collect::<Vec<_>>(),
             "complete": p.complete(),
+            "draws": U64(self.m.preview_draws),
+            "open_previews": self.m.current_previews().len(),
         })
     }
 

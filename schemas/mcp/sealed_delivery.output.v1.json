@@ -61,6 +61,10 @@
         },
         "bytes": {
           "type": "integer"
+        },
+        "root": {
+          "type": "string",
+          "description": "Merkle root over 256-byte chunks; the delivery must match it too"
         }
       },
       "required": [
@@ -163,6 +167,10 @@
         },
         "untrusted_notice": {
           "type": "string"
+        },
+        "draws": {
+          "type": "integer",
+          "description": "every preview ever drawn on this agent; many draws can mean a seller relisting to redraw"
         }
       },
       "required": [

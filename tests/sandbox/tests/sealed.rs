@@ -240,28 +240,37 @@ async fn sold(
 
     // SC21: bob asks for random chunks; the block seed picks them; alice
     // proves each against the committed root before bob buys.
-    let r = w.ok(&bob, &agent.id, "request_preview", json!({}), 0).await;
+    // Review 5 P2: a request pays its storage (0.01 NEAR) and is bob's own.
+    let r = w
+        .ok(&bob, &agent.id, "request_preview", json!({}), 10u128.pow(22))
+        .await;
     let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
-    assert_eq!(idx.len(), 2, "{r}");
+    assert_eq!(
+        idx.len() as u32,
+        agent_core::sealed::preview_size(honest.len() as u32),
+        "{r}"
+    );
     for i in &idx {
         let (chunk, proof) = agent_core::sealed::chunk_proof(honest, *i).unwrap();
         w.ok(
             &alice,
             &agent.id,
             "answer_preview",
-            json!({"index": i, "chunk": b64(&chunk), "proof": proof}),
+            json!({"requester": bob.id, "index": i, "chunk": b64(&chunk), "proof": proof}),
             1,
         )
         .await;
     }
-    let pv = w.view(&agent.id, "get_preview", json!({})).await;
+    let pv = w
+        .view(&agent.id, "get_preview", json!({"requester": bob.id}))
+        .await;
     assert_eq!(pv["complete"], json!(true), "{pv}");
     let (bad, _) = w
         .call(
             &alice,
             &agent.id,
             "answer_preview",
-            json!({"index": idx[0], "chunk": b64(b"forged"), "proof": []}),
+            json!({"requester": bob.id, "index": idx[0], "chunk": b64(b"forged"), "proof": []}),
             1,
         )
         .await;

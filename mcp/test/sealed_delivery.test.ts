@@ -116,12 +116,12 @@ test("SD7 someone who is not the buyer cannot open the bundle; each fixture has 
 });
 
 /** A copy of the offline fixtures with one sealed sale changed. */
-function fixtureWith(change: (e: any, fx: any) => void): string {
+function fixtureWith(change: (e: any, fx: any) => void, agent = "swapped.testnet"): string {
   const src = new URL("../../../fixtures/mcp/", import.meta.url);
   const dir = mkdtempSync(join(tmpdir(), "sd-"));
   copyFileSync(new URL("world.json", src), join(dir, "world.json"));
   const fx = JSON.parse(readFileSync(new URL("sealed.json", src), "utf8"));
-  change(fx.agents["swapped.testnet"], fx);
+  change(fx.agents[agent], fx);
   writeFileSync(join(dir, "sealed.json"), JSON.stringify(fx));
   return join(dir, "world.json");
 }
@@ -153,6 +153,25 @@ test("SD9 (review 4 L3) a dispute after the window is refused before sending, th
     const d = await s.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "dispute", confirm: true });
     assert.equal(d.ok, false);
     assert.equal((d.body as any).error.code, "DISPUTE_CLOSED", JSON.stringify(d.body));
+  } finally {
+    await s.close();
+  }
+});
+
+test("SD10 (review 5 P1) the right hash with another bundle's chunk root is a mismatch: the buyer can dispute", async () => {
+  const world = fixtureWith((e) => {
+    e.commit.root = "ab".repeat(32);
+  }, "brainy.testnet");
+  const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: world });
+  try {
+    const o: any = (await s.call("sealed_delivery", { agent: "brainy.testnet", sale_id: 1, action: "open" })).body;
+    assert.equal(o.matches, false, "the contract checks the root too (SC23)");
+    assert.equal(o.commit.root, "ab".repeat(32));
+    const a = await s.call("sealed_delivery", { agent: "brainy.testnet", sale_id: 1, action: "accept", confirm: true });
+    assert.equal((a.body as any).error.code, "CONFIG_MISMATCH");
+    const d = await s.call("sealed_delivery", { agent: "brainy.testnet", sale_id: 1, action: "dispute", confirm: true });
+    assert.ok(valid("sealed_delivery", d), JSON.stringify(d.body));
+    assert.equal((d.body as any).state, "mismatch");
   } finally {
     await s.close();
   }
