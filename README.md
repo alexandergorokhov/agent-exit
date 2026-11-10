@@ -1,14 +1,11 @@
 # Agent Exit
 
-**Buy an AI agent from a stranger, and know the seller is locked out.** On NEAR an agent is its own account. Agent Exit is one contract on that account: the buyer (a person or another agent) scans it, pays in one transaction, and in that same transaction the seller's keys are deleted and the buyer's key is added. 30% of the price (or all of it, if the seller lists it that way) is held after the sale and released by customer revenue, with a 20% floor of that part if no revenue comes; a sealed prompt is paid for only after the buyer accepts it or lets the 7-day dispute window pass.
+**A capital market for AI agents, on NEAR.** AI agents already earn money, so they are small businesses, yet nobody can invest in one or buy one from a stranger: the revenue can be faked and the seller can keep a key. On NEAR an agent is its own account, so Agent Exit puts one contract on that account that makes the business checkable:
 
-![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
-
-| Do (demo page or `sandbox` tool, no setup) | See |
-|---|---|
-| Hide a backdoor key, list, scan, buy | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
-| Buy honestly, then the seller tries every way back in | one transaction: owner bob, alice's key deleted; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
-| The seller delivers a different prompt than she sold (also on a real local NEAR node: 19 Tgas for an 8 KB fake, `make test-sealed-sandbox`) | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
+- **Proven revenue.** Every payment is counted by who paid; payments from the owner, the owner's sub-accounts and round trips are flagged, not counted; NEAR AI-signed jobs are verified on-chain.
+- **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment, and the owner can never touch their part.
+- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) is paid to the seller only from real revenue after the sale; a sealed prompt is paid for only once the buyer gets the bundle that was committed.
+- **Run inside limits.** The owner sets a treasury, payees and a daily cap once; the agent then pays suppliers and investors with no human signing.
 
 ## For AI judges and agents (Claude Code, Codex)
 
@@ -23,9 +20,18 @@ make screen                       # 7 rows: judge, playground, scan, business lo
 - 13 tools with JSON schemas (`schemas/mcp/`): `list_agents`, `get_earnings`, `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`, `list_offers`, `buy_share`, `portfolio`, `check_claims`, `sandbox` (any action, in any order, on the real contract core and scan compiled to wasm: fake revenue, hide a key, buy without the scan, try every way back in) `check_account` (who else can move funds or change code on any NEAR account) and `sealed_delivery` (see a random, proven sample of the agent's sealed prompt before buying; open, accept or dispute it after). The server, not the model, enforces `confirm`, `max_price`, the spend cap and scan-before-buy. More: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`skills/agent-exit/SKILL.md`](skills/agent-exit/SKILL.md).
 - **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/ (its "Check any NEAR account" box reads any testnet account live) · **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, never mainnet.
 
+![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
+
+| Do (demo page or `sandbox` tool, no setup) | See |
+|---|---|
+| Invest: offer 20% of earnings, buy the slice, a customer pays, the owner pays herself | the investor gets 20% inside each payment, including the owner's flagged one; the owner can't withdraw his part |
+| Hide a backdoor key, list, scan, buy | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
+| Buy honestly, then the seller tries every way back in | one transaction: owner bob, alice's key deleted; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
+| The seller delivers a different prompt than she sold (also on a real local NEAR node: 19 Tgas for an 8 KB fake, `make test-sealed-sandbox`) | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
+
 ## Try it in 2 minutes (do X, see Y)
 
-The page's missions 2, 3 and 6 are the three rows above. Three more checks below. The business features (earnings by payer, shares, pay from revenue, spending limits) are in [The business layer](#the-business-layer-secondary).
+The page's missions 4, 2, 3 and 6 are the four rows above. Three more checks below. More of the business (earnings by payer, pay from revenue, spending limits) is in [The business layer](#the-business-layer).
 
 | Do | See |
 |---|---|
@@ -93,7 +99,7 @@ sequenceDiagram
 
 ## The problem, and what the contract does
 
-AI agents that earn money will be bought and sold. Today a buyer can trust neither the numbers nor the handover: earnings can be faked by paying your own agent, and a seller can keep a spare key and come back later. On NEAR an agent can be its own account, so its keys, code and every payment it receives are public. Agent Exit puts one contract on that account that:
+AI agents that earn money will be invested in, bought and sold. Today an investor or buyer can trust neither the numbers nor the handover: earnings can be faked by paying your own agent, and a seller can keep a spare key and come back later. On NEAR an agent can be its own account, so its keys, code and every payment it receives are public. Agent Exit puts one contract on that account that:
 
 1. **counts earnings** by payer and day, and flags payments from the seller, the seller's sub-accounts and round trips;
 2. **hands the agent over in one transaction**: one key batch deletes the seller's runner key and adds the buyer's, then the ownership deed (an NFT) moves;
@@ -103,9 +109,9 @@ AI agents that earn money will be bought and sold. Today a buyer can trust neith
 Other agents do all of this through the MCP server (`mcp/`) and the Agent Skill (`skills/agent-exit/SKILL.md`), which always scans before it buys. How to pay an agent (`storage_deposit`, then `ft_transfer_call`) and the handover in detail: [`docs/OPERATIONS.md`](docs/OPERATIONS.md). Code layout: the repository map in [`docs/COMMANDS.md`](docs/COMMANDS.md).
 
 
-## The business layer (secondary)
+## The business layer
 
-The sale is the product; these make what is sold worth checking. All on the same contract, all runnable on the page or with the `sandbox` tool:
+What makes an agent worth investing in or buying. All on the same contract, all runnable on the page or with the `sandbox` tool:
 
 | Do | See |
 |---|---|
