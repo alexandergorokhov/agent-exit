@@ -658,3 +658,51 @@ fn judge_path_in_readme_first_lines() {
         assert!(read(f).contains("make judge"), "{f} lacks make judge");
     }
 }
+
+/// Judge 24: every file docs/SCENARIOS.md names as a test exists (a bare
+/// name must exist somewhere in the repo; `agent-core/...` is under
+/// contracts/; paths under out/ are run outputs).
+#[test]
+fn scenarios_name_real_files() {
+    let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut names = std::collections::HashSet::new();
+    let mut stack = vec![base.clone()];
+    while let Some(d) = stack.pop() {
+        for e in std::fs::read_dir(&d).unwrap().flatten() {
+            let n = e.file_name().to_string_lossy().to_string();
+            if e.path().is_dir() {
+                if !["target", "node_modules", ".git", ".claude", "dist"].contains(&n.as_str()) {
+                    stack.push(e.path());
+                }
+            } else {
+                names.insert(n);
+            }
+        }
+    }
+    let s = read("docs/SCENARIOS.md");
+    let exts = [".rs", ".ts", ".mjs", ".js", ".json", ".md", ".sh", ".toml"];
+    let mut missing = Vec::new();
+    for part in s.split('`').skip(1).step_by(2) {
+        let p = part.split("::").next().unwrap_or("");
+        if !exts.iter().any(|e| p.ends_with(e))
+            || p.contains(' ')
+            || p.contains('*')
+            || p.starts_with("out/")
+            || p.starts_with('/')
+        {
+            continue;
+        }
+        let ok = if p.contains('/') {
+            base.join(p).exists() || base.join("contracts").join(p).exists()
+        } else {
+            names.contains(p)
+        };
+        if !ok {
+            missing.push(p.to_string());
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "docs/SCENARIOS.md names missing files: {missing:?}"
+    );
+}
