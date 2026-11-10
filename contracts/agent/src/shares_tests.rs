@@ -1,7 +1,7 @@
 // Promises returned by contract methods are dropped on purpose (see tests.rs).
 #![allow(unused_must_use)]
 
-//! Shares of future earnings through the contract (PLAN-shares.md): the
+//! Shares of future earnings through the contract (docs/SHARES.md): the
 //! `buy_share` message, the events and the views, in the mocked runtime.
 
 use crate::sim::*;

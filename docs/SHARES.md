@@ -1,16 +1,8 @@
-# Plan: invest in agents (shares) + a translator that really works
+# Shares of future earnings: rules and threats
 
-Saved 2026-11-03. Alex approved options 1 and 2 after cold judge 7 (38/60, Impact 4/10).
-Goal: raise Impact by turning Agent Exit from "buy a whole agent" into "invest in agents",
-where every payout comes from earnings you can check on chain.
+How investing in an agent works, the rules SH1-SH11 (each one a test) and the threats T1-T17. Tests: `contracts/agent-core/tests/shares.rs`, `contracts/agent/src/shares_tests.rs`, `mcp/test/shares_tools.test.ts`. All money is `xUSD-FAKE`.
 
-Pitch (after cold judge 8): the headline **stays the handover** ("buy an AI agent with proven earnings; the seller is locked out in one NEAR transaction"). Shares are the second line: **"the same checked meter also pays investors: buy a share of an agent's future earnings; fake revenue pays them too."** Leading with "invest in AI agents" would collide with Virtuals' tagline.
-
-The core stays the same: the earnings meter, the scan and the one-transaction handover. Shares are a second way to put money in, and they reuse the same meter.
-
-## 1. Shares of future earnings (option 2)
-
-### How it works (plain words)
+## How it works
 
 1. The owner offers a slice, for example "20% of earnings for 12 months, 500 xUSD". They choose the percentage, the price and the end date.
 2. An investor buys it with one `ft_transfer_call`. The price goes to the owner. The investor does not need to buy the whole slice.
@@ -19,7 +11,7 @@ The core stays the same: the earnings meter, the scan and the one-transaction ha
 5. When the agent is sold, its shares come with it. The buyer's scan shows "20% of earnings go to investors until <date>", and the price reflects it.
 6. An investor can hold shares in several agents. One portfolio view lists them all, with what each has paid.
 
-### Rules (written as tests first)
+## Rules (written as tests first)
 
 | # | Rule |
 |---|---|
@@ -31,56 +23,15 @@ The core stays the same: the earnings meter, the scan and the one-transaction ha
 | SH6 | No new slice may be offered while the agent is listed for sale, because the buyer already scanned the terms. Investors can still buy an existing slice |
 | SH7 | The scan reports open slices as a disclosure (not a block): percentage, end date, holders |
 | SH8 | A self-payment, or one flagged as a round trip, still pays investors. Faking revenue then costs the cheater the investors' cut: wash trading loses money, the same idea as the earn-out (S10) |
-| SH9 | (CUT by judge 8: invites a losing comparison with liquid agent-token markets) A share can be sold to another account (`transfer_share`). This is the "secondary market" in its simplest form |
-| SH10 | (CUT by judge 8) The owner can buy a slice back early at the price set in the offer (`buyback_bps`). Optional; cut first if time is short |
+| SH9 | (not built) A share can be sold to another account (`transfer_share`). This is the "secondary market" in its simplest form |
+| SH10 | (not built) The owner can buy a slice back early at the price set in the offer (`buyback_bps`). Optional; cut first if time is short |
 | SH11 | Price escrow: 50% of the share price goes to the owner now; the rest is released as investors are paid, and refunded to them at the end date if earnings stop (see T2) |
 
 Known limit, to state honestly (it goes in NOT-CAUGHT): an owner can send customers to another account that has no meter. The earnings shown then fall, and investors see that drop on the meter. No contract can stop off-chain rerouting.
 
-### Code changes
-
-| Where | Change |
-|---|---|
-| `contracts/agent-core/src/shares.rs` (new) | Slice and holder state, split math (`money::split_shares`), SH1–SH10 |
-| `agent-core/src/lib.rs` | `pay()` calls the share split after `split_revenue`. New methods: `offer_share`, `buy_share`, `transfer_share`, `close_share`, `claim` (reuses the existing one) |
-| `contracts/agent/src/lib.rs` | `ft_on_transfer` msg `{"buy_share":{...}}`, the new methods and views (`get_shares`, `get_holdings(account)`), and events `share_offered/share_bought/share_paid/share_closed` |
-| `tools/scan` | SH7 disclosure finding |
-| `tools/playground` | Actions `offer_share`, `buy_share`, `claim_share`. **Mission 4 "Invest"**: buy 20%, a customer pays, the investor's balance grows, and a cheater's self-payment pays the investor too |
-| `mcp/` | Tools `list_offers`, `buy_share`, `portfolio`. The skill gets one "invest" section |
-| `tools/testnet` | **scene-8**: dave buys shares in translator and summarizer, customers pay both, dave claims. Fake xUSD only |
-| `web/` | "Invest" mission, a portfolio card (dave's holdings, read live), and scenario 5 "An investor holds two agents" in Run and verify |
-| README | First screen gets the new pitch and one table row per new proof |
-| Tests | SH1–SH10 unit tests, a property test for split exactness and conservation (`held` = sum of claimables + owner_free + treasury + escrow), the playground scenario and the web smoke test |
-
-## 2. Translator does real work (option 1)
-
-What exists: `make translator-serve` is a worker. It translates through NEAR AI Cloud and returns NEAR AI's signature, and the customer pays with that signature, so the contract marks the payment "Verified" (gate G6).
-
-| Step | Who | Real money? |
-|---|---|---|
-| a. Add ~$5 credit at cloud.near.ai (the last try failed with 402) | Alex | **Yes, ~$5. The only real cost** |
-| b. `make llm-buyer-check`, then `make gate-g6` | PC | No (fake xUSD), a few cents of credit |
-| c. **scene-9 "a day of work"**: 5 customer accounts send 5 short texts. translator-serve translates each one, and each customer pays with the signed answer. The meter shows 5 verified payments | PC | Cents of NEAR AI credit |
-| d. The page shows the 5 jobs: text in, translation out, NearBlocks link, and a "Verified" pill re-checked on chain | Cloud | No |
-
-**If Alex does not buy credit:** run step c with the Anthropic key (~$0.02, inside the $1.50 cap). Payments then count as **real work, not verified**, and the page says so. This is worth about 1 point less.
-
-## Order and expected score
-
-| # | Step | Who | Est. points |
-|---|---|---|---|
-| 1 | Cold-judge this plan before any code | Cloud | |
-| 2 | Shares in agent-core and the contract, with tests (SH1–SH9) | Cloud | |
-| 3 | Playground "Invest" mission + scan disclosure + MCP tools | Cloud | +1.5 to +2 (Impact, Originality) |
-| 4 | scene-8 on testnet, then the portfolio card on the page | PC run, Cloud page | +1 |
-| 5 | Real translator jobs (G6 or Anthropic fallback), scene-9 | Alex credit, PC run | +1.5 to +2 |
-| 6 | Cold judge 8, then the video | Cloud, Alex | |
-
-Target: 38 → about 42–43/60.
-
 ## Security, designed as if the money were real
 
-Alex (2026-11-03): "imagine the money is real and let's set up the security on it." Every row below gets a test before the code exists. The existing protections the contract already has are marked "have".
+Designed as if the money were real. Every row below got a test before the code existed. Protections the contract already had are marked "have".
 
 ### Who could steal, and how we stop it
 
@@ -112,19 +63,15 @@ Alex (2026-11-03): "imagine the money is real and let's set up the security on i
 
 | Step | Status |
 |---|---|
-| Property tests and fuzzing (`make fuzz`, `make stress`) cover share calls | in this plan |
-| near-sandbox test: buy a share, pay, claim, with a transfer failure in between | in this plan |
-| Alex's own security review | later, Alex (not started by Claude) |
+| Property test of conservation over random share sequences | done (`contracts/agent-core/tests/shares_prop.rs`) |
+| Shares on a real chain: buy, pay, claim on NEAR testnet | done (scene 8) |
+| An independent security review of the share code | before any real money |
 | External audit, a bug bounty, and a mainnet launch with low caps | out of scope for the hackathon; listed in the README as "before mainnet" |
 
 ### Still honest limits
 
 - An owner can route customers to another account with no meter. The escrow (T2) limits the damage to the 50% paid upfront. The meter shows the drop.
 - Testnet demo, fake money, not an offer. Shares of earnings may be securities in many countries.
-
-### Deploy
-
-Contract code changes, so the build is reproducible and the code hash is new. The locked agents can't be upgraded (that's the point), so the new code goes to **new agent accounts under agentexit3** (for example `translator2`, `summarizer2`). The old scenes stay valid. This may need a faucet top-up from Alex.
 
 ## As built (after adversarial review 1, 2026-11-04)
 
@@ -144,12 +91,3 @@ Where the code differs from the plan above, the code wins:
 | Slots | `MAX_OPEN_OFFERS` counts only the current owner's own slices; inherited sold slices stay, shown at the price actually paid (review 2) |
 | Deed moves | Every deed move trims unsold slices, including a transfer to the owner's own second account (documented, not prevented) |
 | MCP | `buy_agent` refuses an agent with more than `AGENT_EXIT_MAX_SHARES_BPS` (default 25%) of earnings pledged (review H2); otherwise the result carries `shares_pct` and the `shares_disclosed` warning, and `list_agents` shows `shares_pct` (review 2 M2) |
-
-## Cold judge 8 (on this plan): 41/60 if built (was 38)
-
-- Impact +2, Sustainability +1. Any prize ~50%, top-3 track ~35%. Review: agent-exit-plan/judge-cold-8-plan.md.
-- Applied: handover stays the headline; SH9 and SH10 cut; scene-8 and scene-9 merge into one scene.
-- **Merged scene:** dave holds 20% of `translator2`. 5 customers pay for 5 NEAR AI-signed translations. dave's claimable grows by exactly 20%. One payment from the owner's sub-account is flagged and still pays dave.
-- Summarizer shares dropped.
-- The $5 NEAR AI credit is worth it: about 1.5 points versus the Anthropic fallback.
-- Top rival: Virtuals Protocol, one token per agent with revenue buy-back. We differ in two ways: a share is a time-limited contract claim on checked earnings, and fake revenue costs the cheater.

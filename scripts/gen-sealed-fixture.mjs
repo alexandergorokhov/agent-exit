@@ -10,7 +10,7 @@ import { commit, publicKey, seal } from "./sealed-config.mjs";
 const bundle = Buffer.from(JSON.stringify({ schema: "agent-config.v1", system_prompt: "You translate EN<->ES. Keep names and numbers exact.", model: "deepseek-v3", tools: ["glossary"], rotate_after_sale: ["NEARAI_API_KEY"] }));
 const fake = Buffer.from(bundle);
 fake[50] = "X".charCodeAt(0);
-// One demo secret per buyer (judge 20): a fixture never shares a key.
+// One demo secret per buyer (found in review): a fixture never shares a key.
 const secretFor = (n) => Buffer.alloc(32, n);
 const T = 1_767_225_600_000_000_000n;
 const DAY = 86_400_000_000_000n;

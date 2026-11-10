@@ -129,17 +129,7 @@ To show the recorded run without a chain: `make demo` and `make web`.
 | `make -n demo-setup` really deployed (2026-11-03, agentexit2) | GNU make runs recipe lines naming $(MAKE) even under -n; contracts/res was built for the old root | preview only with DRY_RUN=1; deploy-testnet now uses $(SUBMAKE) and refuses a wasm built for another root |
 | `near: command not found` in a new terminal | shell start interrupted (Ctrl+C) before nvm loaded | `source ~/.bashrc` |
 
-## 9. Open items
-
-- Security review by the owner (planned, not started).
-- G6 (NEAR AI credit) and G2 (Base Sepolia key) not run on testnet.
-- `make demo-setup` builds a fresh world on a new root (section 7); a played root cannot be reset.
-- Stress tests (STR-*) being written; run them on the sandbox when they land.
-- Judge review 3 (2026-11-02): 41/60. Next, by points per effort: real AI buyer run (needs an API key, +2.5), page testnet links (+1.5), video (+1.5), G6 with NEAR AI credit (+1.5), scene 4 re-run on the fixed scan, hosted page.
-- Stress run (2026-11-02, `make stress`): 26 scenarios, 22 pass. STR-12 (`withdraw` while Listed) and STR-19 (unbounded pending Base authorizations) are fixed in the contract code; they need `make build` and a fresh testnet deploy (`make demo-setup`). STR-17 (MCP spend cap across processes) is fixed.
-- Real AI buyer: waiting for the Anthropic key; one capped run (12 steps, 150k tokens).
-
-## 10. AI buyer on testnet (scene 7)
+## 9. AI buyer on testnet (scene 7)
 
 After `make scenes` (translator is owned by summarizer):
 
@@ -155,12 +145,12 @@ results, never a key. The session cap is 1,000 xUSD-FAKE. Pass: cheat
 scanned and not bought, translator bought, old owner locked out, buy tx
 link in `testnet.txs`.
 
-## 11. Invest: shares on testnet (scene 8)
+## 10. Invest: shares on testnet (scene 8)
 
 The locked agents (translator, cheat) keep their old code by design, so
 shares run on a new agent account, `translator2.<root>`, with the new build.
 
-**Order matters:** run section 10 (scene 7 + the AI buyer) first. After
+**Order matters:** run section 9 (scene 7 + the AI buyer) first. After
 `make build` the expected code hash is the shares build, so a scan of the
 old translator would report a code-hash mismatch.
 
@@ -178,7 +168,7 @@ jobs then pay as unverified, and the page says so). If NEAR AI answers
 with an unknown model, set `NEARAI_MODEL` in `~/.agent-exit.env` to a model
 from `https://cloud-api.near.ai/v1/model/list`.
 
-## 12. A fresh world under the same root (sub-world)
+## 11. A fresh world under the same root (sub-world)
 
 Sales move deeds, so a played world cannot record the scenes again. To
 re-record without a new top-level account:

@@ -148,7 +148,7 @@ function statusName(s: unknown): string {
 export const UPGRADE_WORDS = ["upgrade", "deploy", "migrate", "set_code", "update_contract", "add_key", "add_full_access_key", "delete_account", "stage_code"];
 
 /** check_account only: more method names that may change the code or keys
- * (judge 18). Not in the scan list, so "locked" never rests on names alone. */
+ * (found in review). Not in the scan list, so "locked" never rests on names alone. */
 const MORE_CODE_WORDS = ["wasm", "self_update", "replace_code", "set_contract", "update_code", "redeploy", "set_owner_key"];
 
 const ACCOUNT_RE = /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
@@ -373,13 +373,13 @@ export class Tools {
     if (globalBy) findings.push({ code: "global_contract_by_account", severity: "high", text: `runs the global contract of ${untrusted(globalBy)}: that account can replace the code at any time` });
     const keys = f.keys.map((k: Json) => {
       const full = k?.permission === "FullAccess";
-      // Judge 19: an unreadable permission is treated like a full-access key.
+      // Review fix: an unreadable permission is treated like a full-access key.
       if (!full && (k?.permission === null || typeof k?.permission !== "object")) {
         findings.push({ code: "unreadable_key", severity: "high", text: `a key whose permission cannot be read (${untrusted(String(k?.public_key))}): treated as full access` });
         return { public_key: untrusted(String(k?.public_key)), kind: "full_access", can: "unknown: its permission could not be read, so assume everything" };
       }
       const p = full ? null : k.permission;
-      // Judge 18: every chain-derived string is cleaned, not only method names.
+      // Review fix: every chain-derived string is cleaned, not only method names.
       const methods: string[] = p ? (Array.isArray(p.method_names) ? p.method_names : []).map((m: unknown) => untrusted(String(m))) : [];
       const allowance = !p || p.allowance === null || p.allowance === undefined ? null : /^\d{1,40}$/.test(String(p.allowance)) ? String(p.allowance) : "unreadable";
       const can = full
@@ -399,7 +399,7 @@ export class Tools {
     if (upgrade.length) findings.push({ code: "code_change_method", severity: "high", text: `the contract exports ${upgrade.map((m) => untrusted(m)).join(", ")}: a way to change the code or the keys later` });
     const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
     const isAgentExit = hasCode && published !== null && f.code_hash === published;
-    // Judge 20: on the published build, every key must be one the contract
+    // Review fix: on the published build, every key must be one the contract
     // itself installed (get_status known_keys), and function-call keys may
     // only point at the account itself.
     if (isAgentExit) {
@@ -422,7 +422,7 @@ export class Tools {
       if (k.kind === "function_call" && k.receiver_id !== account) findings.push({ code: "fc_key_other_contract", severity: "medium", text: `${k.public_key} lets its holder spend this account's NEAR on gas calling ${k.receiver_id}` });
     }
     if (f.keys_second) {
-      // Judge 19: compare what each key may do, not only its name.
+      // Review fix: compare what each key may do, not only its name.
       const norm = (ks: Json[]) => JSON.stringify(ks.map((k: Json) => JSON.stringify([k?.public_key, k?.permission])).sort());
       const a = norm(f.keys);
       const b = norm(f.keys_second);
@@ -433,7 +433,7 @@ export class Tools {
     } else if (this.backend.network === "testnet") {
       findings.push({ code: "second_provider_unavailable", severity: "medium", text: "only one RPC provider answered: the key list is not cross-checked" });
     }
-    // Judge 18: "locked" only for a build whose code we know (the published
+    // Review fix: "locked" only for a build whose code we know (the published
     // Agent Exit build). Other code with no key and no upgrade-named method
     // may still change itself under another name.
     const verdict = !hasCode
@@ -556,7 +556,7 @@ export class Tools {
       return { ...out, next: state === "delivered" ? "call sealed_delivery with action open, then accept or dispute before dispute_until" : state === "awaited" ? "wait for the seller's deliver_config; after deliver_by, claim_undelivered returns the whole price" : "nothing left to do" };
     }
     if (state !== "delivered") throw new ToolError("NOT_DELIVERED", state === "awaited" ? `nothing delivered yet: nothing to ${action}` : `the sale is already settled (${state}): nothing to ${action}`);
-    // Judge 20: only the buyer opens the bundle. A read-only server with no
+    // Review fix: only the buyer opens the bundle. A read-only server with no
     // account may open the offline demo fixtures; never someone else's.
     if (this.cfg.accountId && this.cfg.accountId !== v.buyer && v.buyer !== undefined) {
       throw new ToolError("CONTRACT_REFUSED", `${this.cfg.accountId} is not the buyer of sale ${saleId} (NotBuyer): only the buyer holds its one-time key`, { contract_error: "NotBuyer" });

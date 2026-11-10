@@ -43,7 +43,7 @@ test("CA3 any account: a wallet is key-controlled; a bot with an upgrade method 
   const codes = bot.findings.map((f: any) => f.code).sort();
   assert.deepEqual(codes, ["code_change_method", "fc_key_any_method", "fc_key_no_allowance", "fc_key_other_contract", "full_access_key_on_contract"]);
   const vault = await check("locked-vault.testnet");
-  assert.equal(vault.verdict, "no_key_unknown_code", "judge 18: locked only for a build we can check");
+  assert.equal(vault.verdict, "no_key_unknown_code", "locked only for a build we can check");
   assert.equal(vault.code.published_agent_exit_build, false);
 });
 

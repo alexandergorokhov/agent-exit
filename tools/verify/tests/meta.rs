@@ -594,7 +594,7 @@ fn readme_testnet_links_are_recorded_runs() {
     );
 }
 
-/// Judge 13: the README's numbers match the goldens and the fee-era payout.
+/// the README's numbers match the goldens and the fee-era payout.
 #[test]
 fn readme_numbers_match_the_goldens() {
     let r = read("README.md");
@@ -659,7 +659,7 @@ fn judge_path_in_readme_first_lines() {
     }
 }
 
-/// Judge 24: every file docs/SCENARIOS.md names as a test exists (a bare
+/// every file docs/SCENARIOS.md names as a test exists (a bare
 /// name must exist somewhere in the repo; `agent-core/...` is under
 /// contracts/; paths under out/ are run outputs).
 #[test]

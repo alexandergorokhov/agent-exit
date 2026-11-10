@@ -1,4 +1,4 @@
-// MCP share tools (PLAN-shares T8): list_offers, buy_share, portfolio.
+// MCP share tools (docs/SHARES.md): list_offers, buy_share, portfolio.
 // Offline, every result is RECORDED from the real contract code
 // (fixtures/mcp/world.json: research.testnet, carol offers 20% for a year
 // at 300.00; the recorded buy is dave taking 10% for 150.00).

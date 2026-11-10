@@ -1,5 +1,5 @@
 //! Shares of future earnings: rules SH1-SH11 and threats T1-T17
-//! (docs/PLAN-shares.md), each as a test on the pure machine.
+//! (docs/SHARES.md), each as a test on the pure machine.
 
 use agent_core::*;
 
