@@ -1285,3 +1285,37 @@ fn h1_init_refuses_a_stranger() {
     s0.env(&s0.call("mallory.testnet"));
     let _ = crate::AgentExit::new(acc(ALICE), None);
 }
+
+/// Security review 6 L7: request_preview keeps exactly its 0.01 NEAR and
+/// sends back the rest.
+#[test]
+fn l7_preview_refunds_the_excess_deposit() {
+    use agent_core::sealed;
+    let bundle: Vec<u8> = b"You translate EN<->ES. "
+        .iter()
+        .cycle()
+        .take(2_048)
+        .cloned()
+        .collect();
+    let mut s = translator_world();
+    let commit = sealed::ConfigCommit::of(&bundle);
+    s.by_1y(ALICE)
+        .commit_config(commit.hash.clone(), commit.bytes, commit.root.clone());
+    s.by_1y(ALICE)
+        .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+    s.by_milli(BOB, 50).request_preview();
+    let back: u128 = near_sdk::test_utils::get_created_receipts()
+        .iter()
+        .filter(|r| r.receiver_id.as_str() == BOB)
+        .flat_map(|r| r.actions.iter())
+        .filter_map(|a| match a {
+            near_sdk::mock::MockAction::Transfer { deposit, .. } => Some(deposit.as_yoctonear()),
+            _ => None,
+        })
+        .sum();
+    assert_eq!(
+        back,
+        40 * 10u128.pow(21),
+        "0.05 attached, 0.01 kept, 0.04 back"
+    );
+}

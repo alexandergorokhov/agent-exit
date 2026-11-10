@@ -1030,6 +1030,7 @@ impl AgentExit {
             "preview_requested",
             json!({"by": caller, "listing_version": self.m.listing_version, "chunks": indices, "draws": self.m.preview_draws}),
         );
+        refund_excess(&caller, PREVIEW_DEPOSIT);
         json!({"listing_version": self.m.listing_version, "chunks": indices})
     }
 
@@ -1112,6 +1113,7 @@ impl AgentExit {
             json!({"sale_id": sale_id, "seller": caller, "ephemeral_pk": ephemeral_pk,
                    "bytes": cipher.len(), "cipher_sha256": core::sealed::to_hex(&env::sha256(&cipher))}),
         );
+        refund_excess(&caller, need.as_yoctonear());
         json!({"sale_id": sale_id, "delivered": true})
     }
 
@@ -2428,4 +2430,12 @@ fn take_deposit(who: &AccountId) -> Option<DepositRecord> {
     let r = read_deposit(who);
     env::storage_remove(&deposit_key(who));
     r
+}
+
+/// Review 6 L7: send back whatever was attached above what the call keeps.
+fn refund_excess(to: &AccountId, keep: u128) {
+    let extra = env::attached_deposit().as_yoctonear().saturating_sub(keep);
+    if extra > 0 {
+        Promise::new(to.clone()).transfer(NearToken::from_yoctonear(extra));
+    }
 }
