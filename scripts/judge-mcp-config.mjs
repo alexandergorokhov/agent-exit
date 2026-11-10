@@ -16,7 +16,18 @@ const buy = world.recorded_buys[0];
 // The current owner's runner key from the recorded testnet buy (scene 6), so
 // check_claims K5 can prove the lockout on testnet (a public key, not a secret).
 const scene6 = read("out/scenes/scene-6.json");
-const ownerPk = scene6.verify_lockout?.keys?.[0]?.public_key;
+let ownerPk = scene6.verify_lockout?.keys?.[0]?.public_key;
+// After the AI buyer (scene 7 + llm-buyer-testnet) bought translator in this
+// world, the owner is that buyer: its runner key is the one the buy added.
+try {
+  const ai = read("out/llm-buyer-testnet.json");
+  const buyer = String(ai.buyer ?? "");
+  const added = ai.summary?.translator_bought && buyer.endsWith(`.${deploy.root}`)
+    ? ai.transcript.steps.flatMap((s) => s.tool_calls).filter((c) => c.name === "buy_agent" && c.ok)
+        .flatMap((c) => c.result.key_batch ?? []).find((k) => k.action === "add_fc")?.key
+    : undefined;
+  if (added) ownerPk = added;
+} catch {}
 if (!/^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(ownerPk ?? "")) throw new Error("out/scenes/scene-6.json has no verify_lockout public key");
 const r = deploy.root;
 // After testnet scene 9 the born-clean factory and its first agent are named too.

@@ -134,7 +134,7 @@
 
     <section id="evidence-run" class="evidence">
       <h2>The same story on NEAR testnet</h2>
-      <p class="muted">The deployed contract (code hash <code>Aots3gb3…</code>, rebuilt bit for bit from commit <code>42a8ee3</code> with <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
+      <p class="muted">The deployed contract (code hash <code>6wb4xz3f…</code>, rebuilt bit for bit from commit <code>7e4e4b9</code> with <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
       <span id="scenarios-anchor"></span>
       <div id="scenarios" class="scenarios"><p class="muted">Loading the scenarios…</p></div>
       <h3 class="walk-title">Step-by-step walkthrough</h3>
@@ -165,11 +165,11 @@
     <section id="for-judges" class="judges">
       <h2>For judges: where each criterion is shown</h2>
       <div class="crit">
-        <a href="#scenarios-anchor"><b>Technical implementation</b><span>Rust contract on NEAR testnet, rebuilt bit for bit (<code>make build</code> at commit <code>42a8ee3</code>). Run a scenario and every stage is re-checked against the chain.</span></a>
+        <a href="#scenarios-anchor"><b>Technical implementation</b><span>Rust contract on NEAR testnet, rebuilt bit for bit (<code>make build</code> at commit <code>7e4e4b9</code>). Run a scenario and every stage is re-checked against the chain.</span></a>
         <a href="#play"><b>Design</b><span>Six missions you play in a few minutes, against the real contract code. Each result says what the contract checked.</span></a>
         <a href="#concept"><b>Impact</b><span>AI agents are becoming businesses. Agent Exit makes them sellable: real revenue, a clean handover.</span></a>
         <a href="#why-near"><b>Originality</b><span>The agent is its own NEAR account. Selling it deletes the seller's keys on-chain, and the earn-out pays only from real customers.</span></a>
-        <a href="#backend"><b>Sustainability</b><span>Standard NEPs (NEP-141 token, NEP-171 deed), an MCP server any AI agent can use, MIT licence, 250+ Rust tests and 171 MCP tests.</span></a>
+        <a href="#backend"><b>Sustainability</b><span>Standard NEPs (NEP-141 token, NEP-171 deed), an MCP server any AI agent can use, MIT licence, 250+ Rust tests and 176 MCP tests.</span></a>
       </div>
       <p class="tracks"><span class="muted small">Tracks:</span>
         <span class="track">Autonomous Business: checked earnings, earn-out, shares of future earnings</span>
@@ -185,7 +185,7 @@
     <details>
       <summary>Data and evidence</summary>
       <p id="source" class="muted"></p>
-      <p id="evidence" class="muted">The attack suite is a regression suite, not independent evidence (we wrote both the attacks and the rules): 20 attack families, 19 counted, each blocked by its rule; 0 of 50 clean agents wrongly blocked; 171 MCP tests. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
+      <p id="evidence" class="muted">The attack suite is a regression suite, not independent evidence (we wrote both the attacks and the rules): 20 attack families, 19 counted, each blocked by its rule; 0 of 50 clean agents wrongly blocked; 176 MCP tests. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
     </details>
   </footer>
 </body>

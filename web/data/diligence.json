@@ -89,7 +89,7 @@
       "run": "#run-cheat"
     },
     {
-      "agent": "translator3.w2.agentexit3.testnet",
+      "agent": "translator3.agentexit4.testnet",
       "name": "translator3",
       "deal": "20% of future earnings for a year, 500.00",
       "rows": [
@@ -126,7 +126,7 @@
       "ok": true,
       "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
-      "tx": "https://testnet.nearblocks.io/txns/CVHZAS8RYZG5cpnKiHV4RhqmvvBPrtCA41TBLQ42LLCD"
+      "tx": "https://testnet.nearblocks.io/txns/HAmKDLz9vK5jM7FefsQA8ASTjwxLeyr4W6U4NgdLUKdw"
     }
   ]
 }

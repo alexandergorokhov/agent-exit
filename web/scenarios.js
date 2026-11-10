@@ -71,11 +71,23 @@ function failureText(status) {
   return (m ? m[1] : s).slice(0, 140);
 }
 
+/** The recorder's label for an action batch (same rule as mcp/src/backend.ts txLabel). */
+function txLabel(actions) {
+  const has = (k) => actions.some((a) => a === k || (a && typeof a === "object" && k in a));
+  const fc = actions.map((a) => a && a.FunctionCall && a.FunctionCall.method_name).find(Boolean);
+  if (fc) return has("DeployContract") ? `deploy+${fc}` : fc;
+  if (has("CreateAccount")) return "create_account";
+  if (has("DeployContract")) return "deploy";
+  if (has("DeleteKey")) return "delete_key";
+  if (has("AddKey")) return "add_key";
+  return "(no call)";
+}
+
 /** Re-checks one recorded transaction against the chain; returns rows and a verdict. */
 async function verifyTx(t) {
   const res = await rpc("tx", { tx_hash: t.tx, sender_account_id: t.by, wait_until: "NONE" });
   const tx = res.transaction || {};
-  const call = (tx.actions || []).map((a) => a.FunctionCall && a.FunctionCall.method_name).find(Boolean) || "(no call)";
+  const call = txLabel(tx.actions || []);
   const ok = res.status && "SuccessValue" in res.status;
   // A call can succeed at the top and still be refused inside (a token refund): the contract's own events say which.
   const events = chainEvents(res);

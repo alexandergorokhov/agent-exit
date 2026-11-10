@@ -25,7 +25,7 @@
         "AGENT_EXIT_CODE_HASH": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
         "AGENT_EXIT_RPC": "https://rpc.testnet.fastnear.com",
         "AGENT_EXIT_RPC_2": "https://test.rpc.fastnear.com",
-        "AGENT_EXIT_RUNNER_PK": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
+        "AGENT_EXIT_RUNNER_PK": "ed25519:Fscms6kv6RNHVMGMSMPPoAfAksruaeDGHbsZQFoZgpmf"
       }
     }
   }
