@@ -156,7 +156,7 @@ try {
     const foot = await q.textContent("footer");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("171 MCP tests"), "S23: MCP test count is current");
+    assert.ok(foot.includes("181 MCP tests"), "S23: MCP test count is current");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
@@ -217,7 +217,7 @@ try {
   // Testnet flag: labelled, offers login, never loaded unless asked.
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
-  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: run of 2026-11-03 (recorded; \"Read live\" checks the chain now)");
+  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: agentexit4, run of 2026-11-10 (recorded; \"Read live\" checks the chain now)");
   assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;

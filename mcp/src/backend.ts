@@ -190,10 +190,25 @@ export interface TxOutcome {
  * regular node keeps. Both are on the testnet allowlist (A41). */
 export const ARCHIVAL_RPC = ["https://archival-rpc.testnet.fastnear.com", "https://archival-rpc.testnet.near.org"];
 
+/** The recorder's label for an action batch (TL1): the first function call,
+ * "deploy+<method>" when the batch also deploys code, "create_account" for a
+ * batch that creates an account and calls nothing, "deploy" for code alone,
+ * "delete_key" / "add_key" for a key change alone. */
+export function txLabel(actions: Json[]): string {
+  const has = (k: string) => actions.some((a) => a === k || (a !== null && typeof a === "object" && k in a));
+  const fc = actions.map((a) => a?.FunctionCall?.method_name).find(Boolean);
+  if (fc) return has("DeployContract") ? `deploy+${fc}` : String(fc);
+  if (has("CreateAccount")) return "create_account";
+  if (has("DeployContract")) return "deploy";
+  if (has("DeleteKey")) return "delete_key";
+  if (has("AddKey")) return "add_key";
+  return "(no call)";
+}
+
 /** Parse an RPC `tx` result into a TxOutcome (same reading as the page's Run and verify). */
 export function txOutcomeOf(res: Json): TxOutcome {
   const tx = res.transaction ?? {};
-  const method = ((tx.actions ?? []) as Json[]).map((a) => a?.FunctionCall?.method_name).find(Boolean) ?? "(no call)";
+  const method = txLabel((tx.actions ?? []) as Json[]);
   const events: string[] = [];
   for (const o of (res.receipts_outcome ?? []) as Json[]) {
     for (const l of (o.outcome?.logs ?? []) as string[]) {

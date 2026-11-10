@@ -23,7 +23,7 @@ An investor (`dave`) paid 500.00 for 20% of `translator3`'s earnings for a year.
 
 A 1% protocol fee on every sale and every share buy (`PROTOCOL_FEE_BPS = 100` in `contracts/agent-core/src/money.rs`). It comes out of the seller's upfront part, never out of the buyer's escrow, so it is capped at that part: a "pay from revenue" sale (nothing up front) pays no fee, and a sealed sale pays it only when the delivery is accepted (SC14); inside the same transaction, and is credited to the fee account as a claimable balance (`FEE_ACCOUNT`, compiled in; the registry admin on testnet). In the worked example: on the 1,000.00 sale the seller gets 690.00 now and the fee account 10.00; on dave's 500.00 share buy alice gets 245.00 now and the fee account 5.00. Brokers of small online businesses commonly take a percentage of the sale price; 1% sits well under that. Tests: `s5_buy_one_step`, `dave_holds` (contract), the `prop.rs` property run (fee = 1% of the price, `payout + fee = paid_now`, solvency holds).
 
-The deployed testnet contract (commit `42a8ee3`) predates the fee; it goes live with the next testnet deploy.
+The deployed testnet contract (commit `7e4e4b9`, world `agentexit4.testnet`) takes the fee on every sale and share buy.
 
 ## Why now
 

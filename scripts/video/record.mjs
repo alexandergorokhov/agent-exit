@@ -72,7 +72,7 @@ await p.waitForSelector("#proof-strip .ps-stats li");
 await p.waitForSelector("#dd-cards .dd-card");
 
 // Shot 1 (0:00-0:14): the claim, then the proof on the first screen.
-await card(["Agent Exit", "Turn an AI agent into a business you can trust.", "Earnings proven on-chain. Invest in a share, or buy it whole. The seller is locked out."], 4000);
+await card(["Agent Exit", "A capital market for AI agents.", "Invest in an agent by its proven revenue, or buy it whole. The seller is locked out."], 4000);
 await card([], 0);
 await caption("Recorded on NEAR testnet: 5 of 5 customer payments signed by NEAR AI and checked by the contract", 3800);
 await caption("An investor bought 20% of an agent's earnings and got exactly 20%", 3200);
@@ -136,9 +136,15 @@ if (await p.locator('#scenarios [data-scenario="day"], [data-scenario="day"]').c
   await caption("On testnet: a business day. The owner set limits once; the agent paid a supplier, hit its daily cap, and dave got exactly 20%", 5000);
 }
 
+// Shot 7: a judge can invest too, with their own testnet account.
+if (await p.locator("#invest-yourself:not([hidden])").count()) {
+  await scrollTo("#invest-yourself");
+  await caption("Your turn: free test dollars, then buy 1% of a live agent's earnings with one transfer on NEAR testnet", 5000);
+}
+
 // End card.
 await caption("", 0);
-await card(["Agent Exit", "Proven earnings. Shares. A clean exit.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
+await card(["Agent Exit", "Invest in agents. Exit cleanly.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
 
 await ctx.close();
 await browser.close();

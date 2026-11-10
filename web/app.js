@@ -1,7 +1,7 @@
 // Agent Exit demo page. Offline by default: every result shown is read from
 // data/demo.json, which tools/verify/src/bin/gen-web-demo.rs records from the
 // contract in near-sdk's mocked runtime. `?network=testnet` shows the testnet
-// mode: the recorded testnet run of 2026-11-03 with explorer links, plus read-only live reads.
+// mode: the recorded testnet run of 2026-11-10 (agentexit4.testnet) with explorer links, plus read-only live reads.
 
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
@@ -73,7 +73,7 @@ let demo;
 let testnet = null;
 let current = 0;
 
-const TESTNET_LABEL = "testnet: run of 2026-11-03 (recorded; \"Read live\" checks the chain now)";
+const TESTNET_LABEL = "testnet: agentexit4, run of 2026-11-10 (recorded; \"Read live\" checks the chain now)";
 
 // ----- live reads (testnet mode only, on click) ------------------------------
 // The CSP allows only 'self', so reads go through the read-only relay at
