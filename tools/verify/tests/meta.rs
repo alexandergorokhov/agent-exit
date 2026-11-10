@@ -706,3 +706,14 @@ fn scenarios_name_real_files() {
         "docs/SCENARIOS.md names missing files: {missing:?}"
     );
 }
+
+/// Rules FAQ Q-015: a person may enter two independent projects, and each
+/// README must name the other one.
+#[test]
+fn readme_names_the_second_project() {
+    let r = std::fs::read_to_string(root().join("README.md")).unwrap();
+    assert!(
+        r.contains("https://github.com/alexandergorokhov/agent-hire"),
+        "README must link the author's second entry (FAQ Q-015)"
+    );
+}
