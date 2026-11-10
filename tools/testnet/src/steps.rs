@@ -634,7 +634,7 @@ async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
             &bob,
             &c.id("xusd"),
             "ft_transfer_call",
-            json!({"receiver_id": id, "amount": (10 * USD).to_string(), "msg": msg.to_string()}),
+            json!({"receiver_id": id, "amount": (OPEN_PRICE * PART_BPS as u128 / OPEN_BPS as u128).to_string(), "msg": msg.to_string()}),
             1,
             300,
         )
@@ -2046,8 +2046,11 @@ async fn business_day(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<St
 
 // ------------------------------------------------------------------ scene 12
 
-/// The open offer's terms: 10% of every payment, 100.00, until 2026-11-30.
-const OPEN_BPS: u64 = 1_000;
+/// The open offer's terms: 25% of every payment, 250.00, until 2026-11-30:
+/// 25 parts of 1% at 10.00, so a whole judging panel can each buy one.
+const OPEN_BPS: u64 = 2_500;
+const OPEN_PRICE: u128 = 250 * USD;
+const PART_BPS: u64 = 100;
 const OPEN_END_NS: u64 = 1_796_083_199 * 1_000_000_000; // 2026-11-30T23:59:59Z
 
 /// An offer any judge can buy a 1% part of from the page (see web "Invest
@@ -2069,16 +2072,16 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         return Err(format!("scene 12 needs {ag} owned by alice and not listed"));
     }
     let open =
-        |o: &Value| o["bps"] == json!(OPEN_BPS) && o["price"] == json!((100 * USD).to_string());
+        |o: &Value| o["bps"] == json!(OPEN_BPS) && o["price"] == json!(OPEN_PRICE.to_string());
     let mut offers = c.view(&ag, "get_shares", json!({})).await?;
     if !offers.as_array().is_some_and(|a| a.iter().any(open)) {
         let t = c
             .call(
-                &format!("alice offers 10% of {name}'s earnings to anyone, 1% parts at 10.00"),
+                &format!("alice offers 25% of {name}'s earnings to anyone, 1% parts at 10.00"),
                 &c.acct("alice")?,
                 &ag,
                 "offer_share",
-                json!({"bps": OPEN_BPS, "price": (100 * USD).to_string(), "end": OPEN_END_NS.to_string()}),
+                json!({"bps": OPEN_BPS, "price": OPEN_PRICE.to_string(), "end": OPEN_END_NS.to_string()}),
                 1,
                 50,
             )
@@ -2091,7 +2094,7 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         .as_array()
         .and_then(|a| a.iter().find(|o| open(o)).cloned())
         .ok_or("the open offer is missing after offer_share")?;
-    let part = OPEN_BPS / 10;
+    let part = PART_BPS;
     let msg = json!({"kind": "buy_share", "offer_id": o["offer_id"], "bps": o["bps"],
                      "price": o["price"], "end": o["end"], "part": part});
     out.set("agent", json!(ag));
