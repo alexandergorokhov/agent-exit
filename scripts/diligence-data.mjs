@@ -11,7 +11,9 @@ const USD = 1_000_000;
 const usd = (x) => (Number(x) / USD).toFixed(2);
 const pct = (a, b) => (Number(b) ? Math.round((100 * Number(a)) / Number(b)) : 0);
 const nb = (tx) => `https://testnet.nearblocks.io/txns/${tx}`;
-const short = (a) => a.replace(/\.w\d+\.agentexit\d*\.testnet$/, "");
+// The world is the account the agents live under, e.g. agentexit4.testnet.
+const worldOf = (cards) => (cards[0]?.agent || "").split(".").slice(1).join(".") || "unknown";
+const short = (a) => a.replace(/(\.w\d+)?\.agentexit\d*\.testnet$/, "");
 
 const s3 = scene(3), s4 = scene(4), s5 = scene(5), s8 = scene(8);
 
@@ -123,7 +125,7 @@ const cards = [
 
 const out = {
   schema: "diligence.v1",
-  note: "Recorded on NEAR testnet (out/scenes, world w2.agentexit3.testnet). All money is xUSD-FAKE.",
+  note: `Recorded on NEAR testnet (out/scenes, world ${worldOf(cards)}). All money is xUSD-FAKE.`,
   cards,
 };
 writeFileSync(new URL("web/data/diligence.json", root), JSON.stringify(out, null, 2) + "\n");

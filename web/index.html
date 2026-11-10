@@ -17,13 +17,13 @@
     <div class="wrap">
       <p class="tag">NEAR · AI agents · fake test money</p>
       <h1>Agent Exit</h1>
-      <p class="lede"><b>Sold means locked out.</b><br>Buy an AI agent, or a share of its earnings, from a stranger. One transaction moves the deed and deletes the seller's keys; 30% of the price is paid only by customer revenue after the sale.</p>
+      <p class="lede"><b>A capital market for AI agents.</b><br>Invest in an AI agent by its proven revenue, or buy the whole business from a stranger. The contract counts every payment by who paid, pays investors inside each customer payment, and a sale deletes the seller's keys in the same transaction.</p>
       <figure class="story"><img src="media/sold-means-locked-out.svg" width="1200" height="420" alt="Sold means locked out: before the sale alice owns translator; one transaction deletes her key, adds bob's and moves the deed; after the sale every way back in is refused on NEAR testnet"></figure>
       <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet: one-transaction sale, then the old seller's break-in attempts, each refused. <a href="#evidence-run">See the runs</a>.</p></div>
       <div class="cta">
         <a class="btn primary" href="#run-invest">Check an agent's earnings on testnet</a>
         <a class="btn" href="#run-cheat">Watch a backdoor get caught on testnet</a>
-        <a class="btn" href="media/agent-exit-demo.mp4">Watch the 90 s video</a>
+        <a class="btn" href="media/agent-exit-demo.mp4">Watch the 2-minute demo</a>
         <a class="btn" href="#play">Try it yourself</a>
         <a class="btn" href="#for-judges">For judges</a>
       </div>
@@ -32,19 +32,19 @@
 
   <main class="wrap">
     <section id="diligence" class="diligence">
-      <h2>What a buyer sees before paying</h2>
+      <h2>Agent Exchange: what an investor or buyer sees before paying</h2>
       <p class="muted">Three agents on NEAR testnet, as the contract and the buyer's scan report them. Revenue is split by who paid; only payments from outside accounts count.</p>
       <div id="dd-cards" class="dd-cards"><p class="muted">Loading…</p></div>
       <figure class="deed">
         <img src="media/deed-translator.svg" width="400" height="240" alt="The deed NFT of translator: counted, verified and flagged revenue, and the share pledged to investors">
-        <figcaption class="small muted">The agent's ownership deed (NEP-171), as the contract's <code>nft_token</code> draws it from its own numbers on every view. Generated offline from the current code; live on testnet after the next deploy.</figcaption>
+        <figcaption class="small muted">The agent's ownership deed (NEP-171), as the contract's <code>nft_token</code> draws it from its own numbers on every view. Live on NEAR testnet: call <code>nft_token</code> on <code>translator.agentexit4.testnet</code>.</figcaption>
       </figure>
     </section>
 
     <section id="concept" class="concept">
       <div class="problem">
         <h2>The problem</h2>
-        <p>AI agents now earn money: they sell translations, research, trades. Soon people will buy and sell them like small businesses. Today a buyer cannot trust two things:</p>
+        <p>AI agents now earn money: they sell translations, research, trades. They are small businesses, yet no one can invest in one or buy one from a stranger, because two things cannot be trusted:</p>
         <ol>
           <li><b>The revenue.</b> The seller can pay their own agent to fake it.</li>
           <li><b>The handover.</b> The seller can keep a hidden key and take the agent back.</li>
@@ -68,7 +68,7 @@
         <div class="arch-box chain">
           <h3>On NEAR (the backend)</h3>
           <ul>
-            <li><b>The agent's own account</b>, e.g. <code>translator.w2.agentexit3.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
+            <li><b>The agent's own account</b>, e.g. <code>translator.agentexit4.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
             <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
             <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
           </ul>
@@ -96,7 +96,7 @@
       <p>Who else can take it? Paste any testnet account (an AI agent's wallet, a bot, a vault). The page reads its access keys and code from NEAR testnet now and names every key or method that lets someone other than its owner move the money or swap the code. Read-only.</p>
       <form id="check-form" class="check-form">
         <label for="check-account">Account</label>
-        <input id="check-account" name="account" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="64" placeholder="translator.w2.agentexit3.testnet" required>
+        <input id="check-account" name="account" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="64" placeholder="translator.agentexit4.testnet" required>
         <button type="submit">Check</button>
       </form>
       <div id="check-out" aria-live="polite"></div>

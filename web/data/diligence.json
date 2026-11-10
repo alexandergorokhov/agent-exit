@@ -1,6 +1,6 @@
 {
   "schema": "diligence.v1",
-  "note": "Recorded on NEAR testnet (out/scenes, world w2.agentexit3.testnet). All money is xUSD-FAKE.",
+  "note": "Recorded on NEAR testnet (out/scenes, world agentexit4.testnet). All money is xUSD-FAKE.",
   "cards": [
     {
       "agent": "translator.agentexit4.testnet",
