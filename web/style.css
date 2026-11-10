@@ -370,3 +370,6 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 #check-out, #check-out code { overflow-wrap: anywhere; word-break: break-word; }
 #check-out code { white-space: normal; }
 .check-form button { flex: 0 0 auto; }
+.invest-yourself .iy-steps li { margin: .6rem 0; }
+.invest-yourself .iy-steps p { margin: 0 0 .3rem; }
+.invest-yourself pre { overflow-x: auto; max-width: 100%; white-space: pre-wrap; word-break: break-all; font-size: .8rem; }

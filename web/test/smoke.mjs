@@ -376,6 +376,16 @@ try {
         assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), want ? 1 : 0, `V7: scenario ${id} shown only when recorded`);
       }
       checks++;
+      // V8: "Invest yourself" shows only with a recorded open offer (scene 12), with 5 steps of commands naming that agent.
+      const iy = vp.locator("#invest-yourself");
+      if (rec.open_offer) {
+        await iy.waitFor({ state: "visible" });
+        assert.equal(await vp.locator("#iy-steps > li").count(), 5, "V8: five invest steps");
+        assert.ok((await iy.textContent()).includes(rec.open_offer.agent), "V8: commands name the offer's agent");
+      } else {
+        assert.equal(await iy.isVisible(), false, "V8: hidden with no open offer");
+      }
+      checks++;
       for (const id of ["sale", "cheat"]) {
         await vp.click(`[data-scenario="${id}"] > summary`);
         await vp.click(`[data-run="${id}"]`);

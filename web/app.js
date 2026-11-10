@@ -337,6 +337,33 @@ async function renderDiligence() {
 }
 renderDiligence().catch(() => { /* the loading text stays */ });
 
+// "Invest yourself": the open offer recorded by scene 12, as copyable
+// near-cli-rs commands. Hidden until the offer exists in data/testnet.json.
+async function renderInvestYourself() {
+  const box = document.getElementById("invest-yourself");
+  if (!box) return;
+  const t = await (await fetch("data/testnet.json")).json();
+  const o = t.open_offer;
+  if (!o || !o.agent || !o.offer) return;
+  const usd = (raw) => (Number(BigInt(raw)) / 1e6).toFixed(2);
+  const end = new Date(Number(BigInt(o.offer.end) / 1000000n)).toISOString().slice(0, 10);
+  document.getElementById("iy-terms").textContent =
+    `${o.agent} pays ${Number(o.offer.bps) / 100}% of every customer payment to its investors until ${end}, for ${usd(o.offer.price)} xUSD-FAKE in all. A 1% part costs ${usd(o.amount)}.`;
+  const call = (to, method, args, gas, dep) => `near contract call-function as-transaction ${to} ${method} json-args '${JSON.stringify(args)}' prepaid-gas '${gas} Tgas' attached-deposit '${dep}' sign-as YOU.testnet network-config testnet sign-with-keychain send`;
+  const view = (to, method, args) => `near contract call-function as-read-only ${to} ${method} json-args '${JSON.stringify(args)}' network-config testnet now`;
+  const steps = [
+    ["Take free test dollars (the faucet registers you)", [call(o.xusd, "faucet", { amount: o.amount }, 30, "0 NEAR")]],
+    ["Check the agent before paying: its earnings by who paid, and the open offer", [view(o.agent, "get_earnings", {}), view(o.agent, "get_shares", {})]],
+    ["Buy a 1% part: one transfer carries the offer's exact terms", [call(o.xusd, "ft_transfer_call", { receiver_id: o.agent, amount: o.amount, msg: o.msg }, 150, "1 yoctoNEAR")]],
+    ["See your holding; each customer payment adds to what you can claim", [view(o.agent, "get_holdings", { account_id: "YOU.testnet" })]],
+    ["Claim your part of the earnings", [call(o.agent, "claim", {}, 50, "0 NEAR")]],
+  ];
+  document.getElementById("iy-steps").replaceChildren(...steps.map(([what, cmds]) =>
+    el("li", {}, el("p", { text: what }), ...cmds.map((c) => el("pre", {}, el("code", { text: c }))))));
+  box.hidden = false;
+}
+renderInvestYourself().catch(() => { /* the section stays hidden */ });
+
 main().catch((e) => {
   document.getElementById("step").replaceChildren(el("p", { class: "err", text: `Could not load the demo: ${e.message}` }));
 });

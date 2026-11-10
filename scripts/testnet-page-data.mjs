@@ -65,6 +65,13 @@ if (existsSync("out/llm-buyer-testnet.json")) {
 const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out/testnet/deploy.json", "utf8")) : {};
 out.root = dep.root || null;
 out.agent_code_hash = dep.agent_code_hash || null;
-out.run = "2026-11-04";
+out.run = new Date().toISOString().slice(0, 10); // the day this page data was made from out/
+// Scene 12: an open offer anyone can buy into from the page ("Invest yourself").
+if (existsSync("out/scenes/scene-12.json")) {
+  const o = JSON.parse(readFileSync("out/scenes/scene-12.json", "utf8"));
+  if (o.pass && o.offer && o.buy_part) {
+    out.open_offer = { agent: o.agent, xusd: `xusd.${dep.root}`, offer: o.offer, part_bps: o.buy_part.part_bps, amount: o.buy_part.amount, msg: o.buy_part.msg };
+  }
+}
 writeFileSync("web/data/testnet.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`web/data/testnet.json: ${Object.keys(out.steps).length} steps, ${Object.values(out.steps).reduce((a, s) => a + s.txs.filter((t) => t.explorer).length, 0)} explorer links`);

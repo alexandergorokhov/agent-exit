@@ -560,10 +560,10 @@
           "label": "registry admin: add_signer",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/2yzdFFMvikoAsxaHFzDyEstZ8HadKUevcspSFAncyLW2",
-          "tx": "2yzdFFMvikoAsxaHFzDyEstZ8HadKUevcspSFAncyLW2",
-          "by": "w2.agentexit3.testnet",
-          "receiver": "translator.w2.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/4k3Do9DeuzBVuLscodf37J2XhZ3pWa2dyPEuqmscpWFx",
+          "tx": "4k3Do9DeuzBVuLscodf37J2XhZ3pWa2dyPEuqmscpWFx",
+          "by": "agentexit4.testnet",
+          "receiver": "translator.agentexit4.testnet",
           "method": "add_signer",
           "events": [
             "signer_added"
@@ -573,10 +573,10 @@
           "label": "p1 pays (at least the price floor) with the NEAR AI proof",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8",
-          "tx": "DVjpb5itVu2aZ2NQJo2phwvb9K5cjvMMUdEvsDcmYGs8",
-          "by": "p1.w2.agentexit3.testnet",
-          "receiver": "xusd.w2.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb",
+          "tx": "GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb",
+          "by": "p1.agentexit4.testnet",
+          "receiver": "xusd.agentexit4.testnet",
           "method": "ft_transfer_call",
           "events": [
             "ft_transfer",
@@ -590,24 +590,24 @@
     "ai-buyer": {
       "scene": "AI",
       "pass": true,
-      "what": "claude-haiku-4-5-20251001 read the Agent Exit skill and used the MCP tools on testnet: its scan of cheat said blocked, so it did not buy it; translator scanned clean and it bought it, then checked the seller is locked out (yes). 5 model steps, 26051 tokens. The server, not the model, holds the key and enforces max_price, confirm and the spend cap.",
+      "what": "claude-haiku-4-5-20251001 read the Agent Exit skill and used the MCP tools on testnet: its scan of cheat said blocked, so it did not buy it; translator scanned clean and it bought it, then checked the seller is locked out (yes). 5 model steps, 42668 tokens. The server, not the model, holds the key and enforces max_price, confirm and the spend cap.",
       "scan": null,
       "txs": [
         {
-          "label": "the AI's buy_agent: carol.agentexit3.testnet pays for translator (one ft_transfer_call)",
+          "label": "the AI's buy_agent: carol.agentexit4.testnet pays for translator (one ft_transfer_call)",
           "ok": true,
           "error": null,
-          "explorer": "https://testnet.nearblocks.io/txns/6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn",
-          "tx": "6PjsAoL5UZk5WyXrp9Xs1jzesAfYWbiSksMC3Kq2cdwn",
-          "by": "carol.agentexit3.testnet",
-          "receiver": "xusd.agentexit3.testnet",
+          "explorer": "https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD",
+          "tx": "Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD",
+          "by": "carol.agentexit4.testnet",
+          "receiver": "xusd.agentexit4.testnet",
           "method": "ft_transfer_call",
           "events": []
         }
       ]
     }
   },
-  "run": "2026-11-04",
+  "run": "2026-11-10",
   "root": "agentexit4.testnet",
   "agent_code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1"
 }
