@@ -172,6 +172,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
         Command::Scene(8) => invest(&c, &env, secrets).await,
         Command::Scene(9) => born_clean(&c, &env, secrets).await,
         Command::Scene(10) => sealed(&c, &env, secrets).await,
+        Command::Scene(11) => business_day(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -1874,6 +1875,173 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     }
 }
 
+// ------------------------------------------------------------------ scene 11
+
+/// What summarizer charges the agent per job (procurement).
+const SUPPLIER_JOB: u128 = 2 * USD;
+
+/// Scene 11, a business day: the owner sets the constraints in ONE
+/// transaction; then only customers and the agent's own runner key sign.
+/// Runs on the scene-8 agent, so dave (20%) is paid inside every payment.
+async fn business_day(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    let mut out = Out::new("out/scenes/scene-11.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(11));
+    out.set("what", json!(info(Step::Scene11BusinessDay).what));
+    println!("scene-11");
+    let name = std::env::var("INVEST_AGENT")
+        .ok()
+        .or_else(|| env.get("INVEST_AGENT").cloned())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "translator3".to_string());
+    let n = name.as_str();
+    let ag = c.id(n);
+    let st = c.view(&ag, "get_status", json!({})).await?;
+    let owner = st["owner"].as_str().unwrap_or_default().to_string();
+    if owner != c.id("alice") || st["status"] == "Listed" {
+        return Err(format!(
+            "scene 11 runs after scene 8 on {ag} (owner alice, not listed); owner is {owner}"
+        ));
+    }
+    let lim = c.view(&ag, "get_limits", json!({})).await?;
+    if lim["spent_today"].as_str().unwrap_or("0") != "0" {
+        return Err(format!(
+            "{ag} already spent today: run scene 11 on a fresh UTC day"
+        ));
+    }
+    out.set("limits_before", lim.clone());
+    for p in ["p1", "p2", "p3", "p4", "p5"] {
+        if balance(c, p).await < JOB_PRICE {
+            let t = c
+                .call(
+                    &format!("mint {}", c.id(p)),
+                    &c.root,
+                    &c.id("xusd"),
+                    "mint",
+                    json!({"account_id": c.id(p), "amount": (100 * USD).to_string()}),
+                    0,
+                    30,
+                )
+                .await;
+            out.tx(&t);
+            ok(&t)?;
+        }
+    }
+
+    println!("  the one human step: alice sets the constraints");
+    let alice = c.acct("alice")?;
+    let cap = 4 * SUPPLIER_JOB;
+    let limits = json!({"limits": {
+        "price_floor": lim["price_floor"], "daily_cap": cap.to_string(),
+        "allowed_payees": [c.id("summarizer")], "split": {"owner_bps": 2000, "treasury_bps": 8000}}});
+    let t = c
+        .call("alice sets the constraints: daily cap 8.00, only payee summarizer, 80% of revenue to the treasury",
+            &alice, &ag, "set_limits", limits, 1, 50)
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+
+    println!("  the day: customers pay, the agent buys supplier jobs");
+    let runner = c.runner(n, &format!("{n}-alice-runner"))?;
+    let before = c
+        .view(&ag, "get_holdings", json!({"account_id": c.id("dave")}))
+        .await?;
+    let earned = |v: &Value| -> u128 {
+        v["holdings"][0]["earned"]
+            .as_str()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
+    };
+    let mut bought = 0u32;
+    let mut cap_refused = false;
+    for (i, (payer, _)) in JOBS.iter().enumerate() {
+        let job = format!("day-{}-{i}", now_ns() / 1_000_000_000);
+        let t = c
+            .call(&format!("{payer} pays {n} 10.00 for a translation"), &c.acct(payer)?, &c.id("xusd"),
+                "ft_transfer_call",
+                json!({"receiver_id": ag, "amount": JOB_PRICE.to_string(), "msg": json!({"kind": "pay", "job_id": job}).to_string()}),
+                1, 150)
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        let t = c
+            .call(
+                &format!(
+                    "the agent's runner key buys summarizer job {} (2.00)",
+                    i + 1
+                ),
+                &runner,
+                &ag,
+                "pay",
+                json!({"payee": c.id("summarizer"), "amount": SUPPLIER_JOB.to_string()}),
+                0,
+                100,
+            )
+            .await;
+        out.tx(&t);
+        if t.ok {
+            bought += 1;
+        } else if t.err().contains("PolicyViolation:DailyCap") {
+            cap_refused = true;
+        } else {
+            return Err(format!("supplier job {}: {}", i + 1, t.err()));
+        }
+    }
+    let t = c
+        .call(
+            "the runner key pays an account not on the payee list (p1)",
+            &runner,
+            &ag,
+            "pay",
+            json!({"payee": c.id("p1"), "amount": SUPPLIER_JOB.to_string()}),
+            0,
+            100,
+        )
+        .await;
+    out.tx(&t);
+    let payee_refused = !t.ok && t.err().contains("PolicyViolation:Payee");
+
+    println!("  dave is paid inside every payment, and claims");
+    let after = c
+        .view(&ag, "get_holdings", json!({"account_id": c.id("dave")}))
+        .await?;
+    let gain = earned(&after) - earned(&before);
+    let dave_exact = gain == JOBS.len() as u128 * JOB_PRICE / 5;
+    let t = c
+        .call(
+            "dave claims",
+            &c.acct("dave")?,
+            &ag,
+            "claim",
+            json!({}),
+            0,
+            100,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    let lim_after = c.view(&ag, "get_limits", json!({})).await?;
+    out.set("limits_after", lim_after.clone());
+    let check = json!({
+        "human_transactions": 1,
+        "supplier_jobs_bought": bought,
+        "cap_refused_the_fifth": cap_refused && bought == 4,
+        "payee_refused": payee_refused,
+        "spent_today": lim_after["spent_today"],
+        "dave_gained": gain.to_string(),
+        "dave_exactly_20_percent": dave_exact,
+    });
+    out.set("check", check);
+    let pass = bought == 4 && cap_refused && payee_refused && dave_exact;
+    out.set("pass", json!(pass));
+    out.write()?;
+    if pass {
+        Ok(())
+    } else {
+        Err("business day checks failed (see out/scenes/scene-11.json)".into())
+    }
+}
+
 // ------------------------------------------------------------------ scene 9
 
 /// NEAR the factory account starts with: its own code (~3.4 for 335 KB),
@@ -2190,7 +2358,9 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
 
     println!("  preview: random chunks proven before the buy (SC21)");
     let bob_id = c.acct("bob")?.id.to_string();
-    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
+    let pv = c
+        .view(&ag, "get_preview", json!({"requester": bob_id}))
+        .await?;
     if pv.is_null() {
         let t = c
             .call(
@@ -2206,7 +2376,9 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
+    let pv = c
+        .view(&ag, "get_preview", json!({"requester": bob_id}))
+        .await?;
     let asked: Vec<u32> = serde_json::from_value(pv["chunks"].clone()).unwrap_or_default();
     let proven: Vec<u64> = pv["proven"]
         .as_array()
@@ -2229,7 +2401,9 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let pv = c.view(&ag, "get_preview", json!({"requester": bob_id})).await?;
+    let pv = c
+        .view(&ag, "get_preview", json!({"requester": bob_id}))
+        .await?;
     out.set("preview", pv.clone());
 
     println!("  buy with a one-time delivery key");

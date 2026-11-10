@@ -32,6 +32,8 @@ const SCENARIOS = [
     intro: "The factory creates the agent account and deploys the published code in one transaction, so no seller key ever existed. The buyer's scan reads the factory's record." },
   { id: "sealed", title: "The seller swaps the prompt: the whole price comes back", steps: ["sealed-prompt"],
     intro: "alice commits to the agent's prompt bundle by hash and Merkle root. bob sees two random chunks proven against it, then buys with a one-time key. alice delivers a different bundle; bob reveals the key, the contract decrypts and hashes it on-chain, and bob gets the whole price back. alice is paid nothing." },
+  { id: "day", title: "A business day: the owner only sets the constraints", steps: ["business-day"],
+    intro: "alice signs one transaction: a daily cap of 8.00, one allowed supplier, 80% of revenue to the treasury. Then no human signs: five customers pay, the agent's own runner key buys a supplier job after each until the cap refuses the fifth, a payment to anyone else is refused, and dave, a 20% investor, is paid inside every payment." },
   { id: "nearai", title: "Verified revenue: a NEAR AI signature checked on-chain", steps: ["nearai-check"],
     intro: "A payment carries NEAR AI Cloud's TEE signature over the request and the answer. The contract recovers the signer and marks the payment verified." },
   { id: "aibuyer", title: "A real AI model buys an agent through MCP", steps: ["ai-buyer"],

@@ -3,7 +3,7 @@
 // and its NearBlocks link. Only what the runner recorded; nothing is invented.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
-const STEP_SCENE = { "break-in": 1, business: 2, verified: 3, cheat: 4, "honest-sale": 5, "agent-buys-agent": 6, invest: 8, "born-clean": 9, "sealed-prompt": 10 };
+const STEP_SCENE = { "break-in": 1, business: 2, verified: 3, cheat: 4, "honest-sale": 5, "agent-buys-agent": 6, invest: 8, "born-clean": 9, "sealed-prompt": 10, "business-day": 11 };
 const out = { schema: "web-testnet.v1", network: "testnet", money: "xUSD-FAKE", steps: {} };
 
 function short(err) {

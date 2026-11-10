@@ -80,4 +80,5 @@ each: their code (~5.3), the growth reserve the contract demands (1.83) and the
 | 3 | `make gates`: G1 key handover on a fresh agent, G6 NEAR AI signature verified by the contract, G2 MPC signs `pay_base` 5 times (latency) and the relay sends it on Base Sepolia | `out/gates/g1.json`, `g6.json`, `g2-sign.json`, `g2.json` |
 | 4 | `make scenes` (order 3, 4, 5, 1, 2, 6; waits out an open Base authorization before listing) | `out/scenes/scene-N.json` |
 | 5 | `make scene-10`: the sealed prompt. Fresh agent `sealed1` (about 9.5 NEAR) sells at 100.00 with a committed config; the seller posts a fake bundle; the buyer's dispute decrypts it on-chain and gets the 100.00 back | `out/scenes/scene-10.json` (`pass`, `check.*`) |
+| 6 | `make scene-11` (after scene 8): a business day on `translator3`: the owner sets the constraints once; customers pay, the runner key buys supplier jobs until the cap refuses, dave is paid in every payment | `out/scenes/scene-11.json` |
 | later | `make scene-N RECORDED=1` replays a recorded scene offline (tx links, real errors) | |
