@@ -1265,3 +1265,23 @@ fn sc22_preview_through_the_contract() {
     assert_eq!(v["proven"].as_array().unwrap().len(), 2);
     assert_eq!(v["draws"], json!("1"));
 }
+
+/// Security review 6 H1: the born-clean factory (the agent's direct parent)
+/// runs `new` in its create batch, so init accepts the account itself or its
+/// parent, and nobody else.
+#[test]
+fn h1_init_accepts_self_and_parent_factory() {
+    let s0 = Sim::new(AGENT, ALICE);
+    for who in [AGENT, "testnet"] {
+        s0.env(&s0.call(who));
+        let _ = crate::AgentExit::new(acc(ALICE), None);
+    }
+}
+
+#[test]
+#[should_panic(expected = "InitNotAllowed")]
+fn h1_init_refuses_a_stranger() {
+    let s0 = Sim::new(AGENT, ALICE);
+    s0.env(&s0.call("mallory.testnet"));
+    let _ = crate::AgentExit::new(acc(ALICE), None);
+}

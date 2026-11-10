@@ -383,8 +383,13 @@ impl AgentExit {
     /// the MPC public key and blocks a mismatch (`base_address_mismatch`,
     /// A51). Nothing else ties it to the derivation.
     #[init]
-    #[private]
     pub fn new(owner_id: AccountId, base_address: Option<String>) -> Self {
+        // Only the account itself (a plain deploy) or its direct parent (the
+        // born-clean factory's create batch) may run init (review 6 H1).
+        let me = env::current_account_id();
+        let by = env::predecessor_account_id();
+        let parent = me.as_str().split_once('.').map(|(_, p)| p);
+        require!(by == me || Some(by.as_str()) == parent, "InitNotAllowed");
         let mut m = Machine::<meter_store::NearStore>::with_store(
             env::current_account_id().as_str(),
             owner_id.as_str(),
