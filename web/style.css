@@ -379,3 +379,8 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .ex-table th { cursor: pointer; user-select: none; }
 .ex-table tr.ex-flag td { color: var(--bad); }
 .ex-table .badge { margin-left: .4rem; }
+.invest-yourself .iy-wallet { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .8rem 0; }
+.invest-yourself .iy-wallet label { width: 100%; font-weight: 600; }
+.invest-yourself .iy-wallet input { flex: 1 1 14rem; min-width: 0; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.invest-yourself .iy-wallet a[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.invest-yourself .iy-wallet p { width: 100%; margin: .2rem 0 0; }

@@ -52,8 +52,18 @@
 
     <section id="invest-yourself" class="invest-yourself" hidden>
       <h2>Invest yourself, on NEAR testnet</h2>
-      <p class="muted">An open offer: <span id="iy-terms"></span> Use any testnet account and the free test token; nothing here is real money. Each command is for <a href="https://github.com/near/near-cli-rs">near-cli-rs</a>; replace <code>YOU.testnet</code> with your account.</p>
+      <p class="muted">An open offer: <span id="iy-terms"></span> Use any testnet account you have in MyNearWallet, or the <a href="https://github.com/near/near-cli-rs">near-cli-rs</a> commands below (replace <code>YOU.testnet</code>). The token is free test money.</p>
+      <div class="iy-wallet">
+        <label for="iy-account">Your testnet account</label>
+        <input id="iy-account" type="text" placeholder="you.testnet" autocomplete="off" spellcheck="false">
+        <a id="iy-invest" class="btn primary" aria-disabled="true">Invest 1% with MyNearWallet</a>
+        <a id="iy-claim" class="btn" aria-disabled="true">Claim your earnings</a>
+        <button type="button" id="iy-read" disabled>See my holding (live)</button>
+        <p id="iy-out" class="small muted" aria-live="polite">One click signs one transaction in MyNearWallet (testnet): free test dollars from the faucet, then a 1% part bought with them. Nothing is real money.</p>
+      </div>
+      <details class="iy-cli"><summary>Or do it with near-cli-rs</summary>
       <ol id="iy-steps" class="iy-steps"></ol>
+      </details>
     </section>
 
     <section id="concept" class="concept">

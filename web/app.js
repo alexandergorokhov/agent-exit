@@ -5,6 +5,7 @@
 
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
+import { signUrl, investTx, claimTx, validAccount } from "./wallet-link.mjs";
 const params = new URLSearchParams(location.search);
 const network = params.get("network") === "testnet" ? "testnet" : "offline";
 
@@ -400,6 +401,51 @@ async function renderInvestYourself() {
   document.getElementById("iy-steps").replaceChildren(...steps.map(([what, cmds]) =>
     el("li", {}, el("p", { text: what }), ...cmds.map((c) => el("pre", {}, el("code", { text: c }))))));
   box.hidden = false;
+  wireWallet(o);
+}
+
+// One-click links to MyNearWallet's sign page (web/wallet-link.mjs). The wallet
+// returns to ?iy=<account>&transactionHashes=… (or errorCode=… if cancelled).
+function wireWallet(o) {
+  const input = document.getElementById("iy-account");
+  const invest = document.getElementById("iy-invest");
+  const claim = document.getElementById("iy-claim");
+  const read = document.getElementById("iy-read");
+  const out = document.getElementById("iy-out");
+  const back = (who) => { const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("iy", who); return u.toString(); };
+  const update = () => {
+    const who = input.value.trim().toLowerCase();
+    const ok = validAccount(who) && who.endsWith(".testnet");
+    for (const a of [invest, claim]) {
+      if (ok) a.removeAttribute("aria-disabled"); else { a.setAttribute("aria-disabled", "true"); a.removeAttribute("href"); }
+    }
+    read.disabled = !ok;
+    if (!ok) return;
+    invest.href = signUrl([investTx(o, who)], back(who));
+    claim.href = signUrl([claimTx(o, who)], back(who));
+  };
+  input.addEventListener("input", update);
+  read.addEventListener("click", async () => {
+    const who = input.value.trim().toLowerCase();
+    out.textContent = "Reading the agent's ledger on testnet…";
+    try {
+      const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_holdings", args_base64: btoa(JSON.stringify({ account_id: who })) });
+      const h = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
+      const bps = (h.holdings || []).reduce((n, x) => n + Number(x.bps), 0);
+      out.textContent = bps ? `${who} holds ${bps / 100}% of ${o.agent}'s revenue offer; claimable now: ${(Number(h.claimable) / 1e6).toFixed(2)} xUSD-FAKE.` : `${who} holds no part of ${o.agent} yet.`;
+    } catch (e) {
+      out.textContent = `Live read failed (it needs the page's local server, make web): ${e.message}`;
+    }
+  });
+  const who = params.get("iy");
+  if (who && validAccount(who)) {
+    input.value = who;
+    const hashes = (params.get("transactionHashes") || "").split(",").filter((h) => /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(h));
+    if (hashes.length) out.replaceChildren("Signed and sent: ", ...hashes.map((h) => el("a", { href: `https://testnet.nearblocks.io/txns/${h}`, target: "_blank", rel: "noopener", text: `${h.slice(0, 8)}…` })), ". Press See my holding.");
+    else if (params.get("errorCode")) out.textContent = "The wallet did not send the transaction (cancelled or failed). Nothing changed.";
+    document.getElementById("invest-yourself").scrollIntoView();
+  }
+  update();
 }
 renderInvestYourself().catch(() => { /* the section stays hidden */ });
 

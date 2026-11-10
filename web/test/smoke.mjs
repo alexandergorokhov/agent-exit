@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { serve } from "../serve.mjs";
+import { WALLET_SIGN, encodeTx, investTx, base64 } from "../wallet-link.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -160,6 +161,14 @@ try {
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
+  }
+
+  // W10: wallet-link's borsh matches @near-js/transactions byte for byte (vector made once with @near-js/transactions 1.3.3).
+  {
+    const offer = { xusd: "xusd.agentexit4.testnet", agent: "translator3.agentexit4.testnet", amount: "10000000", msg: "{\"kind\":\"buy_share\"}" };
+    assert.equal(base64(encodeTx(investTx(offer, "you.testnet"))), "CwAAAHlvdS50ZXN0bmV0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAAAAeHVzZC5hZ2VudGV4aXQ0LnRlc3RuZXQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACBgAAAGZhdWNldBUAAAB7ImFtb3VudCI6IjEwMDAwMDAwIn0A4FfrSBsAAAAAAAAAAAAAAAAAAAAAAAACEAAAAGZ0X3RyYW5zZmVyX2NhbGxlAAAAeyJyZWNlaXZlcl9pZCI6InRyYW5zbGF0b3IzLmFnZW50ZXhpdDQudGVzdG5ldCIsImFtb3VudCI6IjEwMDAwMDAwIiwibXNnIjoie1wia2luZFwiOlwiYnV5X3NoYXJlXCJ9In0AYLeYbIgAAAEAAAAAAAAAAAAAAAAAAAA=", "W10: borsh golden vector");
+    assert.throws(() => encodeTx({ signerId: "x", receiverId: "a.testnet", actions: [] }), "W10: rejects bad input");
+    checks++;
   }
 
   // S24: strict CSP meta, no remote script, vendored connector pinned by hash.
@@ -400,6 +409,18 @@ try {
         await iy.waitFor({ state: "visible" });
         assert.equal(await vp.locator("#iy-steps > li").count(), 5, "V8: five invest steps");
         assert.ok((await iy.textContent()).includes(rec.open_offer.agent), "V8: commands name the offer's agent");
+        // W9: one-click wallet links. Disabled until a valid account is typed; then the link is
+        // MyNearWallet's /sign page with one transaction (faucet + buy) signed by that account.
+        assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W9: invest link disabled with no account");
+        await vp.fill("#iy-account", "Bad Name!");
+        assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W9: invalid account keeps it disabled");
+        await vp.fill("#iy-account", "judge.testnet");
+        const href = await vp.locator("#iy-invest").getAttribute("href");
+        assert.ok(href.startsWith(`${WALLET_SIGN}?transactions=`), "W9: invest link goes to MyNearWallet sign");
+        const u = new URL(href);
+        assert.equal(u.searchParams.get("transactions"), base64(encodeTx(investTx(rec.open_offer, "judge.testnet"))), "W9: the link carries the faucet + buy transaction");
+        assert.ok(new URL(u.searchParams.get("callbackUrl")).searchParams.get("iy") === "judge.testnet", "W9: wallet returns to the page");
+        assert.ok((await vp.locator("#iy-claim").getAttribute("href")).includes("transactions="), "W9: claim link built");
       } else {
         assert.equal(await iy.isVisible(), false, "V8: hidden with no open offer");
       }

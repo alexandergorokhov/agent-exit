@@ -6,7 +6,7 @@
 export const UPSTREAMS = ["https://rpc.testnet.fastnear.com", "https://rpc.testnet.near.org"];
 // Regular nodes forget transactions after a few days; "tx" falls back to an archival node.
 export const ARCHIVAL = "https://archival-rpc.testnet.fastnear.com";
-export const VIEW_METHODS = ["get_status", "get_listing", "get_earnings"];
+export const VIEW_METHODS = ["get_status", "get_listing", "get_earnings", "get_holdings", "get_shares"];
 const ACCOUNT = /^([a-z0-9_-]+(\.[a-z0-9_-]+)*\.testnet|[0-9a-f]{64})$/;
 export const MAX_BODY = 2048;
 
