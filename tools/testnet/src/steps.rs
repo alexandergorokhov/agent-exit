@@ -2203,7 +2203,13 @@ async fn exchange(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String
     }
     let alice = c.acct("alice")?;
     let mut board = vec![];
-    for l in EXCHANGE.iter() {
+    // EXCHANGE_AGENTS=N runs only the first N (about 10 NEAR each) when the root is short.
+    let n = std::env::var("EXCHANGE_AGENTS")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(EXCHANGE.len())
+        .clamp(1, EXCHANGE.len());
+    for l in EXCHANGE.iter().take(n) {
         let agent = format!("{}.{fid}", l.name);
         println!("  {agent}");
         if !c.exists(&agent).await {
@@ -2327,8 +2333,7 @@ async fn exchange(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String
         board.push(json!({"agent": agent, "name": l.name, "earnings": earnings, "status": status["status"],
             "owner": status["owner"], "shares": shares, "listing": listing, "born_clean": birth["state"] == json!("Born")}));
     }
-    let pass =
-        board.len() == EXCHANGE.len() && board.iter().all(|b| b["born_clean"] == json!(true));
+    let pass = board.len() == n && board.iter().all(|b| b["born_clean"] == json!(true));
     out.set("factory", json!(fid));
     out.set("board", json!(board));
     out.set("pass", json!(pass));
