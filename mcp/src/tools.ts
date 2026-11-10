@@ -425,6 +425,10 @@ export class Tools {
       if (k.kind === "function_call" && k.receiver_id !== account) findings.push({ code: "fc_key_other_contract", severity: "medium", text: `${k.public_key} lets its holder spend this account's NEAR on gas calling ${k.receiver_id}` });
     }
     if (f.keys_second) {
+      // Review 6 L3: two hosts of one operator are not an independent check.
+      const op = (u: string) => { try { return new URL(u).hostname.split(".").slice(-2).join("."); } catch { return u; } };
+      const rpcs = this.cfg.rpc ?? [];
+      if (rpcs.length > 1 && op(rpcs[0]) === op(rpcs[1])) findings.push({ code: "providers_same_operator", severity: "low", text: `both RPC providers are run by ${op(rpcs[0])}: the cross-check does not guard against that operator` });
       // Review fix: compare what each key may do, not only its name.
       const norm = (ks: Json[]) => JSON.stringify(ks.map((k: Json) => JSON.stringify([k?.public_key, k?.permission])).sort());
       const a = norm(f.keys);
@@ -645,7 +649,7 @@ export class Tools {
     } else {
       writeFileSync(file, JSON.stringify({ agent, listing_version: listing.listing_version, commit: c, delivery_pk: pkHex, delivery_sk: sk }), { mode: 0o600, flag: "w" });
     }
-    return { hash: String(c.hash), bytes: Number(c.bytes), delivery_pk, delivery_key_file: file, next: "after the seller's deliver_config (get_sealed_config shows it): node scripts/sealed-config.mjs open <secret from delivery_key_file> <ephemeral_pk> <ciphertext> <hash>; on a mismatch call the contract's dispute_config with that secret" };
+    return { hash: String(c.hash), bytes: Number(c.bytes), delivery_pk, delivery_key_file: file, next: "after the seller's deliver_config: call sealed_delivery action open (it reads delivery_key_file itself; never put the secret on a command line), then accept, or dispute (confirm: true) on a mismatch" };
   }
   private engine: string | null = null;
 

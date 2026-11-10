@@ -229,3 +229,18 @@ test("CA15 (review 6 L5) a global contract by hash: its code is not read, so it 
     await s.close();
   }
 });
+
+test("CA16 (review 6 L3) two RPC hosts of one operator are flagged: the cross-check is not independent", async () => {
+  const f = (async (_url: string, init?: RequestInit) => {
+    const p = JSON.parse(String(init?.body)).params;
+    const result = p.request_type === "view_account" ? { code_hash: "11111111111111111111111111111111" } : p.request_type === "view_access_key_list" ? { keys: [] } : {};
+    return new Response(JSON.stringify({ result }), { status: 200 });
+  }) as unknown as typeof fetch;
+  for (const [env, same] of [[{ AGENT_EXIT_RPC: "https://rpc.testnet.fastnear.com", AGENT_EXIT_RPC_2: "https://test.rpc.fastnear.com" }, true], [{}, false]] as const) {
+    const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet", ...env });
+    const t = new Tools(cfg, new TestnetBackend(cfg, f), loadSchemas(REPO));
+    const r = await t.call("check_account", { account: "someone-else.testnet" });
+    assert.ok(valid("check_account", r), JSON.stringify(r.body));
+    assert.equal((r.body as any).findings.some((x: any) => x.code === "providers_same_operator"), same, JSON.stringify(env));
+  }
+});
