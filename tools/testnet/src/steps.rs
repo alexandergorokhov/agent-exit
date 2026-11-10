@@ -174,6 +174,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
         Command::Scene(10) => sealed(&c, &env, secrets).await,
         Command::Scene(11) => business_day(&c, &env, secrets).await,
         Command::Scene(12) => open_offer(&c, &env, secrets).await,
+        Command::Scene(13) => exchange(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -633,7 +634,7 @@ async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
             &bob,
             &c.id("xusd"),
             "ft_transfer_call",
-            json!({"receiver_id": id, "amount": (10 * USD).to_string(), "msg": msg.to_string()}),
+            json!({"receiver_id": id, "amount": (OPEN_PRICE * PART_BPS as u128 / OPEN_BPS as u128).to_string(), "msg": msg.to_string()}),
             1,
             300,
         )
@@ -2045,8 +2046,11 @@ async fn business_day(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<St
 
 // ------------------------------------------------------------------ scene 12
 
-/// The open offer's terms: 10% of every payment, 100.00, until 2026-11-30.
-const OPEN_BPS: u64 = 1_000;
+/// The open offer's terms: 25% of every payment, 250.00, until 2026-11-30:
+/// 25 parts of 1% at 10.00, so a whole judging panel can each buy one.
+const OPEN_BPS: u64 = 2_500;
+const OPEN_PRICE: u128 = 250 * USD;
+const PART_BPS: u64 = 100;
 const OPEN_END_NS: u64 = 1_796_083_199 * 1_000_000_000; // 2026-11-30T23:59:59Z
 
 /// An offer any judge can buy a 1% part of from the page (see web "Invest
@@ -2068,16 +2072,16 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         return Err(format!("scene 12 needs {ag} owned by alice and not listed"));
     }
     let open =
-        |o: &Value| o["bps"] == json!(OPEN_BPS) && o["price"] == json!((100 * USD).to_string());
+        |o: &Value| o["bps"] == json!(OPEN_BPS) && o["price"] == json!(OPEN_PRICE.to_string());
     let mut offers = c.view(&ag, "get_shares", json!({})).await?;
     if !offers.as_array().is_some_and(|a| a.iter().any(open)) {
         let t = c
             .call(
-                &format!("alice offers 10% of {name}'s earnings to anyone, 1% parts at 10.00"),
+                &format!("alice offers 25% of {name}'s earnings to anyone, 1% parts at 10.00"),
                 &c.acct("alice")?,
                 &ag,
                 "offer_share",
-                json!({"bps": OPEN_BPS, "price": (100 * USD).to_string(), "end": OPEN_END_NS.to_string()}),
+                json!({"bps": OPEN_BPS, "price": OPEN_PRICE.to_string(), "end": OPEN_END_NS.to_string()}),
                 1,
                 50,
             )
@@ -2090,7 +2094,7 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         .as_array()
         .and_then(|a| a.iter().find(|o| open(o)).cloned())
         .ok_or("the open offer is missing after offer_share")?;
-    let part = OPEN_BPS / 10;
+    let part = PART_BPS;
     let msg = json!({"kind": "buy_share", "offer_id": o["offer_id"], "bps": o["bps"],
                      "price": o["price"], "end": o["end"], "part": part});
     out.set("agent", json!(ag));
@@ -2106,6 +2110,234 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
     out.set("pass", json!(true));
     out.write()?;
     Ok(())
+}
+
+// ------------------------------------------------------------------ scene 13
+
+/// One agent on the Exchange board: who pays it, and what its owner offers.
+struct Listing {
+    name: &'static str,
+    /// (payer, payments, each in whole xUSD-FAKE)
+    pays: &'static [(&'static str, u32, u128)],
+    /// Some((bps, price)) = an open share offer.
+    offer: Option<(u16, u128)>,
+    /// Some(price) = listed for sale.
+    sale: Option<u128>,
+}
+
+const EXCHANGE: [Listing; 6] = [
+    Listing {
+        name: "translate-pro",
+        pays: &[
+            ("p1", 2, 10),
+            ("p2", 2, 10),
+            ("p3", 1, 20),
+            ("p4", 1, 20),
+            ("p5", 1, 20),
+        ],
+        offer: Some((1_000, 50)),
+        sale: None,
+    },
+    Listing {
+        name: "research-desk",
+        pays: &[("p2", 1, 30), ("p3", 1, 30), ("p6", 1, 30), ("dave", 1, 30)],
+        offer: Some((2_000, 100)),
+        sale: None,
+    },
+    Listing {
+        name: "pump-bot",
+        pays: &[("alice", 3, 100), ("x.alice", 1, 100), ("p1", 1, 10)],
+        offer: None,
+        sale: Some(1_000),
+    },
+    Listing {
+        name: "support-247",
+        pays: &[
+            ("p1", 1, 8),
+            ("p2", 1, 8),
+            ("p3", 1, 8),
+            ("p4", 1, 8),
+            ("p5", 1, 8),
+        ],
+        offer: None,
+        sale: Some(150),
+    },
+    Listing {
+        name: "trend-trader",
+        pays: &[
+            ("p4", 1, 40),
+            ("p5", 1, 40),
+            ("p6", 1, 40),
+            ("x.alice", 1, 60),
+        ],
+        offer: Some((1_500, 60)),
+        sale: None,
+    },
+    Listing {
+        name: "summarize-it",
+        pays: &[
+            ("p1", 1, 6),
+            ("p2", 1, 6),
+            ("p3", 1, 6),
+            ("p4", 1, 6),
+            ("p6", 1, 6),
+        ],
+        offer: None,
+        sale: Some(90),
+    },
+];
+
+/// The Exchange: six agents born clean in the factory, each with its own
+/// payment history (outside customers, the owner's self-pay, a sub-account),
+/// an open share offer or a sale listing. The page's board reads them.
+async fn exchange(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    let _ = env;
+    let mut out = Out::new("out/scenes/scene-13.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(13));
+    out.set("what", json!(info(Step::Scene13Exchange).what));
+    println!("scene-13");
+    let fid = c.id("factory");
+    if c.view(&fid, "has_code", json!({})).await? != json!(true) {
+        return Err("scene 13 runs after scene 9 (the factory holds the agent code)".into());
+    }
+    let alice = c.acct("alice")?;
+    let mut board = vec![];
+    for l in EXCHANGE.iter() {
+        let agent = format!("{}.{fid}", l.name);
+        println!("  {agent}");
+        if !c.exists(&agent).await {
+            let t = c
+                .call(
+                    &format!("create_agent {} for alice (born clean)", l.name),
+                    &c.root,
+                    &fid,
+                    "create_agent",
+                    json!({"name": l.name, "owner_id": c.id("alice")}),
+                    BORN_YOCTO,
+                    300,
+                )
+                .await;
+            out.tx(&t);
+            ok(&t)?;
+        }
+        // The agent needs a token account to be paid.
+        let t = c
+            .call(
+                &format!("register {agent} with xUSD-FAKE"),
+                &c.root,
+                &c.id("xusd"),
+                "mint",
+                json!({"account_id": agent, "amount": "0"}),
+                0,
+                30,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        let e = c.view(&agent, "get_earnings", json!({})).await?;
+        let gross_now: u128 = e["gross"]
+            .as_str()
+            .and_then(|g| g.parse().ok())
+            .or_else(|| e["gross"].as_u64().map(u128::from))
+            .unwrap_or(0);
+        if gross_now == 0 {
+            for (payer, n, each) in l.pays.iter() {
+                let who = c.acct(payer)?;
+                let need = *each * USD * (*n as u128);
+                if balance(c, payer).await < need {
+                    let t = c
+                        .call(
+                            &format!("mint {payer}"),
+                            &c.root,
+                            &c.id("xusd"),
+                            "mint",
+                            json!({"account_id": c.id(payer), "amount": need.to_string()}),
+                            0,
+                            30,
+                        )
+                        .await;
+                    out.tx(&t);
+                    ok(&t)?;
+                }
+                if !payer.contains("alice") {
+                    let t = c
+                        .call(
+                            &format!("{payer} registers a payer row on {}", l.name),
+                            &who,
+                            &agent,
+                            "storage_deposit",
+                            json!({}),
+                            24_000_000_000_000_000_000_000,
+                            30,
+                        )
+                        .await;
+                    out.tx(&t);
+                    ok(&t)?;
+                }
+                for j in 0..*n {
+                    let t = c.call(&format!("{payer} pays {} {each}.00", l.name), &who, &c.id("xusd"), "ft_transfer_call",
+                        json!({"receiver_id": agent, "amount": (each * USD).to_string(),
+                               "msg": json!({"kind": "pay", "job_id": format!("ex-{}-{payer}-{j}", l.name)}).to_string()}),
+                        1, 150).await;
+                    out.tx(&t);
+                    ok(&t)?;
+                }
+            }
+        }
+        if let Some((bps, price)) = l.offer {
+            let offers = c.view(&agent, "get_shares", json!({})).await?;
+            if offers.as_array().is_none_or(|a| a.is_empty()) {
+                let end = now_ns() + 60 * agent_core::DAY_NS;
+                let t = c.call(&format!("alice offers {}% of {}'s earnings for {price}.00", bps / 100, l.name), &alice, &agent,
+                    "offer_share", json!({"bps": bps, "price": (price * USD).to_string(), "end": end.to_string()}), 1, 50).await;
+                out.tx(&t);
+                ok(&t)?;
+            }
+        }
+        if let Some(price) = l.sale {
+            let st = c.view(&agent, "get_status", json!({})).await?;
+            if st["status"] != "Listed" {
+                let (hash, _) = c.code(&agent).await?;
+                let t = c
+                    .call(
+                        &format!("alice lists {} at {price}.00", l.name),
+                        &alice,
+                        &agent,
+                        "list_for_sale",
+                        json!({"price": (price * USD).to_string(), "code_hash": hash}),
+                        1,
+                        50,
+                    )
+                    .await;
+                out.tx(&t);
+                ok(&t)?;
+            }
+        }
+        let earnings = c.view(&agent, "get_earnings", json!({})).await?;
+        let status = c.view(&agent, "get_status", json!({})).await?;
+        let shares = c.view(&agent, "get_shares", json!({})).await?;
+        let listing = c
+            .view(&agent, "get_listing", json!({}))
+            .await
+            .unwrap_or(Value::Null);
+        let birth = c
+            .view(&fid, "get_agent", json!({"account_id": agent}))
+            .await?;
+        board.push(json!({"agent": agent, "name": l.name, "earnings": earnings, "status": status["status"],
+            "owner": status["owner"], "shares": shares, "listing": listing, "born_clean": birth["state"] == json!("Born")}));
+    }
+    let pass =
+        board.len() == EXCHANGE.len() && board.iter().all(|b| b["born_clean"] == json!(true));
+    out.set("factory", json!(fid));
+    out.set("board", json!(board));
+    out.set("pass", json!(pass));
+    out.write()?;
+    if pass {
+        Ok(())
+    } else {
+        Err("exchange: an agent is missing or not born clean (see out/scenes/scene-13.json)".into())
+    }
 }
 
 // ------------------------------------------------------------------ scene 9
