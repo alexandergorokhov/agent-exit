@@ -148,6 +148,14 @@ playground-wasm: ## Build the page's playground: the real agent-core state machi
 	cp target/wasm32-unknown-unknown/release/playground.wasm web/playground.wasm
 	cd web && sha256sum playground.wasm > playground.wasm.sha256
 
+.PHONY: agent-invests agent-invests-testnet
+agent-invests: mcp-build ## Scripted investing agent via MCP (no model, $0): reads open offers, picks by counted revenue per 1%, buys, reads its portfolio; offline -> out/agent-invests.json
+	@mkdir -p $(OUT)
+	node mcp/dist/scripts/agent-invests.js --out $(OUT)/agent-invests.json
+
+agent-invests-testnet: mcp-build ## [testnet] After make scene-12: the same agent, through carol's MCP server, buys a 1% part of the open offer on testnet (xUSD-FAKE) -> out/agent-invests-testnet.json
+	node mcp/dist/scripts/agent-invests.js --network testnet --root $(TESTNET_ROOT) --out $(OUT)/agent-invests-testnet.json
+
 .PHONY: llm-buyer-testnet
 llm-buyer-testnet: mcp-build ## [testnet] After make scene-7: a real model, through carol's MCP server, scans both agents and buys on testnet (xUSD-FAKE) -> out/llm-buyer-testnet.json. ONE capped Anthropic run (~$0.05)
 	node mcp/dist/scripts/llm-buyer.js --network testnet --root $(TESTNET_ROOT) --provider anthropic --max-steps 12 --max-tokens 150000 --out $(OUT)/llm-buyer-testnet.json
