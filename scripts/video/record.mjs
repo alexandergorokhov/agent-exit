@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Records the 80-second demo video from the page, offline: the recorded
+// Records the demo video (about 2 minutes) from the page, offline: the recorded
 // testnet data (web/data) and the playground (the real contract core in
 // wasm). No network, no wallet. Captions are drawn on the page.
 //   node web/serve.mjs 8090 &   then   node scripts/video/record.mjs
@@ -87,11 +87,23 @@ await mark('[data-agent="translator"],[data-agent="translator3"]');
 await caption("translator: 72% from outside customers, clean keys. translator3: every job signed by NEAR AI.", 5500);
 
 await mark("", false);
-// Shot 3 (0:34-0:58): the honest sale, in the real contract logic.
+// Shot 3: invest instead of buying (business first).
+await scrollTo("#play");
+await p.locator('#missions button[data-mission="invest"]').click();
+await wait(600);
+await caption("Proven earnings unlock money. alice sells 20% of future earnings to dave", 0);
+await act("offer_share", 1800);
+await act("buy_share", 2600);
+await caption("Each customer payment pays the investor inside the same call", 0);
+await act("pay_customer_inv", 2800);
+await caption("alice pays her own agent to fake revenue: flagged, not counted, and the investor still gets 20%", 0);
+await act("pay_self_inv", 3800);
+
+// Shot 4: the honest sale, in the real contract logic.
 await scrollTo("#play");
 await p.locator('#missions button[data-mission="honest"]').click();
 await wait(600);
-await caption("The real contract logic, compiled into the page: list, scan, buy", 0);
+await caption("Or buy it whole. The real contract logic, compiled into the page: list, scan, buy", 0);
 await act("list", 1800);
 await act("scan", 2200);
 await act("buy", 3200);
@@ -102,17 +114,27 @@ await act("withdraw", 2200);
 await act("set_key", 2200);
 await act("old_key", 2600);
 
-// Shot 4 (0:58-1:18): invest instead of buying.
+// Shot 5: the off-chain brain. A swapped prompt returns the whole price.
 await scrollTo("#play");
-await p.locator('#missions button[data-mission="invest"]').click();
+await p.locator('#missions button[data-mission="brain"]').click();
 await wait(600);
-await caption("Or invest: alice sells 20% of future earnings", 0);
-await act("offer_share", 1800);
-await act("buy_share", 2600);
-await caption("Each customer payment pays the investor inside the same call", 0);
-await act("pay_customer_inv", 2800);
-await caption("alice pays her own agent to fake revenue: flagged, not counted, and the investor still gets 20%", 0);
-await act("pay_self_inv", 3800);
+await caption("The agent's value is also its prompt. alice commits to it sealed: only its hash goes on-chain", 0);
+await act("commit_config", 2400);
+await act("list", 1500);
+await act("scan", 1800);
+await act("buy", 2600);
+await act("pay_customer", 1500);
+await caption("alice delivers a cheaper prompt instead", 0);
+await act("deliver_fake", 2400);
+await act("open_config", 2400);
+await caption("The contract decrypts and hashes the delivery itself: it does not match, so the whole price goes back to bob", 0);
+await act("dispute_config", 4200);
+
+// Shot 6: recorded on testnet, the owner only sets the constraints.
+if (await p.locator('#scenarios [data-scenario="day"], [data-scenario="day"]').count()) {
+  await scrollTo('[data-scenario="day"]');
+  await caption("On testnet: a business day. The owner set limits once; the agent paid a supplier, hit its daily cap, and dave got exactly 20%", 5000);
+}
 
 // End card.
 await caption("", 0);
