@@ -58,7 +58,7 @@ Offline: `cargo test -p playground`. Everything else: `make setup` once, then `m
 
 ![The demo page](docs/img/demo.png)
 
-[Watch the 90-second demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4) (recorded from the page; no voiceover).
+[Watch the 2-minute demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4) (recorded from the page; no voiceover).
 
 ## What is real, and what is not yet
 
