@@ -234,7 +234,7 @@ hash: ## Compare committed wasm with contracts/res/SHA256SUMS
 
 # ------------------------------------------------------------- real-node tests
 
-.PHONY: test-sandbox test-sealed-sandbox
+.PHONY: test-sandbox test-sealed-sandbox test-born-sandbox
 # neard raises its open-file limit to 65535 and exits if it cannot. Where the
 # hard limit is lower (some containers), a tiny LD_PRELOAD shim clamps that
 # one request to the hard limit.
@@ -248,6 +248,12 @@ test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21, SC-S1/S2 seal
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
+
+test-born-sandbox: ## BC-S1: the born-clean factory creates an agent with no key on a real local node; a stranger cannot run new (~30 s)
+	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm FACTORY_WASM=../../target/near-sandbox/agent_factory.wasm cargo test --locked --test born -- --test-threads=1 --nocapture
 
 test-sealed-sandbox: ## SC-S1/S2: sealed-config dispute + honest accept on a real local node, gas printed (~35 s)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
