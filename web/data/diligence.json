@@ -3,7 +3,7 @@
   "note": "Recorded on NEAR testnet (out/scenes, world w2.agentexit3.testnet). All money is xUSD-FAKE.",
   "cards": [
     {
-      "agent": "translator.w2.agentexit3.testnet",
+      "agent": "translator.agentexit4.testnet",
       "name": "translator",
       "deal": "For sale at 1000.00",
       "rows": [
@@ -46,7 +46,7 @@
       "run": "#run-sale"
     },
     {
-      "agent": "cheat.w2.agentexit3.testnet",
+      "agent": "cheat.agentexit4.testnet",
       "name": "cheat",
       "deal": "For sale at 500.00",
       "rows": [

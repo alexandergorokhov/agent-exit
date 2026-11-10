@@ -1,5 +1,5 @@
 {
-  "buyer": "carol.agentexit3.testnet",
+  "buyer": "carol.agentexit4.testnet",
   "buyer_xusd": "2000000000",
   "cheat_status": "Listed",
   "pass": true,
@@ -8,25 +8,28 @@
   "translator_status": "Listed",
   "txs": [
     {
-      "by": "summarizer.agentexit3.testnet",
+      "by": "summarizer.agentexit4.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "translator.agentexit3.testnet",
-              "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+              "agent": "translator.agentexit4.testnet",
+              "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+              "config": null,
               "escrow": "300000000",
               "known_keys": [
                 "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
               ],
               "known_keys_hash": "e49e57be6c30b2b6c8b7ac5001254e546fc62f491b1f0de413afd1501dc50c39",
-              "listed_at": "1793755218541637741",
+              "listed_at": "1794280738036510307",
               "listing_version": 5,
               "paid_now": "700000000",
               "price": "1000000000",
               "schema": "listing.v1",
-              "seller": "summarizer.agentexit3.testnet",
+              "seller": "summarizer.agentexit4.testnet",
+              "shares": [],
+              "shares_bps": 0,
               "terms": {
                 "earnout_bps": 3000,
                 "floor_bps": 2000,
@@ -39,8 +42,8 @@
                 "min_earnout_bps": 3000,
                 "min_window_secs": 2592000
               },
-              "token": "xusd.agentexit3.testnet",
-              "treasury_snapshot": "2000000"
+              "token": "xusd.agentexit4.testnet",
+              "treasury_snapshot": "3000000"
             }
           ],
           "event": "listed",
@@ -48,27 +51,30 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Emkbe3dtJ6RHzEeTqfFJbQUAj34QXaXCfhgUT8bF151w",
+      "explorer": "https://testnet.nearblocks.io/txns/FyK47wYyTJ8xWtS8Yb8hN4xbRugwcRCNBNgTN4i4XYce",
       "label": "summarizer lists translator at 1000.00",
       "method": "list_for_sale",
-      "ms": 4567,
+      "ms": 5231,
       "ok": true,
-      "receiver": "translator.agentexit3.testnet",
-      "tx": "Emkbe3dtJ6RHzEeTqfFJbQUAj34QXaXCfhgUT8bF151w",
+      "receiver": "translator.agentexit4.testnet",
+      "tx": "FyK47wYyTJ8xWtS8Yb8hN4xbRugwcRCNBNgTN4i4XYce",
       "value": {
-        "agent": "translator.agentexit3.testnet",
-        "code_hash": "7K1Q5DWYuTKwbtUU8uvzrW4kyyFXG7ZVxvJDX7vAEWHq",
+        "agent": "translator.agentexit4.testnet",
+        "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+        "config": null,
         "escrow": "300000000",
         "known_keys": [
           "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
         ],
         "known_keys_hash": "e49e57be6c30b2b6c8b7ac5001254e546fc62f491b1f0de413afd1501dc50c39",
-        "listed_at": "1793755218541637741",
+        "listed_at": "1794280738036510307",
         "listing_version": 5,
         "paid_now": "700000000",
         "price": "1000000000",
         "schema": "listing.v1",
-        "seller": "summarizer.agentexit3.testnet",
+        "seller": "summarizer.agentexit4.testnet",
+        "shares": [],
+        "shares_bps": 0,
         "terms": {
           "earnout_bps": 3000,
           "floor_bps": 2000,
@@ -81,8 +87,8 @@
           "min_earnout_bps": 3000,
           "min_window_secs": 2592000
         },
-        "token": "xusd.agentexit3.testnet",
-        "treasury_snapshot": "2000000"
+        "token": "xusd.agentexit4.testnet",
+        "treasury_snapshot": "3000000"
       }
     }
   ],
