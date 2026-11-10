@@ -388,7 +388,7 @@ else
 	$(TESTNET_RUN) scene-13
 endif
 
-scene-12: ## [testnet] An open share offer anyone can buy into from the page: alice offers 10% of the scene-8 agent's earnings in 1% parts at 10.00 xUSD-FAKE -> out/scenes/scene-12.json [DRY_RUN=1] (after scene-11)
+scene-12: ## [testnet] An open share offer anyone can buy into from the page: alice offers 25% of the scene-8 agent's earnings in 25 parts of 1% at 10.00 xUSD-FAKE -> out/scenes/scene-12.json [DRY_RUN=1] (after scene-11)
 ifdef DRY_RUN
 	@$(PLAN) scene-12
 else
