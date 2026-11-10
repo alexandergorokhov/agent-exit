@@ -1147,12 +1147,19 @@ export class Tools {
     // random preview is proven (sealed_delivery action preview).
     // A bundle under 1 KB has no preview: it would give it away (SC25).
     // Review 5 P2: the preview must be the buyer's own draw.
+    let redrawn: Json | null = null;
     if (quoted.config?.root && Number(quoted.config.bytes ?? 0) >= 1024) {
       const p = await this.backend.preview(agent, buyer);
       if (!p || p.complete !== true || p.requested_by !== buyer || String(p.listing_version) !== String(quoted.listing_version)) {
         throw new ToolError("PREVIEW_INCOMPLETE", `${agent} sells a sealed config with a chunk root, and its random preview is ${p ? "not proven yet" : "not requested"}: call sealed_delivery action preview (confirm: true), wait for the seller's proof, then buy`);
       }
+      // Review 6 M2: draws the current listing no longer holds were dropped
+      // by a relist or a cancel, which lets a seller pick which chunks show.
+      const draws = Number(p.draws ?? 0);
+      const open = Number(p.open_previews ?? draws);
+      if (draws > open) redrawn = { code: "preview_redrawn", severity: "warn", untrusted_detail: `${draws} preview draws on this agent, ${open} in the current listing: earlier draws were dropped by a relist or cancel, so the seller may have chosen which chunks you saw` };
     }
+    if (redrawn) warnings.push(redrawn);
     const sealedCfg = this.deliveryKey(agent, quoted);
     const out = await this.backend.buy(agent, buyer, pk, price.toString(), listing_version, known_keys_hash, sealedCfg?.delivery_pk);
     // From here the buy was SENT (L2): never release the reservation and never

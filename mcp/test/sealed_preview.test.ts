@@ -130,3 +130,22 @@ for (const [name, cfg] of [["no root", { hash: "a".repeat(64), bytes: 4000 }], [
     }
   });
 }
+
+// Security review 6 M2: a seller can drop a buyer's draw by relisting instead of
+// answering. The contract counts every draw; when there were more draws than
+// open previews, buy_agent says so in its warnings.
+test("SP7 more draws than open previews (a relist dropped some): buy_agent warns preview_redrawn", async () => {
+  const chunk = Buffer.from("You translate contracts into Spanish.").toString("base64");
+  const v = world.agents["translator.testnet"].listing.listing_version;
+  for (const [draws, warn] of [["1", false], ["5", true]] as const) {
+    const { wf, dir } = worldWith({ schema: "sealed-preview.v1", listing_version: String(v), requested_by: "summarizer.testnet", chunks: [0], proven: [{ index: 0, chunk }], complete: true, draws, open_previews: 1 });
+    const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
+    try {
+      const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+      assert.ok(valid("buy_agent", r), JSON.stringify(r.body));
+      assert.equal((r.body as any).warnings.some((x: any) => x.code === "preview_redrawn"), warn, `draws ${draws}`);
+    } finally {
+      await s.close();
+    }
+  }
+});
