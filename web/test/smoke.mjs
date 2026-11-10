@@ -348,7 +348,11 @@ try {
       await vp.goto(base);
       await vp.waitForSelector('#scenarios[data-ready="1"]');
       // W6: the hero's first button checks proven earnings; the second runs the cheat scenario.
-      assert.equal(await vp.locator('header .cta a.primary[href="#run-invest"]').count(), 1, "W6: the main hero button checks proven earnings");
+      assert.equal(await vp.locator('header .cta a.primary[href="#invest-yourself"]').count(), 1, "W6: the main hero button is invest yourself");
+      assert.equal(await vp.locator('header .cta a[href="#run-invest"]').count(), 1, "W6: hero button checks proven earnings");
+      // F1: the 30-second screen: one-sentence lede, and the buttons sit above the picture.
+      assert.ok((await vp.locator("header .lede").textContent()).split(/[.!?]\s/).length <= 3, "F1: lede is at most two sentences");
+      assert.ok(await vp.evaluate(() => document.querySelector("header .cta").getBoundingClientRect().bottom < 800), "F1: buttons above the fold at 800px");
       assert.equal(await vp.locator('header .cta a[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
       // M1: the buyer's due-diligence cards: two buys (one refused) and one investment.
       await vp.waitForSelector("#dd-cards .dd-card");
