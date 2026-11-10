@@ -79,11 +79,11 @@ test("SP3 a preview for an older listing version does not count", async () => {
   }
 });
 
-test("SP4 a bundle under 1 KB has no preview (it would give the prompt away): the buy goes ahead", async () => {
+test("SP4 a bundle under 1 KB has no preview (it would give the prompt away): the buy goes ahead once the buyer accepts that", async () => {
   const { wf, dir } = worldWith(null, 600);
   const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
   try {
-    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     assert.ok(r.ok, JSON.stringify(r.body));
   } finally {
     await s.close();
@@ -106,3 +106,27 @@ test("SP5 (review 5 P2) someone else's proven preview does not count: the buyer 
     await s.close();
   }
 });
+
+// Security review 6 M1: a sealed listing with no chunk root, or under 1 KB, gives
+// no preview at all. buy_agent refuses it unless the buyer accepts that
+// explicitly, and then says so in the warnings.
+for (const [name, cfg] of [["no root", { hash: "a".repeat(64), bytes: 4000 }], ["under 1 KB", { hash: "a".repeat(64), bytes: 500, root: ROOT }]] as const) {
+  test(`SP6 a sealed listing with ${name}: NO_PREVIEW unless accept_no_preview`, async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agent-exit-sp6-"));
+    const w = structuredClone(world);
+    w.agents["translator.testnet"].listing.config = cfg;
+    const wf = join(dir, "world.json");
+    writeFileSync(wf, JSON.stringify(w));
+    const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
+    try {
+      const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+      assert.equal(r.ok, false);
+      assert.equal((r.body as any).error.code, "NO_PREVIEW", JSON.stringify(r.body));
+      const ok = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
+      assert.ok(valid("buy_agent", ok), JSON.stringify(ok.body));
+      assert.ok((ok.body as any).warnings.some((x: any) => x.code === "no_preview_accepted"), JSON.stringify(ok.body));
+    } finally {
+      await s.close();
+    }
+  });
+}

@@ -53,6 +53,12 @@
         "heartbeat"
       ],
       "keys": []
+    },
+    "global-hash.testnet": {
+      "code_hash": "11111111111111111111111111111111",
+      "global_contract_hash": "GLoBa1HashGLoBa1HashGLoBa1HashGLoBa1HashGLo",
+      "methods": [],
+      "keys": []
     }
   }
 }

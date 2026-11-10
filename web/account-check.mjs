@@ -35,7 +35,9 @@ export function wasmExports(code) {
     if (id === 7) {
       limit = end;
       const n = leb();
-      for (let k = 0; k < n && k < 10000; k++) {
+      // Review 6 L4: never return a short list that could hide an export.
+      if (n > 10000) throw new Error("too many exports to check");
+      for (let k = 0; k < n; k++) {
         const len = leb();
         if (i + len > end) throw new Error("malformed wasm");
         const name = new TextDecoder().decode(code.subarray(i, i + len));
@@ -62,6 +64,9 @@ export function assess(facts, opts = {}) {
   // Review 4 M2: a NEAR global contract by owner account id can be swapped by that owner.
   const globalBy = facts.global_contract_account_id || null;
   const hasCode = facts.code_hash !== EMPTY_CODE || !!globalBy || !!facts.global_contract_hash;
+  // Review 6 L5: a global contract's code is not the account's own, so its
+  // methods were never read here.
+  if (globalBy || facts.global_contract_hash) facts = { ...facts, methods: null };
   if (globalBy) findings.push({ code: "global_contract_by_account", severity: "high", text: `runs the global contract of ${clean(globalBy)}: that account can replace the code at any time` });
   const keys = facts.keys.map((k) => {
     const pk = clean(k?.public_key);
@@ -96,7 +101,7 @@ export function assess(facts, opts = {}) {
         : "no_key_unknown_code";
   const summary = {
     locked: "Locked: no key can change the code or take the account, and the code is the published Agent Exit build.",
-    no_key_unknown_code: "No full-access key and no upgrade-named method, but the code is not a build we can check: read its source.",
+    no_key_unknown_code: "No full-access key, but the code is not a build we can check: read its source.",
     key_controlled: "An ordinary account: whoever holds a full-access key controls it.",
     backdoor_risk: "Backdoor risk: code runs here, but a key or an upgrade path can override it.",
   }[verdict];

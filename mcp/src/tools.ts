@@ -395,7 +395,10 @@ export class Tools {
       if (!(k.method_names as string[]).length) findings.push({ code: "fc_key_any_method", severity: "medium", text: `${k.public_key} may call every method of ${k.receiver_id}` });
       if (k.allowance === null) findings.push({ code: "fc_key_no_allowance", severity: "low", text: `${k.public_key} has no gas allowance cap` });
     }
-    const upgrade = f.methods.filter((m) => [...UPGRADE_WORDS, ...MORE_CODE_WORDS].some((w) => m.toLowerCase().includes(w)));
+    // Review 6 L5: a global contract's code is not read here, so its methods are unknown.
+    const globalCode = !!globalBy || !!f.global_contract_hash;
+    if (globalCode) findings.push({ code: "code_unreadable", severity: "medium", text: "runs a NEAR global contract whose code this check does not read, so upgrade methods cannot be ruled out" });
+    const upgrade = (globalCode ? [] : f.methods).filter((m: string) => [...UPGRADE_WORDS, ...MORE_CODE_WORDS].some((w) => m.toLowerCase().includes(w)));
     if (upgrade.length) findings.push({ code: "code_change_method", severity: "high", text: `the contract exports ${upgrade.map((m) => untrusted(m)).join(", ")}: a way to change the code or the keys later` });
     const published = this.cfg.expectedCodeHash ?? (this.backend.network === "offline" ? "fixture-release-hash-v1" : null);
     const isAgentExit = hasCode && published !== null && f.code_hash === published;
@@ -440,11 +443,11 @@ export class Tools {
       ? "key_controlled"
       : fullKeys || upgrade.length || findings.some((x) => ["providers_disagree", "key_not_issued_by_contract", "contract_keys_unreadable", "global_contract_by_account"].includes(x.code))
         ? "backdoor_risk"
-        : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key", "fc_key_other_contract"].includes(x.code))
+        : isAgentExit && !findings.some((x) => ["second_provider_unavailable", "fc_key_any_method", "fc_key_no_allowance", "unreadable_key", "fc_key_other_contract", "code_unreadable"].includes(x.code))
           ? "locked"
           : "no_key_unknown_code";
     const summary = {
-      no_key_unknown_code: "no full-access key and no method named like an upgrade, but the code is not a build we can check: a method with another name could still change it. Read the source, or use the published build",
+      no_key_unknown_code: "no full-access key, but the code is not a build we can check: a method under any name could still change it. Read the source, or use the published build",
       locked: "locked: no key can change the code or take the account, and the code is the published Agent Exit build (no upgrade method); only its own methods act",
       key_controlled: "key-controlled: an ordinary account; whoever holds a full-access key controls it",
       backdoor_risk: "backdoor risk: code runs here, but a full-access key or an upgrade path can override it",
@@ -1092,6 +1095,13 @@ export class Tools {
     if (pledged > this.cfg.maxSharesBps) {
       throw new ToolError("SHARES_OVER_MAX", `${pledged / 100}% of this agent's earnings already go to investors (limit ${this.cfg.maxSharesBps / 100}%)`, { shares_bps: pledged });
     }
+    // Security review 6 M1: a sealed config with no chunk root, or under 1 KB,
+    // can show no preview, so a junk prompt would go unseen until after the
+    // buy. Refuse unless the buyer accepts that explicitly.
+    const noPreview = !!quoted.config && !(quoted.config.root && Number(quoted.config.bytes ?? 0) >= 1024);
+    if (noPreview && a.accept_no_preview !== true) {
+      throw new ToolError("NO_PREVIEW", `${agent} sells a sealed config that allows no preview (${quoted.config.root ? "under 1 KB" : "no chunk root"}): you would see the prompt only after paying. The contract still refunds a bundle that does not match its hash. Pass accept_no_preview: true to buy anyway`);
+    }
     if (price > BigInt(units(maxPrice))) {
       throw new ToolError("OVER_MAX_PRICE", `price ${usd(price)} > max_price ${maxPrice.toFixed(2)}`, { price: usd(price) });
     }
@@ -1100,7 +1110,9 @@ export class Tools {
     const cap = BigInt(units(this.cfg.sessionCap));
     this.ledger.reserve(price, cap);
     try {
-      return await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
+      const out = await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
+      if (noPreview && Array.isArray(out.warnings)) out.warnings.push({ code: "no_preview_accepted", severity: "warn", untrusted_detail: "bought a sealed config without a preview; open it with sealed_delivery and dispute within 7 days if it does not match" });
+      return out;
     } catch (e) {
       // buyReserved throws before the transaction is sent, or when the chain
       // refused it and the token refunded it (BUY_REFUSED). When the send

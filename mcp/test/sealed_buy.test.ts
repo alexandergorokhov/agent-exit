@@ -17,7 +17,7 @@ test("SC13 a sealed-config listing: the buy names a one-time key; the secret sta
   writeFileSync(wf, JSON.stringify(w));
   const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
   try {
-    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     assert.ok(valid("buy_agent", r), JSON.stringify(r.body));
     const sc = (r.body as any).sealed_config;
     assert.equal(sc.hash, commit.hash);
@@ -49,7 +49,7 @@ test("SC13b a retry after a buy that was not sent reuses the same one-time key; 
   writeFileSync(file, JSON.stringify({ agent: "translator.testnet", listing_version: v, commit, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
   const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
   try {
-    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     assert.ok(valid("buy_agent", r), JSON.stringify(r.body));
     assert.equal((r.body as any).sealed_config.delivery_pk, "c".repeat(64), "the earlier key is reused, not a crash");
   } finally {
@@ -59,7 +59,7 @@ test("SC13b a retry after a buy that was not sent reuses the same one-time key; 
   writeFileSync(file, JSON.stringify({ agent: "translator.testnet", listing_version: v, commit: { hash: "e".repeat(64), bytes: 1 }, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
   const s2 = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend2.json") });
   try {
-    const r = await s2.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+    const r = await s2.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     const pk = (r.body as any).sealed_config.delivery_pk;
     assert.notEqual(pk, "c".repeat(64));
     assert.equal(JSON.parse(readFileSync(file, "utf8")).delivery_pk, pk);

@@ -215,3 +215,17 @@ test("CA14 (review 4 M2) an account running a global contract by account id is a
     await s.close();
   }
 });
+
+test("CA15 (review 6 L5) a global contract by hash: its code is not read, so it is never locked and makes no claim about methods", async () => {
+  const s = await connect({});
+  try {
+    const r = await s.call("check_account", { account: "global-hash.testnet" });
+    assert.ok(valid("check_account", r), JSON.stringify(r.body));
+    const b: any = r.body;
+    assert.equal(b.verdict, "no_key_unknown_code");
+    assert.ok(b.findings.some((x: any) => x.code === "code_unreadable"), JSON.stringify(b.findings));
+    assert.ok(!/no method named like an upgrade/.test(b.summary), b.summary);
+  } finally {
+    await s.close();
+  }
+});

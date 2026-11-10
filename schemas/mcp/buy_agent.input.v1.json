@@ -39,6 +39,10 @@
       "minimum": 0,
       "maximum": 365,
       "description": "refuse unless the earn-out window is at least this many days; can only tighten the server minimum (30 days, shorter only in a demo build)"
+    },
+    "accept_no_preview": {
+      "type": "boolean",
+      "description": "buy a listing that sells a sealed config with no possible preview (no chunk root, or under 1 KB); without it buy_agent refuses with NO_PREVIEW"
     }
   },
   "required": [

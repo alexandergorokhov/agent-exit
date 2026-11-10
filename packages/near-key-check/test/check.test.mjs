@@ -26,7 +26,7 @@ function rpc(id, f, known = null) {
     seen.push(params.request_type);
     assert.equal(method, "query", "view queries only");
     const ok = (result) => ({ json: async () => ({ result }) });
-    if (params.request_type === "view_account") return ok({ code_hash: f.code_hash, global_contract_account_id: f.global_contract_account_id });
+    if (params.request_type === "view_account") return ok({ code_hash: f.code_hash, global_contract_account_id: f.global_contract_account_id, global_contract_hash: f.global_contract_hash });
     if (params.request_type === "view_access_key_list") return ok({ keys: f.keys.map((k) => ({ public_key: k.public_key, access_key: { permission: k.permission && typeof k.permission === "object" ? { FunctionCall: k.permission } : k.permission } })) });
     if (params.request_type === "view_code") return ok({ code_base64: wasm(f.methods).toString("base64") });
     if (params.request_type === "call_function") return known ? ok({ result: [...Buffer.from(JSON.stringify({ known_keys: known }))] }) : { json: async () => ({ error: { message: "MethodNotFound" } }) };
@@ -68,4 +68,22 @@ test("NK4 only testnet accounts and RPCs; the CLI exits 2 on bad input", async (
   const r = spawnSync(process.execPath, [here("../cli.mjs")], { encoding: "utf8" });
   assert.equal(r.status, 2);
   assert.match(r.stderr, /usage/);
+});
+
+// Security review 6 L4: a module with more exports than the parser reads is an
+// error, never a short list that could hide an `upgrade` export.
+test("NK5 more than 10,000 exports: wasmExports throws instead of stopping early", async () => {
+  const { wasmExports } = await import("../account-check.mjs");
+  const names = Array.from({ length: 10_001 }, (_, i) => (i === 10_000 ? "upgrade" : `f${i}`));
+  assert.throws(() => wasmExports(wasm(names)), /too many exports/);
+  assert.deepEqual(wasmExports(wasm(["a", "upgrade"])), ["a", "upgrade"]);
+});
+
+// Security review 6 L5: for a global contract the account's own code is never
+// read, so "no upgrade-named method" cannot be claimed and it is never locked.
+test("NK6 a global contract by hash: code unreadable, not locked, no claim about methods", () => {
+  const r = assess({ account: "g.testnet", code_hash: "11111111111111111111111111111111", global_contract_hash: "H".repeat(44), methods: [], keys: [], known_keys: [] }, { publishedHash: "H".repeat(44) });
+  assert.notEqual(r.verdict, "locked");
+  assert.ok(r.findings.some((f) => f.code === "code_unreadable"), JSON.stringify(r.findings));
+  assert.ok(!/no upgrade-named method/i.test(r.summary), r.summary);
 });
