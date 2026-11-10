@@ -432,6 +432,7 @@ function wireWallet(o) {
       const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_holdings", args_base64: btoa(JSON.stringify({ account_id: who })) });
       const h = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
       const bps = (h.holdings || []).reduce((n, x) => n + Number(x.bps), 0);
+      liveOffer(o).catch(() => { /* the recorded terms stay */ });
       out.textContent = bps ? `${who} holds ${bps / 100}% of ${o.agent}'s revenue offer; claimable now: ${(Number(h.claimable) / 1e6).toFixed(2)} xUSD-FAKE.` : `${who} holds no part of ${o.agent} yet.`;
     } catch (e) {
       out.textContent = `Live read failed (it needs the page's local server, make web): ${e.message}`;
@@ -446,6 +447,18 @@ function wireWallet(o) {
     document.getElementById("invest-yourself").scrollIntoView();
   }
   update();
+}
+
+// Live count of parts sold in the open offer (read-only relay, on click only; only where the page's server runs).
+async function liveOffer(o) {
+  const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_shares", args_base64: btoa("{}") });
+  const offers = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
+  const live = offers.find((x) => String(x.offer_id) === String(o.offer.offer_id));
+  if (!live) return;
+  const parts = Number(live.bps) / Number(o.part_bps);
+  const sold = Number(live.sold_bps) / Number(o.part_bps);
+  const who = new Set((live.holders || []).map((h) => h.account)).size;
+  document.getElementById("iy-live").textContent = `Live on testnet now: ${sold} of ${parts} parts sold, to ${who} investor${who === 1 ? "" : "s"}.`;
 }
 renderInvestYourself().catch(() => { /* the section stays hidden */ });
 
