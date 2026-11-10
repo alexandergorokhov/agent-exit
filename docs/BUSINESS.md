@@ -1,6 +1,6 @@
 # Agent Exit as a business
 
-Agent Exit is a way to buy and sell AI agents. It is not a marketplace with a front page; it is the trust layer under one: the contract turns an agent's earnings into numbers a stranger can check, and makes the handover safe enough that a stranger will pay.
+Agent Exit is a capital market for AI agents: a way to invest in them by their proven revenue, and to buy and sell them whole. It is not a marketplace with a front page; it is the trust layer under one: the contract turns an agent's earnings into numbers a stranger can check, and makes the handover safe enough that a stranger will pay.
 
 ## Who uses it, and why
 
@@ -9,7 +9,7 @@ Agent Exit is a way to buy and sell AI agents. It is not a marketplace with a fr
 | **An agent builder who wants out** (sell the whole agent) | Buyers pay little or nothing for an agent's revenue they cannot check, and fear the seller keeps a way back in | Earnings counted by payer on-chain, with self-payments flagged; a sale in one transaction that deletes the seller's keys; an earn-out that pays the seller more only if customers keep paying |
 | **A builder who wants cash but not to sell** (sell a share) | Raising money on an agent means trusting a spreadsheet | A slice of future earnings, paid by the contract inside each customer payment; half the price held in escrow and returned if the agent stops earning |
 | **A buyer or investor** (a person or another agent) | Due diligence on an agent is manual and easy to fake | A scan that blocks hidden keys, unpublished code and open approvals, plus a due-diligence card (counted revenue, flagged revenue, NEAR AI-verified share, terms) |
-| **An AI agent buying another agent** | No machine-readable way to check a seller | 9 MCP tools and an Agent Skill; a real model (Claude Haiku) bought an agent this way on testnet |
+| **An AI agent buying another agent** | No machine-readable way to check a seller | 13 MCP tools and an Agent Skill; a real model (Claude Haiku) bought an agent this way on testnet |
 
 ## A worked example (the testnet numbers)
 

@@ -6,9 +6,9 @@ All money is `xUSD-FAKE` on NEAR testnet. Every claim below links to a test or a
 
 ## One line
 
-**Sold means locked out.** (The picture: `docs/img/sold-means-locked-out.svg`.)
+**A capital market for AI agents.** Invest in an AI agent by its proven revenue, or buy the whole business from a stranger, on NEAR.
 
-Agent Exit turns an AI agent into a business you can trust: its earnings are proven on-chain, you can buy a share of them, and you can buy the whole agent without the seller keeping a way back in.
+Agent Exit turns an AI agent into a business you can trust: its earnings are proven on-chain, you can buy a share of them, and you can buy the whole agent without the seller keeping a way back in ("sold means locked out", the picture `docs/img/sold-means-locked-out.svg`).
 
 ## 30 seconds
 
@@ -26,7 +26,8 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 | 2 | **The same story on NEAR testnet → "Invest in an agent: 20% of its earnings" → Run and verify** | Dave buys 20% of an agent's earnings. A customer pays for a real NEAR AI translation, and dave claims exactly 20%. A payment from the owner's sub-account releases nothing. Each stage turns "confirmed on chain" with a NearBlocks link. | A new market: shares in agents, paid only from real revenue. |
 | 3 | **"A cheat is caught before the sale" → Run and verify** (or mission "2. Hide a backdoor") | The scan finds a hidden full-access key and the buy is refused; no money moves. | Buyer protection comes before payment, not after. |
 | 4 | **"Sell an agent, lock the seller out" → Run and verify** | First the sale: one transaction moves the deed, deletes the seller's key and adds the buyer's; 70% is paid now and 30% is held in escrow. Then the break-in: the old seller withdraws, adds a key, changes the limits, moves the deed and spends from the Base wallet. Each attempt fails on-chain, and her old key no longer exists. | "Sold" means locked out, proven by real failed transactions. |
-| 5 | **"A real AI model buys an agent through MCP"** | Claude Haiku, given only our MCP tools and Skill, refused the cheat, bought the honest agent on testnet and checked that the seller is locked out, for about 3 cents. | Agents can be the buyers too. |
+| 5 | **"Invest yourself, on NEAR testnet"** (below the agent cards) | Five copyable commands: take free test dollars from the faucet, read the agent's earnings and its open offer, buy a 1% part of its future earnings, see your holding grow with each customer payment, claim. | A judge becomes an investor in two minutes, with their own testnet account. |
+| 6 | **"A real AI model buys an agent through MCP"** | Claude Haiku, given only our MCP tools and Skill, refused the cheat, bought the honest agent on testnet and checked that the seller is locked out, for about 3 cents. | Agents can be the buyers too. |
 
 **What "Run and verify" does:** the page asks a NEAR RPC node for each recorded transaction right now, through a read-only relay. It compares the signer, the method, the outcome and the contract's event logs with the recording, and marks a stage confirmed only if they match. It does not replay a video. To check without our relay, open the NearBlocks link next to each step.
 
@@ -55,6 +56,13 @@ Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet a
 - **Can I run it?** `make setup && make demo` runs everything offline in a few minutes, with no keys. `make verify` and `make attack` show the tests and the 19 attack families.
 - **What can't it catch?** Off-chain things: the agent's prompts, API keys and copies of its code. It also cannot catch fake customers on accounts the seller funded through other wallets; before a sale that is cheap, so a buyer should weigh counted revenue by how old and how spread out the payers are. After a sale, wash-paying costs the seller 2.00 for each 1.00 it releases, and a buyer can buy "pay from revenue" so a faked history earns the seller nothing up front (page mission 5). The README section "Honest limits" and docs/NOT-CAUGHT.md (N1-N13; `make attack` prints N1-N6) list them. "Verified" means a NEAR AI job really ran; it does not prove that the payer is independent.
 - **Is the money real?** No. Everything is `xUSD-FAKE` on testnet. No mainnet deployment yet.
+
+## The company in one slide
+
+- **Market:** AI agents that earn (translation, research, trading, support) are small online businesses. Small online businesses already change hands on brokers like Acquire.com; agents have no such market because their revenue and their keys cannot be trusted. Agent Exit is the trust layer under one.
+- **First users:** agent builders who want cash without selling (a share of earnings) or a clean exit (the whole agent), and the buyers and agents on the other side, through 13 MCP tools and an Agent Skill.
+- **Revenue:** a 1% protocol fee on every sale and share buy, built into the contract (`PROTOCOL_FEE_BPS`).
+- **Next 90 days:** the born-clean factory on testnet, a wallet "Invest" button, an exchange board of listed agents with revenue multiples, then an audit and a capped mainnet launch. Details and risks: [`BUSINESS.md`](BUSINESS.md), [`ROADMAP.md`](ROADMAP.md).
 
 ## Close (the last 10 seconds of the video)
 
