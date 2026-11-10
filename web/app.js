@@ -337,6 +337,45 @@ async function renderDiligence() {
 }
 renderDiligence().catch(() => { /* the loading text stays */ });
 
+// The Exchange board (scene 13): factory-born agents, sortable. Hidden until
+// recorded. Multiple = asking price, or the value an open offer implies
+// (price / share), over counted revenue.
+async function renderExchange() {
+  const box = document.getElementById("exchange");
+  if (!box) return;
+  const t = await (await fetch("data/testnet.json")).json();
+  const x = t.exchange;
+  if (!x || !Array.isArray(x.agents) || !x.agents.length) return;
+  const usd = (raw) => Number(BigInt(raw)) / 1e6;
+  const rows = x.agents.map((a) => {
+    const counted = usd(a.counted);
+    const gross = usd(a.gross);
+    const open = a.offers.find((o) => o.sold_bps < o.bps);
+    const value = a.ask ? usd(a.ask) : open ? usd(open.price) * 10000 / open.bps : null;
+    const deal = a.ask ? `for sale at ${usd(a.ask).toFixed(2)}` : open ? `${open.bps / 100}% of earnings for ${usd(open.price).toFixed(2)}` : "not offered";
+    return { ...a, counted, flaggedPct: gross ? (100 * usd(a.flagged)) / gross : 0, deal, multiple: value !== null && counted > 0 ? value / counted : Infinity };
+  });
+  let key = "multiple", dir = 1;
+  const tbody = box.querySelector("tbody");
+  const draw = () => {
+    rows.sort((a, b) => (a[key] > b[key] ? dir : a[key] < b[key] ? -dir : 0));
+    tbody.replaceChildren(...rows.map((r) => el("tr", { class: r.flaggedPct >= 50 ? "ex-flag" : "" },
+      el("td", {}, el("code", { text: r.name }), r.born_clean ? el("span", { class: "badge ok", text: "born clean" }) : null),
+      el("td", { text: r.counted.toFixed(2) }),
+      el("td", { text: `${r.flaggedPct.toFixed(0)}%` }),
+      el("td", { text: String(r.payers) }),
+      el("td", { text: r.deal }),
+      el("td", { text: Number.isFinite(r.multiple) ? `${r.multiple.toFixed(1)}×` : "no counted revenue" }))));
+  };
+  box.querySelectorAll("th[data-k]").forEach((th) => th.addEventListener("click", () => {
+    dir = key === th.dataset.k ? -dir : 1; key = th.dataset.k; draw();
+  }));
+  draw();
+  document.getElementById("ex-note").textContent = `Recorded on NEAR testnet from the factory ${x.factory}. All money is xUSD-FAKE. A high flagged share means the owner paid the agent herself: the meter does not count it.`;
+  box.hidden = false;
+}
+renderExchange().catch(() => { /* the board stays hidden */ });
+
 // "Invest yourself": the open offer recorded by scene 12, as copyable
 // near-cli-rs commands. Hidden until the offer exists in data/testnet.json.
 async function renderInvestYourself() {

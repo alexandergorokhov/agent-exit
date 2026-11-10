@@ -373,3 +373,9 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--code-bg); border-radius:
 .invest-yourself .iy-steps li { margin: .6rem 0; }
 .invest-yourself .iy-steps p { margin: 0 0 .3rem; }
 .invest-yourself pre { overflow-x: auto; max-width: 100%; white-space: pre-wrap; word-break: break-all; font-size: .8rem; }
+.exchange .ex-wrap { overflow-x: auto; max-width: 100%; }
+.ex-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.ex-table th, .ex-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.ex-table th { cursor: pointer; user-select: none; }
+.ex-table tr.ex-flag td { color: var(--bad); }
+.ex-table .badge { margin-left: .4rem; }

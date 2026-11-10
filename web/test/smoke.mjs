@@ -376,6 +376,20 @@ try {
         assert.equal(await vp.locator(`[data-scenario="${id}"]`).count(), want ? 1 : 0, `V7: scenario ${id} shown only when recorded`);
       }
       checks++;
+      // V9: the Exchange board shows only with a recorded scene 13, one row per agent, sortable.
+      const ex = vp.locator("#exchange");
+      if (rec.exchange) {
+        await ex.waitFor({ state: "visible" });
+        assert.equal(await vp.locator("#ex-table tbody tr").count(), rec.exchange.agents.length, "V9: one row per agent");
+        const first = await vp.locator("#ex-table tbody tr td code").first().textContent();
+        await vp.click('#ex-table th[data-k="name"]');
+        const sorted = await vp.locator("#ex-table tbody tr td code").allTextContents();
+        assert.deepEqual(sorted, [...sorted].sort(), "V9: sorting by name works");
+        assert.ok(first, "V9: rows have names");
+      } else {
+        assert.equal(await ex.isVisible(), false, "V9: hidden with no exchange");
+      }
+      checks++;
       // V8: "Invest yourself" shows only with a recorded open offer (scene 12), with 5 steps of commands naming that agent.
       const iy = vp.locator("#invest-yourself");
       if (rec.open_offer) {

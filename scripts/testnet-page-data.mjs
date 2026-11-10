@@ -66,6 +66,19 @@ const dep = existsSync("out/testnet/deploy.json") ? JSON.parse(readFileSync("out
 out.root = dep.root || null;
 out.agent_code_hash = dep.agent_code_hash || null;
 out.run = new Date().toISOString().slice(0, 10); // the day this page data was made from out/
+// Scene 13: the Exchange board (factory-born agents with their own revenue mix).
+if (existsSync("out/scenes/scene-13.json")) {
+  const x = JSON.parse(readFileSync("out/scenes/scene-13.json", "utf8"));
+  if (x.pass && Array.isArray(x.board)) {
+    out.exchange = { factory: x.factory, agents: x.board.map((b) => ({
+      agent: b.agent, name: b.name, status: b.status, born_clean: b.born_clean === true,
+      gross: String(b.earnings?.gross ?? 0), counted: String(b.earnings?.counted ?? 0), verified: String(b.earnings?.verified ?? 0),
+      flagged: String(b.earnings?.flagged ?? 0), payers: Number(b.earnings?.counted_payers ?? 0),
+      ask: b.listing?.price ? String(b.listing.price) : null,
+      offers: (Array.isArray(b.shares) ? b.shares : []).map((o) => ({ bps: Number(o.bps), sold_bps: Number(o.sold_bps ?? 0), price: String(o.price), end: String(o.end) })),
+    })) };
+  }
+}
 // Scene 12: an open offer anyone can buy into from the page ("Invest yourself").
 if (existsSync("out/scenes/scene-12.json")) {
   const o = JSON.parse(readFileSync("out/scenes/scene-12.json", "utf8"));
