@@ -285,6 +285,8 @@ pub enum Step {
     Scene10Sealed,
     /// Not in `scenes`: a business day on the scene-8 agent, no human key.
     Scene11BusinessDay,
+    /// Not in `scenes`: an open share offer anyone can buy into from the page.
+    Scene12OpenOffer,
 }
 
 pub struct StepInfo {
@@ -326,6 +328,7 @@ pub fn info(step: Step) -> StepInfo {
         Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)", &[], "out/scenes/scene-6.json"),
         Scene8Invest => ("scene-8", "invest (not part of `scenes`): creates a fresh agent (INVEST_AGENT, default translator3; locked agents cannot take new code) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 translation jobs (translated and NEAR AI-signed when NEARAI_API_KEY is set; the scene fails if any job is unverified then); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims", &[], "out/scenes/scene-8.json"),
         Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
+        Scene12OpenOffer => ("scene-12", "an open offer for anyone (after scene-11): on the scene-8 agent (INVEST_AGENT, default translator3) alice offers 10% of every future payment for 100.00 xUSD-FAKE until 2026-11-30, sold in parts of 1% (10.00); anyone with a testnet account takes free xUSD-FAKE from the faucet and buys a part with one ft_transfer_call; no purchase is made here", &[], "out/scenes/scene-12.json"),
         Scene11BusinessDay => ("scene-11", "a business day (not part of `scenes`; after scene-8): on the scene-8 agent (INVEST_AGENT, default translator3) the owner signs ONE transaction, set_limits (daily cap 8.00, the only payee summarizer, split 80/20); then no human key signs: 5 customers pay 10.00 each, after each the agent's runner key buys a 2.00 summarizer job (procurement), a fifth 2.00 job is refused PolicyViolation:DailyCap, a payment to a payee not on the list is refused PolicyViolation:Payee; dave (20% investor) is paid inside every customer payment and claims", &[], "out/scenes/scene-11.json"),
         Scene10Sealed => ("scene-10", "sealed prompt (not part of `scenes`): a fresh agent (SEALED_AGENT, default sealed1) owned by alice, runner key, setup key deleted; alice commits to a 2 KB config bundle (sha256 + length + chunk Merkle root) and lists at 100.00; bob requests a random preview and alice proves each requested chunk against the root (SC21); bob scans and buys with a one-time X25519 delivery key; alice posts a FAKE bundle sealed to that key; bob reveals the key in dispute_config, the contract decrypts on-chain and finds a mismatch; bob claims and has his 100.00 back; alice got nothing; her late release_upfront is refused", &[], "out/scenes/scene-10.json"),
         Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
@@ -363,7 +366,7 @@ impl Command {
                 s.strip_prefix("scene-")?
                     .parse()
                     .ok()
-                    .filter(|n| (1..=11).contains(n))?,
+                    .filter(|n| (1..=12).contains(n))?,
             ),
         })
     }
@@ -384,6 +387,7 @@ pub fn scene_step(n: u8) -> Step {
         9 => Step::Scene9BornClean,
         10 => Step::Scene10Sealed,
         11 => Step::Scene11BusinessDay,
+        12 => Step::Scene12OpenOffer,
         _ => Step::Scene6AgentBuysAgent,
     }
 }
@@ -424,8 +428,8 @@ pub fn plan(cmd: Command) -> Vec<Step> {
 /// scan calls it insolvent (A46): 9.5 NEAR leaves ~0.8 spare.
 pub const FUNDING: [(&str, u32); 14] = [
     ("xusd", 2_500),
-    ("translator", 9_500),
-    ("cheat", 9_500),
+    ("translator", 9_700),
+    ("cheat", 9_700),
     ("summarizer", 1_000),
     ("alice", 1_000),
     ("bob", 1_000),
@@ -440,7 +444,7 @@ pub const FUNDING: [(&str, u32); 14] = [
 ];
 
 /// The fresh agent each G1 run creates (not part of the deploy).
-pub const G1_AGENT_MILLI: u32 = 9_500;
+pub const G1_AGENT_MILLI: u32 = 9_700;
 
 /// Gas and storage the root itself spends during the deploy.
 pub const ROOT_MARGIN_MILLI: u32 = 1_000;
@@ -643,7 +647,8 @@ mod tests {
         assert_eq!(Command::parse("scene-9"), Some(Command::Scene(9)));
         assert_eq!(Command::parse("scene-10"), Some(Command::Scene(10)));
         assert_eq!(Command::parse("scene-11"), Some(Command::Scene(11)));
-        assert_eq!(Command::parse("scene-12"), None);
+        assert_eq!(Command::parse("scene-12"), Some(Command::Scene(12)));
+        assert_eq!(Command::parse("scene-13"), None);
         let missing = &plan_json(Command::GateG6, &c, false)["steps"][0]["missing"];
         assert_eq!(missing, &json!(["NEARAI_API_KEY"]));
     }

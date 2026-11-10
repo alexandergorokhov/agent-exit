@@ -173,6 +173,7 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
         Command::Scene(9) => born_clean(&c, &env, secrets).await,
         Command::Scene(10) => sealed(&c, &env, secrets).await,
         Command::Scene(11) => business_day(&c, &env, secrets).await,
+        Command::Scene(12) => open_offer(&c, &env, secrets).await,
         Command::Scene(n) => scene(&c, n, secrets).await,
     }
 }
@@ -2040,6 +2041,71 @@ async fn business_day(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<St
     } else {
         Err("business day checks failed (see out/scenes/scene-11.json)".into())
     }
+}
+
+// ------------------------------------------------------------------ scene 12
+
+/// The open offer's terms: 10% of every payment, 100.00, until 2026-11-30.
+const OPEN_BPS: u64 = 1_000;
+const OPEN_END_NS: u64 = 1_796_083_199 * 1_000_000_000; // 2026-11-30T23:59:59Z
+
+/// An offer any judge can buy a 1% part of from the page (see web "Invest
+/// yourself"). Idempotent: an open offer with these terms is reused.
+async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
+    let mut out = Out::new("out/scenes/scene-12.json", secrets);
+    out.set("schema", json!("scene.v1"));
+    out.set("scene", json!(12));
+    out.set("what", json!(info(Step::Scene12OpenOffer).what));
+    println!("scene-12");
+    let name = std::env::var("INVEST_AGENT")
+        .ok()
+        .or_else(|| env.get("INVEST_AGENT").cloned())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "translator3".to_string());
+    let ag = c.id(&name);
+    let st = c.view(&ag, "get_status", json!({})).await?;
+    if st["owner"].as_str() != Some(c.id("alice").as_str()) || st["status"] == "Listed" {
+        return Err(format!("scene 12 needs {ag} owned by alice and not listed"));
+    }
+    let open =
+        |o: &Value| o["bps"] == json!(OPEN_BPS) && o["price"] == json!((100 * USD).to_string());
+    let mut offers = c.view(&ag, "get_shares", json!({})).await?;
+    if !offers.as_array().is_some_and(|a| a.iter().any(open)) {
+        let t = c
+            .call(
+                &format!("alice offers 10% of {name}'s earnings to anyone, 1% parts at 10.00"),
+                &c.acct("alice")?,
+                &ag,
+                "offer_share",
+                json!({"bps": OPEN_BPS, "price": (100 * USD).to_string(), "end": OPEN_END_NS.to_string()}),
+                1,
+                50,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+        offers = c.view(&ag, "get_shares", json!({})).await?;
+    }
+    let o = offers
+        .as_array()
+        .and_then(|a| a.iter().find(|o| open(o)).cloned())
+        .ok_or("the open offer is missing after offer_share")?;
+    let part = OPEN_BPS / 10;
+    let msg = json!({"kind": "buy_share", "offer_id": o["offer_id"], "bps": o["bps"],
+                     "price": o["price"], "end": o["end"], "part": part});
+    out.set("agent", json!(ag));
+    out.set("offer", o.clone());
+    out.set(
+        "buy_part",
+        json!({
+            "part_bps": part,
+            "amount": (10 * USD).to_string(),
+            "msg": msg.to_string(),
+        }),
+    );
+    out.set("pass", json!(true));
+    out.write()?;
+    Ok(())
 }
 
 // ------------------------------------------------------------------ scene 9
