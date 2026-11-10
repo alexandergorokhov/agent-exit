@@ -287,7 +287,7 @@ PLAN = cargo run --quiet --locked --offline -p testnet-plan --
 # under `make -n`, which once sent a real deploy. Use DRY_RUN=1 to preview.
 SUBMAKE = $(MAKE)
 
-.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 scene-8 scene-9 scene-10 scene-11 scene-12 testnet-plan-test
+.PHONY: build-testnet testnet-setup deploy-testnet seed-testnet gates gate-g1 gate-g2 gate-g6 gate-g2-relay scenes scene-7 scene-8 scene-9 scene-10 scene-11 scene-12 scene-13 testnet-plan-test
 build-testnet: ## [testnet] Build the three wasm (token, agent, factory) with the testnet token, admin and MPC signer compiled in -> target/near-testnet
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
@@ -365,6 +365,13 @@ ifdef DRY_RUN
 	@$(PLAN) scene-10
 else
 	$(TESTNET_RUN) scene-10
+endif
+
+scene-13: ## [testnet] The Exchange: six agents born clean in the factory, each with its own revenue mix, share offer or sale listing, for the page's board -> out/scenes/scene-13.json [DRY_RUN=1] (after scene-9)
+ifdef DRY_RUN
+	@$(PLAN) scene-13
+else
+	$(TESTNET_RUN) scene-13
 endif
 
 scene-12: ## [testnet] An open share offer anyone can buy into from the page: alice offers 10% of the scene-8 agent's earnings in 1% parts at 10.00 xUSD-FAKE -> out/scenes/scene-12.json [DRY_RUN=1] (after scene-11)

@@ -17,7 +17,7 @@ async fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let Some(cmd) = args.first().and_then(|a| Command::parse(a)) else {
         eprintln!(
-            "usage: agent-exit-testnet <deploy|gates|g1|g2|g6|scenes|scene-1..scene-12> [--dry-run]"
+            "usage: agent-exit-testnet <deploy|gates|g1|g2|g6|scenes|scene-1..scene-13> [--dry-run]"
         );
         std::process::exit(2);
     };
