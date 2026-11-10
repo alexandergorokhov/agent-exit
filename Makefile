@@ -122,6 +122,7 @@ mcp-test: mcp-build ## MCP tests offline (S14, S15, E29, E30, schemas, skill) + 
 	cd mcp && node --test --test-concurrency=4 'dist/test/*.test.js'
 	node mcp/dist/scripts/agent-buys-agent.js --out $(OUT)/agent-buys-agent.json --golden tests/golden/agent-buys-agent.json
 	$(MAKE) -s scripts-test
+	cd packages/near-key-check && node --test 'test/*.test.mjs'
 
 .PHONY: scripts-test
 scripts-test: ## Offline: safety rules of scripts/testnet (testnet only, no secret echoed, DRY_RUN)
@@ -161,6 +162,9 @@ attack: ## Seeded backdoor corpus + clean controls + contract refusals -> out/at
 	cargo run --quiet --locked --offline -p attack -- --n $(N) --seed $(SEED) --clean $(CLEAN) $(if $(FIXTURE),--fixture $(FIXTURE)) --out $(OUT)/attack.json > /dev/null
 
 .PHONY: check-account
+key-check: ## Standalone, read-only, any testnet account: make key-check ID=name.testnet (packages/near-key-check; exit 0 locked, 1 not, 2 error)
+	@node packages/near-key-check/cli.mjs '$(subst ','',$(ID))'
+
 check-account: mcp-build ## Who else can take any NEAR account: make check-account ID=trading-bot.testnet [NETWORK=testnet] (exit 0 locked, 1 not locked, 2 error)
 	@AGENT_EXIT_NETWORK='$(or $(NETWORK),offline)' node mcp/dist/scripts/check-account.js '$(subst ','',$(ID))' 
 

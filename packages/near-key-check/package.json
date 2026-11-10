@@ -1,0 +1,13 @@
+{
+  "name": "near-key-check",
+  "version": "0.1.0",
+  "description": "Who else can take this NEAR account? Reads its keys and code (read-only) and says whether anyone but its contract can move the money or change the code. Zero dependencies.",
+  "type": "module",
+  "exports": { ".": "./index.mjs" },
+  "bin": { "near-key-check": "./cli.mjs" },
+  "files": ["index.mjs", "account-check.mjs", "read.mjs", "cli.mjs", "README.md"],
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "license": "MIT",
+  "private": true
+}
