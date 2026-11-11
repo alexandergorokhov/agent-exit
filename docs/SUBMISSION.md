@@ -25,3 +25,12 @@ Autonomous Business, AI Security & Defense, NFTs That Do Something, Agent Econom
 ## Other project (FAQ Q-015)
 
 The same author also entered Hire Tree (https://github.com/alexandergorokhov/agent-hire), a separate, independent project.
+
+## X post (owner posts it, with the video attached)
+
+> AI agent revenue can be faked, and sellers can keep a key.
+>
+> Agent Exit on @NEARProtocol: buy a share of an agent's proven revenue, or the whole agent in one transaction that locks the seller out.
+>
+> Live on testnet: https://near-transparent-agent-market-web.vercel.app/
+> #NEARHackathon
