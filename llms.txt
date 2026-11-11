@@ -47,7 +47,8 @@
 - [mcp/scripts/agent-buys-agent.ts](mcp/scripts/agent-buys-agent.ts): scripted agent-buys-agent run
 - [mcp/scripts/agent-invests.ts](mcp/scripts/agent-invests.ts): scripted investing agent (`make agent-invests`, `make agent-invests-testnet`)
 - [mcp/scripts/check-account.ts](mcp/scripts/check-account.ts): `make check-account ID=...`: who else can take any NEAR account (also MCP `check_account`)
-- [web/index.html](web/index.html): demo page (`make web`; offline, recorded; `?network=testnet` reads live through a read-only relay)
+- [web/index.html](web/index.html): the market page for people (agents for sale with verdicts, invest via MyNearWallet, the playground); script [web/market.js](web/market.js)
+- [web/proof.html](web/proof.html): the full walkthrough and checks (`make web`; offline, recorded; `?network=testnet` reads live through a read-only relay)
 - [web/app.js](web/app.js): the demo page's script (data in web/data/demo.json and web/data/testnet.json)
 - [tools/verify/src/bin/gen-web-demo.rs](tools/verify/src/bin/gen-web-demo.rs): records web/data/demo.json from the contract (`make web-data`)
 - [mcp/mcp-config.example.json](mcp/mcp-config.example.json): MCP client config

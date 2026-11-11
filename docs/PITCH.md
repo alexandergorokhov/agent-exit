@@ -20,7 +20,7 @@ On NEAR an agent can be its own account. Agent Exit puts a contract on that acco
 
 ## Two-minute demo walkthrough (the page)
 
-Open https://near-transparent-agent-market-web.vercel.app/. It needs no wallet and no setup.
+Open https://near-transparent-agent-market-web.vercel.app/ (the market: agents for sale, each with a verdict; click one for its due diligence) and https://near-transparent-agent-market-web.vercel.app/proof.html (the walkthrough below). Neither needs a wallet or setup.
 
 | # | Do | See | Why it matters |
 |---|---|---|---|

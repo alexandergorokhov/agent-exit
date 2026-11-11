@@ -8,7 +8,7 @@ All money shown is `xUSD-FAKE`; say so once, on screen.
 1. Testnet world is deployed and seeded: `make deploy-testnet` (on the owner's PC).
 2. Record the scenes in **recording order** 3, 4, 5, 1, 2, 6 (the sale must happen before the break-in): `make scenes`. Each writes `out/scenes/scene-N.json` with explorer links.
 3. Replay any scene offline for a clean take: `make scene-N RECORDED=1`.
-4. Open in tabs: the demo page (`make web`, or https://near-transparent-agent-market-web.vercel.app/?network=testnet), testnet.nearblocks.io for `translator.agentexit5.testnet`, a terminal at the repo root with a large font.
+4. Open in tabs: the demo page (`make web`, or https://near-transparent-agent-market-web.vercel.app/proof.html?network=testnet), testnet.nearblocks.io for `translator.agentexit5.testnet`, a terminal at the repo root with a large font.
 5. Recorder: OBS or the Windows Game Bar (Win+Alt+R), 1920x1080, mic on. No edits needed beyond cutting between scenes.
 
 ## Video 1: 3-minute pitch

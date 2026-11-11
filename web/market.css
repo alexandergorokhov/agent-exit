@@ -1,0 +1,107 @@
+/* The market page (index.html). Builds on style.css (tokens, buttons, the
+   playground) and adds the catalog, the deed cards and the agent panel.
+   One bold device: the verdict stamp on each deed. Everything else stays quiet. */
+.mk { --ink: #0f1a17; --sold: #3346a8; --sold-bg: #eef0fb; background: #f4f6f5; }
+
+/* bar */
+.mk-bar { position: sticky; top: 0; z-index: 20; background: rgb(244 246 245 / .92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.mk-bar .wrap { display: flex; align-items: center; gap: 24px; height: 56px; }
+.mk-brand { white-space: nowrap; font-weight: 800; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+.mk-links { display: flex; gap: 20px; margin-right: auto; }
+.mk-links a, .mk-judges { color: var(--text-2); text-decoration: none; font-size: var(--fs-sm); font-weight: 600; }
+.mk-links a:hover, .mk-judges:hover { color: var(--accent-ink); }
+.mk-judges { white-space: nowrap; margin-left: auto; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; background: var(--surface); }
+
+/* intro: one line, one sentence */
+.mk-intro { padding: 56px 0 8px; }
+.mk-intro h1 { font-size: clamp(36px, 6vw, 64px); max-width: 15ch; letter-spacing: -.035em; line-height: 1.02; margin: 0 0 16px; color: var(--ink); }
+.mk-intro p { font-size: var(--fs-lg); color: var(--muted); margin: 0; max-width: 46ch; line-height: 1.4; }
+
+/* toolbar + filter chips */
+#market { margin-top: 36px; }
+.mk-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chips button { font: inherit; font-size: var(--fs-sm); font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* the catalog: deed cards */
+.catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.mk-deed { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 12px; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; transition: border-color .15s, transform .15s; min-width: 0; }
+.mk-deed:hover { border-color: #b9c6c0; }
+.mk-deed:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .mk-deed:hover { transform: translateY(-2px); } }
+.mk-deed-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mk-deed-name { font-family: var(--mono); font-size: var(--fs-md); font-weight: 700; color: var(--ink); }
+.mk-deed-rev b { font-size: var(--fs-xl); font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: -.01em; }
+.mk-deed-rev small { color: var(--muted); font-size: var(--fs-sm); }
+.mk-deed-judge { color: var(--text-2); font-size: var(--fs-sm); line-height: 1.45; min-height: 2.9em; }
+.mk-deed-foot { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: var(--fs-sm); color: var(--muted); }
+.mk-deed-deal { color: var(--ink); font-weight: 700; }
+
+
+/* the stamp: an inked verdict, slightly turned, like a deed office stamp */
+.stamp { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 3px 9px; border: 2px solid currentColor; border-radius: 6px; transform: rotate(-4deg); white-space: nowrap; }
+.stamp.s-ok { color: var(--ok); }
+.stamp.s-bad { color: var(--bad); }
+.stamp.s-sold { color: var(--sold); }
+.stamp.big { font-size: 15px; padding: 5px 12px; }
+
+/* revenue meter: real vs self-paid */
+.meter { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--code-bg); }
+.meter .m-real { background: var(--accent); }
+.meter .m-self { background: var(--bad); }
+
+/* how it works */
+#how { margin-top: 64px; }
+.how { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
+.how li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.how li b::before { content: counter(s) "  "; color: var(--accent); }
+.how li span { color: var(--muted); font-size: var(--fs-sm); }
+.mk .play { margin-top: 64px; }
+
+/* the agent panel: a sheet from the right */
+.mk-panel { overflow-x: hidden; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(520px, 100vw); max-width: 100vw; border: 0; padding: 0; background: var(--surface); box-shadow: -12px 0 40px rgb(0 0 0 / .12); }
+.mk-panel::backdrop { background: rgb(15 26 23 / .35); }
+@media (prefers-reduced-motion: no-preference) { .mk-panel[open] { animation: slide .18s ease-out; } @keyframes slide { from { transform: translateX(24px); opacity: .6; } } }
+.panel-close { position: absolute; top: 16px; right: 20px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 22px; cursor: pointer; color: var(--text-2); }
+.panel-body { padding: 28px 28px 40px; display: flex; flex-direction: column; gap: 18px; }
+.panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-right: 52px; }
+.panel-head > div { min-width: 0; }
+.panel-head h2 { font-family: var(--mono); font-size: var(--fs-xl); }
+.panel-head p { margin: 4px 0 0; }
+.mono { font-family: var(--mono); overflow-wrap: anywhere; }
+.panel-judge { font-size: var(--fs-md); margin: 0; color: var(--text-2); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kpis div { display: flex; flex-direction: column; }
+.kpis b { font-size: var(--fs-lg); font-variant-numeric: tabular-nums; color: var(--ink); }
+.kpis b.bad { color: var(--bad); }
+.kpis span { font-size: var(--fs-xs); color: var(--muted); }
+.deal-line { margin: 0; }
+.mk-act { background: var(--code-bg); border-radius: 12px; padding: 16px; }
+.mk-act p { margin: 8px 0 0; }
+.mk-act p:first-child { margin-top: 0; }
+.mk-act-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.mk-act-row input { flex: 1 1 160px; min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; font: inherit; }
+.mk-act-row .btn[aria-disabled="true"] { opacity: .55; }
+.mk-bad { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+.mk-sold { background: var(--sold-bg); color: var(--sold); }
+.mcp { margin: 8px 0; padding: 10px 12px; background: var(--surface); border-radius: 8px; overflow-x: auto; font-size: var(--fs-xs); }
+.dd summary { cursor: pointer; font-weight: 700; }
+.dd dl { display: grid; grid-template-columns: 11em 1fr; gap: 8px 14px; margin: 12px 0 0; font-size: var(--fs-sm); }
+.dd dt { color: var(--muted); }
+.dd dd { margin: 0; }
+.txs { font-size: var(--fs-sm); line-height: 1.7; }
+
+/* footer */
+.mk-foot { margin-top: 72px; padding: 24px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--fs-sm); }
+.mk-foot .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .mk-bar .wrap { gap: 12px; }
+  .mk-links { display: none; }
+  .mk-intro { padding-top: 32px; }
+  .how { grid-template-columns: 1fr; }
+  .dd dl { grid-template-columns: 1fr; gap: 2px; }
+  .dd dt { margin-top: 8px; }
+  .panel-body { padding: 24px 18px 40px; }
+}

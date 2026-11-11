@@ -224,7 +224,7 @@ fn web_demo_data_is_recorded_from_the_contract() {
     // Every NearBlocks link the page shows comes from the recorded testnet run.
     // The page's static links (the "Built on NEAR" rows, the factory tx) count too.
     let data = std::fs::read_to_string(root().join("web/data/testnet.json")).unwrap()
-        + &std::fs::read_to_string(root().join("web/index.html")).unwrap();
+        + &std::fs::read_to_string(root().join("web/proof.html")).unwrap();
     let mut recorded = String::new();
     for e in std::fs::read_dir(root().join("out/scenes")).unwrap() {
         recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
@@ -348,7 +348,7 @@ fn s22_docs_do_not_overclaim() {
         "llms.txt",
         "web/data/demo.json",
         "web/app.js",
-        "web/index.html",
+        "web/proof.html",
     ] {
         let t = read(f);
         assert!(!t.contains("200/200 caught"), "{f} says 200/200 caught");
@@ -448,7 +448,7 @@ fn s23_page_copy_is_honest() {
 
 #[test]
 fn s24_page_has_csp_and_vendored_connector() {
-    let h = read("web/index.html");
+    let h = read("web/proof.html");
     let csp = h
         .split("http-equiv=\"Content-Security-Policy\"")
         .nth(1)
@@ -547,7 +547,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
         count >= declared,
         "COMMANDS.md: {count} MCP tests but {declared} are declared"
     );
-    for f in ["README.md", "web/index.html"] {
+    for f in ["README.md", "web/proof.html"] {
         for n in re(&read(f)) {
             assert!(
                 n >= declared,
@@ -591,7 +591,7 @@ fn s25_readme_first_screen() {
         "README.md",
         "AGENTS.md",
         "llms.txt",
-        "web/index.html",
+        "web/proof.html",
         "web/data/demo.json",
         "web/app.js",
     ] {
@@ -605,9 +605,9 @@ fn s25_readme_first_screen() {
             "{f}: marketplace label"
         );
     }
-    assert!(read("web/index.html").contains("Sold means locked out"));
-    assert!(read("web/index.html").contains("Try to cheat it"));
-    assert!(read("web/index.html").contains("Why only on NEAR"));
+    assert!(read("web/proof.html").contains("Sold means locked out"));
+    assert!(read("web/proof.html").contains("Try to cheat it"));
+    assert!(read("web/proof.html").contains("Why only on NEAR"));
     assert!(read(".gitignore").lines().any(|l| l == ".claude/"));
     let mk = read("Makefile");
     assert!(mk.contains("scripts/demo-summary.mjs") && mk.contains("-p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null"));
@@ -848,7 +848,7 @@ fn the_lede_opens_readme_pitch_and_page() {
         first.contains(LEDE),
         "docs/PITCH.md opens with the lede: {first}"
     );
-    assert!(read("web/index.html").contains(LEDE), "the page lede");
+    assert!(read("web/proof.html").contains(LEDE), "the page lede");
 }
 
 #[test]

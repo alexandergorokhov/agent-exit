@@ -15,14 +15,15 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
 const server = await serve(0);
-const base = `http://127.0.0.1:${server.address().port}/`;
+const root = `http://127.0.0.1:${server.address().port}/`;
+const base = `${root}proof.html`;
 const browser = await chromium.launch();
 const problems = [];
 let checks = 0;
 
 async function page(viewport) {
   const ctx = await browser.newContext({ viewport });
-  await ctx.route("**/*", (r) => (r.request().url().startsWith(base) ? r.continue() : r.abort()));
+  await ctx.route("**/*", (r) => (r.request().url().startsWith(root) ? r.continue() : r.abort()));
   const p = await ctx.newPage();
   p.on("console", (m) => { if (m.type() === "error") problems.push(`console: ${m.text()}`); });
   p.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
@@ -189,7 +190,7 @@ try {
 
   // S24: strict CSP meta, no remote script, vendored connector pinned by hash.
   {
-    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const html = readFileSync(new URL("../proof.html", import.meta.url), "utf8");
     const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
     assert.ok(csp, "S24: CSP meta tag present");
     for (const want of ["default-src 'none'", "script-src 'self'", "style-src 'self'", "connect-src 'self'", "base-uri 'none'", "form-action 'none'"]) assert.ok(csp[1].includes(want), `S24: CSP lacks ${want}`);
@@ -197,7 +198,7 @@ try {
     // L6: the server and the static-host files send the meta CSP plus frame-ancestors, nosniff and a referrer policy.
     const want = `${csp[1]}; frame-ancestors 'none'`;
     for (const path of ["", "style.css", "missing-file"]) {
-      const r = await fetch(base + path);
+      const r = await fetch(root + path);
       assert.equal(r.headers.get("content-security-policy"), want, `L6: CSP header on /${path}`);
       assert.equal(r.headers.get("x-content-type-options"), "nosniff", `L6: nosniff on /${path}`);
       assert.equal(r.headers.get("referrer-policy"), "no-referrer", `L6: referrer policy on /${path}`);
@@ -258,7 +259,7 @@ try {
     assert.ok(refuse(q({ request_type: "call_function", account_id: "translator.agentexit.testnet", method_name: "withdraw", args_base64: "e30=" })), "L7: non-view method refused");
     assert.ok(refuse(q({ request_type: "view_account", account_id: "agentexit.near" })), "L7: mainnet account refused");
     assert.ok(refuse(q({ request_type: "view_state", account_id: "translator.agentexit.testnet", prefix_base64: "" })), "L7: view_state refused");
-    const r = await fetch(`${base}api/rpc`, { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "send_tx", params: {} }) });
+    const r = await fetch(`${root}api/rpc`, { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "send_tx", params: {} }) });
     assert.equal(r.status, 400, "L7: local relay refuses a send");
     // The Vercel function itself must load as ESM (a .js file there loaded as
     // CommonJS and crashed on the hosted page) and refuse a send.
@@ -276,8 +277,8 @@ try {
     await ctx.route("**/*", async (route) => {
       const u = route.request().url();
       seenHosts.add(new URL(u).host);
-      if (!u.startsWith(base)) return route.abort();
-      if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+      if (!u.startsWith(root)) return route.abort();
+      if (!u.startsWith(`${root}api/rpc`)) return route.continue();
       const b = JSON.parse(route.request().postData());
       const acc = b.params.account_id;
       const cheat = acc.startsWith("cheat.");
@@ -309,8 +310,8 @@ try {
     await ctx.route("**/*", async (route) => {
       const u = route.request().url();
       seen.add(new URL(u).host);
-      if (!u.startsWith(base)) return route.abort();
-      if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+      if (!u.startsWith(root)) return route.abort();
+      if (!u.startsWith(`${root}api/rpc`)) return route.continue();
       const b = JSON.parse(route.request().postData());
       const acc = b.params.account_id;
       const bot = acc === "bot.testnet";
@@ -348,8 +349,8 @@ try {
       const asked = [];
       await ctx.route("**/*", async (route) => {
         const u = route.request().url();
-        if (!u.startsWith(base)) return route.abort();
-        if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+        if (!u.startsWith(root)) return route.abort();
+        if (!u.startsWith(`${root}api/rpc`)) return route.continue();
         const b = JSON.parse(route.request().postData());
         asked.push(b.method);
         let result;
@@ -566,7 +567,7 @@ try {
     const wasmBytes = statSync(new URL("contracts/res/agent_exit.wasm", repo)).size;
     const bytes = wasmBytes.toLocaleString("en-US");
     for (const f of ["README.md", "docs/LIMITS.md"]) assert.ok(readFileSync(new URL(f, repo), "utf8").includes(`${bytes} bytes`), `B4: ${f} names the wasm size (${bytes} bytes)`);
-    const html = readFileSync(new URL("index.html", web), "utf8");
+    const html = readFileSync(new URL("proof.html", web), "utf8");
     const rsFiles = execFileSync("git", ["ls-files", "*.rs"], { cwd: repo.pathname, encoding: "utf8" }).split("\n").filter(Boolean);
     const rustTests = rsFiles.reduce((n, f) => n + (readFileSync(new URL(f, repo), "utf8").match(/#\[test\]/g) || []).length, 0);
     const mcpTests = Number(/\((\d+) tests, then/.exec(readFileSync(new URL("docs/COMMANDS.md", repo), "utf8"))[1]);
@@ -646,8 +647,8 @@ try {
       const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
       await ctx.route("**/*", async (route) => {
         const u = route.request().url();
-        if (!u.startsWith(base)) return route.abort();
-        if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+        if (!u.startsWith(root)) return route.abort();
+        if (!u.startsWith(`${root}api/rpc`)) return route.continue();
         const b = JSON.parse(route.request().postData());
         const value = b.params.method_name === "get_holdings" ? { holdings: [{ bps: 250 }], claimable: "1500000" }
           : [{ ...o.offer, sold_bps: 500, holders: [...o.offer.holders, { account: "judge.testnet", bps: 250 }] }];
@@ -685,7 +686,7 @@ try {
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     // #run-day runs the scenario: answer the relay with an error instead of reaching for the network.
-    await ctx.route("**/*", (r) => { const u = r.request().url(); if (!u.startsWith(base)) return r.abort(); if (u.startsWith(`${base}api/rpc`)) return r.fulfill({ contentType: "application/json", body: '{"jsonrpc":"2.0","id":1,"error":{"message":"offline test"}}' }); return r.continue(); });
+    await ctx.route("**/*", (r) => { const u = r.request().url(); if (!u.startsWith(root)) return r.abort(); if (u.startsWith(`${root}api/rpc`)) return r.fulfill({ contentType: "application/json", body: '{"jsonrpc":"2.0","id":1,"error":{"message":"offline test"}}' }); return r.continue(); });
     const q = await ctx.newPage();
     q.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
     for (const [hash, fold] of [["#test-count", "criteria"], ["#backend", "how-it-works"], ["#break-in", "replay"], ["#run-day", "sc-more"]]) {
@@ -716,6 +717,43 @@ try {
       checks++;
     }
     await noHorizontalScroll(q, "nav at 375px");
+    await q.close();
+  }
+
+  // M1-M8: the market page (index.html), for people: a catalog of agents with verdicts,
+  // a detail panel with one action, few words, no sideways scroll; proof lives on proof.html.
+  for (const vp of [{ width: 1280, height: 800 }, { width: 375, height: 812 }]) {
+    const q = await page(vp);
+    await q.goto(root);
+    await q.waitForSelector("#market[data-ready]");
+    const names = await q.locator(".mk-deed").evaluateAll((d) => d.map((x) => x.dataset.agent));
+    assert.deepEqual([...names].sort(), ["cheat", "pump-bot", "research-desk", "translate-pro", "translator", "translator3"], "M1: six agents in the catalog");
+    const stamps = Object.fromEntries(await q.locator(".mk-deed").evaluateAll((d) => d.map((x) => [x.dataset.agent, x.querySelector(".stamp").textContent])));
+    assert.equal(stamps.cheat, "Blocked", "M2: the cheat is stamped Blocked");
+    assert.equal(stamps["pump-bot"], "Self-paid", "M2: pump-bot is stamped Self-paid");
+    assert.equal(stamps.translator, "Sold", "M2: translator is stamped Sold");
+    await q.click('#filters button[data-f="flag"]');
+    assert.equal(await q.locator(".mk-deed").count(), 2, "M3: the Flagged filter shows 2");
+    await q.click('#filters button[data-f="all"]');
+    await q.click('.mk-deed[data-agent="translator3"]');
+    assert.ok(await q.locator("#agent-panel").evaluate((d) => d.open), "M4: a card opens the agent panel");
+    await q.fill("#mk-account", "softlynx.near");
+    assert.match(await q.textContent("#mk-note"), /real-money \.near account/, "M5: a .near account gets a testnet hint");
+    assert.equal(await q.getAttribute("#mk-invest", "aria-disabled"), "true", "M5: and the invest link stays off");
+    await q.fill("#mk-account", "judge.testnet");
+    const href = await q.getAttribute("#mk-invest", "href");
+    const rec = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    assert.equal(new URL(href).searchParams.get("transactions"), base64(encodeTx(investTx(rec.open_offer, "judge.testnet"))), "M6: the panel's invest link carries the faucet + buy transaction");
+    await q.keyboard.press("Escape");
+    await q.click('.mk-deed[data-agent="research-desk"]');
+    assert.match(await q.textContent("#agent-panel"), /buy_share \{ agent: "research-desk\./, "M7: an agent can buy through MCP (buy_share)");
+    await q.keyboard.press("Escape");
+    const words = await q.evaluate(() => document.querySelector("main").innerText.split(/\s+/).filter(Boolean).length);
+    assert.ok(words <= 520, `M8: the market page is lean (${words} words at ${vp.width}px)`);
+    assert.equal(await q.locator('a[href="proof.html"]').count() >= 1, true, "M8: proof and judges are one link away");
+    await q.waitForSelector('#play[data-ready="1"]');
+    await noHorizontalScroll(q, `market at ${vp.width}px`);
+    checks += 12;
     await q.close();
   }
 
