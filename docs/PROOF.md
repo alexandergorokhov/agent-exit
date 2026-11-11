@@ -24,6 +24,21 @@ One row per headline claim: how to check it offline (no network, no account), th
 | An agent buys an agent (scripted client, no AI model) | `make agent-buys-agent` (equals `tests/golden/agent-buys-agent.json`) | `out/scenes/scene-6.json` | [buy](https://testnet.nearblocks.io/txns/Bp48FRJGDYUEMuMDTKRdNVY73YjBcRZfnheK6GibD88q) | agentexit5 |
 | A real AI model (Claude Haiku 4.5) buys through MCP: refuses the cheat, buys translator, checks the lockout | committed run on offline fixtures: `out/llm-buyer.json` | `out/llm-buyer-testnet.json`, `out/scenes/scene-7.json` | [buy](https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD) | agentexit4 |
 
+## Code hash in 3 commands
+
+The deployed agents run code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF` (sha256 `42d1c5d9f80dee431c930dd5a80061ee425c1ee043d57859b927dea144fe07b2`). Source: tag `testnet-agentexit5` (`70d06b2`), built with `make build` in `sourcescan/cargo-near:0.22.0-rust-1.97.0`. HEAD differs in the contract source by one lint-only line (`aa95854`).
+
+```sh
+# 1. The committed wasm (offline): prints the hex above
+sha256sum contracts/res/agent_exit.wasm
+# 2. The deployed account (read-only, public RPC): result.code_hash is the base58 above
+curl -s https://rpc.testnet.near.org -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"translator.agentexit5.testnet"}}'
+# 3. NEP-330 build metadata stored in the contract: build image and source
+near contract call-function as-read-only translator.agentexit5.testnet contract_source_metadata json-args '{}' network-config testnet now
+```
+
+`make judge` runs check K0 on the files: the hash of `contracts/res/agent_exit.wasm` must equal `web/data/testnet.json`, `out/testnet/deploy.json`, `.mcp.json` and `SHA256SUMS`. It prints commands 2 and 3.
+
 ## Verify testnet without our server
 
 The offline `check_claims` re-runs the contract code; it does not prove the testnet history. To check that history without the MCP testnet server:

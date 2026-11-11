@@ -82,5 +82,5 @@ The README keeps a summary; this is the full list. What is not caught by design:
   real `AccessKeyNotFound` errors and token refunds on a local node; the
   testnet run of 2026-11-04 covers the same on the public network (see
   "Live on NEAR testnet").
-- The agent wasm is about 550 KB and not size-optimised yet.
+- The agent wasm is about 626 KiB (641,087 bytes) and not size-optimised yet.
 - **Born clean is live on testnet since 2026-11-11** (scene 9 on `agentexit5.testnet`). The agent's `new` accepts only itself or its parent factory as caller. Agents deployed before that build cannot be born clean; a buyer's scan still reports how each agent was made.

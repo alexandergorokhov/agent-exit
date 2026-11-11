@@ -6,6 +6,7 @@
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
 import { signUrl, investTx, claimTx, validAccount } from "./wallet-link.mjs";
+import { fmt, investorPayout, waterfall } from "./ledger.mjs";
 const params = new URLSearchParams(location.search);
 const network = params.get("network") === "testnet" ? "testnet" : "offline";
 
@@ -231,7 +232,7 @@ function renderMode() {
   if (network === "offline") {
     box.replaceChildren(
       el("span", { class: "pill", text: "offline: recorded results" }),
-      el("a", { class: "pill link", href: "?network=testnet", text: "Check NEAR testnet →" }));
+      el("a", { class: "pill link", href: "?network=testnet", text: "Check NEAR testnet" }));
     return;
   }
   const who = el("span", { class: "muted", id: "wallet" });
@@ -317,15 +318,14 @@ async function renderProofStrip() {
   // Business first: three numbers, each with its transaction.
   const inv = t.steps["invest"]?.txs || [];
   const jobs = inv.filter((x) => x.ok && /pays .* for a translation/.test(x.label || ""));
-  const share = inv.find((x) => x.ok && x.method === "ft_transfer_call" && /buys the 20% slice/.test(x.label || ""));
-  const claim = inv.find((x) => x.ok && /claim/i.test(x.label || ""));
+  const payout = investorPayout(t);
   const stat = (num, text, x, more) => el("li", {},
     el("b", { class: "ps-num", text: num }), " ",
     el("span", { class: "ps-label", text }), " ",
     el("span", { class: "ps-links" }, x ? link(x, "tx ↗") : null, more || null));
   const stats = [];
   if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "customer payments signed by NEAR AI, checked on-chain", jobs[0]));
-  if (share && claim) stats.push(stat("exact", "investor payout, to the cent", claim));
+  if (payout) stats.push(stat(fmt(payout.investor), `of ${fmt(payout.total)} paid to the investor (${payout.pct}%)`, payout.claim));
   stats.push(stat(`${tries.length}/${tries.length}`, "take-backs refused after a sale", tries[0]));
   const after = document.getElementById("story-after");
   if (after) after.textContent = `All ${tries.length} of her ways back refused.`;
@@ -343,6 +343,29 @@ async function renderProofStrip() {
   openTarget();
 }
 renderProofStrip().catch(() => { /* the static fallback text stays */ });
+
+// "How it earns" in the Exchange header: where the money of the two recorded
+// deals went (translator sold for 1,000.00; dave bought 20% for 500.00).
+function renderWaterfall() {
+  const box = document.getElementById("waterfall");
+  if (!box) return;
+  const deal = (title, w, heldLabel) => {
+    const parts = [["seller now", w.seller, "wf-seller"], ["fee", w.fee, "wf-fee"], [heldLabel, w.held, "wf-held"]];
+    const bar = el("div", { class: "wf-bar", role: "img", "aria-label": `${title}: ${parts.map(([k, v]) => `${fmt(v)} ${k}`).join(", ")}` },
+      parts.map(([, v, c]) => { const s = el("span", { class: c }); s.style.setProperty("width", `${(100 * v) / w.total}%`); return s; }));
+    return el("div", { class: "wf-deal", "data-total": String(w.total) },
+      el("p", { class: "wf-title" }, el("b", { text: title }), ` ${fmt(w.total)}`), bar,
+      el("p", { class: "wf-legend small" }, parts.map(([k, v, c]) => el("span", { class: `wf-key ${c}`, "data-cents": String(v) }, el("i"), `${fmt(v)} ${k}`))));
+  };
+  box.replaceChildren(deal("Sale", waterfall("sale", 100000), "earn-out"), deal("Share buy", waterfall("share", 50000), "escrow"));
+}
+renderWaterfall();
+
+// The judge's command block: one click copies it.
+document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+  const text = document.getElementById(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); b.textContent = "Copied"; } catch { b.textContent = "Select and copy"; }
+}));
 
 // Due-diligence cards (scripts/diligence-data.mjs, from the recorded testnet run):
 // verdict first, four numbers, a bar, and every original row under "Full due diligence".
@@ -369,7 +392,7 @@ async function renderDiligence() {
       c.metrics ? el("dl", { class: "dd-metrics" }, c.metrics.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])) : null,
       total ? el("div", { class: "dd-bar", role: "img", "aria-label": `real revenue ${c.bar.real}, self-paid ${c.bar.self}` }, real, self) : null,
       el("div", { class: "dd-foot" }, full,
-        el("p", { class: "small dd-run" }, el("a", { href: c.run, text: "Re-check on chain →" }))));
+        el("p", { class: "small dd-run" }, el("a", { href: c.run, text: "Re-check on chain" }))));
   }));
 }
 renderDiligence().catch(() => { /* the loading text stays */ });
@@ -447,7 +470,7 @@ async function renderExchange() {
     th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); } });
   });
   draw();
-  document.getElementById("ex-note").textContent = `${x.agents.map((a) => a.name).join(", ")}: born with no admin key. Recorded on testnet.`;
+  document.getElementById("ex-note").textContent = `${x.agents.map((a) => a.name).join(", ")}: born with no key. Recorded on testnet.`;
   box.hidden = false;
 }
 renderExchange().catch(() => { /* the board stays hidden */ });

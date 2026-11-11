@@ -7,6 +7,9 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { serve } from "../serve.mjs";
 import { WALLET_SIGN, encodeTx, investTx, base64 } from "../wallet-link.mjs";
+import { fmt, investorPayout, waterfall } from "../ledger.mjs";
+import { execFileSync } from "node:child_process";
+import { readdirSync, statSync } from "node:fs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -153,12 +156,12 @@ try {
     await q.waitForSelector('#step[data-step="agent-buys-agent"]');
     assert.equal(await q.locator('#step [data-slot="ai-buyer-transcript"]').count(), 1, "S23: slot for the AI buyer transcript");
     assert.ok(!(await q.textContent("#step")).includes("An agent buys an agent"));
-    // counts in the footer come from the golden attack report, not typed by hand
+    // counts in "Honest limits" come from the golden attack report, not typed by hand
     const golden = JSON.parse(readFileSync(new URL("../../tests/golden/attack.json", import.meta.url), "utf8"));
-    const foot = await q.textContent("footer");
+    const foot = await q.textContent("#for-judges");
     assert.ok(foot.includes(`${golden.families.length} attack families`), "S23: family count is current");
     assert.ok(foot.includes(`${golden.summary.families} counted`), "S23: counted-family count is current");
-    assert.ok(foot.includes("185 MCP tests"), "S23: MCP test count is current");
+    assert.ok(/\d+ Rust tests and \d+ MCP tests/.test(foot), "S23: test counts shown (B4 checks them)");
     assert.ok(foot.includes("regression suite, not independent evidence"));
     checks += 8;
     await q.close();
@@ -490,13 +493,15 @@ try {
     const words = await q.evaluate(() => document.body.innerText.split(/\s+/).filter((w) => /\w/.test(w)).length);
     // Was 1,808 before the redesign. What is left is mostly UI: the table, the three case-file
     // scorecards and the playground's live state; prose sits in closed folds.
-    assert.ok(words <= 740, `U2: ${words} visible words on load at ${vp.width}px (budget 740)`);
+    // Loop 45 added the business lines judges asked for (fee, running cost, first users, deal splits)
+    // and the judge command block: about 100 words, so the budget moved from 740 to 850.
+    assert.ok(words <= 850, `U2: ${words} visible words on load at ${vp.width}px (budget 850)`);
     const order = await q.evaluate(() => ["exchange", "invest-yourself", "protect", "play", "evidence-run", "check", "for-judges"].map((id) => {
       const e = document.getElementById(id); return e ? e.getBoundingClientRect().top + scrollY : -1; }));
     assert.ok(order.every((y, i) => y >= 0 && (i === 0 || y > order[i - 1])), `U3: sections in order (${order.join(", ")})`);
     assert.equal(await q.evaluate(() => document.getElementById("replay").open), false, "U3: the offline replay is folded on a plain load");
     const h = await q.evaluate(() => document.documentElement.scrollHeight);
-    assert.ok(h <= (vp.width > 600 ? 4200 : 7500), `U4: page is ${h}px tall at ${vp.width}px`);
+    assert.ok(h <= (vp.width > 600 ? 4100 : 7700), `U4: page is ${h}px tall at ${vp.width}px`);
     const banned = await q.evaluate(() => {
       const judges = document.getElementById("for-judges").innerText + document.getElementById("ex-note").innerText + document.querySelector("footer").innerText;
       return (document.body.innerText.match(/NotOwner|NotRunner|NEP-\d|nft_token|0xfe|born clean|age-weighted|escrow floor/g) || []).filter((w) => !judges.includes(w));
@@ -505,6 +510,80 @@ try {
     await noHorizontalScroll(q, `whole page at ${vp.width}px`);
     checks += 7;
     await q.close();
+  }
+
+  // B1-B9 (loop 45): business first, numbers from the files, one proof section, a folded judge grid.
+  {
+    const world = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    const web = new URL("../", import.meta.url);
+    // B1: the page never says "mainnet": its own HTML, scripts and data (not the vendored wallet library).
+    const own = [...readdirSync(web).filter((f) => /\.(html|js|mjs|css)$/.test(f)), ...readdirSync(new URL("data/", web)).map((f) => `data/${f}`)];
+    for (const f of own) { assert.ok(!/mainnet/i.test(readFileSync(new URL(f, web), "utf8")), `B1: "mainnet" in web/${f}`); checks++; }
+    // B2: the hero payout is computed from the recorded run: 14.00 of 70.00 (20%).
+    const pay = investorPayout(world);
+    assert.ok(pay, "B2: the invest run is recorded");
+    assert.equal(pay.total, 7000, "B2: the recorded customer payments add up to 70.00");
+    assert.equal(pay.investor, (pay.total * pay.pct) / 100, "B2: the investor gets exactly their share");
+    assert.equal(`${fmt(pay.investor)} of ${fmt(pay.total)}`, "14.00 of 70.00");
+    // B3: the deal waterfalls add up to the price.
+    for (const [kind, price, want] of [["sale", 100000, [69000, 1000, 30000]], ["share", 50000, [24500, 500, 25000]]]) {
+      const w = waterfall(kind, price);
+      assert.deepEqual([w.seller, w.fee, w.held], want, `B3: ${kind} split`);
+      assert.equal(w.seller + w.fee + w.held, price, `B3: ${kind} parts add up`);
+    }
+    // B4: numbers in the docs match the files (drift check).
+    const repo = new URL("../../", import.meta.url);
+    const wasmBytes = statSync(new URL("contracts/res/agent_exit.wasm", repo)).size;
+    const bytes = wasmBytes.toLocaleString("en-US");
+    for (const f of ["README.md", "docs/LIMITS.md"]) assert.ok(readFileSync(new URL(f, repo), "utf8").includes(`${bytes} bytes`), `B4: ${f} names the wasm size (${bytes} bytes)`);
+    const html = readFileSync(new URL("index.html", web), "utf8");
+    const rsFiles = execFileSync("git", ["ls-files", "*.rs"], { cwd: repo.pathname, encoding: "utf8" }).split("\n").filter(Boolean);
+    const rustTests = rsFiles.reduce((n, f) => n + (readFileSync(new URL(f, repo), "utf8").match(/#\[test\]/g) || []).length, 0);
+    const mcpTests = Number(/\((\d+) tests, then/.exec(readFileSync(new URL("docs/COMMANDS.md", repo), "utf8"))[1]);
+    assert.ok(html.includes(`${rustTests} Rust tests and ${mcpTests} MCP tests`), `B4: the page says ${rustTests} Rust tests and ${mcpTests} MCP tests`);
+    assert.ok(!/\d+\+ tests/.test(html), "B4: no rounded test count");
+    checks += 6;
+    // B5: the factory link is the recorded scene-13 birth.
+    const scene13 = readFileSync(new URL("out/scenes/scene-13.json", repo), "utf8");
+    const factoryTx = /txns\/(\w+)" target="_blank" rel="noopener noreferrer" id="factory-tx"/.exec(html)[1];
+    assert.ok(scene13.includes(factoryTx), "B5: the factory tx is in out/scenes/scene-13.json");
+    checks++;
+    for (const vp of [{ width: 1280, height: 800 }, { width: 375, height: 812 }]) {
+      const q = await page(vp);
+      await q.goto(base);
+      await q.waitForSelector("#proof-strip .ps-stats li");
+      await q.waitForSelector("#waterfall .wf-deal");
+      await q.waitForSelector('#scenarios[data-ready="1"]');
+      const body = await q.evaluate(() => document.body.textContent);
+      assert.ok(!/mainnet/i.test(body), `B1: rendered page says "mainnet" at ${vp.width}px`);
+      const stat = await q.locator("#proof-strip .ps-stats li").nth(1);
+      assert.match(await stat.textContent(), /14\.00 of 70\.00\s*paid to the investor \(20%\)/, "B2: hero payout stat");
+      assert.equal(await stat.locator("a").getAttribute("href"), pay.claim.explorer, "B2: the stat links the claim tx");
+      const hero = await q.textContent("header.hero");
+      assert.ok(hero.includes("How it earns: a 1% fee on every sale and share buy, taken in the same transaction"), "B2: business model line");
+      assert.ok(/no server of ours touches the money/.test(hero), "B2: running cost line");
+      assert.equal(await q.locator('header.hero a[href$="docs/BUSINESS.md"]').count(), 1, "B2: links BUSINESS.md");
+      assert.equal(await q.locator('header.hero a', { hasText: "Source code" }).count(), 1, "B9: source code link in the hero");
+      const ex = await q.textContent("#exchange");
+      for (const t of ["translator sold for 1,000.00, so the fee was 10.00", "13 MCP tools", "Only on NEAR"]) assert.ok(ex.includes(t), `B3: Exchange says "${t}"`);
+      const sums = await q.$$eval("#waterfall .wf-deal", (ds) => ds.map((d) => [Number(d.dataset.total), [...d.querySelectorAll("[data-cents]")].reduce((a, e) => a + Number(e.dataset.cents), 0)]));
+      assert.deepEqual(sums, [[100000, 100000], [50000, 50000]], "B3: waterfall parts add up on the page");
+      // B6: one proof section; no duplicate limits text, no tiles, no eyebrows, no arrows on links.
+      assert.equal(await q.locator("#evidence-run #check").count(), 1, "B6: the scan is inside the proof section");
+      for (const sel of ["#evidence", "#concept", ".eyebrow", "header .tag"]) assert.equal(await q.locator(sel).count(), 0, `B6: ${sel} removed`);
+      assert.equal((body.match(/regression suite, not independent evidence/g) || []).length, 1, "B6: honest limits said once");
+      assert.equal(await q.locator("header .cta a.primary").textContent(), "Buy a 2.5% share for 25.00", "B9: the main button names the deal");
+      // B7: the judge grid is folded; the command block can be copied; the roadmap has three steps.
+      assert.equal(await q.evaluate(() => document.getElementById("criteria").open), false, "B7: criteria folded");
+      assert.equal(await q.locator("#for-judges #criteria .crit a").count(), 5, "B7: five criteria inside the fold");
+      assert.equal(await q.locator("#copy-judge").count(), 1, "B7: copy button");
+      assert.match(await q.textContent("#judge-cmd"), /make judge/, "B7: the command runs make judge");
+      assert.equal(await q.locator("#for-judges .roadmap li").count(), 3, "B7: three roadmap steps");
+      assert.ok((await q.textContent("#for-judges")).includes("/mcp__agent-exit__judge_tour"), "B7: names the judge_tour prompt");
+      await noHorizontalScroll(q, `loop 45 page at ${vp.width}px`);
+      checks += 20;
+      await q.close();
+    }
   }
 
   // W11: back from the wallet, the transaction shows on the page and stays listed (localStorage).
@@ -557,7 +636,7 @@ try {
     await ctx.route("**/*", (r) => { const u = r.request().url(); if (!u.startsWith(base)) return r.abort(); if (u.startsWith(`${base}api/rpc`)) return r.fulfill({ contentType: "application/json", body: '{"jsonrpc":"2.0","id":1,"error":{"message":"offline test"}}' }); return r.continue(); });
     const q = await ctx.newPage();
     q.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
-    for (const [hash, fold] of [["#concept", null], ["#backend", "how-it-works"], ["#break-in", "replay"], ["#run-day", "sc-more"]]) {
+    for (const [hash, fold] of [["#test-count", "criteria"], ["#backend", "how-it-works"], ["#break-in", "replay"], ["#run-day", "sc-more"]]) {
       await q.goto(`${base}${hash}`);
       if (fold === "sc-more") await q.waitForFunction(() => document.querySelector(".sc-more")?.open === true);
       else if (fold) await q.waitForFunction((id) => document.getElementById(id).open, fold);

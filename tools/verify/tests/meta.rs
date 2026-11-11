@@ -498,13 +498,23 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
             })
             .collect()
     };
+    // The one number: docs/COMMANDS.md's `make mcp-test` row ("(N tests, then").
+    let commands = read("docs/COMMANDS.md");
+    let at = commands.find(" tests, then").expect("COMMANDS.md names the MCP test count");
+    let count: usize = commands[..at]
+        .rsplit('(')
+        .next()
+        .unwrap()
+        .parse()
+        .expect("COMMANDS.md: (N tests, then");
+    assert!(count >= declared, "COMMANDS.md: {count} MCP tests but {declared} are declared");
     for f in ["README.md", "web/index.html"] {
         for n in re(&read(f)) {
             assert!(
                 n >= declared,
                 "{f}: {n} MCP tests but {declared} are declared"
             );
-            assert_eq!(n, 185, "{f}: the MCP test count differs from make mcp-test");
+            assert_eq!(n, count, "{f}: the MCP test count differs from docs/COMMANDS.md (make mcp-test)");
         }
     }
 }
