@@ -2436,6 +2436,6 @@ fn take_deposit(who: &AccountId) -> Option<DepositRecord> {
 fn refund_excess(to: &AccountId, keep: u128) {
     let extra = env::attached_deposit().as_yoctonear().saturating_sub(keep);
     if extra > 0 {
-        Promise::new(to.clone()).transfer(NearToken::from_yoctonear(extra));
+        let _ = Promise::new(to.clone()).transfer(NearToken::from_yoctonear(extra));
     }
 }
