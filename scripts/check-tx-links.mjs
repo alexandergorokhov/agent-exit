@@ -32,6 +32,13 @@ for (const [step, s] of Object.entries(data.steps)) {
     else bad.push(`${step}: ${t.tx} (${t.label}): ${JSON.stringify(r.error || "hash mismatch").slice(0, 120)}`);
   }
 }
+// The Invest button's recorded transaction (page data open_offer.example_tx).
+const ex = data.open_offer && data.open_offer.example_tx;
+if (ex && ex.tx) {
+  const r = await lookup({ tx: ex.tx, by: ex.account });
+  if (r.result && r.result.transaction && r.result.transaction.hash === ex.tx) ok++;
+  else bad.push(`open_offer.example_tx: ${ex.tx}: ${JSON.stringify(r.error || "hash mismatch").slice(0, 120)}`);
+}
 console.log(`check-tx-links: ${ok} found, ${bad.length} not found`);
 for (const b of bad) console.log(`  ${b}`);
 process.exit(bad.length ? 1 : 0);

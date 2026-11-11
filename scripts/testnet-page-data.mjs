@@ -84,6 +84,14 @@ if (existsSync("out/scenes/scene-12.json")) {
   const o = JSON.parse(readFileSync("out/scenes/scene-12.json", "utf8"));
   if (o.pass && o.offer && o.buy_part) {
     out.open_offer = { agent: o.agent, xusd: `xusd.${dep.root}`, offer: o.offer, part_bps: o.buy_part.part_bps, amount: o.buy_part.amount, msg: o.buy_part.msg };
+    // The Invest button's own transaction, signed by script for an outside
+    // account (scripts/testnet/invest-button.mjs -> out/invest-button-testnet.json).
+    if (existsSync("out/invest-button-testnet.json")) {
+      const b = JSON.parse(readFileSync("out/invest-button-testnet.json", "utf8"));
+      if (b.pass && b.agent === o.agent && /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(b.tx_hash)) {
+        out.open_offer.example_tx = { account: b.account, tx: b.tx_hash, explorer: b.explorer, holdings_bps: b.holdings_bps_after, note: b.note };
+      }
+    }
   }
 }
 writeFileSync("web/data/testnet.json", JSON.stringify(out, null, 2) + "\n");

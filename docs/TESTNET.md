@@ -24,6 +24,7 @@ Recorded on 2026-11-10 in a fresh world under `agentexit5.testnet` (agent code h
 | Shares: dave claims exactly 20% | [Evd1jGnU…](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy) |
 | A real AI model (Claude Haiku 4.5, about $0.05) buys an agent through MCP (previous world `agentexit4.testnet`) | [Dh5QgrRb…](https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD) |
 | Born clean (scene 9): the factory creates `born1` in one batch, no access key ever | [2Rgj3r37…](https://testnet.nearblocks.io/txns/2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD) |
+| The page's Invest button transaction (faucet, then buy 2.5% of translator3), signed by script for the outside account `p6.agentexit5.testnet` (`scripts/testnet/invest-button.mjs`) | [DHJhBU22…](https://testnet.nearblocks.io/txns/DHJhBU229GZvNWTykNBXZ4134BXjCFA2ixY5SMZBiCSW) |
 | An MCP agent invests by a fixed rule: carol buys 2.5% of translator3 through `buy_share` (`make agent-invests-testnet`) | [5ijxcigm…](https://testnet.nearblocks.io/txns/5ijxcigmGFmXDGym3p3S5jf9kwKnPQJ5HineUcoS8aPr) |
 
 Not run on testnet: G2 (the Base Sepolia payment; needs a Base relayer key). The cheat scan (scene 4) and the earnings view (scene 3) are read-only and recorded in `out/scenes/`.

@@ -1,0 +1,27 @@
+{
+  "schema": "invest-button-testnet.v1",
+  "money": "xUSD-FAKE (test token, no value)",
+  "note": "the same transaction the page's Invest button builds (web/wallet-link.mjs), signed by script",
+  "account": "p6.agentexit5.testnet",
+  "agent": "translator3.agentexit5.testnet",
+  "token": "xusd.agentexit5.testnet",
+  "actions": [
+    {
+      "method": "faucet",
+      "gas_tgas": 30,
+      "deposit_yocto": "0"
+    },
+    {
+      "method": "ft_transfer_call",
+      "gas_tgas": 150,
+      "deposit_yocto": "1"
+    }
+  ],
+  "bytes_equal_to_page_except_key_nonce_blockhash": true,
+  "tx_hash": "DHJhBU229GZvNWTykNBXZ4134BXjCFA2ixY5SMZBiCSW",
+  "explorer": "https://testnet.nearblocks.io/txns/DHJhBU229GZvNWTykNBXZ4134BXjCFA2ixY5SMZBiCSW",
+  "status_ok": true,
+  "holdings_bps_before": 0,
+  "holdings_bps_after": 250,
+  "pass": true
+}
