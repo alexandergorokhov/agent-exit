@@ -39,12 +39,17 @@ make demo                      # the offline story; make screen runs 7 rows (jud
 
 **About the Base wallet:** what is live on testnet is the lockout of its NEAR-side control: the old seller's `pay_base` call is refused (`NotRunner`, the "Base wallet spend" link). A real payment from the Base wallet on Base Sepolia is not yet recorded (gate G2).
 
-**Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
-- a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), and an account can be **born with no key** (live on testnet: the factory's one batch creates it, deploys the published code and runs `new`), so "the seller is locked out" can be read from the chain;
-- function-call keys are **scoped** to one contract and its methods, so the runner key can run the agent and nothing else;
-- named accounts make the seller's own sub-accounts (`bot.alice.testnet`) visible, so their payments are flagged;
-- the agent's **Base wallet** is derived from its account name with Chain Signatures, so it stays the same across a sale;
-- NEAR AI Cloud signatures on payments are **checked on-chain** (ecrecover) to mark earnings as verified.
+**Why only on NEAR? Built on NEAR**, one row per NEAR feature. The interface is written up as [the standard, not just the marketplace](docs/STANDARD.md).
+
+| NEAR feature | What it does here | Testnet tx |
+|---|---|---|
+| NEP-171 deed | one ownership token, issued by the agent's own account | [deed minted](https://testnet.nearblocks.io/txns/354LsbDdYkbEB1pgxsevvXVRr7QcqQA4vCJn7WQUUzHa) |
+| NEP-141 payments | every payment counted by who paid; named accounts (`bot.alice.testnet`) expose the seller's own | [customer pays](https://testnet.nearblocks.io/txns/65r5dJFDddzMdvT2VE7nQxkZGywMBbQu1gPG5jhHyYtq) |
+| Key deletion + function-call keys | the sale deletes the seller's key and adds the buyer's scoped runner key in one transaction | [sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC) |
+| Born-clean factory | the agent account is created with no key at all | [birth](https://testnet.nearblocks.io/txns/8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7) |
+| Chain Signatures Base wallet | NEAR-side lockout live (old seller's `pay_base` refused); a Base Sepolia payment not yet | [refused spend](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) |
+| NEAR AI Cloud signature | checked on-chain (ecrecover) to mark earnings verified, on `agentexit4` | [verified job](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb) |
+| MCP for agents | 13 tools; a Claude model bought an agent through them, on `agentexit4` | [AI buy](https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD) |
 
 ![The demo page](docs/img/demo.png)
 

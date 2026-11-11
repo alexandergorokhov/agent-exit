@@ -567,15 +567,15 @@ details.criteria[open] .crit { margin-top: 8px; }
 .crit span { font-size: var(--fs-sm); color: var(--muted); }
 .tracks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 14px 0 0; max-width: none; }
 .track { font-size: var(--fs-xs); font-weight: 600; padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
-details.why-near { margin-top: 0; border-top: 1px solid var(--line); padding-top: 4px; }
-details.why-near > summary { font-weight: 600; padding: 8px 0; }
-.why { margin-top: 8px; }
-.why { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.why div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 6px; align-content: start; }
-.why b { font-size: var(--fs-sm); }
-.why span { font-size: var(--fs-sm); color: var(--muted); }
-@media (max-width: 1000px) { .why { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 520px) { .why { grid-template-columns: 1fr; } }
+/* Built on NEAR: one compact row per NEAR feature, each with its recorded tx (not a card grid). */
+.built-on { margin: 16px 0 4px; }
+.built-on h3 { font-size: var(--fs-md); margin: 0 0 2px; }
+.built-on > p { margin: 0 0 6px; }
+.bon { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
+.bon li { display: grid; grid-template-columns: 8.5em minmax(0, 1fr) auto; gap: 0 12px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); line-height: 1.4; }
+.bon span { color: var(--text-2); min-width: 0; }
+.bon a { white-space: nowrap; font-size: var(--fs-xs); }
+@media (max-width: 640px) { .bon li { grid-template-columns: minmax(0, 1fr) auto; } .bon span { grid-column: 1 / -1; grid-row: 2; font-size: var(--fs-xs); } }
 details.how, details.limits { margin-top: 0; border-top: 1px solid var(--line); padding-top: 4px; }
 details.how > summary, details.limits > summary { font-weight: 600; padding: 8px 0; }
 .problem { margin: 12px 0; }

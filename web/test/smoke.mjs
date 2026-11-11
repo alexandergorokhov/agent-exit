@@ -520,14 +520,17 @@ try {
     // and the judge command block: about 100 words, so the budget moved from 740 to 850.
     // Loop 45 round 3 added what judges asked for: the two-sentence lede naming both fears, labelled
     // investors, the early-multiple note and why each playground step is disabled: about 65 words.
-    assert.ok(words <= 910, `U2: ${words} visible words on load at ${vp.width}px (budget 910)`);
+    // Loop 46: the "Built on NEAR" strip for judges (7 rows, each with its tx, and the link to the
+    // standard) adds about 85 words, so the budget moved from 910 to 1000.
+    assert.ok(words <= 1000, `U2: ${words} visible words on load at ${vp.width}px (budget 1000)`);
     const order = await q.evaluate(() => ["exchange", "invest-yourself", "protect", "play", "evidence-run", "check", "for-judges"].map((id) => {
       const e = document.getElementById(id); return e ? e.getBoundingClientRect().top + scrollY : -1; }));
     assert.ok(order.every((y, i) => y >= 0 && (i === 0 || y > order[i - 1])), `U3: sections in order (${order.join(", ")})`);
     assert.equal(await q.evaluate(() => document.getElementById("replay").open), false, "U3: the offline replay is folded on a plain load");
     const h = await q.evaluate(() => document.documentElement.scrollHeight);
     // Loop 45 round 3: the same additions (step reasons, investor labels, early note) cost ~120px on desktop, ~330px at 375px.
-    assert.ok(h <= (vp.width > 600 ? 4200 : 7950), `U4: page is ${h}px tall at ${vp.width}px`);
+    // Loop 46: the "Built on NEAR" strip costs ~235px on desktop and ~440px at 375px (each row wraps to two lines).
+    assert.ok(h <= (vp.width > 600 ? 4450 : 8400), `U4: page is ${h}px tall at ${vp.width}px`);
     const banned = await q.evaluate(() => {
       const judges = document.getElementById("for-judges").innerText + document.getElementById("ex-note").innerText + document.querySelector("footer").innerText;
       return (document.body.innerText.match(/NotOwner|NotRunner|NEP-\d|nft_token|0xfe|born clean|age-weighted|escrow floor/g) || []).filter((w) => !judges.includes(w));

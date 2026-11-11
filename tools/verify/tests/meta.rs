@@ -217,7 +217,9 @@ fn web_demo_data_is_recorded_from_the_contract() {
         "the testnet run happened; the page must not say it is coming"
     );
     // Every NearBlocks link the page shows comes from the recorded testnet run.
-    let data = std::fs::read_to_string(root().join("web/data/testnet.json")).unwrap();
+    // The page's static links (the "Built on NEAR" rows, the factory tx) count too.
+    let data = std::fs::read_to_string(root().join("web/data/testnet.json")).unwrap()
+        + &std::fs::read_to_string(root().join("web/index.html")).unwrap();
     let mut recorded = String::new();
     for e in std::fs::read_dir(root().join("out/scenes")).unwrap() {
         recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
