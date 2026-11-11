@@ -31,7 +31,9 @@ export async function connect(env: Record<string, string>): Promise<Session> {
   return {
     client,
     async call(name, args = {}) {
-      const r = await client.callTool({ name, arguments: args });
+      // check_claims re-reads every recorded testnet transaction from archival
+      // nodes; under rate limits that takes longer than the SDK's 60 s default.
+      const r = await client.callTool({ name, arguments: args }, undefined, { timeout: 300_000 });
       const content = r.content as { type: string; text: string }[];
       const body = JSON.parse(content[0].text);
       return { ok: !r.isError, body };

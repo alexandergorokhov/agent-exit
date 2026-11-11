@@ -1067,6 +1067,64 @@
   "run": "2026-11-11",
   "root": "agentexit5.testnet",
   "agent_code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+  "exchange": {
+    "factory": "factory.agentexit5.testnet",
+    "agents": [
+      {
+        "agent": "translate-pro.factory.agentexit5.testnet",
+        "name": "translate-pro",
+        "status": "Active",
+        "born_clean": true,
+        "gross": "100000000",
+        "counted": "100000000",
+        "verified": "0",
+        "flagged": "0",
+        "payers": 5,
+        "ask": null,
+        "offers": [
+          {
+            "bps": 1000,
+            "sold_bps": 0,
+            "price": "50000000",
+            "end": "1799546352747984887"
+          }
+        ]
+      },
+      {
+        "agent": "research-desk.factory.agentexit5.testnet",
+        "name": "research-desk",
+        "status": "Active",
+        "born_clean": true,
+        "gross": "120000000",
+        "counted": "120000000",
+        "verified": "0",
+        "flagged": "0",
+        "payers": 4,
+        "ask": null,
+        "offers": [
+          {
+            "bps": 2000,
+            "sold_bps": 0,
+            "price": "100000000",
+            "end": "1799546450354564156"
+          }
+        ]
+      },
+      {
+        "agent": "pump-bot.factory.agentexit5.testnet",
+        "name": "pump-bot",
+        "status": "Listed",
+        "born_clean": true,
+        "gross": "410000000",
+        "counted": "10000000",
+        "verified": "0",
+        "flagged": "400000000",
+        "payers": 1,
+        "ask": "1000000000",
+        "offers": []
+      }
+    ]
+  },
   "open_offer": {
     "agent": "translator3.agentexit5.testnet",
     "xusd": "xusd.agentexit5.testnet",
