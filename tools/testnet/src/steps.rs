@@ -2046,11 +2046,12 @@ async fn business_day(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<St
 
 // ------------------------------------------------------------------ scene 12
 
-/// The open offer's terms: 25% of every payment, 250.00, until 2026-11-30:
-/// 25 parts of 1% at 10.00, so a whole judging panel can each buy one.
+/// The open offer's terms: 25% of every payment, 250.00, until 2026-11-30.
+/// The contract's smallest part is a tenth of the offer (MIN_PART_DIV), so
+/// 10 parts of 2.5% at 25.00 each.
 const OPEN_BPS: u64 = 2_500;
 const OPEN_PRICE: u128 = 250 * USD;
-const PART_BPS: u64 = 100;
+const PART_BPS: u64 = OPEN_BPS / 10;
 const OPEN_END_NS: u64 = 1_796_083_199 * 1_000_000_000; // 2026-11-30T23:59:59Z
 
 /// An offer any judge can buy a 1% part of from the page (see web "Invest
@@ -2077,7 +2078,7 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
     if !offers.as_array().is_some_and(|a| a.iter().any(open)) {
         let t = c
             .call(
-                &format!("alice offers 25% of {name}'s earnings to anyone, 1% parts at 10.00"),
+                &format!("alice offers 25% of {name}'s earnings to anyone, 2.5% parts at 25.00"),
                 &c.acct("alice")?,
                 &ag,
                 "offer_share",

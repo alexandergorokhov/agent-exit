@@ -1,6 +1,6 @@
 // Scripted "an agent invests" (AI1): an investing agent, as an MCP client,
 // reads every open revenue offer, picks the one with the most counted revenue
-// per 1% of price from at least 2 different payers, buys the smallest part
+// per 1% of price from 2+ counted payers or NEAR AI-verified revenue, buys the smallest part
 // the offer allows (offline: the recorded 10%), and reads its portfolio. No model: a fixed rule, so the
 // run costs nothing and is repeatable. Every response is validated against
 // schemas/mcp/.
@@ -25,11 +25,12 @@ const arg = (f: string): string | undefined => {
 interface Offer { offer_id: number; pct: number; price: string; price_per_pct: string; open_pct: number; min_part_pct: number; seller_is_owner: boolean }
 interface AgentOffers { agent: string; counted: string; counted_payers: number; buyable: boolean; offers: Offer[] }
 
-/** The investing rule: counted revenue per dollar of a 1% part, among offers anyone can buy now. */
-export function pick(agents: AgentOffers[]): { agent: string; offer: Offer; score: number } | null {
+/** The investing rule: counted revenue per dollar of a 1% part, among offers anyone can buy now,
+ *  from agents with 2+ counted payers or NEAR AI-verified revenue (`verified`: agent -> dollars). */
+export function pick(agents: AgentOffers[], verified: Record<string, string> = {}): { agent: string; offer: Offer; score: number } | null {
   let best: { agent: string; offer: Offer; score: number } | null = null;
   for (const a of agents) {
-    if (!a.buyable || a.counted_payers < 2) continue;
+    if (!a.buyable || (a.counted_payers < 2 && !(Number(verified[a.agent] ?? 0) > 0))) continue;
     for (const o of a.offers) {
       if (o.open_pct < o.min_part_pct || !o.seller_is_owner) continue;
       const score = Number(a.counted) / Number(o.price_per_pct);
@@ -74,9 +75,15 @@ async function main(): Promise<number> {
   let chosen: ReturnType<typeof pick> = null;
   try {
     const l = await step("read every open revenue offer", "list_offers");
-    chosen = l.ok ? pick((l.body as { agents: AgentOffers[] }).agents) : null;
+    const agents = l.ok ? (l.body as { agents: AgentOffers[] }).agents : [];
+    // Check each candidate's earnings by who paid before choosing.
+    const verified: Record<string, string> = {};
+    for (const a of agents.filter((x) => x.buyable && x.offers.length)) {
+      const e = await step(`check ${a.agent}'s earnings by who paid`, "get_earnings", { agent: a.agent });
+      if (e.ok) verified[a.agent] = (e.body as { earnings: { verified: string } }).earnings.verified;
+    }
+    chosen = pick(agents, verified);
     if (!chosen) { process.stderr.write("agent-invests: no offer passes the rule\n"); return 1; }
-    await step(`check ${chosen.agent}'s earnings by who paid before paying`, "get_earnings", { agent: chosen.agent });
     const pct = pctOverride ?? chosen.offer.min_part_pct;
     const maxPrice = Number(chosen.offer.price_per_pct) * pct;
     const b = await step(`buy ${pct}% of ${chosen.agent}'s future revenue for at most ${maxPrice.toFixed(2)}`, "buy_share",
@@ -92,7 +99,7 @@ async function main(): Promise<number> {
     money: "xUSD-FAKE, a fake test dollar with no value",
     network,
     investor,
-    rule: "most counted revenue per 1% of price, at least 2 counted payers, seller is the owner; buy the smallest part",
+    rule: "most counted revenue per 1% of price, from 2+ counted payers or NEAR AI-verified revenue, seller is the owner; buy the smallest part",
     chosen: chosen && { agent: chosen.agent, offer_id: chosen.offer.offer_id, score: Number(chosen.score.toFixed(4)) },
     steps,
     txs: steps.flatMap((x) => {

@@ -27,6 +27,13 @@ test("AI1 pick: best counted revenue per dollar, only buyable offers with 2+ pay
   assert.equal(pick([]), null);
 });
 
+test("AI1 pick: NEAR AI-verified revenue stands in for 2 counted payers", () => {
+  const a = { agent: "v.testnet", counted: "100.00", counted_payers: 0, buyable: true, offers: [offer(7, "10.00")] };
+  assert.equal(pick([a]), null, "no payers and no verified revenue: skipped");
+  assert.equal(pick([a], { "v.testnet": "0.00" }), null, "zero verified: skipped");
+  assert.equal(pick([a], { "v.testnet": "50.00" })?.agent, "v.testnet", "verified revenue: bought");
+});
+
 test("AI1 offline run: buys a part through MCP and the portfolio shows it", () => {
   const out = join(mkdtempSync(join(tmpdir(), "agent-invests-")), "o.json");
   execFileSync(process.execPath, [join(REPO, "mcp", "dist", "scripts", "agent-invests.js"), "--out", out], { cwd: REPO, stdio: "pipe" });
