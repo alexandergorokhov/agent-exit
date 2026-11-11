@@ -19,13 +19,14 @@
       ],
       "env": {
         "AGENT_EXIT_NETWORK": "testnet",
-        "AGENT_EXIT_AGENTS": "translator.agentexit4.testnet,translator3.agentexit4.testnet,cheat.agentexit4.testnet",
-        "AGENT_EXIT_TOKEN": "xusd.agentexit4.testnet",
-        "AGENT_EXIT_ADMIN": "agentexit4.testnet",
-        "AGENT_EXIT_CODE_HASH": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+        "AGENT_EXIT_AGENTS": "translator.agentexit5.testnet,translator3.agentexit5.testnet,cheat.agentexit5.testnet,born1.factory.agentexit5.testnet",
+        "AGENT_EXIT_TOKEN": "xusd.agentexit5.testnet",
+        "AGENT_EXIT_ADMIN": "agentexit5.testnet",
+        "AGENT_EXIT_CODE_HASH": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
         "AGENT_EXIT_RPC": "https://rpc.testnet.fastnear.com",
         "AGENT_EXIT_RPC_2": "https://test.rpc.fastnear.com",
-        "AGENT_EXIT_RUNNER_PK": "ed25519:Fscms6kv6RNHVMGMSMPPoAfAksruaeDGHbsZQFoZgpmf"
+        "AGENT_EXIT_RUNNER_PK": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb",
+        "AGENT_EXIT_FACTORY": "factory.agentexit5.testnet"
       }
     }
   }

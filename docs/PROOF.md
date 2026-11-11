@@ -35,8 +35,8 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 | Invariants I1-I7, I9-I11 hold over random action sequences (I7: the runner never spends more than the daily cap; every payment's split adds up exactly; no spending while listed) | property tests, fixed seed (`contracts/agent-core/tests/prop.rs`) | I1-I7, I9-I11 |
 | Shares of future earnings: an owner sells up to 49% of every future payment; investors are paid inside `pay()` from the gross payment, half the price waits in escrow and is released only by counted payments, unsold slices close when the agent changes hands, and buy_agent refuses agents with more than 25% pledged | offline: 22 core tests (`contracts/agent-core/tests/shares.rs`), a conservation property test over random offer/buy/pay/claim/close/sell sequences, 5 contract tests, MCP SB1-SB2, playground mission 4; testnet: scene 8 (`out/scenes/scene-8.json`) | SH1-SH11, T1-T17, review-adversarial-1/2 |
 
-Run on NEAR testnet on 2026-11-10 (root `agentexit4.testnet`, code hash `6wb4xz3f…`) (outputs in `out/`, links in the README's
-"Live on NEAR testnet"): the deploy, gate G1, the six scenes, gate G6, scene 8 (shares, on `translator3`), scenes 10-12 and the AI buyer. Not run:
+Run on NEAR testnet on 2026-11-10 (root `agentexit5.testnet`, code hash `5VqS52NR…`) (outputs in `out/`, links in the README's
+"Live on NEAR testnet"): the deploy, gate G1, the six scenes, scene 8 (shares, on `translator3`), scene 9 (born clean), scenes 10-12 and an MCP investor (`make agent-invests-testnet`); gate G6 and the AI buyer ran the same day on the previous world `agentexit4.testnet`. Not run:
 G2 (needs a Base Sepolia key). Ran on testnet 2026-11-10 and passed: an AI model (Claude Haiku) buying through MCP `buy_agent` (`make llm-buyer-testnet`, `out/llm-buyer-testnet.json`). Gate G6 passed the same day: a real NEAR AI Cloud signature verified by the contract (`out/gates/g6.json`).
 Not built yet: MCP `list_agent` on testnet (returns `NOT_BUILT`), `accept_job`, a wallet login on the page, and a
 Playwright run against the deployed page (`make e2e`); their `make` targets say `not built yet`.

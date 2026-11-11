@@ -570,11 +570,17 @@ fn readme_testnet_links_are_recorded_runs() {
             recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
         }
     }
-    // The AI buyer's testnet run records its own transactions.
-    let llm =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../out/llm-buyer-testnet.json");
-    if let Ok(t) = std::fs::read_to_string(llm) {
-        recorded.push_str(&t);
+    // The AI buyer's and the MCP investor's testnet runs record their own transactions.
+    for f in [
+        "out/llm-buyer-testnet.json",
+        "out/agent-invests-testnet.json",
+    ] {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(f);
+        if let Ok(t) = std::fs::read_to_string(p) {
+            recorded.push_str(&t);
+        }
     }
     let mut n = 0;
     for part in r.split("testnet.nearblocks.io/txns/").skip(1) {

@@ -48,7 +48,7 @@ Clone into the Linux file system (`~/src/near-transparent-agent-market`), not
 
 Current build (2026-11-03, root `agentexit3.testnet`, STR-12 and STR-19 fixes):
 agent_exit.wasm `5dc306a2c08322c2287eb2ae41d920e6ba0f0cf7c99950a2f202431fef9e371c`
-(the first world; the current recording is `agentexit4.testnet`, code hash `6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1`, see README), xusd.wasm
+(the first world; the current recording is `agentexit5.testnet`, code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF`, see README), xusd.wasm
 `f744bec2c1b4d3ba486624783530d596915a78fcd4a6e9298c72bc3bd7b0dde1`. The root is
 compiled in, so another root gives other hashes. The first run (2026-11-02,
 `agentexit.testnet`) was `be4b898d…` / `DoqGZ6zx…`, before the fixes.

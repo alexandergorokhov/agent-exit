@@ -1,0 +1,210 @@
+{
+  "agent": "born1.factory.agentexit5.testnet",
+  "agent_code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+  "birth": {
+    "agent": "born1.factory.agentexit5.testnet",
+    "block_height": "277139931",
+    "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+    "created_at_ns": "1794356089773830630",
+    "deposit": "10200000000000000000000000",
+    "owner_at_birth": "alice.agentexit5.testnet",
+    "paid_by": "agentexit5.testnet",
+    "state": "Born"
+  },
+  "check": {
+    "born_record": true,
+    "no_key_at_birth": true,
+    "only_function_call_keys_after": true,
+    "published_code": true,
+    "scan_born_clean": true,
+    "scan_cheat_born_clean": false
+  },
+  "code_hash_on_chain": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+  "factory": "factory.agentexit5.testnet",
+  "keys_after_runner": [
+    {
+      "permission": {
+        "allowance": "5000000000000000000000000",
+        "method_names": [
+          "heartbeat",
+          "accept_job",
+          "pay",
+          "pay_base"
+        ],
+        "receiver_id": "born1.factory.agentexit5.testnet"
+      },
+      "public_key": "ed25519:HoMYKFHbrLS4Yo42YMdpHvr52x64dLcGYjov9MhJv8zz"
+    }
+  ],
+  "keys_at_birth": {
+    "rpc1": [],
+    "rpc2": []
+  },
+  "pass": true,
+  "scan_born": {
+    "born_clean": true,
+    "findings": [
+      {
+        "code": "not_listed",
+        "detail": "status is Active",
+        "severity": "block"
+      },
+      {
+        "code": "listing_missing",
+        "detail": "no listing (get_listing) to check the price and earn-out terms against",
+        "severity": "block"
+      }
+    ]
+  },
+  "scan_cheat": {
+    "born_clean": false,
+    "findings": [
+      {
+        "code": "full_access_key_present",
+        "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account",
+        "severity": "block"
+      },
+      {
+        "code": "not_born_clean",
+        "detail": "cheat.agentexit5.testnet was not created by the factory factory.agentexit5.testnet: hidden keys and pre-written state are caught only by this scan",
+        "severity": "warn"
+      }
+    ]
+  },
+  "scene": 9,
+  "schema": "scene.v1",
+  "txs": [
+    {
+      "by": "agentexit5.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/F1oJBRF68bhLSj9dY2nZCeVmRnRqWoYCjKrF22pAUngJ",
+      "label": "create factory.agentexit5.testnet",
+      "method": "create_account",
+      "ms": 4388,
+      "ok": true,
+      "receiver": "factory.agentexit5.testnet",
+      "tx": "F1oJBRF68bhLSj9dY2nZCeVmRnRqWoYCjKrF22pAUngJ",
+      "value": null
+    },
+    {
+      "by": "factory.agentexit5.testnet",
+      "error": null,
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/HriZp9QDbXWPo8YLxkJWK7HrvAo3F7z8edQ1CVZRUqCZ",
+      "label": "deploy the factory",
+      "method": "deploy+new",
+      "ms": 3852,
+      "ok": true,
+      "receiver": "factory.agentexit5.testnet",
+      "tx": "HriZp9QDbXWPo8YLxkJWK7HrvAo3F7z8edQ1CVZRUqCZ",
+      "value": null
+    },
+    {
+      "by": "factory.agentexit5.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "bytes": 641087,
+              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF"
+            }
+          ],
+          "event": "code_stored",
+          "standard": "agent_exit_factory",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/HJB1kChV5xMS1Kgujbfe7Tv8LrgFjmRM7TQvF6jdTnHJ",
+      "label": "factory: store_code (the published agent wasm)",
+      "method": "store_code",
+      "ms": 6276,
+      "ok": true,
+      "receiver": "factory.agentexit5.testnet",
+      "tx": "HJB1kChV5xMS1Kgujbfe7Tv8LrgFjmRM7TQvF6jdTnHJ",
+      "value": null
+    },
+    {
+      "by": "agentexit5.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "memo": "agent_exit:deed",
+              "owner_id": "alice.agentexit5.testnet",
+              "token_ids": [
+                "deed"
+              ]
+            }
+          ],
+          "event": "nft_mint",
+          "standard": "nep171",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "access_keys_added": 0,
+              "agent": "born1.factory.agentexit5.testnet",
+              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+              "deposit": "10200000000000000000000000",
+              "owner": "alice.agentexit5.testnet"
+            }
+          ],
+          "event": "agent_born",
+          "standard": "agent_exit_factory",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD",
+      "label": "create_agent born1 for alice (one batch, no key)",
+      "method": "create_agent",
+      "ms": 6781,
+      "ok": true,
+      "receiver": "factory.agentexit5.testnet",
+      "tx": "2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD",
+      "value": true
+    },
+    {
+      "by": "alice.agentexit5.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "key": "ed25519:HoMYKFHbrLS4Yo42YMdpHvr52x64dLcGYjov9MhJv8zz",
+              "owner": "alice.agentexit5.testnet",
+              "pending": true,
+              "removed": []
+            }
+          ],
+          "event": "runner_key_set",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "deleted": [],
+              "key": "ed25519:HoMYKFHbrLS4Yo42YMdpHvr52x64dLcGYjov9MhJv8zz"
+            }
+          ],
+          "event": "runner_key_confirmed",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/AM5cz7WMTRcWoq7vtNqjKRWgZsU8RU494kDznKcgk7f2",
+      "label": "alice: set_runner_key",
+      "method": "set_runner_key",
+      "ms": 6246,
+      "ok": true,
+      "receiver": "born1.factory.agentexit5.testnet",
+      "tx": "AM5cz7WMTRcWoq7vtNqjKRWgZsU8RU494kDznKcgk7f2",
+      "value": true
+    }
+  ],
+  "what": "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean"
+}

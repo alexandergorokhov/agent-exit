@@ -2104,7 +2104,8 @@ async fn open_offer(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
         "buy_part",
         json!({
             "part_bps": part,
-            "amount": (10 * USD).to_string(),
+            // The part's cost, as the contract computes it (2.5% of 250.00 = 25.00).
+            "amount": (OPEN_PRICE * part as u128 / OPEN_BPS as u128).to_string(),
             "msg": msg.to_string(),
         }),
     );

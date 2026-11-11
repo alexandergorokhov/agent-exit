@@ -1,9 +1,9 @@
 {
   "schema": "diligence.v1",
-  "note": "Recorded on NEAR testnet (out/scenes, world agentexit4.testnet). All money is xUSD-FAKE.",
+  "note": "Recorded on NEAR testnet (out/scenes, world agentexit5.testnet). All money is xUSD-FAKE.",
   "cards": [
     {
-      "agent": "translator.agentexit4.testnet",
+      "agent": "translator.agentexit5.testnet",
       "name": "translator",
       "deal": "For sale at 1000.00",
       "rows": [
@@ -46,7 +46,7 @@
       "run": "#run-sale"
     },
     {
-      "agent": "cheat.agentexit4.testnet",
+      "agent": "cheat.agentexit5.testnet",
       "name": "cheat",
       "deal": "For sale at 500.00",
       "rows": [
@@ -89,7 +89,7 @@
       "run": "#run-cheat"
     },
     {
-      "agent": "translator3.agentexit4.testnet",
+      "agent": "translator3.agentexit5.testnet",
       "name": "translator3",
       "deal": "20% of future earnings for a year, 500.00",
       "rows": [
@@ -126,7 +126,7 @@
       "ok": true,
       "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
-      "tx": "https://testnet.nearblocks.io/txns/HAmKDLz9vK5jM7FefsQA8ASTjwxLeyr4W6U4NgdLUKdw"
+      "tx": "https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B"
     }
   ]
 }

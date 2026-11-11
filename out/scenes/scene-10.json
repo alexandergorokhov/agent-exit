@@ -6,7 +6,7 @@
     "seller_got_nothing": true,
     "state_mismatch": true
   },
-  "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+  "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
   "commit": {
     "bytes": 2000,
     "hash": "d5d4d3a05d5ac0323215bcd0b19b7cc45070940f7a18a8401b8a145b5abc0e4e",
@@ -19,7 +19,7 @@
   "pass": true,
   "preview": {
     "chunks": [
-      3
+      0
     ],
     "complete": true,
     "draws": "1",
@@ -27,17 +27,17 @@
     "open_previews": 1,
     "proven": [
       {
-        "chunk": "Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLg==",
-        "index": 3
+        "chunk": "eyJzeXN0ZW1fcHJvbXB0IjoiWW91IHRyYW5zbGF0ZSBjb250cmFjdHMgaW50byBTcGFuaXNoLiBLZWVwIGRlZmluZWQgdGVybXMuIiwidG9vbHMiOlsiZ2xvc3NhcnkiLCJuZWFyYWkiXSwicm90YXRlIjpbIk5FQVJBSV9BUElfS0VZIl0sInBhZCI6Ii4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLg==",
+        "index": 0
       }
     ],
-    "requested_at": "1794282397062337598",
-    "requested_by": "bob.agentexit4.testnet",
+    "requested_at": "1794356151434814115",
+    "requested_by": "bob.agentexit5.testnet",
     "schema": "sealed-preview.v1"
   },
   "sale_id": 1,
   "scan": {
-    "agent": "sealed1.agentexit4.testnet",
+    "agent": "sealed1.agentexit5.testnet",
     "buy_args": {
       "known_keys_hash": "1589199216b5d278c67aa3818fa797d9385a795453633bedf390ddcc7201ac26",
       "listing_version": 1,
@@ -48,9 +48,9 @@
     "verdict": "clean"
   },
   "scan_input": {
-    "agent": "sealed1.agentexit4.testnet",
+    "agent": "sealed1.agentexit5.testnet",
     "chain": {
-      "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+      "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
       "keys": [
         {
           "permission": {
@@ -61,7 +61,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "sealed1.agentexit4.testnet"
+            "receiver_id": "sealed1.agentexit5.testnet"
           },
           "public_key": "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi"
         }
@@ -76,7 +76,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "sealed1.agentexit4.testnet"
+            "receiver_id": "sealed1.agentexit5.testnet"
           },
           "public_key": "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi"
         }
@@ -156,7 +156,7 @@
       "subaccounts": []
     },
     "contract": {
-      "admin": "agentexit4.testnet",
+      "admin": "agentexit5.testnet",
       "base_wallet": {
         "address": null,
         "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
@@ -171,17 +171,17 @@
       "near_storage_solvent": true,
       "open_approvals": 0,
       "open_auth_until": 0,
-      "owner": "alice.agentexit4.testnet",
+      "owner": "alice.agentexit5.testnet",
       "paid_to_total": 0,
       "status": "Listed",
-      "token": "xusd.agentexit4.testnet"
+      "token": "xusd.agentexit5.testnet"
     },
     "expected": {
-      "admin": "agentexit4.testnet",
-      "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+      "admin": "agentexit5.testnet",
+      "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
       "listing_version": 1,
       "price": "100000000",
-      "token": "xusd.agentexit4.testnet"
+      "token": "xusd.agentexit5.testnet"
     },
     "listing": {
       "listing_version": 1,
@@ -195,22 +195,22 @@
         "window_secs": 2592000
       }
     },
-    "now_ns": 1794282409318749019,
+    "now_ns": 1794356163506511642,
     "schema": "scan-input.v1"
   },
   "scene": 10,
   "schema": "scene.v1",
   "sealed_config": {
-    "buyer": "bob.agentexit4.testnet",
-    "ciphertext": "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",
+    "buyer": "bob.agentexit5.testnet",
+    "ciphertext": "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",
     "cleared": false,
     "commit": {
       "bytes": 2000,
       "hash": "d5d4d3a05d5ac0323215bcd0b19b7cc45070940f7a18a8401b8a145b5abc0e4e",
       "root": "ebc3a2a5e6f255f2032a1cdf04627e83abf04b0b43cfee15a9a6e054d0f2cbd6"
     },
-    "deliver_by": "1794455214640087503",
-    "delivery_pk": "7982cf3d418e1f4e209c791c53f77bbb05c35f46024ecf35cb52aeacb4636030",
+    "deliver_by": "1794528968294781590",
+    "delivery_pk": "cd1a81784b294917818e8ad39aa6402bde0934eedf633307b50227a5eb502029",
     "dispute_until": "0",
     "sale_id": 1,
     "schema": "sealed-config.v1",
@@ -223,20 +223,20 @@
   },
   "txs": [
     {
-      "by": "agentexit4.testnet",
+      "by": "agentexit5.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/94eqsAfAVsqcpSiurc3vzsbZ6o9fihVbe5gDx7FHXhFG",
-      "label": "create sealed1.agentexit4.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/DWPvAtAGVZzufq4zHLnYYoUht7qiwTWFnLfNaQa3Czpz",
+      "label": "create sealed1.agentexit5.testnet",
       "method": "create_account",
-      "ms": 4070,
+      "ms": 4206,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "94eqsAfAVsqcpSiurc3vzsbZ6o9fihVbe5gDx7FHXhFG",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "DWPvAtAGVZzufq4zHLnYYoUht7qiwTWFnLfNaQa3Czpz",
       "value": null
     },
     {
-      "by": "agentexit4.testnet",
+      "by": "agentexit5.testnet",
       "error": null,
       "events": [
         {
@@ -244,7 +244,7 @@
             {
               "amount": "0",
               "memo": "FAKE test dollars",
-              "owner_id": "sealed1.agentexit4.testnet"
+              "owner_id": "sealed1.agentexit5.testnet"
             }
           ],
           "event": "ft_mint",
@@ -252,24 +252,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/DZoStFnop23uww2dJFdvhSW76g3CDvZDpDuDZtx2Z8Wd",
-      "label": "mint sealed1.agentexit4.testnet",
+      "explorer": "https://testnet.nearblocks.io/txns/76Y4upP7dkZxvoezJzMV9WGMzbH1R9e71W5XKsJNjC8N",
+      "label": "mint sealed1.agentexit5.testnet",
       "method": "mint",
-      "ms": 4755,
+      "ms": 4081,
       "ok": true,
-      "receiver": "xusd.agentexit4.testnet",
-      "tx": "DZoStFnop23uww2dJFdvhSW76g3CDvZDpDuDZtx2Z8Wd",
+      "receiver": "xusd.agentexit5.testnet",
+      "tx": "76Y4upP7dkZxvoezJzMV9WGMzbH1R9e71W5XKsJNjC8N",
       "value": null
     },
     {
-      "by": "sealed1.agentexit4.testnet",
+      "by": "sealed1.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "memo": "agent_exit:deed",
-              "owner_id": "alice.agentexit4.testnet",
+              "owner_id": "alice.agentexit5.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -280,24 +280,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/5TQyDUCFcRKbw3nKfAjW8PoWCbZii8LuemiFmvV7HhGJ",
+      "explorer": "https://testnet.nearblocks.io/txns/HYqwR2ubw3ePHWsQC7HXLuAEqUpgMdJuNXB7wNuWVdDu",
       "label": "deploy sealed1",
       "method": "deploy+new",
-      "ms": 5769,
+      "ms": 4570,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "5TQyDUCFcRKbw3nKfAjW8PoWCbZii8LuemiFmvV7HhGJ",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "HYqwR2ubw3ePHWsQC7HXLuAEqUpgMdJuNXB7wNuWVdDu",
       "value": null
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "key": "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi",
-              "owner": "alice.agentexit4.testnet",
+              "owner": "alice.agentexit5.testnet",
               "pending": true,
               "removed": []
             }
@@ -318,30 +318,30 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/BtGukVxHV8JTnUCacNx6RzJYRR6NwfCUJUPiAK3QWcij",
+      "explorer": "https://testnet.nearblocks.io/txns/FpeNcWNygkbeo57XAyNCqhUWwCR2bjhesfJoaJQhY21s",
       "label": "sealed1: alice sets her runner key",
       "method": "set_runner_key",
-      "ms": 6063,
+      "ms": 5714,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "BtGukVxHV8JTnUCacNx6RzJYRR6NwfCUJUPiAK3QWcij",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "FpeNcWNygkbeo57XAyNCqhUWwCR2bjhesfJoaJQhY21s",
       "value": true
     },
     {
-      "by": "sealed1.agentexit4.testnet",
+      "by": "sealed1.agentexit5.testnet",
       "error": null,
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/AHGLzndCcpQLnFs9zRMW2PrABcPNjsnuvYs5fVxeheuj",
+      "explorer": "https://testnet.nearblocks.io/txns/59iXqGRqXArrFWPM4FAYXtaYhRGZGqUyrHqd2TPJaGqN",
       "label": "sealed1: delete setup key",
       "method": "delete_key",
-      "ms": 3579,
+      "ms": 3251,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "AHGLzndCcpQLnFs9zRMW2PrABcPNjsnuvYs5fVxeheuj",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "59iXqGRqXArrFWPM4FAYXtaYhRGZGqUyrHqd2TPJaGqN",
       "value": null
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": null,
       "events": [
         {
@@ -352,7 +352,7 @@
                 "hash": "d5d4d3a05d5ac0323215bcd0b19b7cc45070940f7a18a8401b8a145b5abc0e4e",
                 "root": "ebc3a2a5e6f255f2032a1cdf04627e83abf04b0b43cfee15a9a6e054d0f2cbd6"
               },
-              "owner": "alice.agentexit4.testnet"
+              "owner": "alice.agentexit5.testnet"
             }
           ],
           "event": "config_committed",
@@ -360,13 +360,13 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/6gPhzgey5tqjxUQNeZj7b9n7aCtom5nmgfEpKY68c78X",
+      "explorer": "https://testnet.nearblocks.io/txns/APPDQcikoCzQLRmovmLTviZmw5RdyYBA6vvXF1YXPuni",
       "label": "alice commits to the sealed config (sha256 + length)",
       "method": "commit_config",
-      "ms": 5133,
+      "ms": 4028,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "6gPhzgey5tqjxUQNeZj7b9n7aCtom5nmgfEpKY68c78X",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "APPDQcikoCzQLRmovmLTviZmw5RdyYBA6vvXF1YXPuni",
       "value": {
         "config": {
           "bytes": 2000,
@@ -376,14 +376,14 @@
       }
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "sealed1.agentexit4.testnet",
-              "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+              "agent": "sealed1.agentexit5.testnet",
+              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
               "config": {
                 "bytes": 2000,
                 "hash": "d5d4d3a05d5ac0323215bcd0b19b7cc45070940f7a18a8401b8a145b5abc0e4e",
@@ -394,12 +394,12 @@
                 "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi"
               ],
               "known_keys_hash": "1589199216b5d278c67aa3818fa797d9385a795453633bedf390ddcc7201ac26",
-              "listed_at": "1794282391618471927",
+              "listed_at": "1794356147049208216",
               "listing_version": 1,
               "paid_now": "70000000",
               "price": "100000000",
               "schema": "listing.v1",
-              "seller": "alice.agentexit4.testnet",
+              "seller": "alice.agentexit5.testnet",
               "shares": [],
               "shares_bps": 0,
               "terms": {
@@ -414,7 +414,7 @@
                 "min_earnout_bps": 3000,
                 "min_window_secs": 2592000
               },
-              "token": "xusd.agentexit4.testnet",
+              "token": "xusd.agentexit5.testnet",
               "treasury_snapshot": "0"
             }
           ],
@@ -423,16 +423,16 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/7Zvn3UubK6apWkZ61Ddmn5bZiL5iyzqmvK1u7anvr5iS",
+      "explorer": "https://testnet.nearblocks.io/txns/D7a2neFWWwGk6yQHb7YzF2Ca2kzZXK7EGe74fCzCG8fi",
       "label": "alice lists sealed1 at 100.00",
       "method": "list_for_sale",
-      "ms": 4984,
+      "ms": 4268,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "7Zvn3UubK6apWkZ61Ddmn5bZiL5iyzqmvK1u7anvr5iS",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "D7a2neFWWwGk6yQHb7YzF2Ca2kzZXK7EGe74fCzCG8fi",
       "value": {
-        "agent": "sealed1.agentexit4.testnet",
-        "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+        "agent": "sealed1.agentexit5.testnet",
+        "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
         "config": {
           "bytes": 2000,
           "hash": "d5d4d3a05d5ac0323215bcd0b19b7cc45070940f7a18a8401b8a145b5abc0e4e",
@@ -443,12 +443,12 @@
           "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi"
         ],
         "known_keys_hash": "1589199216b5d278c67aa3818fa797d9385a795453633bedf390ddcc7201ac26",
-        "listed_at": "1794282391618471927",
+        "listed_at": "1794356147049208216",
         "listing_version": 1,
         "paid_now": "70000000",
         "price": "100000000",
         "schema": "listing.v1",
-        "seller": "alice.agentexit4.testnet",
+        "seller": "alice.agentexit5.testnet",
         "shares": [],
         "shares_bps": 0,
         "terms": {
@@ -463,20 +463,20 @@
           "min_earnout_bps": 3000,
           "min_window_secs": 2592000
         },
-        "token": "xusd.agentexit4.testnet",
+        "token": "xusd.agentexit5.testnet",
         "treasury_snapshot": "0"
       }
     },
     {
-      "by": "bob.agentexit4.testnet",
+      "by": "bob.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "by": "bob.agentexit4.testnet",
+              "by": "bob.agentexit5.testnet",
               "chunks": [
-                3
+                0
               ],
               "draws": 1,
               "listing_version": 1
@@ -487,22 +487,22 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/2h5DrRkTnCZBnp4ezvPoehj3TiSw1RakTsskMJCBFxn5",
+      "explorer": "https://testnet.nearblocks.io/txns/9wmypFqFcvwPppHqrF7FxhDAQ1qyVX5R4C8D1Emkbwx2",
       "label": "bob asks for a random preview (the block seed picks the chunks)",
       "method": "request_preview",
-      "ms": 4954,
+      "ms": 4171,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "2h5DrRkTnCZBnp4ezvPoehj3TiSw1RakTsskMJCBFxn5",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "9wmypFqFcvwPppHqrF7FxhDAQ1qyVX5R4C8D1Emkbwx2",
       "value": {
         "chunks": [
-          3
+          0
         ],
         "listing_version": 1
       }
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": null,
       "events": [
         {
@@ -510,8 +510,8 @@
             {
               "bytes": 256,
               "complete": true,
-              "index": 3,
-              "requester": "bob.agentexit4.testnet"
+              "index": 0,
+              "requester": "bob.agentexit5.testnet"
             }
           ],
           "event": "preview_chunk",
@@ -519,28 +519,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Fxv6mjZqdw5epRkaJbeswJRryzcXtBNWAu4HpTsyvdJg",
-      "label": "alice proves chunk 3 against the committed root",
+      "explorer": "https://testnet.nearblocks.io/txns/KBRKywkRbuAubpBTMTUcagg6FiBE1jo3mmsc6y4gGE3",
+      "label": "alice proves chunk 0 against the committed root",
       "method": "answer_preview",
-      "ms": 4603,
+      "ms": 4277,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "Fxv6mjZqdw5epRkaJbeswJRryzcXtBNWAu4HpTsyvdJg",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "KBRKywkRbuAubpBTMTUcagg6FiBE1jo3mmsc6y4gGE3",
       "value": {
         "complete": true,
-        "index": 3
+        "index": 0
       }
     },
     {
-      "by": "bob.agentexit4.testnet",
+      "by": "bob.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "100000000",
-              "new_owner_id": "sealed1.agentexit4.testnet",
-              "old_owner_id": "bob.agentexit4.testnet"
+              "new_owner_id": "sealed1.agentexit5.testnet",
+              "old_owner_id": "bob.agentexit5.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -552,7 +552,7 @@
             {
               "add_key": "ed25519:3ujXwXdKAcxK6skaJDPDuw8iTF9vKDgk7gYuHDXyBjQ3",
               "amount": "100000000",
-              "buyer": "bob.agentexit4.testnet",
+              "buyer": "bob.agentexit5.testnet",
               "delete_keys": [
                 "ed25519:2cpU41gNLgGVZbtdNUw8r9yjxqAHzZ27Wstpg4MuNWHi"
               ],
@@ -567,8 +567,8 @@
           "data": [
             {
               "memo": "agent_exit:buy",
-              "new_owner_id": "bob.agentexit4.testnet",
-              "old_owner_id": "alice.agentexit4.testnet",
+              "new_owner_id": "bob.agentexit5.testnet",
+              "old_owner_id": "alice.agentexit5.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -581,9 +581,9 @@
         {
           "data": [
             {
-              "buyer": "bob.agentexit4.testnet",
+              "buyer": "bob.agentexit5.testnet",
               "escrow": "30000000",
-              "fee_to": "agentexit4.testnet",
+              "fee_to": "agentexit5.testnet",
               "known_keys": [
                 "ed25519:3ujXwXdKAcxK6skaJDPDuw8iTF9vKDgk7gYuHDXyBjQ3"
               ],
@@ -593,9 +593,9 @@
               "price": "100000000",
               "protocol_fee": "0",
               "sale_id": 1,
-              "seller": "alice.agentexit4.testnet",
+              "seller": "alice.agentexit5.testnet",
               "seller_revenue_claimable": "0",
-              "window_end": "1796874414640087503"
+              "window_end": "1796948168294781590"
             }
           ],
           "event": "sale",
@@ -603,27 +603,27 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/6WNrnmqaMZ85gHS1Fj51im4a1BDmYyD1HsSmaDrC9qZZ",
+      "explorer": "https://testnet.nearblocks.io/txns/5y2tMrVCNdsdPXXWHSy1xpywUrJrkQNTSa8ThVaBY6bE",
       "label": "bob buys sealed1 at 100.00 with a delivery key",
       "method": "ft_transfer_call",
-      "ms": 7063,
+      "ms": 6966,
       "ok": true,
-      "receiver": "xusd.agentexit4.testnet",
-      "tx": "6WNrnmqaMZ85gHS1Fj51im4a1BDmYyD1HsSmaDrC9qZZ",
+      "receiver": "xusd.agentexit5.testnet",
+      "tx": "5y2tMrVCNdsdPXXWHSy1xpywUrJrkQNTSa8ThVaBY6bE",
       "value": "100000000"
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "bytes": 2000,
-              "cipher_sha256": "a66bdddd1bacc627c24f809588d4faa7da7ae6edf75d1792da225ef9fa390090",
-              "ephemeral_pk": "513bfe206fe8fd715de9e351d3df39e2aebcf2b9d815c0cb2ea2d6977049f024",
+              "cipher_sha256": "394533c5322eecd6822ed7c9ef990166ac9ee06ca8fdbafa962830cf315688b0",
+              "ephemeral_pk": "d8ef9efaaef75d4e7d927d814d34f5e918e109cd242a511f588923d6061f4d75",
               "sale_id": 1,
-              "seller": "alice.agentexit4.testnet"
+              "seller": "alice.agentexit5.testnet"
             }
           ],
           "event": "config_delivered",
@@ -631,26 +631,26 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/HS3NbdLnhe2Fi6mWQDPj2XRLpHjprV9Yn4nNZ6ArX6H9",
+      "explorer": "https://testnet.nearblocks.io/txns/Hjbfj9ngPkYJLyk6HtW8gVS7k7534ueaQgHQLhov5D1J",
       "label": "alice delivers a bundle that is NOT the committed one",
       "method": "deliver_config",
-      "ms": 4972,
+      "ms": 4724,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "HS3NbdLnhe2Fi6mWQDPj2XRLpHjprV9Yn4nNZ6ArX6H9",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "Hjbfj9ngPkYJLyk6HtW8gVS7k7534ueaQgHQLhov5D1J",
       "value": {
         "delivered": true,
         "sale_id": 1
       }
     },
     {
-      "by": "bob.agentexit4.testnet",
+      "by": "bob.agentexit5.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "buyer": "bob.agentexit4.testnet",
+              "buyer": "bob.agentexit5.testnet",
               "refund_to_buyer": "100000000",
               "sale_id": 1
             }
@@ -660,20 +660,20 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/2Ti84DixWLB65VdPMu9tsUXm727udt63ZkMJZj4Dri7f",
+      "explorer": "https://testnet.nearblocks.io/txns/Bu9CWFGKo6a61d1VYuwxCaNdD2HYBM3kktfE7KmLahwz",
       "label": "bob reveals the one-time key; the contract decrypts and compares",
       "method": "dispute_config",
-      "ms": 4984,
+      "ms": 5780,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "2Ti84DixWLB65VdPMu9tsUXm727udt63ZkMJZj4Dri7f",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "Bu9CWFGKo6a61d1VYuwxCaNdD2HYBM3kktfE7KmLahwz",
       "value": {
         "refund_to_buyer": "100000000",
         "sale_id": 1
       }
     },
     {
-      "by": "bob.agentexit4.testnet",
+      "by": "bob.agentexit5.testnet",
       "error": null,
       "events": [
         {
@@ -681,8 +681,8 @@
             {
               "amount": "100000000",
               "memo": "agent_exit:Claim",
-              "new_owner_id": "bob.agentexit4.testnet",
-              "old_owner_id": "sealed1.agentexit4.testnet"
+              "new_owner_id": "bob.agentexit5.testnet",
+              "old_owner_id": "sealed1.agentexit5.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -690,26 +690,26 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CoVQPLoToE3FEmS2GF5RPHKEDQ5WQryG2ivjvN3Bhr3",
+      "explorer": "https://testnet.nearblocks.io/txns/DfHpq7oH6J3gH4tZhppFeG5FopFEUVf6zZnEAafWcvvm",
       "label": "bob claims the refund",
       "method": "claim",
-      "ms": 6014,
+      "ms": 6037,
       "ok": true,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "CoVQPLoToE3FEmS2GF5RPHKEDQ5WQryG2ivjvN3Bhr3",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "DfHpq7oH6J3gH4tZhppFeG5FopFEUVf6zZnEAafWcvvm",
       "value": true
     },
     {
-      "by": "alice.agentexit4.testnet",
+      "by": "alice.agentexit5.testnet",
       "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: UnknownSale\")) })",
       "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/CvfRthroYLNqvZWUNc4cfGYU296LrK4nUwQGiyqPfH7w",
+      "explorer": "https://testnet.nearblocks.io/txns/28tRkMRJyd1kwoQGJWoMhnBDqgAFGT3CLjSZYbtxtZRg",
       "label": "alice tries to release the upfront part after the dispute",
       "method": "release_upfront",
-      "ms": 4600,
+      "ms": 4921,
       "ok": false,
-      "receiver": "sealed1.agentexit4.testnet",
-      "tx": "CvfRthroYLNqvZWUNc4cfGYU296LrK4nUwQGiyqPfH7w",
+      "receiver": "sealed1.agentexit5.testnet",
+      "tx": "28tRkMRJyd1kwoQGJWoMhnBDqgAFGT3CLjSZYbtxtZRg",
       "value": null
     }
   ],
