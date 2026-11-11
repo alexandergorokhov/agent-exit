@@ -530,7 +530,8 @@ try {
     const h = await q.evaluate(() => document.documentElement.scrollHeight);
     // Loop 45 round 3: the same additions (step reasons, investor labels, early note) cost ~120px on desktop, ~330px at 375px.
     // Loop 46: the "Built on NEAR" strip costs ~235px on desktop and ~440px at 375px (each row wraps to two lines).
-    assert.ok(h <= (vp.width > 600 ? 4450 : 8400), `U4: page is ${h}px tall at ${vp.width}px`);
+    // Budgets keep ~8% headroom: system fonts differ by OS (Linux 8,265px vs Windows/WSL 8,575px at 375px for the same page).
+    assert.ok(h <= (vp.width > 600 ? 4800 : 9200), `U4: page is ${h}px tall at ${vp.width}px`);
     const banned = await q.evaluate(() => {
       const judges = document.getElementById("for-judges").innerText + document.getElementById("ex-note").innerText + document.querySelector("footer").innerText;
       return (document.body.innerText.match(/NotOwner|NotRunner|NEP-\d|nft_token|0xfe|born clean|age-weighted|escrow floor/g) || []).filter((w) => !judges.includes(w));
