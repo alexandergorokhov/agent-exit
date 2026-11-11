@@ -324,7 +324,7 @@ async function renderProofStrip() {
     el("span", { class: "ps-label", text }), " ",
     el("span", { class: "ps-links" }, x ? link(x, "tx ↗") : null, more || null));
   const stats = [];
-  if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "customer payments signed by NEAR AI, checked on-chain", jobs[0]));
+  if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "payments in the first investment signed by NEAR AI", jobs[0]));
   if (payout) stats.push(stat(fmt(payout.investor), `of ${fmt(payout.total)} paid to the investor (${payout.pct}%)`, payout.claim));
   stats.push(stat(`${tries.length}/${tries.length}`, "take-backs refused after a sale", tries[0]));
   const after = document.getElementById("story-after");

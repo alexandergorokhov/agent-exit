@@ -399,7 +399,7 @@ try {
       assert.equal(await vp.locator("#proof-strip .ps-list li").count(), 6, "V5: six refused calls");
       assert.equal(await vp.locator('#proof-strip a[href^="https://testnet.nearblocks.io/txns/"]').count(), 10, "V5: seven tx links plus three stat links");
       assert.equal(await vp.locator("#proof-strip .ps-stats li").count(), 3, "V5: three numbers, business first");
-      assert.ok(/5\/5 customer payments signed by NEAR AI/.test(strip), "V5: verified earnings first");
+      assert.ok(/5\/5 payments in the first investment signed by NEAR AI/.test(strip), "V5: verified earnings first");
       checks++;
       // V4: the live shares payout, the NEAR AI check and the AI buy are runnable too.
       for (const id of ["invest", "nearai", "aibuyer"]) {
