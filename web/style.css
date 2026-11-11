@@ -93,10 +93,11 @@ nav.top .brand { margin-right: auto; font-weight: 800; color: var(--text); white
 nav.top .nav-row { display: flex; align-items: center; gap: 22px; min-width: 0; }
 nav.top .nav-row a { white-space: nowrap; }
 @media (max-width: 640px) {
-  nav.top .wrap { gap: 12px; }
-  /* Every section stays one tap away: the link row scrolls sideways, the page does not. */
-  nav.top .nav-row { gap: 16px; overflow-x: auto; scrollbar-width: none; height: 100%; padding-right: 8px; -webkit-overflow-scrolling: touch; mask-image: linear-gradient(to right, #000 85%, transparent); }
-  nav.top .nav-row::-webkit-scrollbar { display: none; }
+  /* Every section stays one tap away and visible: the brand on one line, all five links on a second. */
+  nav.top { height: auto; }
+  nav.top .wrap { flex-wrap: wrap; gap: 0; padding-top: 6px; padding-bottom: 2px; }
+  nav.top .brand { width: 100%; font-size: var(--fs-sm); }
+  nav.top .nav-row { width: 100%; justify-content: space-between; gap: 8px; height: 32px; }
   nav.top .nav-row a { font-size: var(--fs-xs); display: flex; align-items: center; height: 100%; }
 }
 
