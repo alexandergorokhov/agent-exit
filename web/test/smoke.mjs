@@ -425,6 +425,12 @@ try {
         assert.equal(await iy.isVisible(), false, "V8: hidden with no open offer");
       }
       checks++;
+      // F2: "How it works" is folded; a link into it opens it.
+      assert.equal(await vp.evaluate(() => document.getElementById("how-it-works").open), false, "F2: folded by default");
+      await vp.evaluate(() => { location.hash = "#backend"; });
+      await vp.waitForFunction(() => document.getElementById("how-it-works").open);
+      await vp.evaluate(() => { location.hash = ""; });
+      checks++;
       for (const id of ["sale", "cheat"]) {
         await vp.click(`[data-scenario="${id}"] > summary`);
         await vp.click(`[data-run="${id}"]`);

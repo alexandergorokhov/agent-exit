@@ -467,3 +467,13 @@ renderInvestYourself().catch(() => { /* the section stays hidden */ });
 main().catch((e) => {
   document.getElementById("step").replaceChildren(el("p", { class: "err", text: `Could not load the demo: ${e.message}` }));
 });
+
+// A link into a folded section opens it (e.g. #backend inside "How it works").
+function openTarget() {
+  const id = location.hash.slice(1);
+  const t = id && document.getElementById(id);
+  const d = t && t.closest("details");
+  if (d && !d.open) { d.open = true; t.scrollIntoView(); }
+}
+addEventListener("hashchange", openTarget);
+openTarget();
