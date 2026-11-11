@@ -2,6 +2,10 @@
 // refused before any transaction, JSON error with the reason.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { SpendLedger } from "../src/tools.js";
 import { RUNNER_PK, valid, writer } from "./helpers.js";
 
 const buy = (agent: string, extra: Record<string, unknown>) => ({
@@ -66,10 +70,25 @@ test("A40 concurrent buy_agent calls cannot each pass the session cap", async ()
   try {
     const rs = await Promise.all([s.call("buy_agent", buy("translator.testnet", {})), s.call("buy_agent", buy("translator.testnet", {}))]);
     const codes = rs.map((r) => (r.ok ? "ok" : r.body.error.code)).sort();
-    assert.ok(codes.includes("SESSION_CAP"), JSON.stringify(codes));
+    // Exactly one buy goes through. Which refusal the other gets depends on
+    // timing: SESSION_CAP if it reserves while the first is in flight,
+    // NOT_LISTED if the first already finished. The cap itself is checked
+    // deterministically in the next test.
     assert.equal(codes.filter((c) => c === "ok").length, 1, JSON.stringify(codes));
+    assert.ok(codes.every((c) => ["ok", "SESSION_CAP", "NOT_LISTED"].includes(c)), JSON.stringify(codes));
   } finally {
     await s.close();
+  }
+});
+
+test("A40 the spend ledger refuses a second reservation over the cap (no await between check and add)", () => {
+  for (const file of [null, join(mkdtempSync(join(tmpdir(), "a40-")), "spend.json")]) {
+    const l = new SpendLedger(file, "summarizer.testnet");
+    l.reserve(1_000_000_000n, 1_500_000_000n);
+    assert.throws(() => l.reserve(1_000_000_000n, 1_500_000_000n), (e: Error & { code?: string }) => e.code === "SESSION_CAP");
+    assert.equal(l.total(), 1_000_000_000n, "the refused reservation added nothing");
+    l.reserve(500_000_000n, 1_500_000_000n);
+    assert.equal(l.total(), 1_500_000_000n, "up to the cap exactly is allowed");
   }
 });
 

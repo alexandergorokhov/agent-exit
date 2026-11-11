@@ -11,6 +11,7 @@ delivery-*.json
 !out/scenes/
 !out/testnet/
 !out/sandbox/
+!out/agent-invests-testnet.json
 .env
 .env.*
 !.env.example
