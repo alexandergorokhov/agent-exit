@@ -83,4 +83,4 @@ The README keeps a summary; this is the full list. What is not caught by design:
   testnet run of 2026-11-04 covers the same on the public network (see
   "Live on NEAR testnet").
 - The agent wasm is about 550 KB and not size-optimised yet.
-- **Born clean is offline-only for now.** The factory and its scan checks are tested offline (BC1-BC18), but the deployed agent build marks `new` as private, so a factory birth on testnet is refused. The fix (accept the parent factory as caller) waits for the next contract deploy.
+- **Born clean is live on testnet since 2026-11-11** (scene 9 on `agentexit5.testnet`). The agent's `new` accepts only itself or its parent factory as caller. Agents deployed before that build cannot be born clean; a buyer's scan still reports how each agent was made.

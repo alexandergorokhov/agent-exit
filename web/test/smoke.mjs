@@ -226,7 +226,7 @@ try {
   // Testnet flag: labelled, offers login, never loaded unless asked.
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
-  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: agentexit4, run of 2026-11-10 (recorded; \"Read live\" checks the chain now)");
+  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: agentexit5, run of 2026-11-11 (recorded; \"Read live\" checks the chain now)");
   assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;
