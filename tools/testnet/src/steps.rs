@@ -756,8 +756,12 @@ async fn g2(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> 
         .as_str()
         .unwrap_or_default()
         .to_string();
+    // The owner after the recorded scenes: bob (scene 5) or summarizer (scene 6);
+    // alice only before any sale.
     let (owner_name, runner_key) = if owner == c.id("bob") {
         ("bob", "translator-bob-runner")
+    } else if owner == c.id("summarizer") {
+        ("summarizer", "translator-summarizer-runner")
     } else {
         ("alice", "translator-alice-runner")
     };

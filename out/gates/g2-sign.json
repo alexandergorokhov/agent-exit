@@ -1,0 +1,232 @@
+{
+  "agent_account": "translator.agentexit5.testnet",
+  "contract_address": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+  "derived_address": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+  "domain_separator": "0x71f17a3b2ff373b803d70a5a07c046c1a2bc8e89c09ef722fcb047abe94c9818",
+  "latency_ms": {
+    "max": 9497,
+    "median": 8837,
+    "min": 7775,
+    "n": 5
+  },
+  "mpc": {
+    "public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
+    "signer": "v1.signer-prod.testnet"
+  },
+  "pass_sign": true,
+  "payee": "0x000000000000000000000000000000000000dead",
+  "samples": [
+    {
+      "auth": {
+        "auth_id": 0,
+        "calldata": "0xe3ee160e000000000000000000000000c839efb7f74b908f40fb1a8e387c0c97068287fc000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af41b67e4b082e3b982023c60109943bca4347c37c53e4f4ab6d1f9b2ed329b95279314000000000000000000000000000000000000000000000000000000000000001c97890f83962a3336c18c4407dd29351becc3acdc1890412cf5fe3ad78a5a42460f2bc16aee607a5ee416b2bcbb78854b164f21cc714edb3374d384820f0b374b",
+        "chain_id": 84532,
+        "digest": "0xb3a13f95a53441537be07019844af0c63fcedcabbab919fd6b83d5b8bd13a99e",
+        "from": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+        "nonce": "0xe4b082e3b982023c60109943bca4347c37c53e4f4ab6d1f9b2ed329b95279314",
+        "owner_epoch": 3,
+        "r": "0x97890f83962a3336c18c4407dd29351becc3acdc1890412cf5fe3ad78a5a4246",
+        "s": "0x0f2bc16aee607a5ee416b2bcbb78854b164f21cc714edb3374d384820f0b374b",
+        "to": "0x000000000000000000000000000000000000dead",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "v": 28,
+        "valid_after": 0,
+        "valid_before": 1794382695,
+        "value": "10000"
+      },
+      "error": null,
+      "explorer": "https://testnet.nearblocks.io/txns/9G98q5TquGJKxAtVx5rJRNX5Lv6VHNh17jyCtUXNMMKs",
+      "ms": 8754,
+      "offline_check": {
+        "signer": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc"
+      },
+      "ok": true,
+      "sign_failed": [],
+      "tx": "9G98q5TquGJKxAtVx5rJRNX5Lv6VHNh17jyCtUXNMMKs"
+    },
+    {
+      "auth": {
+        "auth_id": 1,
+        "calldata": "0xe3ee160e000000000000000000000000c839efb7f74b908f40fb1a8e387c0c97068287fc000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af41b6f047b1fac3371b8c7ee972e33eba11f6840f3997c4542c18f09c7a32e704532d1000000000000000000000000000000000000000000000000000000000000001c15c31f1fc3b940d442d28238d0b94f635f77b2b3676b696ce25ab327134da6db6248a9d782f9be23fc9cbe5fa168398313ee5b4ce1f791d755ccca377919b3f7",
+        "chain_id": 84532,
+        "digest": "0xec8aa3c871fb81b2e695f32f0b11becd24bfd53730ebcb9b69eeb2a36d214d63",
+        "from": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+        "nonce": "0x047b1fac3371b8c7ee972e33eba11f6840f3997c4542c18f09c7a32e704532d1",
+        "owner_epoch": 3,
+        "r": "0x15c31f1fc3b940d442d28238d0b94f635f77b2b3676b696ce25ab327134da6db",
+        "s": "0x6248a9d782f9be23fc9cbe5fa168398313ee5b4ce1f791d755ccca377919b3f7",
+        "to": "0x000000000000000000000000000000000000dead",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "v": 28,
+        "valid_after": 0,
+        "valid_before": 1794382703,
+        "value": "10000"
+      },
+      "error": null,
+      "explorer": "https://testnet.nearblocks.io/txns/HbMM3emQCzbk39mqeJaeAk6Q2JouFXTFj4pPJkwGan4J",
+      "ms": 7775,
+      "offline_check": {
+        "signer": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc"
+      },
+      "ok": true,
+      "sign_failed": [],
+      "tx": "HbMM3emQCzbk39mqeJaeAk6Q2JouFXTFj4pPJkwGan4J"
+    },
+    {
+      "auth": {
+        "auth_id": 2,
+        "calldata": "0xe3ee160e000000000000000000000000c839efb7f74b908f40fb1a8e387c0c97068287fc000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af41b78e9a6a76e8366efc049960acc89694b84a7c94a6fd5d5e1634e087b6c73698a0e000000000000000000000000000000000000000000000000000000000000001b8784a5946bc89742f4e67cb3a417c4c0975f51db3c9c3fc1466bf68ee679abf37ea84775d936765601468440ec88955a27e39e5b2ec5b842b2300ef30639c15f",
+        "chain_id": 84532,
+        "digest": "0xee1a706d624c02832d3f0be568cf0b99185142212a45726c29b633f96bafa15c",
+        "from": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+        "nonce": "0xe9a6a76e8366efc049960acc89694b84a7c94a6fd5d5e1634e087b6c73698a0e",
+        "owner_epoch": 3,
+        "r": "0x8784a5946bc89742f4e67cb3a417c4c0975f51db3c9c3fc1466bf68ee679abf3",
+        "s": "0x7ea84775d936765601468440ec88955a27e39e5b2ec5b842b2300ef30639c15f",
+        "to": "0x000000000000000000000000000000000000dead",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "v": 27,
+        "valid_after": 0,
+        "valid_before": 1794382712,
+        "value": "10000"
+      },
+      "error": null,
+      "explorer": "https://testnet.nearblocks.io/txns/Gq3p4D28VHVKmCpH45RQVCHnAA5XgUn2WD7y7GiS4YrP",
+      "ms": 8974,
+      "offline_check": {
+        "signer": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc"
+      },
+      "ok": true,
+      "sign_failed": [],
+      "tx": "Gq3p4D28VHVKmCpH45RQVCHnAA5XgUn2WD7y7GiS4YrP"
+    },
+    {
+      "auth": {
+        "auth_id": 3,
+        "calldata": "0xe3ee160e000000000000000000000000c839efb7f74b908f40fb1a8e387c0c97068287fc000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af41b804e21f7bc88db7d11b4f388b5c28ffb1cbd4c6c90f7e58375dffb1b41b5775441000000000000000000000000000000000000000000000000000000000000001b2ec23fe95b8c5f7a5a558fd388fa4cb0e58245ddf3430ea178645878d26978321cfa40eb81c5fa333a3753026b09d193ff0ad2ffc30f286414d778570de415a0",
+        "chain_id": 84532,
+        "digest": "0x343e21219fb64b6cd346afbf27875c0168227ad4570c042471765ca6b6d00f8d",
+        "from": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+        "nonce": "0x4e21f7bc88db7d11b4f388b5c28ffb1cbd4c6c90f7e58375dffb1b41b5775441",
+        "owner_epoch": 3,
+        "r": "0x2ec23fe95b8c5f7a5a558fd388fa4cb0e58245ddf3430ea178645878d2697832",
+        "s": "0x1cfa40eb81c5fa333a3753026b09d193ff0ad2ffc30f286414d778570de415a0",
+        "to": "0x000000000000000000000000000000000000dead",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "v": 27,
+        "valid_after": 0,
+        "valid_before": 1794382720,
+        "value": "10000"
+      },
+      "error": null,
+      "explorer": "https://testnet.nearblocks.io/txns/EKwY44ozzCn1T1ukNwKF9GdxakMkEavgHKgL2JMspc81",
+      "ms": 8837,
+      "offline_check": {
+        "signer": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc"
+      },
+      "ok": true,
+      "sign_failed": [],
+      "tx": "EKwY44ozzCn1T1ukNwKF9GdxakMkEavgHKgL2JMspc81"
+    },
+    {
+      "auth": {
+        "auth_id": 4,
+        "calldata": "0xe3ee160e000000000000000000000000c839efb7f74b908f40fb1a8e387c0c97068287fc000000000000000000000000000000000000000000000000000000000000dead00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af41b8975b4c840774cd0c024f4a5f0408776f379a36b451cabf1f16acf621644f76a52000000000000000000000000000000000000000000000000000000000000001c42dda468cad2dd900d3617986489aa476c3fca4685a5babb5badb0a354d04c140c3c5b1a6ffefe53e0261003f5c52adfc504597450292f58b9ad9fa30582f16f",
+        "chain_id": 84532,
+        "digest": "0x85c936dfab5bcf4fa34db04afbd0f271df2831960d867ca2d5676e49781b6eeb",
+        "from": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc",
+        "nonce": "0x75b4c840774cd0c024f4a5f0408776f379a36b451cabf1f16acf621644f76a52",
+        "owner_epoch": 3,
+        "r": "0x42dda468cad2dd900d3617986489aa476c3fca4685a5babb5badb0a354d04c14",
+        "s": "0x0c3c5b1a6ffefe53e0261003f5c52adfc504597450292f58b9ad9fa30582f16f",
+        "to": "0x000000000000000000000000000000000000dead",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "v": 28,
+        "valid_after": 0,
+        "valid_before": 1794382729,
+        "value": "10000"
+      },
+      "error": null,
+      "explorer": "https://testnet.nearblocks.io/txns/DA4xvQWPG5G5hKrwwrm8umFjRt19LSjS38GyfVEhYYmh",
+      "ms": 9497,
+      "offline_check": {
+        "signer": "0xc839efb7f74b908f40fb1a8e387c0c97068287fc"
+      },
+      "ok": true,
+      "sign_failed": [],
+      "tx": "DA4xvQWPG5G5hKrwwrm8umFjRt19LSjS38GyfVEhYYmh"
+    }
+  ],
+  "schema": "gate-g2-sign.v1",
+  "sign_args": {
+    "args": {
+      "request": {
+        "domain_id": 0,
+        "path": "wallet-1",
+        "payload_v2": {
+          "Ecdsa": "<digest hex>"
+        }
+      }
+    },
+    "deposit_yocto": 1,
+    "method": "sign"
+  },
+  "txs": [
+    {
+      "by": "summarizer.agentexit5.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "allowed_payees": [
+                "summarizer.agentexit5.testnet"
+              ],
+              "cap_left_today": "50000000",
+              "daily_cap": "50000000",
+              "day": 20768,
+              "owner": "summarizer.agentexit5.testnet",
+              "owner_epoch": 3,
+              "price_floor": "5000000",
+              "schema": "limits.v1",
+              "spent_today": "0",
+              "split": {
+                "owner_bps": 8000,
+                "treasury_bps": 2000
+              },
+              "treasury": "2000000"
+            }
+          ],
+          "event": "limits_set",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/8Ts3L8b1vGmEWiopa3p5TSRE7XoBX2GndAarEik7anCA",
+      "label": "summarizer: set_limits with Base (cap 5.00 USDC)",
+      "method": "set_limits",
+      "ms": 4892,
+      "ok": true,
+      "receiver": "translator.agentexit5.testnet",
+      "tx": "8Ts3L8b1vGmEWiopa3p5TSRE7XoBX2GndAarEik7anCA",
+      "value": {
+        "allowed_payees": [
+          "summarizer.agentexit5.testnet"
+        ],
+        "cap_left_today": "50000000",
+        "daily_cap": "50000000",
+        "day": 20768,
+        "owner": "summarizer.agentexit5.testnet",
+        "owner_epoch": 3,
+        "price_floor": "5000000",
+        "schema": "limits.v1",
+        "spent_today": "0",
+        "split": {
+          "owner_bps": 8000,
+          "treasury_bps": 2000
+        },
+        "treasury": "2000000"
+      }
+    }
+  ]
+}
