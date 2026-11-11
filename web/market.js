@@ -22,6 +22,11 @@ const usd = (raw) => Number(BigInt(raw)) / 1e6;
 const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const link = (href, text) => el("a", { href, target: "_blank", rel: "noopener noreferrer", text });
 
+// Product names for people; the account stays in the panel. pump-bot and
+// cheat are our own ill-intended test agents, labelled as such.
+const TITLES = { translator3: "Lingo Live", "translate-pro": "Translate Pro", "research-desk": "Research Desk", "pump-bot": "TrendPulse", cheat: "QuickQuote", translator: "Polyglot" };
+const ILL = new Set(["pump-bot", "cheat"]);
+
 // One shape for every agent, from the two recorded files.
 export function buildCatalog(t, dd) {
   const out = [];
@@ -38,7 +43,7 @@ export function buildCatalog(t, dd) {
     const pct = Number(o.part_bps) / 100;
     out.push({
       name: "translator3", account: o.agent, kind: "invest", stamp: ["Verified", "ok"],
-      judgement: "Every counted job is signed by NEAR AI and checked on-chain.",
+      judgement: "Every counted job is signed by NEAR AI.",
       real: t3.bar.real, self: t3.bar.self, customers: 5, keys: "clean",
       deal: `${pct}% of its earnings for ${money(usd(o.amount))}`,
       dealShort: `${pct}% for ${money(usd(o.amount))}`,
@@ -53,8 +58,8 @@ export function buildCatalog(t, dd) {
       name: a.name, account: a.agent, kind: flagged ? "flagged" : open ? "offer" : "listed",
       stamp: flagged ? ["Self-paid", "bad"] : ["Clean", "ok"],
       judgement: flagged
-        ? `${Math.round((100 * self) / gross)}% of its revenue came from its own owner. The price is not supported.`
-        : `${a.payers} paying customers, no self-payments. Born with no key.`,
+        ? `${Math.round((100 * self) / gross)}% of its revenue is the owner paying itself.`
+        : `${a.payers} paying customers. Born with no seller key.`,
       real, self, customers: a.payers, keys: a.born_clean ? "none, ever" : "clean",
       deal: a.ask ? `whole agent for ${money(usd(a.ask))}` : open ? `${open.bps / 100}% of its earnings for ${money(usd(open.price))}` : "not offered",
       dealShort: a.ask ? `${money(usd(a.ask))}` : open ? `${open.bps / 100}% for ${money(usd(open.price))}` : "—",
@@ -70,7 +75,7 @@ export function buildCatalog(t, dd) {
   const cheat = card("cheat");
   if (cheat) out.push({
     name: "cheat", account: cheat.agent, kind: "blocked", stamp: ["Blocked", "bad"],
-    judgement: "All its revenue was self-paid, and a hidden key would let the seller take it back.",
+    judgement: "Self-paid revenue and a hidden seller key.",
     real: cheat.bar.real, self: cheat.bar.self, customers: 0, keys: "hidden full-access key",
     deal: "listed for 500.00; every buy is refused", dealShort: "buy refused",
     rows: cheat.rows, txs: tx("cheat", /lists cheat/, "the listing"),
@@ -78,11 +83,12 @@ export function buildCatalog(t, dd) {
   const tr = card("translator");
   if (tr) out.push({
     name: "translator", account: tr.agent, kind: "sold", stamp: ["Sold", "sold"],
-    judgement: "Sold in one transaction. The seller tried 6 ways back in; all 6 failed.",
+    judgement: "Sold. The seller tried 6 ways back in; all failed.",
     real: tr.bar.real, self: tr.bar.self, customers: 6, keys: "seller's key deleted",
     deal: "sold to bob for 1,000.00", dealShort: "sold, 1,000.00",
     rows: tr.rows, txs: [...tx("honest-sale", /buys translator/, "the sale"), ...tx("break-in", /withdraw/, "seller tries to withdraw"), ...tx("break-in", /old runner key/, "seller's old key")],
   });
+  for (const a of out) { a.title = TITLES[a.name] || a.name; a.ill = ILL.has(a.name); }
   return out;
 }
 
@@ -100,7 +106,7 @@ function sizeMeters(root) { root.querySelectorAll(".meter span").forEach((s) => 
 
 function cardEl(a) {
   return el("button", { type: "button", class: `mk-deed k-${a.kind}`, "data-agent": a.name, "aria-haspopup": "dialog" },
-    el("span", { class: "mk-deed-top" }, el("span", { class: "mk-deed-name", text: a.name }), el("span", { class: `stamp s-${a.stamp[1]}`, text: a.stamp[0] })),
+    el("span", { class: "mk-deed-top" }, el("span", { class: "mk-deed-name" }, a.title, a.ill ? el("small", { class: "mk-ill", text: "ill-intended (test)" }) : null), el("span", { class: `stamp s-${a.stamp[1]}`, text: a.stamp[0] })),
     el("span", { class: "mk-deed-rev" }, el("b", { text: money(a.real) }), el("small", { text: " real revenue" })),
     meter(a),
     el("span", { class: "mk-deed-judge", text: a.judgement }),
@@ -148,7 +154,7 @@ function actionFor(a) {
 function detail(a) {
   const body = el("div", { class: "panel-body" },
     el("header", { class: "panel-head" },
-      el("div", {}, el("h2", { id: "panel-title", text: a.name }), el("p", { class: "small muted mono", text: a.account })),
+      el("div", {}, el("h2", { id: "panel-title", text: a.title }), a.ill ? el("p", { class: "mk-ill", text: "Ill-intended test agent, built to show what the market refuses" }) : null, el("p", { class: "small muted mono", text: a.account })),
       el("span", { class: `stamp big s-${a.stamp[1]}`, text: a.stamp[0] })),
     el("p", { class: "panel-judge", text: a.judgement }),
     el("div", { class: "kpis" },
@@ -199,6 +205,7 @@ async function main() {
   draw();
   document.getElementById("market").dataset.ready = String(agents.length);
   const m = /^#agent=([\w-]+)$/.exec(location.hash);
+  window.addEventListener("hashchange", () => { const h = /^#agent=([\w-]+)$/.exec(location.hash); if (h) open(h[1], false); });
   if (m) open(m[1], false);
   else if (new URLSearchParams(location.search).get("iy")) open("translator3", false);
 }

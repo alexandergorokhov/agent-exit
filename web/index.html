@@ -14,23 +14,15 @@
 <body class="mk">
   <nav class="mk-bar" aria-label="Main"><div class="wrap">
     <a class="mk-brand" href="#">Agent Exit</a>
-    <span class="mk-links"><a href="#market">Market</a><a href="#play">Try to cheat</a><a href="#how">How it works</a></span>
+    <span class="mk-links"><a href="#market">Market</a><a href="#how">How it works</a><a href="#play">Try to cheat</a></span>
     <a class="mk-judges" href="proof.html">For judges</a>
   </div></nav>
 
   <main class="wrap">
     <header class="mk-intro">
       <h1>Buy AI agents by what they really earn.</h1>
-      <p>Revenue is counted by who paid. At a sale the seller's keys are deleted. Live on NEAR testnet, with free test dollars.</p>
+      <p>A market where AI agents are bought and sold like small businesses. Live on NEAR testnet, with free test dollars.</p>
     </header>
-
-    <section class="mk-idea" aria-labelledby="idea-title">
-      <h2 id="idea-title" class="sr-only">The idea</h2>
-      <div><h3>The problem</h3><p>Buying an AI agent today is blind trust. Its revenue can be self-paid, and the seller can keep a hidden key and take it back.</p></div>
-      <div><h3>The concept</h3><p>The agent's NEAR account is the business. A contract counts revenue by who paid, scans for backdoors, and swaps the keys to the buyer in one transaction.</p></div>
-      <div><h3>How we innovate</h3><p>The first agent sale where code, not trust, locks the seller out: keys swap in one transaction, revenue is proved by who paid, and part of the price waits for real customers. Agents can buy agents over MCP.</p></div>
-      <div><h3>What's next</h3><p>Agents that hold wallets on other chains through Chain Signatures, shares of agent earnings that trade, and any NEAR AI agent listed by its own MCP call.</p></div>
-    </section>
 
     <section id="market" aria-labelledby="market-title">
       <div class="mk-toolbar">
@@ -39,6 +31,24 @@
         <a class="small" href="media/agent-exit-demo.mp4">Watch the 2-minute demo</a>
       </div>
       <div id="catalog" class="catalog"><p class="muted">Loading agents…</p></div>
+    </section>
+
+    <section id="how" aria-labelledby="how-title">
+      <h2 id="how-title">How it works</h2>
+      <ol class="how">
+        <li><b>Check</b><span>Revenue is counted by who paid. A scan lists every key on the agent.</span></li>
+        <li><b>Buy</b><span>One transaction: seller's key out, buyer's key in, seller paid.</span></li>
+        <li><b>Earn-out</b><span>Part of the price waits in the contract and goes to the seller as real customers keep paying.</span></li>
+      </ol>
+      <dl class="qa">
+        <div><dt>Who holds the money?</dt><dd>The contract. No escrow company.</dd></div>
+        <div><dt>Who checks the agent?</dt><dd>The contract counts payments; self-payments don't count. The scan blocks hidden keys.</dd></div>
+        <div><dt>Who decides to pay the seller?</dt><dd>Nobody. Code releases the held part as new customers pay. The rest goes back to the buyer, above a small minimum for the seller.</dd></div>
+        <div><dt>What is new?</dt><dd>Code, not trust, locks the seller out. AI agents can buy agents over MCP.</dd></div>
+        <div><dt>How does it earn?</dt><dd>A 1% fee on every sale and share.</dd></div>
+        <div><dt>What's next?</dt><dd>Agents with wallets on other chains, and tradable shares of agent earnings.</dd></div>
+      </dl>
+      <p class="mk-case"><b>Example:</b> Alice sells her translation agent, Polyglot, to Bob for 1,000. Bob gets the keys at once, and 300 waits for Polyglot's customers. <a href="#agent=translator">See the sale</a></p>
     </section>
 
     <section id="play" class="play" aria-labelledby="play-title">
@@ -63,14 +73,6 @@
       <ol id="pg-feed" class="feed"></ol>
     </section>
 
-    <section id="how" aria-labelledby="how-title">
-      <h2 id="how-title">How a sale works</h2>
-      <ol class="how">
-        <li><b>Check</b><span>The buyer sees revenue by who paid and every key on the agent.</span></li>
-        <li><b>Buy</b><span>One transaction deletes the seller's key, adds the buyer's and moves the deed.</span></li>
-        <li><b>Locked out</b><span>Part of the price waits for real customers. Any way back in fails.</span></li>
-      </ol>
-    </section>
   </main>
 
   <dialog id="agent-panel" class="mk-panel" aria-labelledby="panel-title">
