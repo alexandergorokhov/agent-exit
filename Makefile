@@ -112,7 +112,7 @@ mcp-build-if-stale:
 	@if [ -f mcp/dist/scripts/judge-check.js ] && { [ -e target/debug/scan ] || [ -e target/release/scan ] || [ -n "$$AGENT_EXIT_SCAN_BIN" ]; } \
 	  && [ -z "$$(find mcp/src mcp/scripts schemas -newer mcp/dist/scripts/judge-check.js -print -quit)" ]; then :; else $(MAKE) -s mcp-build; fi
 
-judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K7, offline; about 1 s once built) -> out/check-claims.json
+judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, K0 code hash + one PASS/FAIL row per README claim (K1-K7, offline; 8 rows; about 1 s once built) -> out/check-claims.json
 	@node mcp/dist/scripts/judge-check.js
 
 judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K8 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. Exit 3 = no RPC answered (not checked, not failed)

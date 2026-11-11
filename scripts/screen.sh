@@ -18,7 +18,7 @@ run() { # id, README claim, expected exit, grep pattern, command...
   printf '%s %-3s %-62s (exit %s, %ss)\n' "$res" "$id" "$claim" "$code" $((SECONDS - t0)) >&2
   rows+=("{\"id\":\"$id\",\"claim\":\"$claim\",\"command\":\"$*\",\"expected_exit\":$want,\"expected_output\":\"${pat//\\/\\\\}\",\"exit\":$code,\"result\":\"$res\",\"log\":\"$log\"}")
 }
-run R1 "MCP for a judge's agent: 13 tools, check_claims K1-K7 pass" 0 "7/7 claims pass" make --no-print-directory judge
+run R1 "MCP for a judge's agent: code hash K0 + check_claims K1-K7 pass" 0 "8/8 claims pass" make --no-print-directory judge
 run R2 "Playground: the contract core and scan compiled to wasm" 0 "test result: ok" cargo test --quiet --locked --offline -p playground
 run R3 "The scan blocks the cheat (hidden full-access key)" 2 "full_access_key_present" make --no-print-directory scan FILE=fixtures/scan/cheat.json
 run R4 "30-day business loop, 0 human calls, equals golden" 0 "output equals tests/golden/business-loop.json" make --no-print-directory business-loop
