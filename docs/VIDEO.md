@@ -3,6 +3,18 @@
 Two videos, each 3:00 or less. The break-in comes inside the first 90 seconds.
 All money shown is `xUSD-FAKE`; say so once, on screen.
 
+## The narrated page video (scripted, offline)
+
+`web/media/agent-exit-demo.mp4` (2:43) is recorded from the market page with captions and a voiceover:
+
+```bash
+PIPER=/path/to/piper PIPER_MODEL=/path/to/en-us-libritts-high.onnx PIPER_SPEAKER=100 node scripts/video/voice.mjs # optional: one wav per caption, Piper TTS, free and offline
+node web/serve.mjs 8090 &  node scripts/video/record.mjs                                          # each caption waits for its spoken line
+bash scripts/video/encode.sh                                                                      # mp4 + GIF; mixes the narration in (scripts/video/mix.mjs)
+```
+
+Without `voice.mjs` the video is the same, silent. Voice: Piper (MIT) with `en-us-libritts-high`, speaker 100, trained on LibriTTS (CC BY 4.0), from the rhasspy/piper v0.0.2 release.
+
 ## Before recording
 
 1. Testnet world is deployed and seeded: `make deploy-testnet` (on the owner's PC).

@@ -5,7 +5,8 @@
 //   node web/serve.mjs 8090 &   then   node scripts/video/record.mjs
 // Writes out/video/raw/*.webm; scripts/video/encode.sh makes the mp4 + GIF.
 import { createRequire } from "node:module";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { speech, cardSpeech } from "./speech.mjs";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
@@ -19,8 +20,25 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, recordVideo: { dir: OUT, size: { width: W, height: H } } });
 const p = await ctx.newPage();
 const wait = (ms) => p.waitForTimeout(ms);
+// Narration (optional): out/video/voice/manifest.json from voice.mjs. Each line
+// starts when its caption shows and the next caption waits for it to end; the
+// start times go to out/video/voice-track.json for encode.sh to mix in.
+const T0 = Date.now();
+const VOICE = new URL("../../out/video/voice/manifest.json", import.meta.url).pathname;
+const manifest = existsSync(VOICE) ? JSON.parse(readFileSync(VOICE, "utf8")) : null;
+const track = [];
+let speechEnd = 0;
+const quiet = async () => { const left = speechEnd - Date.now(); if (left > 0) await wait(left); };
+function say(text) {
+  const v = manifest && text && manifest[text];
+  if (!v) return 0;
+  track.push({ t: (Date.now() - T0) / 1000, file: v.file, text });
+  speechEnd = Date.now() + v.dur * 1000 + 300;
+  return v.dur * 1000 + 300;
+}
 
 async function caption(text, ms = 3000, big = false) {
+  await quiet();
   await p.evaluate(([t, big]) => {
     let c = document.getElementById("vid-cap");
     if (!c) {
@@ -36,9 +54,11 @@ async function caption(text, ms = 3000, big = false) {
     c.textContent = t;
     c.style.display = t ? "block" : "none";
   }, [text, big]);
-  if (ms) await wait(ms);
+  const spoken = say(speech(text));
+  if (ms) await wait(Math.max(ms, spoken));
 }
 async function card(lines, ms) {
+  await quiet();
   await p.evaluate((lines) => {
     let c = document.getElementById("vid-card");
     if (!c) {
@@ -50,7 +70,8 @@ async function card(lines, ms) {
     c.replaceChildren(...lines.map((l, i) => { const d = document.createElement("div"); d.textContent = l; if (i === 0) d.style.cssText = "font-size:56px;font-weight:800"; else if (l.startsWith("http")) d.style.cssText = "color:#3ddc97;font-size:26px"; return d; }));
     c.style.display = lines.length ? "flex" : "none";
   }, lines);
-  if (ms) await wait(ms);
+  const spoken = lines.length ? say(cardSpeech(lines)) : 0;
+  if (ms) await wait(Math.max(ms, spoken));
 }
 async function scrollTo(sel, offset = -110) {
   await p.evaluate(([s, o]) => { const e = document.querySelector(s); window.scrollTo({ top: e.getBoundingClientRect().top + window.scrollY + o, behavior: "smooth" }); }, [sel, offset]);
@@ -96,7 +117,7 @@ await caption("Polyglot was sold in one transaction. The seller then tried 6 way
 await closeAgent();
 await p.click('#filters button[data-f="all"]');
 await openAgent("translator3", 0);
-await caption("Lingo Live: every counted job signed by NEAR AI. Anyone can buy 2.5% of its earnings for 25 test dollars.", 5000);
+await caption("Lingo Live: half its counted revenue is signed by NEAR AI. Anyone can buy 2.5% of its earnings for 25 test dollars.", 5000);
 await p.fill("#mk-account", "judge.testnet");
 await caption("Type a testnet account: one signature in MyNearWallet buys the share", 3500);
 await closeAgent();
@@ -155,6 +176,8 @@ await caption("Check, buy in one transaction, seller locked out. Every claim is 
 await caption("", 0);
 await card(["Agent Exit", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
 
+await quiet();
 await ctx.close();
 await browser.close();
+if (manifest) writeFileSync(new URL("../../out/video/voice-track.json", import.meta.url).pathname, JSON.stringify(track, null, 2) + "\n");
 console.log(`video: raw recording in ${OUT}`);
