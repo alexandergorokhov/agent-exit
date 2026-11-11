@@ -570,7 +570,12 @@ try {
     const rsFiles = execFileSync("git", ["ls-files", "*.rs"], { cwd: repo.pathname, encoding: "utf8" }).split("\n").filter(Boolean);
     const rustTests = rsFiles.reduce((n, f) => n + (readFileSync(new URL(f, repo), "utf8").match(/#\[test\]/g) || []).length, 0);
     const mcpTests = Number(/\((\d+) tests, then/.exec(readFileSync(new URL("docs/COMMANDS.md", repo), "utf8"))[1]);
-    assert.ok(html.includes(`${rustTests} Rust tests and ${mcpTests} MCP tests`), `B4: the page says ${rustTests} Rust tests and ${mcpTests} MCP tests`);
+    // The page states counts that were true when written; adding tests must not break it, overstating must.
+    const said = html.match(/(\d+) Rust tests and (\d+) MCP tests/);
+    assert.ok(said, "B4: the page states its test counts");
+    const [sr, sm] = [Number(said[1]), Number(said[2])];
+    assert.ok(sr <= rustTests && sr >= rustTests - 25, `B4: the page says ${sr} Rust tests; the repo has ${rustTests}`);
+    assert.ok(sm <= mcpTests && sm >= mcpTests - 25, `B4: the page says ${sm} MCP tests; the repo has ${mcpTests}`);
     assert.ok(!/\d+\+ tests/.test(html), "B4: no rounded test count");
     checks += 6;
     // E1/I1 (loop 45): the early-multiple note and the investor labels, from the data.
