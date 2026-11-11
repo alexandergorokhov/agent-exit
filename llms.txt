@@ -1,15 +1,20 @@
 # Agent Exit
 
-> Buy an AI agent with earnings you can check on-chain and a handover that locks the seller out, on NEAR. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added in one key batch; payouts are separate and claimable afterwards), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 checks the reproducible-build hash in contracts/res/SHA256SUMS), payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified), the agent runs inside owner-set spending limits enforced by the contract, and other agents can buy agents through an MCP server (`make agent-buys-agent` is a scripted replay, no AI model; `make demo` runs the offline story). Rerun offline with `make verify`.
+> A capital market for AI agents, on NEAR: invest in a share of an agent's earnings, or buy the whole agent, with earnings you can check on-chain and a handover that locks the seller out. One contract on the agent's own account counts earnings by payer and day (flagging self-payments, seller sub-accounts and round trips), hands the agent over in one transaction (deed NFT moves, seller runner key deleted, buyer runner key added in one key batch; payouts are separate and claimable afterwards), pays the seller 70% now and releases the 30% earn-out only from real post-sale revenue. All money is a fake test token (xUSD-FAKE). A client scan blocks backdoored agents before the sale (`make attack`: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives — a regression suite, not independent evidence; A9 (Base) is not counted until Base is live and A5 checks the reproducible-build hash in contracts/res/SHA256SUMS), payments can carry a NEAR AI Cloud signature checked on-chain (NEAR Verified), the agent runs inside owner-set spending limits enforced by the contract, and other agents can buy agents through an MCP server (`make agent-buys-agent` is a scripted replay, no AI model; `make demo` runs the offline story). Rerun offline with `make verify`.
 
 ## Start here
 
-- Judging or reviewing: `make judge` (the MCP server from `.mcp.json` re-runs the README claims K1-K7 with the `check_claims` tool, one PASS/FAIL row each) and `make screen` (every offline README claim with its promised result). Claude Code in this repo gets the `agent-exit` MCP servers from `.mcp.json`; prompt `judge_tour`.
+- Judging or reviewing: `make setup && make mcp-build` once, then `make judge` (about 1 s once built; the MCP server from `.mcp.json` re-runs claims K1-K7 offline with the `check_claims` tool; last line `judge: 7/7 claims pass (offline sandbox, real contract code, xUSD-FAKE)`; already built: `node mcp/dist/scripts/judge-check.js`) and `make screen` (7 rows, 1-3 min). Claude Code in this repo gets two MCP servers from `.mcp.json`: `agent-exit` (offline) and `agent-exit-testnet` (read-only live testnet; `check_claims` there is K1-K8, K8 = gate G6 on the previous world agentexit4; with no RPC each claim says `unverified_network`, not checked, and `make judge-testnet` exits 3); prompt `judge_tour`.
+- [docs/PROOF.md](docs/PROOF.md): "Claims and evidence": each headline claim, its offline check, its recorded testnet file and NearBlocks link, and its world; "Verify testnet without our server": read `out/scenes/*.json` `txs[]` with curl `EXPERIMENTAL_tx_status`
+- Live testnet world `agentexit5.testnet`, agent code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF`; born-clean factory `factory.agentexit5.testnet` (scene 9: born1; scene 13, the Exchange: translate-pro, research-desk, pump-bot). Gate G6 and the AI buyer (scene 7) ran on the previous world `agentexit4.testnet`.
 - [README.md](README.md): what it is, what is proven and where, honest limits
 - [docs/PROOF.md](docs/PROOF.md): the claims table: what is proven, where and by which scenario ids
+- [docs/TESTNET.md](docs/TESTNET.md): every testnet transaction, and a scene index (scenes 1-13, G1, G6: what each proves, its world, a key transaction)
+- [out/scenes/scene-13.json](out/scenes/scene-13.json): recorded testnet scenes (`scene-1.json` to `scene-13.json`; each has `pass`, `what`, `txs[]` with `explorer` links)
+- [out/agent-invests-testnet.json](out/agent-invests-testnet.json): a scripted MCP agent invests on testnet (carol buys a 2.5% part)
 - [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
 - [Makefile](Makefile): every target; unbuilt ones print "not built yet" and exit 1
-- [skills/agent-exit/SKILL.md](skills/agent-exit/SKILL.md): Agent Skill: read earnings, scan, buy, verify lockout
+- [skills/agent-exit/SKILL.md](skills/agent-exit/SKILL.md): Agent Skill: read earnings, scan, buy, verify lockout, invest in shares
 
 ## Paying an agent
 
@@ -31,7 +36,8 @@
 - [tools/base-wallet/src/lib.rs](tools/base-wallet/src/lib.rs): Base wallet client (feature 5): Chain Signatures derivation, TEST MPC signer, EIP-3009 auth check
 - [contracts/agent-core/src/base.rs](contracts/agent-core/src/base.rs): pay_base rules and the EIP-3009 digest
 - [tools/testnet-plan/src/lib.rs](tools/testnet-plan/src/lib.rs): testnet day plan and testnet-only guards (`make deploy-testnet DRY_RUN=1`)
-- [tools/testnet/src/steps.rs](tools/testnet/src/steps.rs): testnet runner: deploy, gates G1/G2/G6, scenes 1-6
+- [tools/testnet/src/steps.rs](tools/testnet/src/steps.rs): testnet runner: deploy, gates G1/G2/G6, scenes 1-13
+- [contracts/factory/src/lib.rs](contracts/factory/src/lib.rs): born-clean factory: one batch creates the agent account, deploys the published code (hash pinned) and runs `new`, with no access key ever
 - [scripts/testnet/g2-relay.mjs](scripts/testnet/g2-relay.mjs): G2 relay (chainsig.js + viem) on Base Sepolia
 - [contracts/agent/src/fuzz_tests.rs](contracts/agent/src/fuzz_tests.rs): `make fuzz` targets
 - [mcp/src/tools.ts](mcp/src/tools.ts): MCP tools list_agents, get_earnings, scan_agent, buy_agent, verify_lockout, list_for_sale, list_offers, buy_share, portfolio, check_claims, sandbox, check_account, sealed_delivery
@@ -39,8 +45,10 @@
 - [mcp/src/backend.ts](mcp/src/backend.ts): offline (recorded) and testnet (read-only) data for the MCP server
 - [mcp/src/server.ts](mcp/src/server.ts): MCP stdio server
 - [mcp/scripts/agent-buys-agent.ts](mcp/scripts/agent-buys-agent.ts): scripted agent-buys-agent run
-- [web/index.html](web/index.html): demo page (`make web`; offline, recorded; `?network=testnet` is labelled not wired)
-- [web/app.js](web/app.js): renders the six demo steps from web/data/demo.json
+- [mcp/scripts/agent-invests.ts](mcp/scripts/agent-invests.ts): scripted investing agent (`make agent-invests`, `make agent-invests-testnet`)
+- [mcp/scripts/check-account.ts](mcp/scripts/check-account.ts): `make check-account ID=...`: who else can take any NEAR account (also MCP `check_account`)
+- [web/index.html](web/index.html): demo page (`make web`; offline, recorded; `?network=testnet` reads live through a read-only relay)
+- [web/app.js](web/app.js): the demo page's script (data in web/data/demo.json and web/data/testnet.json)
 - [tools/verify/src/bin/gen-web-demo.rs](tools/verify/src/bin/gen-web-demo.rs): records web/data/demo.json from the contract (`make web-data`)
 - [mcp/mcp-config.example.json](mcp/mcp-config.example.json): MCP client config
 

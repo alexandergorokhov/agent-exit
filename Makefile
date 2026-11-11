@@ -105,11 +105,17 @@ mcp-build: ## Build the MCP server (TypeScript) and the scan binary it calls
 mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_NETWORK=testnet; never mainnet)
 	@node mcp/dist/src/server.js
 
-.PHONY: judge judge-testnet screen
-judge: mcp-build ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K7) -> out/check-claims.json
+.PHONY: judge judge-testnet screen mcp-build-if-stale
+# judge skips the build (no cargo, no tsc) when mcp/dist and the scan binary are
+# newer than the sources; otherwise it runs mcp-build.
+mcp-build-if-stale:
+	@if [ -f mcp/dist/scripts/judge-check.js ] && { [ -e target/debug/scan ] || [ -e target/release/scan ] || [ -n "$$AGENT_EXIT_SCAN_BIN" ]; } \
+	  && [ -z "$$(find mcp/src mcp/scripts schemas -newer mcp/dist/scripts/judge-check.js -print -quit)" ]; then :; else $(MAKE) -s mcp-build; fi
+
+judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, one PASS/FAIL row per README claim (K1-K7, offline; about 1 s once built) -> out/check-claims.json
 	@node mcp/dist/scripts/judge-check.js
 
-judge-testnet: mcp-build ## [testnet, read-only, no key] The same from the agent-exit-testnet entry: every recorded transaction re-read from archival nodes + live agents -> out/check-claims-testnet.json
+judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K8 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. Exit 3 = no RPC answered (not checked, not failed)
 	@node mcp/dist/scripts/judge-check.js --testnet
 
 screen: ## The README's main offline claims, 7 rows with their promised outcome (1-3 min; make verify, attack and fuzz run separately) -> out/screen.json
@@ -153,7 +159,7 @@ agent-invests: mcp-build ## Scripted investing agent via MCP (no model, $0): rea
 	@mkdir -p $(OUT)
 	node mcp/dist/scripts/agent-invests.js --out $(OUT)/agent-invests.json
 
-agent-invests-testnet: mcp-build ## [testnet] After make scene-12: the same agent, through carol's MCP server, buys a 1% part of the open offer on testnet (xUSD-FAKE) -> out/agent-invests-testnet.json
+agent-invests-testnet: mcp-build ## [testnet] After make scene-12: the same agent, through carol's MCP server, buys the smallest part (2.5%) of the open offer on testnet (xUSD-FAKE) -> out/agent-invests-testnet.json
 	node mcp/dist/scripts/agent-invests.js --network testnet --root $(TESTNET_ROOT) --out $(OUT)/agent-invests-testnet.json
 
 .PHONY: llm-buyer-testnet
@@ -360,7 +366,7 @@ else
 	$(TESTNET_RUN) scene-7
 endif
 
-scene-8: ## [testnet] Invest: new agent translator2 (shares code), dave buys 20% of its earnings, 5 customers pay for 5 real translations, dave gets exactly 20% -> out/scenes/scene-8.json [DRY_RUN=1] (needs make build first; NEAR AI-signed if NEARAI_API_KEY has credit)
+scene-8: ## [testnet] Invest: new agent translator3 (INVEST_AGENT), dave buys 20% of its earnings, 5 customers pay for 5 real translations, dave gets exactly 20% -> out/scenes/scene-8.json [DRY_RUN=1] (needs make build first; NEAR AI-signed if NEARAI_API_KEY has credit)
 ifdef DRY_RUN
 	@$(PLAN) scene-8
 else
@@ -381,7 +387,7 @@ else
 	$(TESTNET_RUN) scene-10
 endif
 
-scene-13: ## [testnet] The Exchange: six agents born clean in the factory, each with its own revenue mix, share offer or sale listing, for the page's board -> out/scenes/scene-13.json [DRY_RUN=1] (after scene-9)
+scene-13: ## [testnet] The Exchange: up to six agents born clean in the factory (EXCHANGE_AGENTS=N; 3 recorded on agentexit5), each with its own revenue mix, share offer or sale listing, for the page's board -> out/scenes/scene-13.json [DRY_RUN=1] (after scene-9)
 ifdef DRY_RUN
 	@$(PLAN) scene-13
 else
@@ -414,7 +420,7 @@ attack-testnet: ## (not built yet) [testnet] A1 A5 A17-A21 live
 	$(call not_built,attack-testnet,M2 B2 on the owner's PC)
 demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-buys-agent replay, then how to open the page
 	@mkdir -p $(OUT)
-	@echo "== 1/3 verify subset: 60 scenarios replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
+	@echo "== 1/3 verify subset: 73 checks replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
 	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null
 	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
 	@echo "== 2/3 scripted replay: a fixed script (no AI model) plays the summarizer agent buying translator through the MCP tools"
@@ -423,7 +429,7 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
-	@echo "Real testnet transactions (2026-11-04, w2.agentexit3.testnet): README section 'Live on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
+	@echo "Real testnet transactions (2026-11-10, agentexit5.testnet; G6 and the AI buyer on agentexit4.testnet): README section 'Live on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
 demo-setup: ## [testnet] Fresh demo world on a NEW root: reproducible build, deploy, G1, scenes, page data [DRY_RUN=1] [FORCE=1]
 ifdef DRY_RUN
 	@$(PLAN) deploy && $(PLAN) g1 && $(PLAN) scenes

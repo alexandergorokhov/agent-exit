@@ -5,9 +5,19 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 
 ## Judging or reviewing? Start here
 
-- `make setup && make mcp-build`, then `make judge`: the MCP server from the repo's `.mcp.json` runs `check_claims`, which re-runs the README's claims K1-K7 (earnings by payer, the scan, a refused buy, the one-transaction sale with the 1% fee, the lockout, a share buy) in a private offline sandbox and prints one PASS/FAIL row each.
-- Claude Code in this repo picks up `.mcp.json` (servers `agent-exit`, offline as a buyer, and `agent-exit-testnet`, read-only live testnet). Call the `check_claims` tool or run the `judge_tour` prompt (`/mcp__agent-exit__judge_tour`).
-- `make screen`: the README's main offline claims in 7 rows, each with its promised result (`out/screen.json`).
+Agent Exit is a capital market for AI agents on NEAR: invest in a share of an agent's earnings or buy the whole agent, with earnings counted by who paid and a one-transaction handover that locks the seller out. Three commands, offline:
+
+| Command | Expected |
+|---|---|
+| `make setup && make mcp-build` (once; Rust + Node 20) | exit 0 |
+| `make judge` (about 1 s once built; no cargo when `mcp/dist` is current; same as `node mcp/dist/scripts/judge-check.js`) | one PASS row per claim K1-K7, last line `judge: 7/7 claims pass (offline sandbox, real contract code, xUSD-FAKE)`, `out/check-claims.json`; exit 0 |
+| `make screen` (1-3 min) | 7 rows, each with its promised result, `out/screen.json` |
+
+- **Each claim -> its check -> its recorded transaction:** "Claims and evidence" in [`docs/PROOF.md`](docs/PROOF.md) (earnings, verified revenue, scan, refused buy, sale, lockout, invest, open offer in parts, MCP investor, sealed prompt, born clean, the Exchange, limits, AI buyer), with the world each ran on.
+- **MCP:** Claude Code in this repo picks up [`.mcp.json`](.mcp.json): `agent-exit` (offline, you act as `summarizer.testnet`) and `agent-exit-testnet` (read-only, live `agentexit5.testnet`, needs RPC). Call `check_claims` or run the prompt `/mcp__agent-exit__judge_tour`. `check_claims` is K1-K7 offline and K1-K8 on testnet (K8 = gate G6, recorded on the previous world `agentexit4.testnet`); each testnet claim names its world.
+- **No RPC?** A testnet claim then says `status: "unverified_network"`, `pass: null` (not checked, not failed), and `make judge-testnet` exits 3. The recorded transactions are in `out/scenes/*.json` (`txs[].explorer`); how to read them with curl: "Verify testnet without our server" in [`docs/PROOF.md`](docs/PROOF.md). The offline `check_claims` re-runs the contract code; it does not prove the testnet history.
+- **Invest by hand (offline):** `list_offers` shows `research.testnet` offer 1 (20% open, smallest part 2%). Offline `buy_share` replays only the recorded buy: as `dave.testnet` (`AGENT_EXIT_ACCOUNT_ID=dave.testnet`), `buy_share {"agent":"research.testnet","offer_id":1,"pct":10,"max_price":150,"confirm":true}`, then `portfolio {"account":"dave.testnet"}`. Any other part: the `sandbox` tool (`offer_share`, `buy_share`, `claim_share`). On testnet the live offer on `translator3.agentexit5.testnet` sells parts of 2.5%.
+- **Born clean and the Exchange** are testnet-only: offline `scan_agent` gives `born_clean: null`. With RPC, `scan_agent born1.factory.agentexit5.testnet` gives `born_clean: true`, and `list_agents` / `list_offers` show `translate-pro`, `research-desk` and `pump-bot` (`.factory.agentexit5.testnet`). Recorded: `out/scenes/scene-9.json`, `out/scenes/scene-13.json`.
 
 ## Do X, see Y
 
@@ -21,7 +31,7 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 6. Attack corpus | `make attack` | stderr summary `19 attack families, each blocked by its rule; 0/50 false positives (regression suite)`. The counts come from `tests/golden/attack.json`, in_scope 190/190: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule. It is a regression suite, not independent evidence; A5 checks the reproducible-build hash in `contracts/res/SHA256SUMS`. Every `contract ... BLOCKED`; `out/attack.json` with `"schema": "attack-report.v1"`; exit 0 (exit 1 on any miss or false positive) |
 | 7. Plant your own backdoor | edit `fixtures/judge-attack.json` (e.g. add a `"FullAccess"` key), then `make attack FIXTURE=fixtures/judge-attack.json` | stderr `judge fixture ...: blocked ["full_access_key_present"]`; the `judge` section of `out/attack.json` |
 | 8. Scan one agent | `make scan FILE=fixtures/scan/cheat.json` | `scan-report.v1` JSON on stdout, `"verdict": "blocked"`; exit 0 clean, 2 blocked, 3 inconclusive, 1 bad input |
-| 9. MCP tests | `make mcp-test` | `# pass 176`, `# fail 0`, then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
+| 9. MCP tests | `make mcp-test` | `# tests 185` (all pass), `# fail 0` (then 10 script tests and the near-key-check tests, each `# fail 0`), then `agent-buys-agent: output equals tests/golden/agent-buys-agent.json`; exit 0 |
 | 10. Agent buys agent | `make agent-buys-agent` | a scripted replay, not an AI model; stderr one line per MCP call; `out/agent-buys-agent.json` with `"schema": "agent-buys-agent.v1"`, `"pass": true`, `summary.seller_locked_out_after: true` |
 | 11. Demo page | `make web-test` (needs the `playwright` package with Chromium) | `web-test: N checks passed (desktop + 375px, offline + testnet flag)`; exit 0. `make web` serves it on port 8080 |
 | 12. Fuzz | `make fuzz` (`FUZZ_CASES=3000`) | `test result: ok. 4 passed`; exit 0 |
@@ -31,6 +41,11 @@ mainnet. All money in this repo is `xUSD-FAKE`, a test token with no value.
 | 16. Real model buyer | `make llm-buyer` | needs `NEARAI_API_KEY` in `~/.agent-exit.env`; exit 2 without it; writes `out/llm-buyer.json`; the model is the cheapest NEAR AI chat model that supports tools (else the default), logged with token usage. `make llm-buyer-check` first makes one tiny authenticated call (exit 2 on no key, 401, 402). a real model run (Claude Haiku 4.5) is committed as `out/llm-buyer.json` (offline fixtures) and `out/llm-buyer-testnet.json` (testnet) |
 | 17. Pay an agent (customer) | call `storage_deposit` on the agent with 0.024 NEAR attached (once per account, A49), then `xusd.ft_transfer_call(agent, amount, msg)` with `msg` empty or `{"kind":"pay"}` | without `storage_deposit` the payment still counts but is pooled as `other`; `storage_balance_of(you)` shows whether you are registered; `storage_unregister` (1 yoctoNEAR) removes your own row if it never had a payment; `storage_withdraw` has nothing to return; `reclaim_payer_row(account)` removes a payment-less row after 30 days, refunding its depositor |
 | 18. Translator worker | `make translator-serve` | listens on 127.0.0.1:8787 only (loopback; do not tunnel it without auth); offline serves a labelled fixture; real mode needs testnet + `NEARAI_API_KEY` + agent account, else exit 2 |
+| 19. Claims, offline | `make judge` | `judge: 7/7 claims pass (offline sandbox, real contract code, xUSD-FAKE)`; exit 0 |
+| 20. Claims, live testnet (read-only, needs RPC) | `make judge-testnet` | K1-K8, each `PASS` with its world; exit 0. Exit 1: a claim failed. Exit 3: no RPC answered, claims `NOT CHECKED (no RPC)` |
+| 21. Who can take an account | `make check-account ID=trading-bot.testnet` (or MCP `check_account`) | `backdoor_risk` (a full-access key on a contract with an `upgrade` method); `locked-vault.testnet`: `locked` |
+| 22. An agent invests (scripted, no model) | `make agent-invests` | reads open offers, picks by counted revenue per 1%, buys, reads its portfolio; `out/agent-invests.json` |
+| 23. Recorded transactions exist | `make check-links` (needs RPC) | every transaction in `web/data/testnet.json` (built from `out/scenes/`) found on an archival node |
 
 `make verify` takes about 2 minutes (10,000 property cases with a fixed seed).
 Set `PROP_CASES=500 make verify` for a faster pass.
@@ -73,21 +88,12 @@ Set `PROP_CASES=500 make verify` for a faster pass.
 
 Build once with `make mcp-build`. Then, from the repo root:
 
-Claude Code (`.mcp.json` in the repo root, or `claude mcp add`):
+Claude Code reads [`.mcp.json`](.mcp.json) in the repo root (written by `node scripts/judge-mcp-config.mjs`; `--check` says if it is stale). It has two servers:
 
-```json
-{
-  "mcpServers": {
-    "agent-exit": {
-      "command": "node",
-      "args": ["mcp/dist/src/server.js"],
-      "env": { "AGENT_EXIT_NETWORK": "offline" }
-    }
-  }
-}
-```
+- `agent-exit`: `AGENT_EXIT_NETWORK=offline`, write tools on as `summarizer.testnet` (the recorded buyer); nothing is sent.
+- `agent-exit-testnet`: `AGENT_EXIT_NETWORK=testnet`, read-only (no `AGENT_EXIT_ALLOW_WRITE`, no key), the agents of `agentexit5.testnet`: translator, translator3, cheat, born1 and the Exchange agents translate-pro, research-desk and pump-bot.
 
-Same file: [`mcp/mcp-config.example.json`](mcp/mcp-config.example.json).
+The smallest offline config: [`mcp/mcp-config.example.json`](mcp/mcp-config.example.json) (`{"AGENT_EXIT_NETWORK": "offline"}`).
 
 Codex (`~/.codex/config.toml`):
 
@@ -108,7 +114,16 @@ argument, so a model cannot be talked into handing the runner key to someone
 else. `AGENT_EXIT_SESSION_CAP` (default 1500 dollars) caps what one session
 may spend. `AGENT_EXIT_MIN_WINDOW_SECS` shortens the earn-out window
 `buy_agent` accepts (demo only; outputs then say `terms_config: "demo"`).
-Keys only from env, never from files. Text that comes from the chain is in
+
+Testnet only (each must be a `.testnet` account or an allowlisted testnet host):
+
+- `AGENT_EXIT_AGENTS`: comma-separated agents that `list_agents` and `list_offers` show.
+- `AGENT_EXIT_TOKEN`, `AGENT_EXIT_ADMIN`, `AGENT_EXIT_CODE_HASH`: the token, registry admin and agent code hash the scan expects (else it blocks with `registry_mismatch` or a code-hash finding).
+- `AGENT_EXIT_RPC`, `AGENT_EXIT_RPC_2`: the two RPC providers the scan compares. `.mcp.json` uses two FastNEAR hosts (one operator, chosen because `rpc.testnet.near.org` rate-limits); `check_account` says so (`providers_same_operator`). For an independent cross-check set `AGENT_EXIT_RPC_2=https://rpc.testnet.near.org`.
+- `AGENT_EXIT_FACTORY`: the born-clean factory; without it `scan_agent` returns `born_clean: null`.
+- `AGENT_EXIT_MAX_SHARES_BPS` (default 2500): `buy_agent` refuses an agent with more of its earnings pledged to investors.
+
+Signing keys only from env; the model API key (`NEARAI_API_KEY`) from a mode-600 env file (`~/.agent-exit.env`); a sealed config's one-time key in a 0600 file written by `buy_agent`, never shown to the model. Text that comes from the chain is in
 fields named `untrusted_*`, sanitised and cut to 200 characters.
 
 ## JSON outputs and their schema names

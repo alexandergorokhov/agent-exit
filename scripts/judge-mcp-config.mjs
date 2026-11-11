@@ -34,6 +34,14 @@ const r = deploy.root;
 let born = null;
 try { born = read("out/scenes/scene-9.json"); } catch {}
 if (born && !(born.pass === true && /^[a-z0-9_-]+\.factory\.[a-z0-9._-]+\.testnet$/.test(born.agent ?? "") && born.agent.endsWith(`.${born.factory}`))) born = null;
+// After testnet scene 13 the Exchange agents (born in the same factory) are named too.
+let exchange = [];
+try {
+  const ex = read("out/scenes/scene-13.json");
+  if (born && ex.pass === true && ex.factory === born.factory) {
+    exchange = (ex.board ?? []).map((b) => String(b.agent)).filter((a) => /^[a-z0-9_-]+\.factory\.[a-z0-9._-]+\.testnet$/.test(a) && a.endsWith(`.${born.factory}`));
+  }
+} catch {}
 if (!/^[a-z0-9._-]+\.testnet$/.test(r)) throw new Error(`deploy root ${r} is not a .testnet account`);
 
 const cfg = {
@@ -53,11 +61,13 @@ const cfg = {
       args: ["mcp/dist/src/server.js"],
       env: {
         AGENT_EXIT_NETWORK: "testnet",
-        AGENT_EXIT_AGENTS: [...["translator", "translator3", "cheat"].map((a) => `${a}.${r}`), ...(born ? [born.agent] : [])].join(","),
+        AGENT_EXIT_AGENTS: [...["translator", "translator3", "cheat"].map((a) => `${a}.${r}`), ...(born ? [born.agent] : []), ...exchange].join(","),
         AGENT_EXIT_TOKEN: `xusd.${r}`,
         AGENT_EXIT_ADMIN: r,
         AGENT_EXIT_CODE_HASH: deploy.agent_code_hash,
         // FastNEAR: rpc.testnet.near.org rate-limits (HTTP 429) the K5 reads.
+        // Both are one operator (check_account says so: providers_same_operator);
+        // set AGENT_EXIT_RPC_2=https://rpc.testnet.near.org for an independent cross-check.
         AGENT_EXIT_RPC: "https://rpc.testnet.fastnear.com",
         AGENT_EXIT_RPC_2: "https://test.rpc.fastnear.com",
         AGENT_EXIT_RUNNER_PK: ownerPk,

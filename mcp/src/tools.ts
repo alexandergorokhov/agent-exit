@@ -1,10 +1,10 @@
-// The ten Agent Exit tools. JSON in, JSON out; every input and output has a
+// The thirteen Agent Exit tools. JSON in, JSON out; every input and output has a
 // schema in schemas/mcp/ and names its schema_version.
 //
 // Read tools: list_agents, get_earnings, scan_agent, verify_lockout,
 // list_offers, portfolio, check_claims (runs the others in a private offline
-// sandbox and reports each README claim as pass/fail).
-// Write tools: buy_agent, list_for_sale, buy_share. They need AGENT_EXIT_ALLOW_WRITE=1
+// sandbox and reports each README claim as pass/fail), sandbox, check_account.
+// Write tools: buy_agent, list_for_sale, buy_share, sealed_delivery. They need AGENT_EXIT_ALLOW_WRITE=1
 // and AGENT_EXIT_ACCOUNT_ID in the server env, confirm: true, and buy_agent
 // needs max_price, stays inside the session spend cap, and scans first:
 // any finding refuses the buy before anything is sent.
@@ -39,13 +39,13 @@ export const WRITE_TOOLS: ToolName[] = ["buy_agent", "list_for_sale", "buy_share
 const DESCRIPTIONS: Record<ToolName, string> = {
   list_agents: "List agents with owner, status, price and meter totals (counted = real customers; flagged = self, sub-account or round-trip payments). Read-only. All money is xUSD-FAKE.",
   get_earnings: "Earnings meter of one agent by payer and day: gross, counted, verified (NEAR AI signature checked on-chain), flagged. Read-only.",
-  scan_agent: "Backdoor scan of an agent account before buying: extra or unknown keys, wrong code hash, upgrade methods, open approvals, listing changes. Read-only. Buy only if verdict is clean.",
+  scan_agent: "Backdoor scan of an agent account before buying: extra or unknown keys, wrong code hash, upgrade methods, open approvals, listing changes. Also reports born_clean (true: the factory created the account with no key ever) when the server has AGENT_EXIT_FACTORY set (testnet); otherwise null. Read-only. Buy only if verdict is clean.",
   buy_agent: "Buy a listed agent in one transaction (deed moves, seller's runner key deleted, your runner key added, 70% paid now, 30% earn-out). WRITE: needs confirm: true and max_price; scans first and refuses on any finding.",
   verify_lockout: "After a sale: check that an account (the old seller) no longer owns the agent, has no key on it, and that owner-only calls are refused. Read-only.",
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
-  buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
-  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes and reads the live agents. Read-only; changes nothing in this server. Returns pass/fail per claim and the tool calls to repeat it yourself.",
+  buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. pct must be at least the offer's min_part_pct from list_offers (else SHARE_TOO_SMALL). WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
+  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share, a swapped sealed prompt refunded in full: K1-K7) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes, reads the live agents and adds K8 (a real NEAR AI signature, gate G6, on the previous world agentexit4). Read-only; changes nothing in this server. Returns per claim status pass, fail or unverified_network (testnet: no RPC answered, so not checked) and the tool calls to repeat it yourself.",
   check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
   sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
   sealed_delivery: "Before a buy, action preview shows (or, with confirm, requests) random chunks of the listed sealed config that the seller must prove against the committed Merkle root; buy_agent refuses a listing with a root until its preview is proven. After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
@@ -57,16 +57,18 @@ export const JUDGE_TOUR = {
   name: "judge_tour",
   description: "A 5-minute guided check of Agent Exit for a judge or reviewer: verify the README's claims yourself with the tools, then try to break it.",
   text: [
-    "You are reviewing Agent Exit, a NEAR project that lets anyone buy an AI agent, or a share of its earnings, with the earnings and the handover checked on-chain. All money is xUSD-FAKE (a test token).",
-    "1. Call check_claims. It re-runs the README's main claims (K1-K7) in a private offline sandbox and reports pass/fail with the exact calls.",
+    "You are reviewing Agent Exit, a capital market for AI agents on NEAR: invest in a share of an agent's earnings, or buy the whole agent, with the earnings and the handover checked on-chain. All money is xUSD-FAKE (a test token).",
+    "Steps 1-7 use the offline server (agent-exit in .mcp.json; you act as summarizer.testnet). The account names in them (cheat.testnet, translator.testnet, alice.testnet, research.testnet ...) exist only offline.",
+    "1. Call check_claims. Offline it re-runs the README's main claims K1-K7 in a private sandbox of the real contract code and reports pass or fail with the exact calls.",
     "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
     "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
-    "5. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
-    "6. Point check_account at any NEAR account (offline: trading-bot.testnet, locked-vault.testnet): it names every key and code-change method that lets someone other than the owner move funds or swap the code.",
-    "7. The sealed prompt, after a buy: sealed_delivery on swapped.testnet sale 1 (open, then dispute with confirm in write mode) and brainy.testnet (open, accept); or the sandbox actions commit_config, list, scan, buy, deliver_fake, dispute_config.",
-    "8. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
-    "Offline mode replays results recorded from the real contract code (fixtures/mcp/world.json); with AGENT_EXIT_NETWORK=testnet the same read tools read the live testnet agents named in the README.",
+    "5. Invest: list_offers shows research.testnet offer 1 (20% open, smallest part 2%). Offline, buy_share replays only the recorded buy, as dave.testnet: buy_share {agent: research.testnet, offer_id: 1, pct: 10, max_price: 150, confirm: true} with AGENT_EXIT_ACCOUNT_ID=dave.testnet, then portfolio {account: dave.testnet}. Any other part: sandbox actions reset, offer_share, buy_share, pay_customer, pay_self, claim_share.",
+    "6. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
+    "7. check_account on any NEAR account (offline: trading-bot.testnet, locked-vault.testnet) names every key and code-change method that lets someone other than the owner move funds or swap the code. The sealed prompt: sealed_delivery on swapped.testnet sale 1, open (matches false), then dispute with confirm true: refund_to_buyer 1000.00; brainy.testnet: open, accept.",
+    "8. Live testnet (agent-exit-testnet, read-only, needs RPC): check_claims gives K1-K8 (K8 = gate G6 on the previous world agentexit4). A claim with status unverified_network was not checked because no RPC answered: that is not a failure. scan_agent born1.factory.agentexit5.testnet shows born_clean true; list_agents and list_offers show the Exchange agents translate-pro, research-desk and pump-bot (.factory.agentexit5.testnet).",
+    "9. No RPC? Every testnet transaction is recorded in out/scenes/*.json (txs[].explorer is its NearBlocks link); docs/PROOF.md maps each claim to its offline check and its recorded transaction.",
+    "10. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
   ].join("\n"),
 };
 
@@ -114,6 +116,13 @@ export function toolList(s: SchemaSet): Json[] {
       openWorldHint: false,
     },
   }));
+}
+
+/** An RPC failure where no node answered (fetch failed, timeout, HTTP status),
+ * as opposed to a node answering that a transaction or account differs. */
+export const NETWORK_ERROR_RE = /unreachable|: HTTP \d+|not JSON/;
+function isNetworkError(e: unknown): boolean {
+  return e instanceof ToolError && e.code === "RPC_ERROR" && NETWORK_ERROR_RE.test(e.message);
 }
 
 // ------------------------------------------------------------ untrusted text
@@ -765,7 +774,7 @@ export class Tools {
     const investor = sandbox(rs.investor);
     const claims: Json[] = [];
     const add = (id: string, claim: string, calls: string[], expected: string, observed: string, pass: boolean) =>
-      claims.push({ id, claim, calls, expected, observed: untrusted(observed).slice(0, 300), pass });
+      claims.push({ id, claim, calls, expected, observed: untrusted(observed).slice(0, 300), pass, status: pass ? "pass" : "fail", world: "offline" });
     const errCode = (r: { ok: boolean; body: Json }) => (r.ok ? "ok" : String(r.body.error?.code));
 
     const ec = await buyer.call("get_earnings", { agent: "cheat.testnet" });
@@ -854,7 +863,9 @@ export class Tools {
       claims,
       passed,
       failed: claims.length - passed,
+      unverified: 0,
       pass: passed === claims.length,
+      status: passed === claims.length ? "pass" : "fail",
       next: "Repeat any claim yourself with the calls listed. On testnet (AGENT_EXIT_NETWORK=testnet, read-only) the same tools read the live agents; the README's testnet table links every transaction on NearBlocks.",
     };
   }
@@ -871,6 +882,7 @@ export class Tools {
     const confirm = async (step: string, pick: (t: Json) => boolean = () => true) => {
       const txs = ((data.steps[step]?.txs ?? []) as Json[]).filter((t) => t.tx && t.method && pick(t));
       let ok = 0;
+      let net = 0;
       const bad: string[] = [];
       for (const t of txs) {
         try {
@@ -881,18 +893,33 @@ export class Tools {
           if (match) ok++;
           else bad.push(`${String(t.tx).slice(0, 8)} differs`);
         } catch (e) {
-          bad.push(`${String(t.tx).slice(0, 8)}: ${(e as Error).message.slice(0, 60)}`);
+          if (isNetworkError(e)) net++;
+          else bad.push(`${String(t.tx).slice(0, 8)}: ${(e as Error).message.slice(0, 60)}`);
         }
       }
-      return { ok, n: txs.length, txs: txs.map((t: Json) => String(t.tx)), text: `${ok}/${txs.length} recorded transactions confirmed on chain${bad.length ? ` (${bad.slice(0, 2).join("; ")})` : ""}` };
+      const text = net === txs.length && txs.length > 0
+        ? `0/${txs.length} recorded transactions read: no archival RPC reachable (not checked)`
+        : `${ok}/${txs.length} recorded transactions confirmed on chain${net ? `, ${net} not read (RPC unreachable)` : ""}${bad.length ? ` (${bad.slice(0, 2).join("; ")})` : ""}`;
+      // `net`: not read because no RPC answered; `mismatch`: read and differs.
+      return { ok, n: txs.length, net, mismatch: txs.length - ok - net, txs: txs.map((t: Json) => String(t.tx)), text };
     };
     const live = async (tool: ToolName, args: Json) => {
       const r = await this.call(tool, args);
-      return r.ok ? r.body : { error: r.body.error?.code ?? "ERROR" };
+      if (r.ok) return r.body;
+      const code = String(r.body.error?.code ?? "ERROR");
+      const net = code === "RPC_ERROR" && NETWORK_ERROR_RE.test(String(r.body.error?.message ?? ""));
+      return { error: net ? "RPC_UNREACHABLE" : code, net };
     };
+    type Input = { net?: number | boolean; mismatch?: number };
     const claims: Json[] = [];
-    const add = (id: string, claim: string, calls: string[], expected: string, observed: string, pass: boolean) =>
-      claims.push({ id, claim, calls: calls.slice(0, 6).map((c) => c.slice(0, 160)), expected, observed: untrusted(observed).slice(0, 300), pass });
+    // Three states: pass; fail (something was read and differs); unverified_network
+    // (not everything could be read because no RPC answered, and nothing read differs).
+    const add = (id: string, claim: string, calls: string[], expected: string, observed: string, pass: boolean, inputs: Input[], world = String(root)) => {
+      const anyNet = inputs.some((x) => x.net === true || Number(x.net ?? 0) > 0);
+      const anyMismatch = inputs.some((x) => Number(x.mismatch ?? 0) > 0);
+      const status = pass ? "pass" : anyNet && !anyMismatch ? "unverified_network" : "fail";
+      claims.push({ id, claim, calls: calls.slice(0, 6).map((c) => c.slice(0, 160)), expected, observed: untrusted(observed).slice(0, 300), pass: status === "unverified_network" ? null : pass, status, world: world.slice(0, 64) });
+    };
     const nb = (h: string[]) => h.slice(0, 2).map((x) => `tx ${x}`);
     const a = (n: string) => `${n}.${root}`;
 
@@ -902,57 +929,68 @@ export class Tools {
     add("K1", "Earnings are counted by who paid: the owner's sub-account payment is flagged, NEAR AI-signed jobs are verified (live)",
       [`get_earnings {"agent":"${a("translator3")}"}`, ...nb(inv.txs)], "flagged > 0, verified > 0 now; the 5 customer payments and the sub-account payment confirmed with their payment events",
       `live: counted ${q.counted ?? e3.error}, verified ${q.verified ?? "?"}, flagged ${q.flagged ?? "?"}; ${inv.text}`,
-      Number(q.flagged) > 0 && Number(q.verified) > 0 && inv.ok === inv.n && inv.n > 0);
+      Number(q.flagged) > 0 && Number(q.verified) > 0 && inv.ok === inv.n && inv.n > 0, [inv, e3]);
 
     const sc = await live("scan_agent", { agent: a("cheat") });
     const codes = ((sc.findings ?? []) as Json[]).map((f) => f.code);
     add("K2", "The scan blocks an agent with a hidden full-access key (live keys)", [`scan_agent {"agent":"${a("cheat")}"}`],
       "verdict blocked, finding full_access_key_present", `live: verdict ${sc.verdict ?? sc.error}, findings ${codes.join(", ") || "none"}`,
-      sc.verdict === "blocked" && codes.includes("full_access_key_present"));
+      sc.verdict === "blocked" && codes.includes("full_access_key_present"), [sc]);
 
     const la = await live("list_agents", {});
     const cheat = ((la.agents ?? []) as Json[]).find((x) => x.agent === a("cheat"));
     add("K3", "A blocked agent is never bought: the cheat still belongs to its seller", ["list_agents {}"],
       `owner of ${a("cheat")} is ${a("alice")}`, `live: owner ${cheat?.owner ?? la.error ?? "not listed"}, status ${cheat?.status ?? "?"}`,
-      cheat?.owner === a("alice"));
+      cheat?.owner === a("alice"), [la]);
 
     const sale = await confirm("honest-sale");
     add("K4", "One transaction sells the whole agent: deed moves, sale event, payouts", nb(sale.txs),
       "the listing and the one ft_transfer_call buy confirmed, with settling, nft_transfer and sale events", sale.text,
-      sale.n > 0 && sale.ok === sale.n);
+      sale.n > 0 && sale.ok === sale.n, [sale]);
 
     const brk = await confirm("break-in");
     const lock = await live("verify_lockout", { agent: a("translator"), account: a("alice") });
     add("K5", "After the sale the old seller is locked out: every way back in was refused, and still is (live)",
       [`verify_lockout {"agent":"${a("translator")}","account":"${a("alice")}"}`, ...nb(brk.txs)],
       "each break-in transaction failed as recorded; locked_out true now", `${brk.text}; live: locked_out ${lock.locked_out ?? lock.error}`,
-      brk.n > 0 && brk.ok === brk.n && lock.locked_out === true);
+      brk.n > 0 && brk.ok === brk.n && lock.locked_out === true, [brk, lock]);
 
     const shares = await confirm("invest", (t) => /^dave (buys|claims)/.test(String(t.label)));
     add("K6", "An investor bought 20% of an agent's earnings and claimed exactly 20%", nb(shares.txs),
-      "dave's buy and claim transactions confirmed with their events", shares.text, shares.n > 0 && shares.ok === shares.n);
+      "dave's buy and claim transactions confirmed with their events", shares.text, shares.n > 0 && shares.ok === shares.n, [shares]);
 
     // K7 (scene 10): shown once the sealed-prompt scene is recorded.
     if (data.steps["sealed-prompt"]) {
       const sp = await confirm("sealed-prompt");
       const disp = ((data.steps["sealed-prompt"].txs ?? []) as Json[]).find((t) => t.method === "dispute_config");
       add("K7", "A seller who delivered a different prompt got nothing: the contract decrypted it and refunded the whole price (scene 10)", nb(sp.txs),
-        "every scene-10 transaction confirmed as recorded, including the dispute_config refund and the refused late release", `${sp.text}; dispute ${disp?.ok ? "accepted" : "missing"}`,
-        sp.n > 0 && sp.ok === sp.n && disp?.ok === true);
+        "every scene-10 transaction confirmed as recorded, including the dispute_config refund and the refused late release", `${sp.text}; recorded dispute_config ${disp?.ok ? "succeeded" : "missing"}`,
+        sp.n > 0 && sp.ok === sp.n && disp?.ok === true, [sp]);
     }
 
     const g6 = await confirm("nearai-check");
-    add("K8", "A real NEAR AI Cloud signature was checked by the contract (gate G6)", nb(g6.txs),
-      "the signer registration and the verified payment confirmed", g6.text, g6.n > 0 && g6.ok === g6.n);
+    // G6 was recorded on the previous world (agentexit4): name it from the signer.
+    const g6by = String(((data.steps["nearai-check"]?.txs ?? []) as Json[])[0]?.by ?? root);
+    const g6world = g6by.split(".").slice(-2).join(".");
+    add("K8", `A real NEAR AI Cloud signature was checked by the contract (gate G6, world ${g6world.slice(0, 40)})`, nb(g6.txs),
+      "the signer registration and the verified payment confirmed", g6.text, g6.n > 0 && g6.ok === g6.n, [g6], g6world);
 
-    const passed = claims.filter((x) => x.pass).length;
+    const passed = claims.filter((x) => x.status === "pass").length;
+    const failed = claims.filter((x) => x.status === "fail").length;
+    const unverified = claims.length - passed - failed;
+    const status = failed > 0 ? "fail" : unverified === claims.length ? "network_unreachable" : unverified > 0 ? "unverified_network" : "pass";
     return {
       ...this.base("check_claims"),
       sandbox: `live NEAR testnet, world ${String(root).slice(0, 64)} (recorded ${String(data.run).slice(0, 20)}): recorded transactions re-read from archival nodes, agents read now. Read-only; nothing is sent. All money is xUSD-FAKE.`,
       claims,
       passed,
-      failed: claims.length - passed,
-      pass: passed === claims.length,
+      failed,
+      unverified,
+      pass: status === "pass" ? true : status === "fail" ? false : null,
+      status,
+      ...(unverified > 0 ? { note: unverified === claims.length
+        ? "no RPC reachable: nothing on testnet was checked (this is not a failed claim). Run make judge offline, or open the NearBlocks links in out/scenes/*.json (txs[].explorer)."
+        : `${unverified} claim(s) not checked: an RPC did not answer. Nothing that was read differs. Retry, or open the NearBlocks links in out/scenes/*.json (txs[].explorer).` } : {}),
       next: "Open any transaction on https://testnet.nearblocks.io/txns/<hash>. The offline server (AGENT_EXIT_NETWORK=offline) runs the same claims through the real contract code, including the buy itself.",
     };
   }
@@ -1349,9 +1387,13 @@ export class Tools {
         offers,
       });
     }
+    const recorded = this.backend instanceof OfflineBackend ? this.backend.recordedShareBuys() : [];
     return {
       ...this.base("list_offers"),
       agents,
+      ...(this.backend instanceof OfflineBackend
+        ? { offline_note: `offline: buy_share replays only recorded buys: ${recorded.map((r) => `buy_share {"agent":"${r.agent}","offer_id":${r.offer_id},"pct":${r.pct},"max_price":${r.max_price},"confirm":true} as ${r.investor} (set AGENT_EXIT_ACCOUNT_ID)`).join("; ") || "none"}. Any other part or investor: the sandbox tool (reset, offer_share, buy_share, pay_customer, claim_share), or check_claims K6.`.slice(0, 500) }
+        : {}),
       meaning:
         "a slice gets pct of every future payment to the agent until it ends; half of what you pay goes to the owner now, half is held and released to the owner only by counted (real customer) payments; at the end, escrow still held is refunded to you. Judge the price against counted earnings, not gross",
     };

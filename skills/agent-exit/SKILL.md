@@ -37,6 +37,9 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
    `safe_to_buy` is true. Any `block` finding (an extra full-access key, an
    unknown key, a wrong code hash, an upgrade method, open approvals, a
    changed listing) means do not buy. `inconclusive` also means do not buy.
+   `born_clean: true` means the born-clean factory created the account with
+   no key ever, so no seller key can be hidden: prefer it. `null` means the
+   server has no factory record to check (offline, or no `AGENT_EXIT_FACTORY`).
 4. **Buy inside your limit.** Call `buy_agent` with `max_price` (the most
    you will pay, in xUSD-FAKE dollars) and `confirm: true`. The runner key
    it installs is the server's `AGENT_EXIT_RUNNER_PK`; there is no key
@@ -57,7 +60,9 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
 1. `list_offers`: open slices (a % of every future payment, a price, an end
    date). Judge the price against `counted` earnings, never `gross`.
 2. `buy_share` with `agent`, `offer_id`, `pct`, `max_price` and
-   `confirm: true`. The server runs the investor scan (every key, code and
+   `confirm: true`. `pct` must be at least the offer's `min_part_pct` from
+   `list_offers` (2.5% on the live testnet offer on translator3), else
+   `SHARE_TOO_SMALL`. The server runs the investor scan (every key, code and
    contract rule of the sale scan, without the listing rules) and refuses on
    any finding, above `max_price` or above the session spend cap. Half the
    price goes to the owner now; half is held and released to the owner only

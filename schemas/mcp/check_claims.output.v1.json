@@ -4,31 +4,140 @@
   "title": "check_claims output",
   "type": "object",
   "properties": {
-    "schema_version": { "type": "string", "const": "agent-exit.mcp.check_claims.v1" },
-    "network": { "type": "string", "enum": ["offline", "testnet"] },
-    "sandbox": { "type": "string", "maxLength": 300 },
+    "schema_version": {
+      "type": "string",
+      "const": "agent-exit.mcp.check_claims.v1"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "testnet"
+      ]
+    },
+    "sandbox": {
+      "type": "string",
+      "maxLength": 300
+    },
     "claims": {
       "type": "array",
       "maxItems": 20,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "claim", "calls", "expected", "observed", "pass"],
+        "required": [
+          "id",
+          "claim",
+          "calls",
+          "expected",
+          "observed",
+          "pass",
+          "status"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^K[0-9]{1,2}$" },
-          "claim": { "type": "string", "maxLength": 200 },
-          "calls": { "type": "array", "maxItems": 6, "items": { "type": "string", "maxLength": 160 } },
-          "expected": { "type": "string", "maxLength": 200 },
-          "observed": { "type": "string", "maxLength": 300 },
-          "pass": { "type": "boolean" }
+          "id": {
+            "type": "string",
+            "pattern": "^K[0-9]{1,2}$"
+          },
+          "claim": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "calls": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "string",
+              "maxLength": 160
+            }
+          },
+          "expected": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "observed": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "pass": {
+            "description": "null = not checked: no RPC answered (testnet only)",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "unverified_network"
+            ]
+          },
+          "world": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "offline, or the testnet world the claim was recorded on"
+          }
         }
       }
     },
-    "passed": { "type": "integer", "minimum": 0 },
-    "failed": { "type": "integer", "minimum": 0 },
-    "pass": { "type": "boolean" },
-    "next": { "type": "string", "maxLength": 600 }
+    "passed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pass": {
+      "description": "true: every claim passed; false: at least one failed; null: none failed but some were not checked (no RPC)",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "next": {
+      "type": "string",
+      "maxLength": 600
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "unverified_network",
+        "network_unreachable"
+      ]
+    },
+    "unverified": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 300
+    }
   },
-  "required": ["schema_version", "network", "sandbox", "claims", "passed", "failed", "pass", "next"],
+  "required": [
+    "schema_version",
+    "network",
+    "sandbox",
+    "claims",
+    "passed",
+    "failed",
+    "pass",
+    "next",
+    "status",
+    "unverified"
+  ],
   "additionalProperties": false
 }

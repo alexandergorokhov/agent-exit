@@ -141,6 +141,11 @@
     },
     "meaning": {
       "type": "string"
+    },
+    "offline_note": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "offline only: which share buys were recorded and can be replayed"
     }
   },
   "required": [

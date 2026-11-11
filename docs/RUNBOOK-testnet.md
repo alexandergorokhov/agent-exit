@@ -79,6 +79,8 @@ G2 not run (no Base Sepolia key). Output: `out/gates/`.
 
 ## 6. The six scenes
 
+The links below are from the first run, on an older world. The current recordings are on `agentexit5.testnet` (scene 7 and gate G6 on `agentexit4.testnet`); every scene, 1-13, with its world and key transaction: [`docs/TESTNET.md`](TESTNET.md#scenes).
+
     make scenes      # recording order 3 4 5 1 2 6 -> out/scenes/
 
 | Scene | What it shows | First-run proof |

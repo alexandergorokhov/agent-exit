@@ -48,7 +48,7 @@ test("J5 archival RPCs are on the testnet allowlist; txOutcomeOf reads signer, m
   assert.ok(o.events.includes("sale"));
 });
 
-test("J6 testnet check_claims: recorded transactions confirmed from archival nodes; a tampered one and missing live reads fail", async () => {
+test("J6 testnet check_claims: recorded transactions confirmed from archival nodes; a tampered or unknown one fails; reads with no RPC answer are not checked (pass null)", async () => {
   const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet", AGENT_EXIT_AGENTS: ["translator", "translator3", "cheat"].map((a) => `${a}.${data.root}`).join(",") });
   const { f, urls } = mockFetch();
   const r: { ok: boolean; body: any } = await new Tools(cfg, new TestnetBackend(cfg, f, null), schemas).call("check_claims", {});
@@ -58,9 +58,17 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   const by = Object.fromEntries(body.claims.map((c: any) => [c.id, c]));
   for (const id of ["K4", "K6", "K8"]) assert.equal(by[id].pass, true, `${id}: ${by[id].observed}`);
   assert.match(by.K4.observed, /^2\/2 recorded transactions confirmed on chain$/);
-  // The live reads were refused by the mock, so the live claims fail honestly.
-  for (const id of ["K1", "K2", "K3", "K5"]) assert.equal(by[id].pass, false, id);
-  assert.equal(body.pass, false);
+  // The live reads were refused by the mock (no RPC answered), so those claims
+  // are not checked: never a pass, and never reported as a false claim.
+  for (const id of ["K1", "K2", "K3", "K5"]) {
+    assert.equal(by[id].pass, null, id);
+    assert.equal(by[id].status, "unverified_network", id);
+  }
+  assert.notEqual(body.pass, true);
+  assert.equal(body.status, "unverified_network");
+  assert.equal(body.failed, 0);
+  assert.equal(by.K8.world, "agentexit4.testnet");
+  assert.equal(by.K4.world, data.root);
   assert.ok(urls.every((u) => ARCHIVAL_RPC.includes(u) || cfg.rpc.includes(u)), "only allowlisted hosts");
 
   const sale = data.steps["honest-sale"].txs[1].tx;
@@ -68,5 +76,39 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   const r2: { ok: boolean; body: any } = await new Tools(cfg, new TestnetBackend(cfg, t2.f, null), schemas).call("check_claims", {});
   const k4 = r2.body.claims.find((c: any) => c.id === "K4");
   assert.equal(k4.pass, false);
+  assert.equal(k4.status, "fail");
   assert.match(k4.observed, /1\/2 .*differs/);
+  assert.equal(r2.body.pass, false);
+  assert.equal(r2.body.status, "fail");
+
+  // A transaction the node does not know is a failed claim, not a network problem.
+  const t3 = mockFetch();
+  const g = data.steps["nearai-check"].txs[0].tx;
+  recorded.delete(g);
+  try {
+    const r3: { ok: boolean; body: any } = await new Tools(cfg, new TestnetBackend(cfg, t3.f, null), schemas).call("check_claims", {});
+    const k8 = r3.body.claims.find((c: any) => c.id === "K8");
+    assert.equal(k8.status, "fail", k8.observed);
+    assert.equal(k8.pass, false);
+  } finally {
+    recorded.set(g, data.steps["nearai-check"].txs[0]);
+  }
+
+  // No RPC at all (a sandboxed judge): every claim is not checked (pass null), never false.
+  const down = (async () => {
+    throw new TypeError("fetch failed");
+  }) as unknown as typeof fetch;
+  const r4: { ok: boolean; body: any } = await new Tools(cfg, new TestnetBackend(cfg, down, null), schemas).call("check_claims", {});
+  assert.equal(r4.ok, true, JSON.stringify(r4.body));
+  assert.equal(schemas.validateOutput.check_claims(r4.body), true, JSON.stringify(schemas.validateOutput.check_claims.errors));
+  assert.ok(r4.body.claims.length >= 7);
+  for (const c of r4.body.claims) {
+    assert.equal(c.status, "unverified_network", `${c.id}: ${c.observed}`);
+    assert.equal(c.pass, null, c.id);
+  }
+  assert.equal(r4.body.pass, null);
+  assert.equal(r4.body.status, "network_unreachable");
+  assert.equal(r4.body.failed, 0);
+  assert.match(r4.body.note, /no RPC reachable: nothing on testnet was checked/);
+  assert.match(r4.body.note, /make judge/);
 });

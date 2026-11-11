@@ -1821,5 +1821,5 @@
       }
     }
   ],
-  "what": "the Exchange (after scene-9): the born-clean factory creates six agents for alice (translate-pro, research-desk, pump-bot, support-247, trend-trader, summarize-it), each paid by its own mix of outside customers, the owner and her sub-account; three offer shares of earnings, three are listed for sale; the page's board shows counted and flagged revenue and the price multiple"
+  "what": "the Exchange (after scene-9; EXCHANGE_AGENTS=3): the born-clean factory creates 3 agents for alice, each paid by its own mix of payers: translate-pro (5 outside customers, 100.00 counted) offers 10% of its earnings for 50.00; research-desk (4 outside customers, 120.00 counted) offers 20% for 100.00; pump-bot (410.00 gross, but 400.00 flagged: alice paid 300.00 herself and her sub-account x.alice 100.00; 10.00 counted) is listed for sale at 1,000.00; the page's board shows counted and flagged revenue and the price multiple"
 }

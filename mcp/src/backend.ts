@@ -427,12 +427,24 @@ export class OfflineBackend implements Backend {
     return structuredClone(a.holdings?.[account] ?? { agent: id, investor: account, holdings: [], claimable: "0" });
   }
 
+  /** The share buys this world recorded: offline buy_share replays only these. */
+  recordedShareBuys(): { agent: string; investor: string; offer_id: number; pct: number; max_price: number }[] {
+    return ((this.world.recorded_share_buys as Json[]) ?? []).map((b) => ({
+      agent: String(b.agent),
+      investor: String(b.investor),
+      offer_id: Number(b.offer_id),
+      pct: Number(b.part) / 100,
+      max_price: Number(b.amount) / 1e6,
+    }));
+  }
+
   async buyShare(id: string, investor: string, seen: ShareTerms, part: number, amount: string): Promise<ShareOutcome> {
     const rec = ((this.world.recorded_share_buys as Json[]) ?? []).find(
       (b) => b.agent === id && b.investor === investor && b.offer_id === seen.offer_id && b.part === part && b.amount === amount,
     );
     if (!rec) {
-      throw new ToolError("OFFLINE_NO_RECORDING", "offline mode replays recorded contract results only; this share buy (agent, investor, offer, part, amount) was not recorded", {
+      const hint = this.recordedShareBuys().map((r) => `${r.agent} offer ${r.offer_id} pct ${r.pct} max_price ${r.max_price} as ${r.investor}`).join("; ");
+      throw new ToolError("OFFLINE_NO_RECORDING", `offline replays recorded share buys only. Recorded: ${hint || "none"}. Other parts: the sandbox tool`.slice(0, 400), {
         recorded: ((this.world.recorded_share_buys as Json[]) ?? []).map((b) => ({ agent: b.agent, investor: b.investor, offer_id: b.offer_id, part: b.part, amount: b.amount })),
       });
     }
@@ -908,14 +920,18 @@ export class TestnetBackend implements Backend {
     if (!/^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(hash)) throw new ToolError("BAD_INPUT", "not a transaction hash");
     if (!sender.endsWith(".testnet")) throw new ToolError("NETWORK_REFUSED", `${sender} is not a .testnet account`);
     let last = "";
+    // answered: some node replied (a JSON-RPC error such as UNKNOWN_TRANSACTION),
+    // so the transaction is checked and differs; otherwise no node was reachable.
+    let answered = false;
     for (const url of ARCHIVAL_RPC) {
       try {
         return txOutcomeOf(await this.rpcMethod(url, "tx", { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" }, this.cfg.rpcTimeoutMs));
       } catch (e) {
         last = (e as Error).message;
+        if (last.startsWith("{")) answered = true;
       }
     }
-    throw new ToolError("RPC_ERROR", `transaction ${hash.slice(0, 8)}… not read from the archival RPCs: ${last.slice(0, 160)}`);
+    throw new ToolError("RPC_ERROR", `transaction ${hash.slice(0, 8)}… not read from the archival RPCs${answered ? "" : " (unreachable)"}: ${last.slice(0, 160)}`);
   }
 
   async holdings(id: string, account: string): Promise<Json> {

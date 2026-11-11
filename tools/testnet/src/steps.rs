@@ -2189,7 +2189,7 @@ const EXCHANGE: [Listing; 6] = [
     },
 ];
 
-/// The Exchange: six agents born clean in the factory, each with its own
+/// The Exchange: up to six agents (EXCHANGE_AGENTS=N runs the first N) born clean in the factory, each with its own
 /// payment history (outside customers, the owner's self-pay, a sub-account),
 /// an open share offer or a sale listing. The page's board reads them.
 async fn exchange(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>) -> Res<()> {
