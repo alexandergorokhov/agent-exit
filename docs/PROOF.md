@@ -47,7 +47,7 @@ Use it with your own agent (a standalone account check, a payment guard, the MCP
 
 ## Code hash in 3 commands
 
-The deployed agents run code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF` (sha256 `42d1c5d9f80dee431c930dd5a80061ee425c1ee043d57859b927dea144fe07b2`). Source: tag `testnet-agentexit5` (`70d06b2`), built with `make build` in `sourcescan/cargo-near:0.22.0-rust-1.97.0`. HEAD differs in the contract source by one lint-only line (`aa95854`).
+The deployed agents run code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF` (sha256 `42d1c5d9f80dee431c930dd5a80061ee425c1ee043d57859b927dea144fe07b2`). Source: commit `70d06b2`, built with `make build` in `sourcescan/cargo-near:0.22.0-rust-1.97.0`. HEAD differs in the contract source by one lint-only line (`aa95854`).
 
 ```sh
 # 1. The committed wasm (offline): prints the hex above
