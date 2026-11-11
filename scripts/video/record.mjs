@@ -64,10 +64,13 @@ async function card(lines, ms) {
     if (!c) {
       c = document.createElement("div");
       c.id = "vid-card";
-      c.style.cssText = "position:fixed;inset:0;z-index:100000;background:#0b1510;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:600 30px/1.35 Inter,system-ui,sans-serif;text-align:center;padding:40px";
+      c.style.cssText = "position:fixed;inset:0;z-index:100000;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:600 30px/1.35 Inter,system-ui,sans-serif;text-align:center;padding:40px";
       document.body.appendChild(c);
     }
-    c.replaceChildren(...lines.map((l, i) => { const d = document.createElement("div"); d.textContent = l; if (i === 0) d.style.cssText = "font-size:56px;font-weight:800"; else if (l.startsWith("http")) d.style.cssText = "color:#3ddc97;font-size:26px"; return d; }));
+    c.replaceChildren(...lines.map((l, i) => {
+      if (l.startsWith("img:")) { const im = document.createElement("img"); im.src = l.slice(4); im.alt = ""; im.style.cssText = "width:560px;border-radius:24px"; return im; }
+      const d = document.createElement("div"); d.textContent = l; if (i === 0) d.style.cssText = "font-size:56px;font-weight:800"; else if (l.startsWith("http")) d.style.cssText = "color:#3ddc97;font-size:26px"; return d;
+    }));
     c.style.display = lines.length ? "flex" : "none";
   }, lines);
   const spoken = lines.length ? say(cardSpeech(lines)) : 0;
@@ -98,7 +101,7 @@ const openAgent = async (name, ms) => { await p.click(`.mk-deed[data-agent="${na
 const closeAgent = async () => { await p.keyboard.press("Escape"); await wait(500); };
 
 // Shot 1: the claim, then the market.
-await card(["Agent Exit", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is test dollars."], 4000);
+await card(["img:media/logo.png", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is test dollars."], 4000);
 await card([], 0);
 await caption("A market of AI agents, recorded on NEAR testnet. Each one carries a verdict.", 4000);
 
@@ -174,7 +177,7 @@ await caption("Check, buy in one transaction, seller locked out. Every claim is 
 
 // End card.
 await caption("", 0);
-await card(["Agent Exit", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
+await card(["img:media/logo.png", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
 
 await quiet();
 await ctx.close();

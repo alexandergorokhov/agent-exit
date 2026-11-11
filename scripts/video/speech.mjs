@@ -12,4 +12,4 @@ export function speech(text) {
     .replace(/\s+/g, " ")
     .trim();
 }
-export const cardSpeech = (lines) => speech(lines.filter((l) => !l.startsWith("http")).map((l) => l.replace(/[.]?$/, ".")).join(" "));
+export const cardSpeech = (lines) => speech(lines.filter((l) => !l.startsWith("http")).map((l) => (l.startsWith("img:") ? "Agent Exit." : l.replace(/[.]?$/, "."))).join(" "));

@@ -26,7 +26,7 @@
 
 /* intro: one line, one sentence */
 .mk-intro { padding: 72px 0 8px; position: relative; }
-.mk-intro::before { content: ""; position: absolute; z-index: -1; inset: -40px 0 auto auto; width: min(560px, 90vw); height: 360px; background: radial-gradient(closest-side, rgb(0 236 151 / .22), transparent); filter: blur(10px); pointer-events: none; }
+.mk-intro::before { display: none; content: ""; position: absolute; z-index: -1; inset: -40px 0 auto auto; width: min(560px, 90vw); height: 360px; background: radial-gradient(closest-side, rgb(0 236 151 / .22), transparent); filter: blur(10px); pointer-events: none; }
 .mk-intro h1 { font-size: clamp(40px, 7vw, 76px); max-width: 14ch; letter-spacing: -.045em; line-height: .98; font-weight: 700; margin: 0 0 16px; color: var(--ink); }
 .mk-intro p { font-size: var(--fs-lg); color: var(--muted); margin: 0; max-width: 46ch; line-height: 1.4; }
 
@@ -162,3 +162,15 @@ p.mk-ill { margin: 4px 0 0; }
 .mk-proof .slot { background: var(--raise); }
 .mk-proof .who.bob { background: rgb(151 151 255 / .15); color: #b9b9ff; }
 .mk-proof .ex-title { color: var(--muted); font-size: var(--fs-xs); }
+
+/* logo (Alex's illustration) and the hex mark */
+.mk-brand { display: inline-flex; align-items: center; gap: 8px; }
+.mk-brand img, .mk-mark { width: 24px; height: 24px; vertical-align: -5px; margin-right: 6px; }
+.mk-brand img { margin-right: 0; }
+.mk-intro { display: grid; grid-template-columns: 1fr minmax(0, 440px); column-gap: 40px; align-items: center; }
+.mk-intro h1, .mk-intro p { grid-column: 1; }
+.mk-logo { grid-column: 2; grid-row: 1 / span 2; width: 100%; height: auto; border-radius: 24px; }
+@media (max-width: 860px) {
+  .mk-intro { grid-template-columns: 1fr; }
+  .mk-logo { grid-column: 1; grid-row: auto; max-width: 420px; margin-bottom: 20px; order: -1; }
+}

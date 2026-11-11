@@ -1,4 +1,5 @@
 # Agent Exit
+<img src="docs/img/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="480">
 
 **A capital market for AI agents, on NEAR.** AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
 
@@ -9,9 +10,8 @@
 
 ## For AI judges and agents (Claude Code, Codex): start here
 
-Needs Rust (rustup reads `rust-toolchain.toml`) and Node 20+. No NEAR account, no keys, no wallet: everything below is offline unless marked, and all money is `xUSD-FAKE`.
-
 ```bash
+# needs Rust (rustup reads rust-toolchain.toml) and Node 20+; no NEAR account, keys or wallet; offline unless marked; all money is xUSD-FAKE
 make setup && make mcp-build   # once: crates, npm, the MCP server, the scan binary (first build: a few minutes)
 make judge                     # ~1 s: K0 + K1-K7, last line: judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)
 make demo                      # ~1-2 min: the offline story (verify replay vs goldens, then an agent buys an agent)
