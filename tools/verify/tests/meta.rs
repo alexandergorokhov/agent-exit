@@ -896,7 +896,7 @@ fn readme_top_is_short_and_links_the_moved_proof() {
 fn submission_is_short_and_complete() {
     let s = read("docs/SUBMISSION.md");
     assert!(
-        s.chars().count() < 2000,
+        s.chars().count() < 4500, // the form fields and X post text (867ba6d) live here too
         "docs/SUBMISSION.md is {} characters",
         s.chars().count()
     );
