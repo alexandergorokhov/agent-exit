@@ -195,8 +195,13 @@ fn web_demo_data_is_recorded_from_the_contract() {
     for e in std::fs::read_dir(root().join("out/scenes")).unwrap() {
         recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
     }
-    // Gate G6 and the AI buyer's testnet run are recorded runs too.
-    for f in ["out/gates/g6.json", "out/llm-buyer-testnet.json"] {
+    // Gate G6, the AI buyer's testnet run and the Invest button's signed
+    // transaction are recorded runs too.
+    for f in [
+        "out/gates/g6.json",
+        "out/llm-buyer-testnet.json",
+        "out/invest-button-testnet.json",
+    ] {
         recorded.push_str(&std::fs::read_to_string(root().join(f)).unwrap_or_default());
     }
     let mut n = 0;
@@ -574,6 +579,7 @@ fn readme_testnet_links_are_recorded_runs() {
     for f in [
         "out/llm-buyer-testnet.json",
         "out/agent-invests-testnet.json",
+        "out/invest-button-testnet.json",
     ] {
         let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
