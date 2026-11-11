@@ -86,6 +86,14 @@ web: ## Serve the demo page on http://127.0.0.1:8080 (offline, recorded; ?networ
 check-links: ## Every tx the page links is known to NEAR testnet (archival RPC; needs network)
 	node scripts/check-tx-links.mjs
 
+.PHONY: attest attest-check
+attest: ## [online, $$0] G7: fetch NEAR AI Cloud's attestation report for the G6 model (no completion, no charge) with a fresh nonce; check it binds the contract's signer (TDX quote via Phala's DCAP verifier, GPU via NVIDIA NRAS) -> out/gates/g7-attestation.json
+	node scripts/attest/verify-nearai-attestation.mjs fetch
+
+attest-check: ## [offline] G7: re-check the saved attestation report (network checks show as unverified) and run its tests
+	node scripts/attest/verify-nearai-attestation.mjs check --offline
+	node --test scripts/attest/test/verify.test.mjs
+
 .PHONY: web-test
 web-test: ## Playwright smoke test of the page (Chromium, desktop + 375px, no network)
 	@command -v node >/dev/null || { echo "node not installed: web-test needs Node >= 20" >&2; exit 1; }
