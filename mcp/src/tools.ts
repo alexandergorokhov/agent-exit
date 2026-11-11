@@ -1106,7 +1106,23 @@ export class Tools {
   }
 
   private async buyAgent(agent: string, maxPrice: number, confirm: boolean, a: Json): Promise<Json> {
-    const buyer = this.writeGate();
+    let buyer: string;
+    try {
+      buyer = this.writeGate();
+    } catch (e) {
+      // With writes off, still tell the caller when the agent would be refused
+      // anyway: the scan is a read, so it runs and a block wins (nothing is sent).
+      if (e instanceof ToolError && e.code === "WRITE_DISABLED") {
+        const r = await this.scan(agent, {}).catch(() => null);
+        if (r && r.verdict !== "clean" && r.verdict !== "inconclusive") {
+          throw new ToolError("SCAN_BLOCKED", `scan verdict ${r.verdict}: not buying (writes are also disabled on this server)`, {
+            findings: findings(r).filter((f) => f.severity === "block"),
+            untrusted_notice: UNTRUSTED_NOTICE,
+          });
+        }
+      }
+      throw e;
+    }
     if (confirm !== true) throw new ToolError("CONFIRM_REQUIRED", "buy_agent needs confirm: true");
     // Review-4 L4: on testnet only agents the operator listed can be bought. The
     // model chooses `confirm` and `max_price`; it cannot widen this list or the cap.

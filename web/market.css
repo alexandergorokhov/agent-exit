@@ -151,3 +151,14 @@ p.mk-ill { margin: 4px 0 0; }
 .mk code { color: var(--text); }
 .mk details > summary { color: var(--accent); }
 
+
+/* proof.html on the same dark theme (body.mk.mk-proof) */
+.mk-proof .hero { background: radial-gradient(900px 360px at 85% -10%, rgb(0 236 151 / .16) 0%, transparent 60%), var(--bg); }
+.mk-proof .hero h1, .mk-proof h2, .mk-proof h3 { color: var(--ink); }
+.mk-proof .top { background: rgb(0 0 0 / .8); border-bottom: 1px solid var(--line); }
+.mk-proof .ex-table tr.ex-featured td, .mk-proof .ex-table tr.ex-featured { background: rgb(0 236 151 / .08); }
+.mk-proof .steps a[aria-current="step"] { background: rgb(0 236 151 / .08); }
+.mk-proof .stat { background: var(--raise); }
+.mk-proof .slot { background: var(--raise); }
+.mk-proof .who.bob { background: rgb(151 151 255 / .15); color: #b9b9ff; }
+.mk-proof .ex-title { color: var(--muted); font-size: var(--fs-xs); }

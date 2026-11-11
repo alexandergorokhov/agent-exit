@@ -1168,7 +1168,8 @@
       "verified": "50.00",
       "flagged": "20.00",
       "payments": 11,
-      "source": "out/agent-invests-testnet.json"
+      "source": "out/agent-invests-testnet.json",
+      "days": 1
     }
   }
 }

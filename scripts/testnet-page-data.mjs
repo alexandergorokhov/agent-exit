@@ -96,7 +96,7 @@ if (existsSync("out/scenes/scene-12.json")) {
       if (existsSync("out/agent-invests-testnet.json")) {
         const inv = JSON.parse(readFileSync("out/agent-invests-testnet.json", "utf8"));
         const e = (inv.steps || []).map((x) => x.response && x.response.earnings).find(Boolean);
-        if (e) out.open_offer.earnings = { gross: e.gross, counted: e.counted, verified: e.verified, flagged: e.flagged, payments: e.payments, source: "out/agent-invests-testnet.json" };
+        if (e) out.open_offer.earnings = { gross: e.gross, counted: e.counted, verified: e.verified, flagged: e.flagged, payments: e.payments, days: Array.isArray(e.days) ? e.days.length : null, source: "out/agent-invests-testnet.json" };
       }
     }
   }

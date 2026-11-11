@@ -7,12 +7,13 @@
   <title>Agent Exit demo</title>
   <meta name="description" content="Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="market.css">
   <script type="module" src="app.js"></script>
   <script type="module" src="playground.js"></script>
   <script type="module" src="scenarios.js"></script>
   <script type="module" src="account.js"></script>
 </head>
-<body>
+<body class="mk mk-proof">
   <nav class="top" aria-label="Sections"><div class="wrap">
     <a class="brand" href="#">Agent Exit</a>
     <span class="nav-row"><a href="#exchange">Exchange</a><a href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a href="#evidence-run">Proof</a><a class="nav-judges" href="#for-judges">For judges</a></span>
@@ -29,7 +30,7 @@
           <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:15)</a>
           <p class="verify-links small">Live on NEAR testnet: <a href="#run-invest">earnings</a> · <a href="#run-sale">lockout</a> · <a href="#run-cheat">cheat caught</a> · <a href="https://github.com/alexandergorokhov/near-transparent-agent-market" target="_blank" rel="noopener noreferrer">Source code</a></p>
         </div>
-        <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on every sale and share buy, taken in the same transaction (<a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
+        <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on what sellers are paid upfront for agents and shares (<a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
       </div>
       <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet. <a href="#evidence-run">Check it yourself</a>.</p></div>
     </div>

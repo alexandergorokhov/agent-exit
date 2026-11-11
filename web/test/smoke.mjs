@@ -440,7 +440,7 @@ try {
         for (const h of rec.open_offer.offer.holders) assert.ok(inv.some((t) => t.includes(h.account) && /MCP agent/.test(t)), `I1: ${h.account} labelled as the MCP agent investor`);
         if (rec.open_offer.example_tx) assert.ok(inv.some((t) => t.includes(rec.open_offer.example_tx.account) && /Invest button/.test(t) && /signed by script/.test(t)), "I1: the Invest-button tx is listed and labelled");
         // E1 (loop 45): an honest note on the early multiple, from the data.
-        assert.match(await vp.locator("#iy-early").textContent(), /^Early: 1 day of revenue \(50\.00\)\. The price is 250\.00 for 25% of earnings until 30 Nov 2026\.$/, "E1: early note on the invest card");
+        assert.match(await vp.locator("#iy-early").textContent(), /^Early: 1 day of revenue \(100\.00\)\. The price is 250\.00 for 25% of earnings until 30 Nov 2026\.$/, "E1: early note on the invest card");
         checks += 3;
         // W9: one-click wallet links. Disabled until a valid account is typed; then the link is
         // MyNearWallet's /sign page with one transaction (faucet + buy) signed by that account.
@@ -613,7 +613,7 @@ try {
       assert.match(await stat.textContent(), /14\.00 of 70\.00\s*paid to the investor \(20%\)/, "B2: hero payout stat");
       assert.equal(await stat.locator("a").getAttribute("href"), pay.claim.explorer, "B2: the stat links the claim tx");
       const hero = await q.textContent("header.hero");
-      assert.ok(hero.includes("How it earns: a 1% fee on every sale and share buy, taken in the same transaction"), "B2: business model line");
+      assert.ok(hero.includes("How it earns: a 1% fee on what sellers are paid upfront for agents and shares"), "B2: business model line");
       assert.ok(/no server of ours touches the money/.test(hero), "B2: running cost line");
       assert.equal(await q.locator('header.hero a[href$="docs/BUSINESS.md"]').count(), 1, "B2: links BUSINESS.md");
       assert.equal(await q.locator('header.hero a', { hasText: "Source code" }).count(), 1, "B9: source code link in the hero");

@@ -24,6 +24,10 @@ for (const env of envs) {
         agent: "translator.testnet", max_price: 1000, confirm: true,
       });
       assert.equal(b.body.error.code, "WRITE_DISABLED");
+      // A blocked agent is still reported as blocked: the scan is a read.
+      const c = await s.call("buy_agent", { agent: "cheat.testnet", max_price: 600, confirm: true });
+      assert.equal(c.body.error.code, "SCAN_BLOCKED", JSON.stringify(c.body));
+      assert.equal(c.body.sent, false);
       const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
       assert.equal(l.body.error.code, "WRITE_DISABLED");
       const sh = await s.call("buy_share", { agent: "research.testnet", offer_id: 1, pct: 10, max_price: 150, confirm: true });

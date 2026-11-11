@@ -422,7 +422,11 @@ async function renderExchange() {
   const o = t.open_offer;
   for (const c of (dd && dd.cards) || []) {
     if (!c.bar) continue;
-    const counted = c.bar.real, gross = c.bar.real + c.bar.self;
+    // The open-offer agent shows its earnings when the offer was bought into
+    // (data/testnet.json open_offer.earnings), the same numbers as the market page.
+    const live = o && o.agent === c.agent && o.earnings ? o.earnings : null;
+    const counted = live ? Number(live.counted) : c.bar.real, gross = live ? Number(live.gross) : c.bar.real + c.bar.self;
+    const selfPaid = live ? Number(live.flagged) : c.bar.self;
     const payers = Number((/from (\d+) paying/.exec((c.rows.find(([k]) => /^Counted/.test(k)) || [])[1] || "") || [])[1] || 0);
     const ask = Number((/([\d.]+)$/.exec(c.deal || "") || [])[1] || 0);
     let deal = c.deal_short || c.deal, value = ask || null, target = `#case-${c.name}`, featured = false, early = null;
@@ -435,7 +439,7 @@ async function renderExchange() {
     } else if (c.name === "translator") {
       deal = `sold to bob for ${money(ask)}`;
     }
-    rows.push({ name: c.name, counted, payers, deal, target, featured, early, flaggedPct: gross ? (100 * c.bar.self) / gross : 0,
+    rows.push({ name: c.name, counted, payers, deal, target, featured, early, flaggedPct: gross ? (100 * selfPaid) / gross : 0,
       multiple: value && counted > 0 ? value / counted : Infinity });
   }
   // Featured first (the agent you can invest in now), then by price over revenue.
@@ -446,7 +450,8 @@ async function renderExchange() {
     if (key) rows.sort(cmp(key)); else rows.sort((a, b) => (Number(!!b.featured) - Number(!!a.featured)) || cmp("multiple")(a, b));
     const flag = (r) => r.flaggedPct >= 50;
     tbody.replaceChildren(...rows.map((r) => el("tr", { class: [flag(r) ? "ex-caught" : "", r.featured ? "ex-featured" : "", r.target ? "ex-link" : ""].join(" ").trim() || null, "data-target": r.target },
-      el("td", { "data-label": "Agent", class: "ex-name" }, r.target ? el("a", { href: r.target }, el("code", { text: r.name })) : el("code", { text: r.name }), " ",
+      el("td", { "data-label": "Agent", class: "ex-name" }, r.target ? el("a", { href: r.target }, el("code", { text: r.name })) : el("code", { text: r.name }),
+        TITLES[r.name] ? el("small", { class: "ex-title", text: ` ${TITLES[r.name]}` }) : null, " ",
         flag(r) ? el("span", { class: "pill block", text: `caught: ${r.flaggedPct.toFixed(0)}% self-paid` })
           : r.featured ? el("span", { class: "pill pass", text: "open to invest" }) : null),
       el("td", { "data-label": "Real revenue", class: "num", text: r.counted.toFixed(2) }),
@@ -483,12 +488,14 @@ renderExchange().catch(() => { /* the board stays hidden */ });
 function offerNote(o, card) {
   if (!o || !card) return null;
   const cents = (raw) => Math.round(Number(BigInt(raw)) / 1e4);
-  return earlyNote({ days: Number(card.revenue_days || 0), counted: Math.round(card.bar.real * 100), price: cents(o.offer.price), bps: Number(o.offer.bps), end: Number(BigInt(o.offer.end) / 1000000n) });
+  return earlyNote({ days: Number((o.earnings && o.earnings.days) || card.revenue_days || 0), counted: Math.round((o.earnings ? Number(o.earnings.counted) : card.bar.real) * 100), price: cents(o.offer.price), bps: Number(o.offer.bps), end: Number(BigInt(o.offer.end) / 1000000n) });
 }
 
 // "Invest yourself": the open offer recorded by scene 12. Hidden until the
 // offer exists in data/testnet.json. The wallet returns here with the tx hash,
 // which is shown as a receipt and kept in this browser (localStorage).
+// The market page's product names (web/market.js), next to the account names.
+const TITLES = { translator3: "Lingo Live", "translate-pro": "Translate Pro", "research-desk": "Research Desk", "pump-bot": "TrendPulse", cheat: "QuickQuote", translator: "Polyglot" };
 const NB = "https://testnet.nearblocks.io";
 const MY_KEY = "ae.myInvestments";
 function loadMine() {
