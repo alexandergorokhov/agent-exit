@@ -5,11 +5,11 @@ All money shown is `xUSD-FAKE`; say so once, on screen.
 
 ## The narrated page video (scripted, offline)
 
-`web/media/agent-exit-demo.mp4` (2:41) is recorded from the market page with captions and a voiceover:
+`web/media/agent-exit-demo.mp4` (2:12) is recorded from the market page with captions and a voiceover:
 
 ```bash
-PIPER=/path/to/piper PIPER_MODEL=/path/to/en-us-libritts-high.onnx PIPER_SPEAKER=100 node scripts/video/voice.mjs # optional: one wav per caption, Piper TTS, free and offline
-node web/serve.mjs 8090 &  node scripts/video/record.mjs                                          # each caption waits for its spoken line
+PIPER=/path/to/piper PIPER_MODEL=/path/to/en-us-libritts-high.onnx PIPER_SPEAKER=100 node scripts/video/voice.mjs # optional: one wav per narration line in scripts/video/script.mjs, Piper TTS, free and offline
+node web/serve.mjs 8090 &  node scripts/video/record.mjs                                          # each shot waits for its spoken line
 bash scripts/video/encode.sh                                                                      # mp4 + GIF; mixes the narration in (scripts/video/mix.mjs)
 ```
 
