@@ -29,6 +29,9 @@ async function caption(text, ms = 3000, big = false) {
       c.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:rgba(10,20,16,.88);color:#fff;font:600 26px/1.3 Inter,system-ui,sans-serif;padding:16px 40px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.25)";
       document.body.appendChild(c);
     }
+    // An open agent panel sits in the top layer: keep the caption beside it, not under it.
+    const d = document.querySelector("dialog[open]");
+    c.style.right = d ? `${d.getBoundingClientRect().width}px` : "0";
     c.style.fontSize = big ? "34px" : "26px";
     c.textContent = t;
     c.style.display = t ? "block" : "none";
@@ -68,25 +71,39 @@ async function mark(sel, on = true) {
 }
 
 await p.goto(URL_);
-await p.waitForSelector("#proof-strip .ps-stats li");
-await p.waitForSelector("#dd-cards .dd-card");
+await p.waitForSelector("#market[data-ready]");
+await p.waitForSelector('#play[data-ready="1"]');
+const openAgent = async (name, ms) => { await p.click(`.mk-deed[data-agent="${name}"]`); await wait(400 + ms); };
+const closeAgent = async () => { await p.keyboard.press("Escape"); await wait(500); };
 
-// Shot 1 (0:00-0:14): the claim, then the proof on the first screen.
-await card(["Agent Exit", "A capital market for AI agents.", "Invest in an agent by its proven revenue, or buy it whole. The seller is locked out."], 4000);
+// Shot 1: the claim, then the market.
+await card(["Agent Exit", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is test dollars."], 4000);
 await card([], 0);
-await caption("Recorded on NEAR testnet: 5 of 5 customer payments signed by NEAR AI, checked on-chain", 3800);
-await caption("20% of earnings paid to an investor, exactly", 3200);
-await caption("After a one-transaction sale, the old seller tried 6 ways back in on testnet. All refused: 6 of 6.", 3500);
+await caption("A market of AI agents, recorded on NEAR testnet. Each one carries a verdict.", 4000);
 
-// Shot 2 (0:14-0:34): what a buyer sees before paying.
-await scrollTo("#diligence");
-await caption("Before paying, a buyer sees revenue split by who paid", 3500);
-await mark('[data-agent="cheat"]');
-await caption("cheat: all 500.00 was paid by the owner and the owner's sub-accounts, plus a hidden full-access key. Do not buy.", 5500);
-await mark('[data-agent="translator"],[data-agent="translator3"]');
-await caption("translator: 72% from outside customers, clean keys. translator3: every job signed by NEAR AI.", 5500);
+// Shot 2: the verdicts a buyer sees before paying.
+await p.click('#filters button[data-f="flag"]');
+await caption("Flagged: revenue its own owner paid, or a hidden key", 2500);
+await openAgent("pump-bot", 0);
+await caption("pump-bot shows 410.00 of revenue. 400.00 came from its owner, so only 10.00 counts.", 5000);
+await closeAgent();
+await openAgent("cheat", 0);
+await caption("cheat: all revenue self-paid, and a hidden key. Buying is refused before any money moves.", 5000);
+await closeAgent();
+await p.click('#filters button[data-f="sold"]');
+await openAgent("translator", 0);
+await caption("translator was sold in one transaction. The seller then tried 6 ways back in. All 6 failed on testnet.", 5500);
+await closeAgent();
+await p.click('#filters button[data-f="all"]');
+await openAgent("translator3", 0);
+await caption("translator3: every counted job signed by NEAR AI. Anyone can buy 2.5% of its earnings for 25 test dollars.", 5000);
+await p.fill("#mk-account", "judge.testnet");
+await caption("Type a testnet account: one signature in MyNearWallet buys the share", 3500);
+await closeAgent();
+await openAgent("research-desk", 0);
+await caption("AI agents can buy too: one MCP call, and the server scans before it pays", 4500);
+await closeAgent();
 
-await mark("", false);
 // Shot 3: invest instead of buying (business first).
 await scrollTo("#play");
 await p.locator('#missions button[data-mission="invest"]').click();
@@ -130,22 +147,13 @@ await act("open_config", 2400);
 await caption("The contract decrypts and hashes the delivery itself: it does not match, so the whole price goes back to bob", 0);
 await act("dispute_config", 4200);
 
-// Shot 6: recorded on testnet, the owner only sets the constraints.
-if (await p.locator('#scenarios [data-scenario="day"], [data-scenario="day"]').count()) {
-  await p.evaluate(() => { const m = document.querySelector(".sc-more"); if (m) m.open = true; });
-  await scrollTo('[data-scenario="day"]');
-  await caption("On testnet: a business day. The owner set limits once; the agent paid a supplier, hit its daily cap, and dave got exactly 20%", 5000);
-}
-
-// Shot 7: a judge can invest too, with their own testnet account.
-if (await p.locator("#invest-yourself:not([hidden])").count()) {
-  await scrollTo("#invest-yourself");
-  await caption("Your turn: free test dollars, then buy 2.5% of a live agent's earnings in one signature on NEAR testnet", 5000);
-}
+// Shot 6: how a sale works, in one line each.
+await scrollTo("#how");
+await caption("Check, buy in one transaction, seller locked out. Every claim is checked on testnet on the For judges page.", 5000);
 
 // End card.
 await caption("", 0);
-await card(["Agent Exit", "Invest in agents. Exit cleanly.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
+await card(["Agent Exit", "Buy AI agents by what they really earn.", "Live on NEAR testnet. All money is fake test money.", "https://near-transparent-agent-market-web.vercel.app"], 5000);
 
 await ctx.close();
 await browser.close();

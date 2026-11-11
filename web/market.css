@@ -63,7 +63,7 @@
 .mk-panel { overflow-x: hidden; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(520px, 100vw); max-width: 100vw; border: 0; padding: 0; background: var(--surface); box-shadow: -12px 0 40px rgb(0 0 0 / .12); }
 .mk-panel::backdrop { background: rgb(15 26 23 / .35); }
 @media (prefers-reduced-motion: no-preference) { .mk-panel[open] { animation: slide .18s ease-out; } @keyframes slide { from { transform: translateX(24px); opacity: .6; } } }
-.panel-close { position: absolute; top: 16px; right: 20px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 22px; cursor: pointer; color: var(--text-2); }
+.panel-close { position: absolute; top: 16px; right: 28px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 22px; cursor: pointer; color: var(--text-2); }
 .panel-body { padding: 28px 28px 40px; display: flex; flex-direction: column; gap: 18px; }
 .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-right: 52px; }
 .panel-head > div { min-width: 0; }
