@@ -46,7 +46,7 @@ export function signUrl(txs, callbackUrl) {
 
 // The page's two buttons, from data/testnet.json's open_offer.
 // invest: one transaction to the token: take test dollars from the faucet, then
-// buy a 1% part with them (ft_transfer_call carries the offer's exact terms).
+// buy the offer's smallest part (part_bps) with them (ft_transfer_call carries the offer's exact terms).
 export function investTx(offer, signerId) {
   return { signerId, receiverId: offer.xusd, actions: [
     { method: "faucet", args: { amount: offer.amount }, gasTgas: 30, deposit: 0 },

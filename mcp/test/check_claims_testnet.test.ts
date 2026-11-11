@@ -112,3 +112,31 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   assert.match(r4.body.note, /no RPC reachable: nothing on testnet was checked/);
   assert.match(r4.body.note, /make judge/);
 });
+
+test("J7 (review 6, L4) a live read that answered with a failing condition is a fail, even when another input had no RPC answer", async () => {
+  const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet", AGENT_EXIT_AGENTS: ["translator", "translator3", "cheat"].map((a) => `${a}.${data.root}`).join(",") });
+  const brk = data.steps["break-in"].txs.find((t: any) => t.tx && t.method).tx;
+  const inv = data.steps["invest"].txs.find((t: any) => t.tx && t.method && /pays translator3/.test(String(t.label))).tx;
+  const { f: base } = mockFetch();
+  // One break-in tx and one invest tx are unreachable; everything else answers.
+  const f = (async (url: string, init: any) => {
+    const body = JSON.parse(init.body);
+    if (body.method === "tx" && (body.params.tx_hash === brk || body.params.tx_hash === inv)) throw new TypeError("fetch failed");
+    return base(url, init);
+  }) as unknown as typeof fetch;
+  const t = new Tools(cfg, new TestnetBackend(cfg, f, null), schemas);
+  const orig = t.call.bind(t);
+  // Live reads answer, but with the claim's condition false.
+  (t as any).call = async (name: string, args: any) => {
+    if (name === "verify_lockout") return { ok: true, body: { locked_out: false } };
+    if (name === "get_earnings") return { ok: true, body: { earnings: { counted: "10.00", verified: "0.00", flagged: "0.00" } } };
+    return orig(name as any, args);
+  };
+  const r: { ok: boolean; body: any } = await t.call("check_claims", {});
+  assert.equal(r.ok, true, JSON.stringify(r.body));
+  const by = Object.fromEntries(r.body.claims.map((c: any) => [c.id, c]));
+  assert.equal(by.K5.status, "fail", by.K5.observed);
+  assert.equal(by.K5.pass, false);
+  assert.equal(by.K1.status, "fail", by.K1.observed);
+  assert.equal(r.body.status, "fail");
+});

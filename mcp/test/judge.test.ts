@@ -53,6 +53,10 @@ test("J3 the judge_tour prompt is listed and names check_claims", async () => {
     assert.match(text, /check_claims/);
     assert.match(text, /verify_lockout/);
     assert.match(text, /xUSD-FAKE/);
+    // Cold judge F4: the invest step works from .mcp.json as shipped (sandbox), dave's replay is optional.
+    const step5 = text.split("\n").find((l) => l.startsWith("5. "))!;
+    assert.match(step5, /sandbox tool .*offer_share.*buy_share.*pay_customer.*claim_share/);
+    assert.match(step5, /Optional: .*dave\.testnet/);
   } finally {
     await s.close();
   }
@@ -76,4 +80,22 @@ test("J4 .mcp.json: both servers point at the built server, never mainnet; the o
   } finally {
     await s.close();
   }
+});
+
+test("J8 (cold judge F2) setup env reaches the server; a missing scan binary is a setup error (exit 4), not failed claims", async () => {
+  const { passThroughEnv } = await import("../src/client.js");
+  const env = passThroughEnv({ AGENT_EXIT_SCAN_BIN: "/x/scan", CARGO_TARGET_DIR: "/t", HTTPS_PROXY: "http://p", no_proxy: "localhost", AGENT_EXIT_PRIVATE_KEY: "ed25519:SECRET", AGENT_EXIT_ACCOUNT_ID: "mallory.testnet" });
+  assert.deepEqual(env, { AGENT_EXIT_SCAN_BIN: "/x/scan", CARGO_TARGET_DIR: "/t", HTTPS_PROXY: "http://p", no_proxy: "localhost" });
+
+  const { spawnSync } = await import("node:child_process");
+  const r = spawnSync(process.execPath, [join(REPO, "mcp", "dist", "scripts", "judge-check.js")], {
+    env: { PATH: process.env.PATH ?? "", AGENT_EXIT_SCAN_BIN: join(REPO, "no-such-scan-binary") },
+    encoding: "utf8",
+    timeout: 60_000,
+  });
+  assert.equal(r.status, 4, r.stderr);
+  assert.match(r.stderr, /SETUP ERROR: scan binary not found/);
+  assert.match(r.stderr, /make mcp-build/);
+  assert.match(r.stderr, /AGENT_EXIT_SCAN_BIN/);
+  assert.doesNotMatch(r.stderr, /^FAIL K/m);
 });

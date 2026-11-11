@@ -10,7 +10,7 @@ const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; ch
 
 // Same policy as the <meta> tag in index.html, plus frame-ancestors, which a
 // meta tag cannot set. web/_headers and web/vercel.json must say the same.
-export const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+export const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 export const SECURITY_HEADERS = { "content-security-policy": CSP, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" };
 
 // `upstreams`: testnet RPC URLs for the read-only relay at /api/rpc
@@ -29,7 +29,7 @@ export function serve(port = 8080, host = "127.0.0.1", upstreams = process.env.A
       res.end(body);
     } catch { res.writeHead(404, SECURITY_HEADERS).end("not found"); }
   });
-  return new Promise((ok) => server.listen(port, host, () => ok(server)));
+  return new Promise((ok, fail) => { server.once("error", fail); server.listen(port, host, () => ok(server)); });
 }
 
 async function rpcRoute(req, res, upstreams) {
@@ -45,5 +45,8 @@ async function rpcRoute(req, res, upstreams) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.argv[2] || process.env.PORT || 8080);
-  serve(port).then(() => console.log(`Agent Exit demo: http://127.0.0.1:${port}/  (testnet mode: ?network=testnet)`));
+  serve(port).then(() => console.log(`Agent Exit demo: http://127.0.0.1:${port}/  (testnet mode: ?network=testnet)`), (e) => {
+    console.error(e.code === "EADDRINUSE" ? `port ${port} is busy: run  make web WEB_PORT=8091` : `could not start the page server: ${e.message}`);
+    process.exit(1);
+  });
 }

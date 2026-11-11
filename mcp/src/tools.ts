@@ -40,7 +40,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_agents: "List agents with owner, status, price and meter totals (counted = real customers; flagged = self, sub-account or round-trip payments). Read-only. All money is xUSD-FAKE.",
   get_earnings: "Earnings meter of one agent by payer and day: gross, counted, verified (NEAR AI signature checked on-chain), flagged. Read-only.",
   scan_agent: "Backdoor scan of an agent account before buying: extra or unknown keys, wrong code hash, upgrade methods, open approvals, listing changes. Also reports born_clean (true: the factory created the account with no key ever) when the server has AGENT_EXIT_FACTORY set (testnet); otherwise null. Read-only. Buy only if verdict is clean.",
-  buy_agent: "Buy a listed agent in one transaction (deed moves, seller's runner key deleted, your runner key added, 70% paid now, 30% earn-out). WRITE: needs confirm: true and max_price; scans first and refuses on any finding.",
+  buy_agent: "Buy a listed agent in one transaction (deed moves, seller's runner key deleted, your runner key added, 70% paid now, 30% earn-out). WRITE: needs confirm: true and max_price; scans first and refuses on any finding; refuses an agent whose revenue is half or more flagged (REVENUE_MOSTLY_FLAGGED) unless accept_flagged_revenue: true.",
   verify_lockout: "After a sale: check that an account (the old seller) no longer owns the agent, has no key on it, and that owner-only calls are refused. Read-only.",
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
@@ -63,7 +63,7 @@ export const JUDGE_TOUR = {
     "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
     "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
     "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
-    "5. Invest: list_offers shows research.testnet offer 1 (20% open, smallest part 2%). Offline, buy_share replays only the recorded buy, as dave.testnet: buy_share {agent: research.testnet, offer_id: 1, pct: 10, max_price: 150, confirm: true} with AGENT_EXIT_ACCOUNT_ID=dave.testnet, then portfolio {account: dave.testnet}. Any other part: sandbox actions reset, offer_share, buy_share, pay_customer, pay_self, claim_share.",
+    "5. Invest, in the sandbox tool (works as shipped, no restart): sandbox action reset, then offer_share (alice offers 20% of every payment for 500), buy_share (dave pays 500: 245.00 to alice now after the 1% fee, 250.00 held), pay_customer (a customer pays 25: 5.00 to dave, 5.00 of the held part released to alice), claim_share (5.00 sent to dave). Optional: list_offers shows research.testnet offer 1; the tool buy_share replays only its recorded buy, as dave.testnet, which needs AGENT_EXIT_ACCOUNT_ID=dave.testnet in .mcp.json and a restart (as summarizer.testnet it answers OFFLINE_NO_RECORDING).",
     "6. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
     "7. check_account on any NEAR account (offline: trading-bot.testnet, locked-vault.testnet) names every key and code-change method that lets someone other than the owner move funds or swap the code. The sealed prompt: sealed_delivery on swapped.testnet sale 1, open (matches false), then dispute with confirm true: refund_to_buyer 1000.00; brainy.testnet: open, accept.",
     "8. Live testnet (agent-exit-testnet, read-only, needs RPC): check_claims gives K1-K8 (K8 = gate G6 on the previous world agentexit4). A claim with status unverified_network was not checked because no RPC answered: that is not a failure. scan_agent born1.factory.agentexit5.testnet shows born_clean true; list_agents and list_offers show the Exchange agents translate-pro, research-desk and pump-bot (.factory.agentexit5.testnet).",
@@ -911,6 +911,9 @@ export class Tools {
       return { error: net ? "RPC_UNREACHABLE" : code, net };
     };
     type Input = { net?: number | boolean; mismatch?: number };
+    // A live() read that answered is checked: its own condition decides (review 6, L4).
+    // Only a read that got no RPC answer may leave a claim unverified_network.
+    const seen = (r: Json, ok: boolean): Input => (r.error ? (r.net ? r : { mismatch: 1 }) : { mismatch: ok ? 0 : 1 });
     const claims: Json[] = [];
     // Three states: pass; fail (something was read and differs); unverified_network
     // (not everything could be read because no RPC answered, and nothing read differs).
@@ -929,19 +932,19 @@ export class Tools {
     add("K1", "Earnings are counted by who paid: the owner's sub-account payment is flagged, NEAR AI-signed jobs are verified (live)",
       [`get_earnings {"agent":"${a("translator3")}"}`, ...nb(inv.txs)], "flagged > 0, verified > 0 now; the 5 customer payments and the sub-account payment confirmed with their payment events",
       `live: counted ${q.counted ?? e3.error}, verified ${q.verified ?? "?"}, flagged ${q.flagged ?? "?"}; ${inv.text}`,
-      Number(q.flagged) > 0 && Number(q.verified) > 0 && inv.ok === inv.n && inv.n > 0, [inv, e3]);
+      Number(q.flagged) > 0 && Number(q.verified) > 0 && inv.ok === inv.n && inv.n > 0, [inv, seen(e3, Number(q.flagged) > 0 && Number(q.verified) > 0)]);
 
     const sc = await live("scan_agent", { agent: a("cheat") });
     const codes = ((sc.findings ?? []) as Json[]).map((f) => f.code);
     add("K2", "The scan blocks an agent with a hidden full-access key (live keys)", [`scan_agent {"agent":"${a("cheat")}"}`],
       "verdict blocked, finding full_access_key_present", `live: verdict ${sc.verdict ?? sc.error}, findings ${codes.join(", ") || "none"}`,
-      sc.verdict === "blocked" && codes.includes("full_access_key_present"), [sc]);
+      sc.verdict === "blocked" && codes.includes("full_access_key_present"), [seen(sc, sc.verdict === "blocked" && codes.includes("full_access_key_present"))]);
 
     const la = await live("list_agents", {});
     const cheat = ((la.agents ?? []) as Json[]).find((x) => x.agent === a("cheat"));
     add("K3", "A blocked agent is never bought: the cheat still belongs to its seller", ["list_agents {}"],
       `owner of ${a("cheat")} is ${a("alice")}`, `live: owner ${cheat?.owner ?? la.error ?? "not listed"}, status ${cheat?.status ?? "?"}`,
-      cheat?.owner === a("alice"), [la]);
+      cheat?.owner === a("alice"), [seen(la, cheat?.owner === a("alice"))]);
 
     const sale = await confirm("honest-sale");
     add("K4", "One transaction sells the whole agent: deed moves, sale event, payouts", nb(sale.txs),
@@ -953,7 +956,7 @@ export class Tools {
     add("K5", "After the sale the old seller is locked out: every way back in was refused, and still is (live)",
       [`verify_lockout {"agent":"${a("translator")}","account":"${a("alice")}"}`, ...nb(brk.txs)],
       "each break-in transaction failed as recorded; locked_out true now", `${brk.text}; live: locked_out ${lock.locked_out ?? lock.error}`,
-      brk.n > 0 && brk.ok === brk.n && lock.locked_out === true, [brk, lock]);
+      brk.n > 0 && brk.ok === brk.n && lock.locked_out === true, [brk, seen(lock, lock.locked_out === true)]);
 
     const shares = await confirm("invest", (t) => /^dave (buys|claims)/.test(String(t.label)));
     add("K6", "An investor bought 20% of an agent's earnings and claimed exactly 20%", nb(shares.txs),
@@ -1152,7 +1155,7 @@ export class Tools {
     const cap = BigInt(units(this.cfg.sessionCap));
     this.ledger.reserve(price, cap);
     try {
-      const out = await this.buyReserved(agent, buyer, pk, quoted, price, t, min);
+      const out = await this.buyReserved(agent, buyer, pk, quoted, price, t, min, v.earnings, a.accept_flagged_revenue === true);
       if (noPreview && Array.isArray(out.warnings)) out.warnings.push({ code: "no_preview_accepted", severity: "warn", untrusted_detail: "bought a sealed config without a preview; open it with sealed_delivery and dispute within 7 days if it does not match" });
       return out;
     } catch (e) {
@@ -1164,7 +1167,7 @@ export class Tools {
     }
   }
 
-  private async buyReserved(agent: string, buyer: string, pk: string, quoted: Json, price: bigint, t: Json, min: MinTerms): Promise<Json> {
+  private async buyReserved(agent: string, buyer: string, pk: string, quoted: Json, price: bigint, t: Json, min: MinTerms, earnings: Json, acceptFlagged: boolean): Promise<Json> {
     const r = await this.scan(agent, { listing_version: quoted.listing_version, price: quoted.price, min_terms: min });
     if (r.verdict !== "clean") {
       throw new ToolError("SCAN_BLOCKED", `scan verdict ${r.verdict}: not buying`, {
@@ -1174,6 +1177,17 @@ export class Tools {
     }
     // Review 2 M2: warnings (shares, sub-accounts) go back with the result.
     const warnings = findings(r).filter((f) => f.severity === "warn");
+    // Review 6 M4: the scan checks keys, code and terms, not the meter. Revenue
+    // that is mostly flagged (owner, past owner, sub-account, round trip) is
+    // refused unless the call accepts it; any flagged revenue is a warning.
+    const gross = BigInt(earnings?.gross ?? 0);
+    const flagged = BigInt(earnings?.flagged ?? 0);
+    if (gross > 0n && flagged * 2n >= gross && !acceptFlagged) {
+      throw new ToolError("REVENUE_MOSTLY_FLAGGED", `${usd(flagged)} of ${usd(gross)} gross revenue is flagged (self-paid, sub-account or round trip), counted only ${usd(BigInt(earnings?.counted ?? 0))}: pass accept_flagged_revenue: true to buy anyway`);
+    }
+    if (flagged > 0n) {
+      warnings.push({ code: "revenue_flagged", severity: "warn", untrusted_detail: `${usd(flagged)} of ${usd(gross)} gross revenue is flagged and not counted; counted ${usd(BigInt(earnings?.counted ?? 0))}` });
+    }
     const { known_keys_hash } = r.buy_args;
     const listing_version: number = quoted.listing_version;
     // On a real node an allowance failure shows only as InvalidTransaction({}):

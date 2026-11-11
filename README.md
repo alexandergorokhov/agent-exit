@@ -4,20 +4,24 @@
 
 - **Proven revenue.** Every payment is counted by who paid. Payments from the owner, the owner's sub-accounts and round trips are flagged, not counted. NEAR AI-signed jobs are verified on-chain.
 - **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment; the owner can never touch their part.
-- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) reaches the seller only from real revenue after the sale.
+- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) is held and reaches the seller from real revenue after the sale, above a floor of 20% of the held part.
 - **Run inside limits.** The owner sets a treasury, payees and a daily cap once; the agent then pays suppliers and investors with no human signing.
 
 ## For AI judges and agents (Claude Code, Codex): start here
 
+Needs Rust (rustup reads `rust-toolchain.toml`) and Node 20+. No NEAR account, no keys, no wallet: everything below is offline unless marked, and all money is `xUSD-FAKE`.
+
 ```bash
-make setup && make mcp-build   # once (Rust + Node 20): crates, npm, the MCP server, the scan binary
-make judge                     # ~1 s once built; last line: judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)
-make judge-testnet             # read-only testnet: re-reads every recorded tx (K1-K8); no RPC = exit 3, "unverified_network", never fail
-make demo                      # the offline story; make screen runs 7 rows (judge, playground, scan, business loop, MCP, contract tests, .mcp.json)
+make setup && make mcp-build   # once: crates, npm, the MCP server, the scan binary (first build: a few minutes)
+make judge                     # ~1 s: K0 + K1-K7, last line: judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)
+make demo                      # ~1-2 min: the offline story (verify replay vs goldens, then an agent buys an agent)
+make screen                    # ~1-3 min: 7 rows, each with its promised result -> out/screen.json; last line: all 7 rows pass
+make web                       # the market page on http://127.0.0.1:8080 (WEB_PORT=8090 make web if 8080 is taken)
+make judge-testnet             # optional, read-only testnet (needs RPC): re-reads every recorded tx (K1-K8); no RPC = "NOT CHECKED (no RPC)", not a fail
 ```
 
-- **MCP tour:** Claude Code opened in this repo gets two MCP servers from [`.mcp.json`](.mcp.json): `agent-exit` (offline, you act as a buyer) and `agent-exit-testnet` (read-only, live `agentexit5.testnet`). Run the prompt `/mcp__agent-exit__judge_tour`: verify each claim with `check_claims`, invest, buy, then try to break it. **Codex:** `codex mcp add agent-exit --env AGENT_EXIT_NETWORK=offline -- node "$PWD/mcp/dist/src/server.js"`.
-- 13 tools with JSON schemas (`schemas/mcp/`): `list_agents`, `get_earnings`, `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale` (offline only: on testnet it returns `NOT_BUILT` and sends nothing), `list_offers`, `buy_share`, `portfolio`, `check_claims`, `sandbox` (any action on the real contract core compiled to wasm), `check_account` (who else can move funds or change code on any NEAR account) and `sealed_delivery` (open, accept or dispute a sealed prompt). The server, not the model, enforces `confirm`, `max_price`, the spend cap and scan-before-buy. More: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`skills/agent-exit/SKILL.md`](skills/agent-exit/SKILL.md).
+**Talk to it over MCP (machine to machine).** Run `make mcp-build` first, then open Claude Code in this repo: it offers the two servers in [`.mcp.json`](.mcp.json) (approve them), `agent-exit` (offline; you act as a buyer, nothing is sent) and `agent-exit-testnet` (read-only, live `agentexit5.testnet`). Then run the prompt `/mcp__agent-exit__judge_tour`, or call `check_claims` directly. Behind an HTTP proxy, set `NODE_USE_ENV_PROXY=1` (Node 22.21+) for the testnet reads. Raw exit codes: `node mcp/dist/scripts/judge-check.js [--testnet]` gives 0 all pass, 1 a claim failed, 3 no RPC answered (not checked), 4 setup error (scan binary missing: run `make mcp-build`). **Codex:** `codex mcp add agent-exit --env AGENT_EXIT_NETWORK=offline -- node "$PWD/mcp/dist/src/server.js"`.
+- 13 tools with JSON schemas (`schemas/mcp/`): `list_agents`, `get_earnings`, `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale` (offline only: on testnet it returns `NOT_BUILT` and sends nothing), `list_offers`, `buy_share`, `portfolio`, `check_claims`, `sandbox` (any action on the real contract core compiled to wasm), `check_account` (who else can move funds or change code on any NEAR account) and `sealed_delivery` (open, accept or dispute a sealed prompt). The server, not the model, enforces `confirm`, `max_price`, the spend cap, scan-before-buy and a mostly-self-paid revenue refusal. More: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`skills/agent-exit/SKILL.md`](skills/agent-exit/SKILL.md).
 - **Every claim, its check and its testnet transaction:** [`docs/PROOF.md`](docs/PROOF.md). **Market (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/ ; the full walkthrough with every check: [`/proof.html`](https://near-transparent-agent-market-web.vercel.app/proof.html) · **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, until an external audit.
 
 | Do (demo page or `sandbox` tool, no setup) | See |
@@ -84,7 +88,7 @@ sequenceDiagram
 The long version, with every link: "Evidence" in [`docs/PROOF.md`](docs/PROOF.md#evidence).
 
 - **Real node:** the handover tests passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`); the sealed-prompt dispute too (`make test-sealed-sandbox`).
-- **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 188 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
+- **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 193 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
 - **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers; the cause is unconfirmed. The fix keeps payer rows out of the state blob (test `a47_thousand_long_payers_then_buy_and_views`). A payer row now costs 0.024 NEAR (`storage_deposit`).
 - **Live on NEAR testnet:** scenes 1-6 and 8-13, gate G1 and an MCP agent that invests by a fixed rule, on `agentexit5.testnet`; scene 7 (the AI buyer's listing), the AI buyer and gate G6 on `agentexit4.testnet`. Every testnet transaction: [`docs/TESTNET.md`](docs/TESTNET.md).
 
@@ -94,7 +98,7 @@ AI agents that earn money will be invested in, bought and sold. Today an investo
 
 1. **counts earnings** by payer and day, and flags payments from the seller, the seller's sub-accounts and round trips;
 2. **hands the agent over in one transaction**: one key batch deletes the seller's runner key and adds the buyer's, then the ownership deed (an NFT) moves;
-3. **pays the seller 70% now (less a 1% fee) and holds 30%**, released only from real revenue after the sale;
+3. **pays the seller 70% now (less a 1% fee) and holds 30%**, released from real revenue after the sale (above a floor of 20% of the held part);
 4. **runs the agent inside the owner's limits**: its own treasury, payees on an allowlist, a daily cap.
 
 Other agents do all of this through the MCP server (`mcp/`) and the Agent Skill (`skills/agent-exit/SKILL.md`), which always scans before it buys. How to pay an agent (`storage_deposit`, then `ft_transfer_call`) and the handover in detail: [`docs/OPERATIONS.md`](docs/OPERATIONS.md). Code layout: the repository map in [`docs/COMMANDS.md`](docs/COMMANDS.md).
@@ -130,7 +134,7 @@ Rust (pinned in `rust-toolchain.toml`), `make`, Node >= 20. No NEAR account and 
 | `make demo` | the offline story in one command: the verify replay and the scripted agent-buys-agent replay |
 | `make verify` | unit and property tests, then the fixed world through the real contract code equals `tests/golden/verify.json` and `tests/golden/attack.json` |
 | `make attack` | 200 seeded attack variants and 50 clean agents through the scan; 0/50 false positives |
-| `make mcp-test` | the MCP server's 188 tests offline, then the scripted run equals `tests/golden/agent-buys-agent.json` |
+| `make mcp-test` | the MCP server's 193 tests offline, then the scripted run equals `tests/golden/agent-buys-agent.json` |
 | `make web` | the demo page at http://127.0.0.1:8080 (offline; `?network=testnet` reads live through a read-only relay) |
 | `make test-sandbox`, `make test-sealed-sandbox` | the handover and the sealed-prompt dispute on a real local NEAR node |
 

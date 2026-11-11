@@ -43,6 +43,10 @@
     "accept_no_preview": {
       "type": "boolean",
       "description": "buy a listing that sells a sealed config with no possible preview (no chunk root, or under 1 KB); without it buy_agent refuses with NO_PREVIEW"
+    },
+    "accept_flagged_revenue": {
+      "type": "boolean",
+      "description": "buy an agent whose flagged revenue (paid by the owner, a past owner, their sub-accounts or a round trip) is half or more of gross; without it buy_agent refuses with REVENUE_MOSTLY_FLAGGED. Any flagged revenue is returned as a revenue_flagged warning"
     }
   },
   "required": [

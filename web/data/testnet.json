@@ -1083,6 +1083,8 @@
         "ask": null,
         "offers": [
           {
+            "offer_id": 1,
+            "min_part": 100,
             "bps": 1000,
             "sold_bps": 0,
             "price": "50000000",
@@ -1103,6 +1105,8 @@
         "ask": null,
         "offers": [
           {
+            "offer_id": 1,
+            "min_part": 200,
             "bps": 2000,
             "sold_bps": 0,
             "price": "100000000",
@@ -1157,6 +1161,14 @@
       "explorer": "https://testnet.nearblocks.io/txns/DHJhBU229GZvNWTykNBXZ4134BXjCFA2ixY5SMZBiCSW",
       "holdings_bps": 250,
       "note": "the same transaction the page's Invest button builds (web/wallet-link.mjs), signed by script"
+    },
+    "earnings": {
+      "gross": "120.00",
+      "counted": "100.00",
+      "verified": "50.00",
+      "flagged": "20.00",
+      "payments": 11,
+      "source": "out/agent-invests-testnet.json"
     }
   }
 }

@@ -746,7 +746,11 @@ try {
     assert.equal(new URL(href).searchParams.get("transactions"), base64(encodeTx(investTx(rec.open_offer, "judge.testnet"))), "M6: the panel's invest link carries the faucet + buy transaction");
     await q.keyboard.press("Escape");
     await q.click('.mk-deed[data-agent="research-desk"]');
-    assert.match(await q.textContent("#agent-panel"), /buy_share \{ agent: "research-desk\./, "M7: an agent can buy through MCP (buy_share)");
+    const call = await q.textContent("#agent-panel pre.mcp");
+    assert.match(call, /^buy_share \{"agent":"research-desk\./, "M7: an agent can buy through MCP (buy_share)");
+    const args = JSON.parse(call.slice("buy_share ".length));
+    const schema = JSON.parse(readFileSync(new URL("../../schemas/mcp/buy_share.input.v1.json", import.meta.url), "utf8"));
+    for (const k of schema.required || []) assert.ok(k in args, `M7: the snippet has the required ${k}`);
     await q.keyboard.press("Escape");
     const words = await q.evaluate(() => document.querySelector("main").innerText.split(/\s+/).filter(Boolean).length);
     assert.ok(words <= 520, `M8: the market page is lean (${words} words at ${vp.width}px)`);
@@ -754,6 +758,16 @@ try {
     await q.waitForSelector('#play[data-ready="1"]');
     await noHorizontalScroll(q, `market at ${vp.width}px`);
     checks += 12;
+    await q.close();
+  }
+
+  // M9: the demo video plays under the site's CSP (media-src 'self').
+  {
+    const q = await page({ width: 1280, height: 800 });
+    await q.goto(`${root}media/agent-exit-demo.mp4`);
+    const ready = await q.waitForFunction(() => { const v = document.querySelector("video"); return v && v.readyState >= 1; }, null, { timeout: 10000 }).then(() => true, () => false);
+    assert.ok(ready, "M9: the demo video loads under the CSP");
+    checks += 1;
     await q.close();
   }
 

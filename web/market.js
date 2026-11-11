@@ -19,6 +19,7 @@ function el(tag, attrs = {}, ...kids) {
   return n;
 }
 const usd = (raw) => Number(BigInt(raw)) / 1e6;
+const day = (ns) => new Date(Number(BigInt(ns) / 1000000n)).toISOString().slice(0, 10);
 const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const link = (href, text) => el("a", { href, target: "_blank", rel: "noopener noreferrer", text });
 
@@ -41,13 +42,24 @@ export function buildCatalog(t, dd) {
   const t3 = card("translator3");
   if (t3 && o) {
     const pct = Number(o.part_bps) / 100;
+    const e = o.earnings; // earnings when the offer was bought into, if recorded
+    const real = e ? Number(e.counted) : t3.bar.real, self = e ? Number(e.flagged) : t3.bar.self;
+    const ver = e ? Number(e.verified) : null;
+    const until = day(o.offer.end);
     out.push({
       name: "translator3", account: o.agent, kind: "invest", stamp: ["Verified", "ok"],
-      judgement: "Every counted job is signed by NEAR AI.",
-      real: t3.bar.real, self: t3.bar.self, customers: 5, keys: "clean",
-      deal: `${pct}% of its earnings for ${money(usd(o.amount))}`,
+      judgement: ver == null ? "Its counted jobs are signed by NEAR AI." : `${money(ver)} of its ${money(real)} counted revenue is signed by NEAR AI.`,
+      real, self, customers: 5, keys: "clean",
+      deal: `${pct}% of its earnings for ${money(usd(o.amount))}, until ${until}`,
       dealShort: `${pct}% for ${money(usd(o.amount))}`,
-      rows: t3.rows, offer: o, txs: [{ label: "an investor buys 2.5%", url: o.example_tx.explorer, ok: true }, ...tx("invest", /translation$/, "a customer pays"), ...tx("invest", /claims$/, "the investor is paid")],
+      ends: Number(BigInt(o.offer.end) / 1000000n),
+      rows: e ? [
+        ["Revenue paid in", money(Number(e.gross))],
+        ["Counted (real customers)", money(real)],
+        ["Signed by NEAR AI", money(ver)],
+        ["Self-paid, not counted", money(self)],
+        ["Offer", `${Number(o.offer.bps) / 100}% of earnings in parts of ${pct}%, ${Number(o.offer.sold_bps) / 100}% sold, until ${until}`],
+      ] : t3.rows, offer: o, txs: [{ label: "an investor buys 2.5%", url: o.example_tx.explorer, ok: true }, ...tx("invest", /translation$/, "a customer pays"), ...tx("invest", /claims$/, "the investor is paid")],
     });
   }
   for (const a of (t.exchange && t.exchange.agents) || []) {
@@ -55,7 +67,7 @@ export function buildCatalog(t, dd) {
     const open = a.offers.find((x) => x.sold_bps < x.bps);
     const flagged = gross > 0 && self / gross >= 0.5;
     out.push({
-      name: a.name, account: a.agent, kind: flagged ? "flagged" : open ? "offer" : "listed",
+      name: a.name, account: a.agent, kind: flagged ? "flagged" : a.ask ? "listed" : open ? "offer" : "held", ask: a.ask, open,
       stamp: flagged ? ["Self-paid", "bad"] : ["Clean", "ok"],
       judgement: flagged
         ? `${Math.round((100 * self) / gross)}% of its revenue is the owner paying itself.`
@@ -116,7 +128,10 @@ function cardEl(a) {
 function investForm(a) {
   const o = a.offer;
   const input = el("input", { id: "mk-account", type: "text", placeholder: "you.testnet", autocomplete: "off", spellcheck: "false", "aria-label": "Your testnet account" });
-  const go = el("a", { id: "mk-invest", class: "btn primary", role: "button", "aria-disabled": "true", text: `Invest ${money(usd(o.amount))} test dollars` });
+  const go = el("a", { id: "mk-invest", class: "btn primary", "aria-disabled": "true", text: `Invest ${money(usd(o.amount))} test dollars` });
+  if (a.ends && Date.now() > a.ends) {
+    return el("div", { class: "mk-act" }, el("p", { text: `This offer ended on ${day(o.offer.end)}. ` }, link(o.example_tx.explorer, "See a recorded investment")));
+  }
   const note = el("p", { id: "mk-note", class: "small muted", "aria-live": "polite", text: "One signature in MyNearWallet. The test dollars are free." });
   input.addEventListener("input", () => {
     const who = input.value.trim().toLowerCase();
@@ -141,13 +156,17 @@ function investForm(a) {
 function actionFor(a) {
   if (a.kind === "invest") return investForm(a);
   if (a.kind === "offer" || a.kind === "listed") {
-    const tool = a.kind === "offer" ? "buy_share" : "buy_agent";
+    // The full call, as the MCP input schema requires it (schemas/mcp/).
+    const call = a.kind === "offer"
+      ? `buy_share ${JSON.stringify({ agent: a.account, offer_id: a.open.offer_id, pct: a.open.min_part / 100, max_price: (usd(a.open.price) * a.open.min_part) / a.open.bps, confirm: true })}`
+      : `buy_agent ${JSON.stringify({ agent: a.account, max_price: usd(a.ask), confirm: true })}`;
     return el("div", { class: "mk-act" },
       el("p", { class: "small", text: "Your AI agent can buy this through our MCP server:" }),
-      el("pre", { class: "mcp" }, el("code", { text: `${tool} { agent: "${a.account}", confirm: true }` })),
-      el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. ", link("https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/AGENTS.md", "Connect your agent")));
+      el("pre", { class: "mcp" }, el("code", { text: call })),
+      el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. Buying needs a write-enabled server with your own testnet account. ", link("https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/AGENTS.md", "Connect your agent")));
   }
-  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : "Price unsupported: only 10.00 of its revenue is real." }));
+  if (a.kind === "held") return el("div", { class: "mk-act" }, el("p", { text: "Not offered for sale right now." }));
+  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }));
   return el("div", { class: "mk-act mk-sold" }, el("p", { text: "The new owner holds the only key. 300.00 of the price is released to the seller only as customers keep paying." }));
 }
 
@@ -196,7 +215,9 @@ async function main() {
       const inp = panel.querySelector("#mk-account");
       inp.value = who; inp.dispatchEvent(new Event("input"));
       const h = (new URLSearchParams(location.search).get("transactionHashes") || "").split(",").filter((x) => /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(x)).pop();
-      if (h) panel.querySelector("#mk-note").replaceChildren("Invested. ", link(NB + h, `Your transaction ${h.slice(0, 8)}…`));
+      // A refused buy is still a successful transaction (the token refunds),
+      // so the page does not claim success: it points at the result.
+      if (h) panel.querySelector("#mk-note").replaceChildren("Sent. Check the result: ", link(NB + h, `your transaction ${h.slice(0, 8)}…`));
     }
   };
   grid.addEventListener("click", (e) => { const c = e.target.closest(".mk-deed"); if (c) open(c.dataset.agent); });

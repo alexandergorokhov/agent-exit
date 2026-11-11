@@ -116,15 +116,22 @@ mcp: mcp-build ## Start the MCP server on stdio (offline by default; AGENT_EXIT_
 .PHONY: judge judge-testnet screen mcp-build-if-stale
 # judge skips the build (no cargo, no tsc) when mcp/dist and the scan binary are
 # newer than the sources; otherwise it runs mcp-build.
+# The scan binary: AGENT_EXIT_SCAN_BIN if set, else the first that exists of
+# target/{debug,release}/scan and $CARGO_TARGET_DIR/{debug,release}/scan.
+# Exported to the judge run (the MCP client passes it on to the server).
+SCAN_FIND = for p in "$${AGENT_EXIT_SCAN_BIN:-}" $(CURDIR)/target/debug/scan $(CURDIR)/target/release/scan"$${CARGO_TARGET_DIR:-target}/debug/scan" "$${CARGO_TARGET_DIR:-target}/release/scan"; do if [ -n "$$p" ] && [ -x "$$p" ]; then echo "$$p"; break; fi; done
 mcp-build-if-stale:
-	@if [ -f mcp/dist/scripts/judge-check.js ] && { [ -e target/debug/scan ] || [ -e target/release/scan ] || [ -n "$$AGENT_EXIT_SCAN_BIN" ]; } \
+	@if [ -f mcp/dist/scripts/judge-check.js ] && [ -n "$$($(SCAN_FIND))" ] \
 	  && [ -z "$$(find mcp/src mcp/scripts schemas -newer mcp/dist/scripts/judge-check.js -print -quit)" ]; then :; else $(MAKE) -s mcp-build; fi
 
+# Exit 4 = setup error (scan binary not found; no claim judged).
 judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, K0 code hash + one PASS/FAIL row per README claim (K1-K7, offline; 8 rows; about 1 s once built) -> out/check-claims.json
-	@node mcp/dist/scripts/judge-check.js
+	@scan="$$($(SCAN_FIND))"; if [ -n "$$scan" ]; then export AGENT_EXIT_SCAN_BIN="$$scan"; fi; node mcp/dist/scripts/judge-check.js
 
-judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K8 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. Exit 3 = no RPC answered (not checked, not failed)
-	@node mcp/dist/scripts/judge-check.js --testnet
+# The script exits 3 when no RPC answered; make then prints "Error 3" and exits 2.
+# For the raw code run: node mcp/dist/scripts/judge-check.js --testnet
+judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K8 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. No RPC: NOT CHECKED rows, make fails with Error 3 (exit 2); node mcp/dist/scripts/judge-check.js --testnet alone exits 3
+	@scan="$$($(SCAN_FIND))"; if [ -n "$$scan" ]; then export AGENT_EXIT_SCAN_BIN="$$scan"; fi; node mcp/dist/scripts/judge-check.js --testnet
 
 screen: ## The README's main offline claims, 7 rows with their promised outcome (1-3 min; make verify, attack and fuzz run separately) -> out/screen.json
 	@bash scripts/screen.sh
@@ -437,7 +444,7 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
-	@echo "Real testnet transactions (2026-11-10, agentexit5.testnet; G6 and the AI buyer on agentexit4.testnet): README section 'Live on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
+	@echo "Real testnet transactions (2026-11-10, agentexit5.testnet; G6 and the AI buyer on agentexit4.testnet): README section 'Proven on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
 demo-setup: ## [testnet] Fresh demo world on a NEW root: reproducible build, deploy, G1, scenes, page data [DRY_RUN=1] [FORCE=1]
 ifdef DRY_RUN
 	@$(PLAN) deploy && $(PLAN) g1 && $(PLAN) scenes

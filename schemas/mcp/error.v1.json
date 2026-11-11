@@ -38,6 +38,7 @@
             "DISPUTE_CLOSED",
             "PREVIEW_INCOMPLETE",
         "NO_PREVIEW",
+        "REVENUE_MOSTLY_FLAGGED",
             "WRITE_DISABLED",
             "CONFIRM_REQUIRED",
             "OVER_MAX_PRICE",

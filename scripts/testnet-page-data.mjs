@@ -75,7 +75,7 @@ if (existsSync("out/scenes/scene-13.json")) {
       gross: String(b.earnings?.gross ?? 0), counted: String(b.earnings?.counted ?? 0), verified: String(b.earnings?.verified ?? 0),
       flagged: String(b.earnings?.flagged ?? 0), payers: Number(b.earnings?.counted_payers ?? 0),
       ask: b.listing?.price ? String(b.listing.price) : null,
-      offers: (Array.isArray(b.shares) ? b.shares : []).map((o) => ({ bps: Number(o.bps), sold_bps: Number(o.sold_bps ?? 0), price: String(o.price), end: String(o.end) })),
+      offers: (Array.isArray(b.shares) ? b.shares : []).map((o) => ({ offer_id: Number(o.offer_id), min_part: Number(o.min_part), bps: Number(o.bps), sold_bps: Number(o.sold_bps ?? 0), price: String(o.price), end: String(o.end) })),
     })) };
   }
 }
@@ -90,6 +90,13 @@ if (existsSync("out/scenes/scene-12.json")) {
       const b = JSON.parse(readFileSync("out/invest-button-testnet.json", "utf8"));
       if (b.pass && b.agent === o.agent && /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(b.tx_hash)) {
         out.open_offer.example_tx = { account: b.account, tx: b.tx_hash, explorer: b.explorer, holdings_bps: b.holdings_bps_after, note: b.note };
+      }
+      // The agent's earnings when the open offer was bought into (the
+      // investor agent's own get_earnings read, out/agent-invests-testnet.json).
+      if (existsSync("out/agent-invests-testnet.json")) {
+        const inv = JSON.parse(readFileSync("out/agent-invests-testnet.json", "utf8"));
+        const e = (inv.steps || []).map((x) => x.response && x.response.earnings).find(Boolean);
+        if (e) out.open_offer.earnings = { gross: e.gross, counted: e.counted, verified: e.verified, flagged: e.flagged, payments: e.payments, source: "out/agent-invests-testnet.json" };
       }
     }
   }

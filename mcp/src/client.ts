@@ -16,12 +16,35 @@ export interface Session {
   stderr: () => string;
 }
 
-/** Start the server with exactly `env` (plus PATH) and connect. */
+/** Setup variables passed through from the caller's environment: where the
+ * scan binary is (AGENT_EXIT_SCAN_BIN, CARGO_TARGET_DIR) and how to reach the
+ * network (proxy, extra CA). Never keys or account settings. */
+export const PASS_THROUGH_ENV = [
+  "AGENT_EXIT_SCAN_BIN",
+  "CARGO_TARGET_DIR",
+  "HTTPS_PROXY",
+  "HTTP_PROXY",
+  "NO_PROXY",
+  "https_proxy",
+  "http_proxy",
+  "no_proxy",
+  "NODE_EXTRA_CA_CERTS",
+  "NODE_USE_ENV_PROXY",
+] as const;
+
+/** The pass-through subset of `from` (default process.env). */
+export function passThroughEnv(from: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of PASS_THROUGH_ENV) if (from[k]) out[k] = from[k] as string;
+  return out;
+}
+
+/** Start the server with `env` plus PATH and the setup variables above, and connect. */
 export async function connect(env: Record<string, string>): Promise<Session> {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [SERVER],
-    env: { PATH: process.env.PATH ?? "", AGENT_EXIT_REPO: REPO, ...env },
+    env: { PATH: process.env.PATH ?? "", AGENT_EXIT_REPO: REPO, ...passThroughEnv(), ...env },
     stderr: "pipe",
   });
   let err = "";

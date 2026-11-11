@@ -2,7 +2,8 @@
 // the repo's .mcp.json (offline entry), calls check_claims and prints one row
 // per README claim. Writes out/check-claims.json. Exit 0 all pass, 1 on any
 // failed claim, 3 when some testnet claims could not be checked because no
-// RPC answered (nothing read differs; this is not a failed claim).
+// RPC answered (nothing read differs; this is not a failed claim), 4 on a
+// setup error (the scan binary was not found: no claim was judged).
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { connect, REPO } from "../src/client.js";
@@ -20,6 +21,17 @@ async function main(): Promise<number> {
     if (!r.ok) {
       process.stderr.write(`judge: check_claims failed: ${JSON.stringify(r.body)}\n`);
       return 1;
+    }
+    // Cold judge F2: with no scan binary the scan-based claims cannot run.
+    // That is a setup problem, not a failed claim: say how to fix it.
+    const noScan = /scan=missing/.test(s.stderr()) || JSON.stringify(r.body.claims ?? []).includes("SCAN_UNAVAILABLE");
+    if (noScan) {
+      process.stderr.write(
+        "judge: SETUP ERROR: scan binary not found, so no claim was judged (this is not a failed claim).\n" +
+          "judge: run `make mcp-build` (builds tools/scan), or set AGENT_EXIT_SCAN_BIN=/path/to/scan" +
+          " (with a shared CARGO_TARGET_DIR it is $CARGO_TARGET_DIR/debug/scan), then run `make judge` again.\n",
+      );
+      return 4;
     }
     process.stderr.write(`judge: MCP server from .mcp.json: ${tools.length} tools (${tools.join(", ")}), prompt ${prompts.join(", ")}\n`);
     // K0: the committed wasm is the build every record names (files only, no RPC).
