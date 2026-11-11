@@ -18,8 +18,34 @@ fn links(file: &str) -> Vec<String> {
         .skip(1)
         .filter_map(|s| s.split(')').next())
         .filter(|l| !l.starts_with("http") && !l.starts_with('#'))
-        .map(String::from)
+        .map(|l| l.split('#').next().unwrap().to_string())
         .collect()
+}
+
+/// `path#anchor` links in a file: each anchor must be a heading of that markdown file.
+fn anchors_resolve(file: &str) {
+    let text = read(file);
+    for l in text.split("](").skip(1).filter_map(|s| s.split(')').next()) {
+        let Some((path, anchor)) = l.split_once('#') else { continue };
+        if l.starts_with("http") || path.is_empty() || !path.ends_with(".md") {
+            continue;
+        }
+        let target = read(path);
+        let slugs: Vec<String> = target
+            .lines()
+            .filter(|h| h.starts_with('#'))
+            .map(|h| {
+                h.trim_start_matches('#')
+                    .trim()
+                    .to_lowercase()
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || *c == ' ' || *c == '-' || *c == '_')
+                    .map(|c| if c == ' ' { '-' } else { c })
+                    .collect()
+            })
+            .collect();
+        assert!(slugs.iter().any(|s| s == anchor), "{file}: {l} has no heading #{anchor}");
+    }
 }
 
 #[test]
@@ -38,6 +64,7 @@ fn s17_readme_and_agents_links_exist() {
             assert!(root().join(&p).exists(), "{f} links missing path {p}");
         }
     }
+    anchors_resolve("README.md");
 }
 
 #[test]
@@ -575,7 +602,9 @@ fn s25_readme_first_screen() {
 /// runner (out/testnet, out/gates, out/scenes): no invented links.
 #[test]
 fn readme_testnet_links_are_recorded_runs() {
-    let r = read("README.md");
+    // The long "What is real" and "Evidence" cells moved to docs/PROOF.md (loop 45):
+    // their links are checked there, so no moved link escapes the check.
+    let r = read("README.md") + &read("docs/PROOF.md");
     let mut recorded = String::new();
     for dir in ["out/testnet", "out/gates", "out/scenes"] {
         let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -738,4 +767,107 @@ fn readme_names_the_second_project() {
         r.contains("https://github.com/alexandergorokhov/agent-hire"),
         "README must link the author's second entry (FAQ Q-015)"
     );
+}
+
+/// Loop 45 round 3: the judge findings stay fixed.
+const LEDE: &str = "AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.";
+
+#[test]
+fn list_for_sale_says_not_built_on_testnet_wherever_listed() {
+    for f in ["README.md", "AGENTS.md", "llms.txt", "skills/agent-exit/SKILL.md"] {
+        let t = read(f);
+        assert!(t.contains("list_for_sale"), "{f} names the tool");
+        assert!(
+            t.contains("NOT_BUILT"),
+            "{f}: list_for_sale is listed with no testnet caveat (it returns NOT_BUILT)"
+        );
+    }
+    let b = read("mcp/src/backend.ts");
+    assert!(b.contains("\"NOT_BUILT\", \"not built yet: testnet list_for_sale"), "the caveat matches the code");
+}
+
+#[test]
+fn readme_labels_both_ai_buyer_costs_and_the_base_wallet() {
+    let r = read("README.md");
+    assert!(
+        r.contains("about $0.05 on the testnet run") && r.contains("about $0.03 on the offline run"),
+        "README: both AI buyer costs, each labelled with its run"
+    );
+    let at = r.find("about $0.05 on the testnet run").unwrap();
+    assert!(r[at..].find("about $0.03 on the offline run").unwrap() < 200, "side by side");
+    assert!(
+        r.contains("lockout of its NEAR-side control") && r.contains("on Base Sepolia is not yet recorded"),
+        "README: the Base wallet lockout is live; a Base Sepolia payment is not yet recorded"
+    );
+    let p = read("docs/PROOF.md");
+    assert!(p.contains("about $0.05 for the testnet run") && p.contains("about $0.03 for this offline run"));
+}
+
+#[test]
+fn the_lede_opens_readme_pitch_and_page() {
+    let r = read("README.md");
+    let head: String = r.lines().take(4).collect::<Vec<_>>().join("\n");
+    assert!(head.contains(LEDE), "README first lines carry the lede");
+    let p = read("docs/PITCH.md");
+    let first = p.lines().find(|l| !l.trim().is_empty() && !l.starts_with('#')).unwrap();
+    assert!(first.contains(LEDE), "docs/PITCH.md opens with the lede: {first}");
+    assert!(read("web/index.html").contains(&LEDE.replace('\'', "'")), "the page lede");
+}
+
+#[test]
+fn readme_top_is_short_and_links_the_moved_proof() {
+    let r = read("README.md");
+    let top = &r[..r.find("## Proven on NEAR testnet").expect("proven table")];
+    for want in ["make judge", "make judge-testnet", "judge_tour", "| Do (demo page or `sandbox` tool, no setup) | See |"] {
+        assert!(top.contains(want), "README top lacks {want}");
+    }
+    assert!(top.lines().count() <= 35, "README top is {} lines", top.lines().count());
+    // The long cells now live in docs/PROOF.md and the README links each section.
+    let p = read("docs/PROOF.md");
+    for (sec, anchor) in [("## What is real, and what is not yet", "docs/PROOF.md#what-is-real-and-what-is-not-yet"), ("## Evidence", "docs/PROOF.md#evidence")] {
+        assert!(p.contains(sec), "docs/PROOF.md has {sec}");
+        assert!(r.contains(anchor), "README links {anchor}");
+    }
+    for moved in ["re-recorded 2026-11-10 on `agentexit5.testnet` with every link checked", "a fresh-agent sale check (gate G1)", "Old-seller lockout, the cheat's scan"] {
+        assert!(!r.contains(moved) && p.contains(moved), "moved to docs/PROOF.md: {moved}");
+    }
+}
+
+#[test]
+fn submission_is_short_and_complete() {
+    let s = read("docs/SUBMISSION.md");
+    assert!(s.chars().count() < 2000, "docs/SUBMISSION.md is {} characters", s.chars().count());
+    let first = s.lines().find(|l| !l.trim().is_empty() && !l.starts_with('#')).unwrap();
+    assert!(first.contains("buy a share of an agent's earnings"), "the investor job comes first: {first}");
+    for want in [
+        "make judge",
+        "make judge-testnet",
+        "judge_tour",
+        "https://github.com/alexandergorokhov/agent-hire",
+        "Hire Tree",
+        "Autonomous Business",
+        "AI Security & Defense",
+        "NFTs That Do Something",
+        "Agent Economy",
+        "xUSD-FAKE",
+    ] {
+        assert!(s.contains(want), "docs/SUBMISSION.md lacks {want}");
+    }
+    let r = read("README.md");
+    for track in ["Autonomous Business", "AI Security & Defense", "NFTs That Do Something", "Agent Economy"] {
+        assert!(r.contains(track), "the README names track {track}");
+    }
+    // Three proofs, each a recorded testnet transaction.
+    let n = s.matches("testnet.nearblocks.io/txns/").count();
+    assert!(n >= 3, "three proofs with links ({n})");
+    let mut recorded = String::new();
+    for dir in ["out/scenes", "out/gates"] {
+        for e in std::fs::read_dir(root().join(dir)).unwrap() {
+            recorded.push_str(&std::fs::read_to_string(e.unwrap().path()).unwrap());
+        }
+    }
+    for part in s.split("testnet.nearblocks.io/txns/").skip(1) {
+        let hash: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        assert!(recorded.contains(&hash), "SUBMISSION links tx {hash}, not in out/");
+    }
 }

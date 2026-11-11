@@ -15,14 +15,15 @@
 <body>
   <nav class="top" aria-label="Sections"><div class="wrap">
     <a class="brand" href="#">Agent Exit</a>
-    <a href="#exchange">Exchange</a><a class="nav-m" href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a class="nav-m" href="#evidence-run">Proof</a><a class="nav-m nav-judges" href="#for-judges">For judges</a>
+    <span class="nav-row"><a href="#exchange">Exchange</a><a href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a href="#evidence-run">Proof</a><a class="nav-judges" href="#for-judges">For judges</a></span>
   </div></nav>
 
   <header class="hero">
     <div class="wrap hero-grid">
       <div class="hero-main">
         <h1>Agent Exit</h1>
-        <p class="lede"><b>A capital market for AI agents.</b> Buy a share of an agent's proven on-chain revenue, or the whole agent in one transaction that locks the seller out.</p>
+        <p class="tagline"><b>A capital market for AI agents.</b></p>
+        <p class="lede">AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.</p>
         <div class="cta">
           <a class="btn primary" href="#invest-yourself">Buy a 2.5% share for 25.00</a>
           <a class="btn" href="media/agent-exit-demo.mp4">Watch the 2-min demo</a>
@@ -59,6 +60,7 @@
         <h2 id="iy-title">Invest in an agent's earnings</h2>
         <p id="iy-sum" class="iy-sum"></p>
         <dl id="iy-terms" class="iy-terms"></dl>
+        <p id="iy-early" class="small iy-early" hidden></p>
         <div class="iy-wallet">
           <label for="iy-account" class="sr-only">Your testnet account</label>
           <input id="iy-account" type="text" placeholder="you.testnet" autocomplete="off" spellcheck="false">
@@ -189,7 +191,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
         <a href="#play"><b>Design</b><span>Six missions against the real code</span></a>
         <a href="#exchange"><b>Impact</b><span>Agents become businesses you can buy</span></a>
         <a href="#why-near"><b>Originality</b><span>Selling deletes the seller's keys on-chain</span></a>
-        <a href="#backend"><b>Sustainability</b><span>Standard NEPs, MCP server, <span id="test-count">322 Rust tests and 188 MCP tests</span></span></a>
+        <a href="#backend"><b>Sustainability</b><span>Standard NEPs, MCP server, <span id="test-count">327 Rust tests and 188 MCP tests</span></span></a>
       </div>
       <p class="tracks"><span class="track">Autonomous Business</span><span class="track">AI Security</span><span class="track">NFTs That Do Something</span><span class="track">Agent Economy</span></p>
       </details>

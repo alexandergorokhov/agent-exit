@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { serve } from "../serve.mjs";
 import { WALLET_SIGN, encodeTx, investTx, base64 } from "../wallet-link.mjs";
-import { fmt, investorPayout, waterfall } from "../ledger.mjs";
+import { fmt, investorPayout, waterfall, earlyNote, investorList } from "../ledger.mjs";
 import { execFileSync } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 
@@ -82,6 +82,18 @@ try {
       const q = await page(vp);
       await q.goto(base);
       await q.waitForSelector('#play[data-ready="1"]');
+      // G1 (loop 45): a disabled step says why.
+      for (const id of Object.keys(want)) {
+        await q.click(`[data-mission="${id}"]`);
+        const later = q.locator("#mission-steps .act.later");
+        const n = await later.count();
+        assert.ok(n > 0, `G1: ${id} has later steps`);
+        for (let i = 0; i < n; i++) {
+          assert.ok(await later.nth(i).isDisabled(), `G1: ${id} later step disabled`);
+          assert.match(await later.nth(i).textContent(), /Do step \d+ first/, `G1: ${id}: a disabled step says why`);
+        }
+        checks++;
+      }
       for (const [id, texts] of Object.entries(want)) {
         await q.click(`[data-mission="${id}"]`);
         while (await q.locator("#mission-steps .act.next").count()) await q.click("#mission-steps .act.next");
@@ -364,7 +376,10 @@ try {
       assert.equal(await vp.locator('header .cta a.primary[href="#invest-yourself"]').count(), 1, "W6: the main hero button is invest yourself");
       assert.equal(await vp.locator('header .cta a[href="#run-invest"]').count(), 1, "W6: hero button checks proven earnings");
       // F1: the 30-second screen: one-sentence lede, and the buttons sit above the picture.
-      assert.ok((await vp.locator("header .lede").textContent()).split(/[.!?]\s/).length <= 3, "F1: lede is at most two sentences");
+      const lede = (await vp.locator("header .lede").textContent()).trim();
+      assert.ok(lede.split(/[.!?]\s/).length <= 2, `F1: lede is at most two sentences: ${lede}`);
+      // L1 (loop 45): the lede names the fear removed: faked revenue and a kept key.
+      assert.ok(/revenue can be faked/.test(lede) && /keep a key/.test(lede), "L1: the lede names both fears");
       assert.ok(await vp.evaluate(() => document.querySelector("header .cta").getBoundingClientRect().bottom < 800), "F1: buttons above the fold at 800px");
       assert.equal(await vp.locator('header .cta a[href="#run-cheat"]').count(), 1, "W6: hero button runs the cheat scenario");
       // M1: the buyer's due-diligence cards: two buys (one refused) and one investment.
@@ -408,6 +423,7 @@ try {
         const sorted = await vp.locator("#ex-table tbody tr td code").allTextContents();
         assert.deepEqual(sorted, [...sorted].sort(), "V9: sorting by name works");
         assert.ok(first, "V9: rows have names");
+        assert.match(await vp.locator("#ex-table tbody tr.ex-featured .ex-early").textContent(), /early: 1 day of revenue/, "E1: the featured row says the multiple is early");
       } else {
         assert.equal(await ex.isVisible(), false, "V9: hidden with no exchange");
       }
@@ -418,6 +434,13 @@ try {
         await iy.waitFor({ state: "visible" });
         assert.equal(await vp.locator("#iy-steps > li").count(), 5, "V8: five invest steps");
         assert.ok((await iy.textContent()).includes(rec.open_offer.agent), "V8: commands name the offer's agent");
+        // I1 (loop 45): "Investors so far" lists the MCP agent investor and the page's Invest tx, each labelled.
+        const inv = await vp.locator("#iy-investors li").allTextContents();
+        for (const h of rec.open_offer.offer.holders) assert.ok(inv.some((t) => t.includes(h.account) && /MCP agent/.test(t)), `I1: ${h.account} labelled as the MCP agent investor`);
+        if (rec.open_offer.example_tx) assert.ok(inv.some((t) => t.includes(rec.open_offer.example_tx.account) && /Invest button/.test(t) && /signed by script/.test(t)), "I1: the Invest-button tx is listed and labelled");
+        // E1 (loop 45): an honest note on the early multiple, from the data.
+        assert.match(await vp.locator("#iy-early").textContent(), /^Early: 1 day of revenue \(50\.00\)\. The price is 250\.00 for 25% of earnings until 30 Nov 2026\.$/, "E1: early note on the invest card");
+        checks += 3;
         // W9: one-click wallet links. Disabled until a valid account is typed; then the link is
         // MyNearWallet's /sign page with one transaction (faucet + buy) signed by that account.
         assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W9: invest link disabled with no account");
@@ -495,13 +518,16 @@ try {
     // scorecards and the playground's live state; prose sits in closed folds.
     // Loop 45 added the business lines judges asked for (fee, running cost, first users, deal splits)
     // and the judge command block: about 100 words, so the budget moved from 740 to 850.
-    assert.ok(words <= 850, `U2: ${words} visible words on load at ${vp.width}px (budget 850)`);
+    // Loop 45 round 3 added what judges asked for: the two-sentence lede naming both fears, labelled
+    // investors, the early-multiple note and why each playground step is disabled: about 65 words.
+    assert.ok(words <= 910, `U2: ${words} visible words on load at ${vp.width}px (budget 910)`);
     const order = await q.evaluate(() => ["exchange", "invest-yourself", "protect", "play", "evidence-run", "check", "for-judges"].map((id) => {
       const e = document.getElementById(id); return e ? e.getBoundingClientRect().top + scrollY : -1; }));
     assert.ok(order.every((y, i) => y >= 0 && (i === 0 || y > order[i - 1])), `U3: sections in order (${order.join(", ")})`);
     assert.equal(await q.evaluate(() => document.getElementById("replay").open), false, "U3: the offline replay is folded on a plain load");
     const h = await q.evaluate(() => document.documentElement.scrollHeight);
-    assert.ok(h <= (vp.width > 600 ? 4100 : 7700), `U4: page is ${h}px tall at ${vp.width}px`);
+    // Loop 45 round 3: the same additions (step reasons, investor labels, early note) cost ~120px on desktop, ~330px at 375px.
+    assert.ok(h <= (vp.width > 600 ? 4200 : 7950), `U4: page is ${h}px tall at ${vp.width}px`);
     const banned = await q.evaluate(() => {
       const judges = document.getElementById("for-judges").innerText + document.getElementById("ex-note").innerText + document.querySelector("footer").innerText;
       return (document.body.innerText.match(/NotOwner|NotRunner|NEP-\d|nft_token|0xfe|born clean|age-weighted|escrow floor/g) || []).filter((w) => !judges.includes(w));
@@ -543,6 +569,23 @@ try {
     assert.ok(html.includes(`${rustTests} Rust tests and ${mcpTests} MCP tests`), `B4: the page says ${rustTests} Rust tests and ${mcpTests} MCP tests`);
     assert.ok(!/\d+\+ tests/.test(html), "B4: no rounded test count");
     checks += 6;
+    // E1/I1 (loop 45): the early-multiple note and the investor labels, from the data.
+    {
+      const dd = JSON.parse(readFileSync(new URL("data/diligence.json", web), "utf8"));
+      const t3 = dd.cards.find((c) => c.agent === world.open_offer.agent);
+      assert.equal(t3.revenue_days, 1, "E1: translator3's counted revenue came in on one day (scene 8)");
+      const n = earlyNote({ days: 1, counted: 5000, price: 25000, bps: 2500, end: Date.UTC(2026, 10, 30, 23, 59, 59) });
+      assert.equal(n.multiple, "20.0×");
+      assert.equal(n.short, "early: 1 day of revenue");
+      assert.equal(n.text, "Early: 1 day of revenue (50.00). The price is 250.00 for 25% of earnings until 30 Nov 2026.");
+      assert.equal(earlyNote({ days: 3, counted: 5000, price: 25000, bps: 2500, end: 0 }).short, "early: 3 days of revenue");
+      assert.equal(earlyNote({ days: 40, counted: 5000, price: 25000, bps: 2500, end: 0 }), null, "E1: no note once there is a month of revenue");
+      const list = investorList(world.open_offer);
+      assert.deepEqual(list.map((x) => x.account), ["carol.agentexit5.testnet", "p6.agentexit5.testnet"]);
+      assert.match(list[0].label, /MCP agent investor/);
+      assert.match(list[1].label, /Invest button tx, signed by script/);
+      checks += 3;
+    }
     // B5: the factory link is the recorded scene-13 birth.
     const scene13 = readFileSync(new URL("out/scenes/scene-13.json", repo), "utf8");
     const factoryTx = /txns\/(\w+)" target="_blank" rel="noopener noreferrer" id="factory-tx"/.exec(html)[1];
@@ -647,6 +690,24 @@ try {
     await q.waitForFunction(() => document.getElementById("replay").open);
     checks++;
     await ctx.close();
+  }
+
+  // N1 (loop 45): at 375px every nav anchor stays reachable (the row scrolls sideways; the page does not).
+  {
+    const q = await page({ width: 375, height: 740 });
+    await q.goto(base);
+    await q.waitForSelector('#scenarios[data-ready="1"]');
+    const hrefs = await q.locator('nav.top a[href^="#"]:not(.brand)').evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+    assert.deepEqual(hrefs, ["#exchange", "#invest-yourself", "#protect", "#evidence-run", "#for-judges"], "N1: nav anchors");
+    for (const h of hrefs) {
+      const a = q.locator(`nav.top a[href="${h}"]`);
+      assert.ok(await a.evaluate((x) => getComputedStyle(x).display !== "none"), `N1: ${h} shown at 375px`);
+      await a.click();
+      await q.waitForFunction((want) => location.hash === want, h);
+      checks++;
+    }
+    await noHorizontalScroll(q, "nav at 375px");
+    await q.close();
   }
 
   assert.deepEqual(problems, [], "no console errors");

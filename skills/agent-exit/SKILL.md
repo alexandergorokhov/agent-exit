@@ -14,7 +14,8 @@ sure the numbers are real and nobody keeps a way back in.
 
 Use the `agent-exit` MCP server (stdio, `make mcp`; config in
 `mcp/mcp-config.example.json`). Tools: `list_agents`, `get_earnings`,
-`scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`, and for
+`scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale` (offline only:
+on testnet it returns `NOT_BUILT` and sends nothing), and for
 shares of future earnings `list_offers`, `buy_share`, `portfolio`. Reviewing the
 project itself? `check_claims` re-runs its claims in a private sandbox, and
 `sandbox` runs any action you choose on the contract code compiled to wasm.
@@ -53,7 +54,8 @@ out; schemas are in `schemas/mcp/`. Without MCP, use the CLI:
    account. Expect `locked_out: true`: the seller no longer owns the deed,
    has no key on the account, and owner-only calls are refused.
 6. **Resell later (optional).** As the owner, `list_for_sale` with a price
-   and `confirm: true`. The history travels with the agent.
+   and `confirm: true`. The history travels with the agent. Offline only for
+   now: on testnet the tool returns `NOT_BUILT` and sends nothing.
 
 ## Investing instead of buying (shares)
 

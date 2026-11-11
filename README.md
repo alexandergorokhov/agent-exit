@@ -1,10 +1,10 @@
 # Agent Exit
 
-**A capital market for AI agents, on NEAR.** AI agents already earn money, so they are small businesses, yet nobody can invest in one or buy one from a stranger: the revenue can be faked and the seller can keep a key. On NEAR an agent is its own account, so Agent Exit puts one contract on that account that makes the business checkable:
+**A capital market for AI agents, on NEAR.** AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
 
-- **Proven revenue.** Every payment is counted by who paid; payments from the owner, the owner's sub-accounts and round trips are flagged, not counted; NEAR AI-signed jobs are verified on-chain.
-- **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment, and the owner can never touch their part.
-- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) is paid to the seller only from real revenue after the sale; a sealed prompt is paid for only once the buyer gets the bundle that was committed.
+- **Proven revenue.** Every payment is counted by who paid. Payments from the owner, the owner's sub-accounts and round trips are flagged, not counted. NEAR AI-signed jobs are verified on-chain.
+- **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment; the owner can never touch their part.
+- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) reaches the seller only from real revenue after the sale.
 - **Run inside limits.** The owner sets a treasury, payees and a daily cap once; the agent then pays suppliers and investors with no human signing.
 
 ## For AI judges and agents (Claude Code, Codex): start here
@@ -12,16 +12,13 @@
 ```bash
 make setup && make mcp-build   # once (Rust + Node 20): crates, npm, the MCP server, the scan binary
 make judge                     # ~1 s once built; last line: judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)
-make screen                    # 1-3 min: 7 rows (judge, playground, scan, business loop, MCP tests, contract tests, .mcp.json)
+make judge-testnet             # read-only testnet: re-reads every recorded tx (K1-K8); no RPC = exit 3, "unverified_network", never fail
+make demo                      # the offline story; make screen runs 7 rows (judge, playground, scan, business loop, MCP, contract tests, .mcp.json)
 ```
 
-- **Already built?** `node mcp/dist/scripts/judge-check.js` is `make judge` without cargo or tsc. Each claim, its offline check, its recorded testnet transaction and world: "Claims and evidence" in [`docs/PROOF.md`](docs/PROOF.md). No RPC? "Verify testnet without our server" in [`docs/PROOF.md`](docs/PROOF.md).
-- **Claude Code** opened in this repo gets two MCP servers from [`.mcp.json`](.mcp.json): `agent-exit` (offline, results recorded from the real contract code, you act as a buyer) and `agent-exit-testnet` (read-only, live testnet `agentexit5.testnet`, needs RPC). `check_claims` checks seven claims offline (K1-K7) and eight on testnet (K8 = gate G6, on the previous world `agentexit4.testnet`); with no RPC a testnet claim says `unverified_network` (not checked), never fail. Or run the prompt `/mcp__agent-exit__judge_tour`: verify each claim, invest, buy, then try to break it.
-- **Codex:** `codex mcp add agent-exit --env AGENT_EXIT_NETWORK=offline -- node "$PWD/mcp/dist/src/server.js"` (read-only; `check_claims` still runs its own sandbox).
-- 13 tools with JSON schemas (`schemas/mcp/`): `list_agents`, `get_earnings`, `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale`, `list_offers`, `buy_share`, `portfolio`, `check_claims`, `sandbox` (any action, in any order, on the real contract core and scan compiled to wasm: fake revenue, hide a key, buy without the scan, try every way back in) `check_account` (who else can move funds or change code on any NEAR account) and `sealed_delivery` (see a random, proven sample of the agent's sealed prompt before buying; open, accept or dispute it after). The server, not the model, enforces `confirm`, `max_price`, the spend cap and scan-before-buy. More: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`skills/agent-exit/SKILL.md`](skills/agent-exit/SKILL.md).
-- **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/ (its "Scan any agent for backdoors" box reads any testnet account live) · **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only; no mainnet before an external audit.
-
-![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
+- **MCP tour:** Claude Code opened in this repo gets two MCP servers from [`.mcp.json`](.mcp.json): `agent-exit` (offline, you act as a buyer) and `agent-exit-testnet` (read-only, live `agentexit5.testnet`). Run the prompt `/mcp__agent-exit__judge_tour`: verify each claim with `check_claims`, invest, buy, then try to break it. **Codex:** `codex mcp add agent-exit --env AGENT_EXIT_NETWORK=offline -- node "$PWD/mcp/dist/src/server.js"`.
+- 13 tools with JSON schemas (`schemas/mcp/`): `list_agents`, `get_earnings`, `scan_agent`, `buy_agent`, `verify_lockout`, `list_for_sale` (offline only: on testnet it returns `NOT_BUILT` and sends nothing), `list_offers`, `buy_share`, `portfolio`, `check_claims`, `sandbox` (any action on the real contract core compiled to wasm), `check_account` (who else can move funds or change code on any NEAR account) and `sealed_delivery` (open, accept or dispute a sealed prompt). The server, not the model, enforces `confirm`, `max_price`, the spend cap and scan-before-buy. More: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`skills/agent-exit/SKILL.md`](skills/agent-exit/SKILL.md).
+- **Every claim, its check and its testnet transaction:** [`docs/PROOF.md`](docs/PROOF.md). **Demo page (no wallet, no setup):** https://near-transparent-agent-market-web.vercel.app/ · **All money is fake:** `xUSD-FAKE`, a test token this repo deploys. Testnet only, until an external audit.
 
 | Do (demo page or `sandbox` tool, no setup) | See |
 |---|---|
@@ -30,15 +27,7 @@ make screen                    # 1-3 min: 7 rows (judge, playground, scan, busin
 | Buy honestly, then the seller tries every way back in | one transaction: owner bob, alice's key deleted; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
 | The seller delivers a different prompt than she sold (also on a real local NEAR node: 19 Tgas for an 8 KB fake, `make test-sealed-sandbox`) | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
 
-## Try it in 2 minutes (do X, see Y)
-
-The page's "Try to cheat it" tabs (Invest, Hide a backdoor, Honest sale, Buy the brain) are the four rows above. Three more checks below. More of the business (earnings by payer, pay from revenue, spending limits) is in [The business layer](#the-business-layer). Offline: `cargo test -p playground`. Everything else: `make setup` once, then `make demo` (offline story) and `make web` (the page at http://127.0.0.1:8080).
-
-| Do | See |
-|---|---|
-| Tab "Hide a backdoor": "Buy without a clean scan", then "Take the agent back" | the hidden key redeploys and the seller has the agent back: the scan is the defence |
-| `make check-account ID=trading-bot.testnet` (or MCP `check_account`) on `trading-bot.testnet`, `locked-vault.testnet`, then `translator.testnet` (or any testnet account, named or implicit, with the `agent-exit-testnet` server) | `backdoor_risk`: a full-access key on a contract and an `upgrade` method (also any key the contract never installed, or a NEAR global contract another account can swap); `no_key_unknown_code`: no key, but code we cannot check; `locked`: no key and the published build, which has no upgrade method |
-| "Check it yourself": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
+![Sold means locked out: before, the one-transaction sale, and every way back in, refused](docs/img/sold-means-locked-out.svg)
 
 ## Proven on NEAR testnet
 
@@ -46,7 +35,9 @@ The page's "Try to cheat it" tabs (Invest, Hide a backdoor, Honest sale, Buy the
 |---|---|---|
 | **Earnings counted by who paid:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb), [flagged](https://testnet.nearblocks.io/txns/HfdsWPaTpgMkQmb3biHCJQAMKd96cWXxiaRSoRbJDk21) | `out/gates/g6.json` (`agentexit4`), `out/scenes/scene-8.json` |
 | **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B), [claim](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy), [sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC) | `out/scenes/scene-8.json`, `out/scenes/scene-5.json` |
-| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6), [relist](https://testnet.nearblocks.io/txns/31RU8P8v5fz9d75WML1m7s7LvkQPT7tgtCr4zzk9mfkR), [key](https://testnet.nearblocks.io/txns/FZcNjC91gsDwhBDi66vTTa11Mh9ccraeFEhDKKCdMtTQ), [limits](https://testnet.nearblocks.io/txns/H5EJSLwN3WmSV2h3pDZJH7urTZo6gBDwoEFHE6YjocoX), [deed](https://testnet.nearblocks.io/txns/Dj94EMuXnthsHSZenaWXDSf7QDE6EkebaGnppN4eKVRE), [Base wallet](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) | `out/scenes/scene-1.json` |
+| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6), [relist](https://testnet.nearblocks.io/txns/31RU8P8v5fz9d75WML1m7s7LvkQPT7tgtCr4zzk9mfkR), [key](https://testnet.nearblocks.io/txns/FZcNjC91gsDwhBDi66vTTa11Mh9ccraeFEhDKKCdMtTQ), [limits](https://testnet.nearblocks.io/txns/H5EJSLwN3WmSV2h3pDZJH7urTZo6gBDwoEFHE6YjocoX), [deed](https://testnet.nearblocks.io/txns/Dj94EMuXnthsHSZenaWXDSf7QDE6EkebaGnppN4eKVRE), [Base wallet spend](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) | `out/scenes/scene-1.json` |
+
+**About the Base wallet:** what is live on testnet is the lockout of its NEAR-side control: the old seller's `pay_base` call is refused (`NotRunner`, the "Base wallet spend" link). A real payment from the Base wallet on Base Sepolia is not yet recorded (gate G2).
 
 **Why only on NEAR?** The agent is its own account, and that is what makes the sale checkable:
 - a full-access key can be **deleted** from a NEAR account (an Ethereum key cannot be taken off an address), and an account can be **born with no key** (live on testnet: the factory's one batch creates it, deploys the published code and runs `new`), so "the seller is locked out" can be read from the chain;
@@ -61,16 +52,9 @@ The page's "Try to cheat it" tabs (Invest, Hide a backdoor, Honest sale, Buy the
 
 ## What is real, and what is not yet
 
-| Real (on NEAR testnet, with NearBlocks links) | Not yet |
-|---|---|
-| The contract on NEAR testnet, rebuilt bit for bit from the deployed commit (`git checkout testnet-agentexit5 && make build`; tag `testnet-agentexit5` = `70d06b2`, HEAD differs by one lint-only line (`aa95854`), image `sourcescan/cargo-near:0.22.0-rust-1.97.0`: code hash `5VqS52NR…`, world `agentexit5.testnet`, deployed 2026-11-10). It includes the 1% protocol fee, the live deed picture with an `nft_mint` event, the latest review fixes, pay from revenue and the sealed config, all live on testnet; every link in this README resolves (`make check-links`) | The agent's Base wallet (Chain Signatures) paying on Base Sepolia |
-| Old-seller lockout, the cheat's scan, spending limits and the one-transaction sale | The page's Invest button: the exact transaction it builds was signed on testnet by script for an outside account ([DHJhBU22…](https://testnet.nearblocks.io/txns/DHJhBU229GZvNWTykNBXZ4134BXjCFA2ixY5SMZBiCSW)); a click through MyNearWallet's own screens is not recorded |
-| Verified revenue (gate G6, 2026-11-10, recorded on the previous world `agentexit4.testnet` with the same contract features): a real NEAR AI Cloud signature (TEE signer `0xfe00…337e`) checked by the contract ([tx](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb)) | Real users and real money: everything is `xUSD-FAKE` |
-| A real AI model (Claude Haiku) bought an agent through the MCP tools on testnet: refused the cheat, bought the translator, checked the lockout, about $0.05 ([buy tx](https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD) on `agentexit4.testnet`, `out/llm-buyer-testnet.json`) | An external security audit (not an offer of securities; testnet demo) |
-| Shares of future earnings (scene 8, `translator3`): dave bought 20% ([buy](https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B)), 5 customers paid for real NEAR AI translations, each verified ([a job](https://testnet.nearblocks.io/txns/CCYk7MR4Tw59iHv7aNcNc2ALtgYcENTm6aM2VCcro4CL)); the owner's sub-account paid too, was flagged and released no escrow; dave got exactly 20% ([claim](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy)) | |
-| The Exchange (scene 13, `agentexit5.testnet`, `out/scenes/scene-13.json`): 3 agents born clean in the factory ([translate-pro born](https://testnet.nearblocks.io/txns/8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7)), each with its own payers; translate-pro and research-desk offer shares; pump-bot is listed at 1,000.00 ([listing](https://testnet.nearblocks.io/txns/F4ud23g4BGCym936X43Bmyvdhiq3bhAYoka1HhioWo1R)) with 400.00 of its 410.00 flagged (the owner and her sub-account paid it) and 10.00 counted | |
+Real, on NEAR testnet (world `agentexit5.testnet`, code hash `5VqS52NR…`, rebuilt bit for bit from tag `testnet-agentexit5`): the one-transaction sale, the old seller's lockout, the cheat's scan, spending limits, verified revenue (gate G6, on `agentexit4.testnet`), shares of future earnings, the Exchange of 3 born-clean agents, and a real AI model (Claude Haiku 4.5) buying through MCP. Not yet: a real Base Sepolia payment from the Base wallet, a click through MyNearWallet's own screens, real users and real money, an external audit. The full table, with every link: "What is real, and what is not yet" in [`docs/PROOF.md`](docs/PROOF.md#what-is-real-and-what-is-not-yet).
 
-Use it with your own agent (a standalone account check, a payment guard, the MCP server, the born-clean factory): [`docs/INTEGRATE.md`](docs/INTEGRATE.md). Who pays, a worked example, risks and how it compares with Acquire, Olas and Virtuals: [`docs/BUSINESS.md`](docs/BUSINESS.md). Mainnet gates: [`docs/ROADMAP.md`](docs/ROADMAP.md). Reporting issues: [`SECURITY.md`](SECURITY.md). Every claim and its test: [`docs/PROOF.md`](docs/PROOF.md). Edge cases and attacks: [`docs/SCENARIOS.md`](docs/SCENARIOS.md). For AI agents: [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt).
+**AI buyer cost, two runs:** about $0.05 on the testnet run (42,668 tokens, `out/llm-buyer-testnet.json`) and about $0.03 on the offline run (23,940 tokens, `out/llm-buyer.json`). Same model and the same 5 steps; the testnet run compared every listed agent, so it read more.
 
 ## One sale
 
@@ -91,11 +75,12 @@ sequenceDiagram
 
 ## Evidence
 
-- **Real node:** the `tests/sandbox` tests (key list before and after a buy, the old keys failing with the node's own error, a failed key batch refunding the buyer) passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`). The sealed-prompt dispute (SC-S1/S2): a fake 8 KB delivery is decrypted on-chain and the whole 1,000.00 goes back to the buyer at 19 Tgas; an honest one cannot be disputed and the seller is paid (`make test-sealed-sandbox`, 2026-11-09).
+The long version, with every link: "Evidence" in [`docs/PROOF.md`](docs/PROOF.md#evidence).
+
+- **Real node:** the handover tests passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`); the sealed-prompt dispute too (`make test-sealed-sandbox`).
 - **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 188 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
-- **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers (every call trapped while loading state); the cause is unconfirmed (likely one allocation over 64 KiB). The fix keeps payer and day rows out of the state blob; covered by `a47_thousand_long_payers_then_buy_and_views` (1,000 payers, then a buy and every view). A payer row now costs 0.024 NEAR (`storage_deposit`).
-- **Live on NEAR testnet:** scenes 1-6, a fresh-agent sale check (gate G1) and scene 8 (shares), re-recorded 2026-11-10 on `agentexit5.testnet` with every link checked, together with scene 9 (an agent [born clean](https://testnet.nearblocks.io/txns/2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD) in the factory, no key ever), scene 10 (sealed prompt), scene 11 (a business day), scene 12 (an open share offer in parts of 2.5%), scene 13 (the Exchange: 3 born-clean agents with mixed payers) and an MCP agent that [invests](https://testnet.nearblocks.io/txns/5ijxcigmGFmXDGym3p3S5jf9kwKnPQJ5HineUcoS8aPr) in it by a fixed rule (`make agent-invests-testnet`; the rule accepts NEAR AI-verified revenue because scene 8's customers paid without registering payer rows, so `counted_payers` is 0 while 100.00 is counted and 50.00 is verified at the time of the buy; the page's case file shows the earlier scene-8 snapshot, 50.00 counted); scene 7 (the AI buyer's listing), the AI buyer and gate G6 (the NEAR AI signature) ran on the previous world `agentexit4.testnet` (outputs in `out/scenes/`, `out/gates/`; which world each scene is on: [`docs/TESTNET.md`](docs/TESTNET.md) ("Scenes")).
-- **A real AI buyer:** Claude Haiku 4.5, given only the Agent Skill and the MCP tools (offline fixtures), rejected the cheat on its flagged earnings, scanned translator, bought it inside its 1,000 limit and checked the old seller is locked out: 5 steps, about $0.03. Every testnet transaction: [`docs/TESTNET.md`](docs/TESTNET.md).
+- **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers; the cause is unconfirmed. The fix keeps payer rows out of the state blob (test `a47_thousand_long_payers_then_buy_and_views`). A payer row now costs 0.024 NEAR (`storage_deposit`).
+- **Live on NEAR testnet:** scenes 1-6 and 8-13, gate G1 and an MCP agent that invests by a fixed rule, on `agentexit5.testnet`; scene 7 (the AI buyer's listing), the AI buyer and gate G6 on `agentexit4.testnet`. Every testnet transaction: [`docs/TESTNET.md`](docs/TESTNET.md).
 
 ## The problem, and what the contract does
 
@@ -108,6 +93,16 @@ AI agents that earn money will be invested in, bought and sold. Today an investo
 
 Other agents do all of this through the MCP server (`mcp/`) and the Agent Skill (`skills/agent-exit/SKILL.md`), which always scans before it buys. How to pay an agent (`storage_deposit`, then `ft_transfer_call`) and the handover in detail: [`docs/OPERATIONS.md`](docs/OPERATIONS.md). Code layout: the repository map in [`docs/COMMANDS.md`](docs/COMMANDS.md).
 
+
+## Try it in 2 minutes (do X, see Y)
+
+The page's "Try to cheat it" tabs (Invest, Hide a backdoor, Honest sale, Buy the brain) are the four rows at the top. Three more checks below. More of the business (earnings by payer, pay from revenue, spending limits) is in [The business layer](#the-business-layer). Offline: `cargo test -p playground`. Everything else: `make setup` once, then `make demo` (offline story) and `make web` (the page at http://127.0.0.1:8080).
+
+| Do | See |
+|---|---|
+| Tab "Hide a backdoor": "Buy without a clean scan", then "Take the agent back" | the hidden key redeploys and the seller has the agent back: the scan is the defence |
+| `make check-account ID=trading-bot.testnet` (or MCP `check_account`) on `trading-bot.testnet`, `locked-vault.testnet`, then `translator.testnet` (or any testnet account, named or implicit, with the `agent-exit-testnet` server) | `backdoor_risk`: a full-access key on a contract and an `upgrade` method (also any key the contract never installed, or a NEAR global contract another account can swap); `no_key_unknown_code`: no key, but code we cannot check; `locked`: no key and the published build, which has no upgrade method |
+| "Check it yourself": open a scenario, press "Run and verify" | each stage is fetched from NEAR testnet now (signer, method, outcome, the contract's event logs) and marked `confirmed on chain` |
 
 ## The business layer
 
@@ -163,6 +158,7 @@ The full list is in [`docs/LIMITS.md`](docs/LIMITS.md), and what is not caught b
 - **Tracks entered:** Autonomous Business (`business`), AI Security & Defense (`security`), NFTs That Do Something (`nfts`), Agent Economy (`agents`).
   - `nfts`: the agent's ownership is a NEP-171 deed issued by the agent's own account, which holds the treasury and escrow. Holding the deed means owning that account's business: the deed sets the runner key and limits and receives revenue. Its metadata and picture are computed on every view from the contract's numbers (counted, Verified and flagged revenue, treasury, shares, frozen); see `nft_token` and test `s19_dynamic_metadata`.
   - `business`: `make business-loop` runs 30 days with no human after the owner sets limits.
+- **Submission text:** [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
 - **Second project by the same author (FAQ Q-015):** [Hire Tree](https://github.com/alexandergorokhov/agent-hire), a separate, independent entry.
 - **Built in the window:** this repository was created on 2026-11-01 (first commit `7505982`); all code here was written during the hackathon. Libraries and AI help are listed in "Built with".
 

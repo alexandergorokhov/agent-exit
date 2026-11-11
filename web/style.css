@@ -89,12 +89,15 @@ nav.top { position: sticky; top: 0; z-index: 10; height: 48px; background: var(-
 nav.top .wrap { height: 100%; display: flex; align-items: center; gap: 22px; }
 nav.top a { color: var(--text-2); text-decoration: none; font-size: var(--fs-sm); font-weight: 600; }
 nav.top a:hover { color: var(--accent-ink); }
-nav.top .brand { margin-right: auto; font-weight: 800; color: var(--text); }
-nav.top .nav-judges { white-space: nowrap; }
+nav.top .brand { margin-right: auto; font-weight: 800; color: var(--text); white-space: nowrap; flex: none; }
+nav.top .nav-row { display: flex; align-items: center; gap: 22px; min-width: 0; }
+nav.top .nav-row a { white-space: nowrap; }
 @media (max-width: 640px) {
-  nav.top .wrap { gap: 14px; }
-  nav.top a:not(.brand):not(.nav-m) { display: none; }
-  nav.top a.nav-m { font-size: var(--fs-xs); }
+  nav.top .wrap { gap: 12px; }
+  /* Every section stays one tap away: the link row scrolls sideways, the page does not. */
+  nav.top .nav-row { gap: 16px; overflow-x: auto; scrollbar-width: none; height: 100%; padding-right: 8px; -webkit-overflow-scrolling: touch; mask-image: linear-gradient(to right, #000 85%, transparent); }
+  nav.top .nav-row::-webkit-scrollbar { display: none; }
+  nav.top .nav-row a { font-size: var(--fs-xs); display: flex; align-items: center; height: 100%; }
 }
 
 /* ----- hero ----- */
@@ -102,8 +105,9 @@ nav.top .nav-judges { white-space: nowrap; }
 .hero-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 40px; align-items: center; }
 .biz { margin: 16px 0 0; color: var(--text-2); max-width: 60ch; }
 .biz b { color: var(--text); }
-.lede { margin: 0; font-size: var(--fs-lg); line-height: 1.4; color: var(--text-2); max-width: 34ch; }
+.lede { margin: 0; font-size: var(--fs-lg); line-height: 1.4; color: var(--text-2); max-width: 44ch; }
 .lede b { display: block; color: var(--text); }
+.tagline { margin: 0 0 6px; font-size: var(--fs-lg); line-height: 1.4; color: var(--text); max-width: 34ch; }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; align-items: center; }
 .verify-links { width: 100%; margin: 4px 0 0; color: var(--muted); }
 
@@ -134,7 +138,7 @@ nav.top .nav-judges { white-space: nowrap; }
 @media (max-width: 520px) {
   .hero { padding: 22px 0 4px; }
   h1 { margin: 8px 0 8px; }
-  .lede { font-size: var(--fs-md); }
+  .lede, .tagline { font-size: var(--fs-md); }
   .cta { margin-top: 16px; gap: 8px; }
   .cta .btn { flex: 1 1 100%; min-height: 46px; }
   .ps-stats li { padding: 6px 12px; }
@@ -310,6 +314,9 @@ nav.top .nav-judges { white-space: nowrap; }
 .act.done .num { background: var(--accent-soft); color: var(--accent-ink); }
 .act.later:disabled { opacity: .7; border-color: var(--line); }
 .act-label { flex: 1; }
+.act .act-why { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--muted); }
+.ex-early { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--muted); white-space: nowrap; }
+.iy-early { margin: 6px 0 0; color: var(--text-2); }
 .who { flex: none; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 700; }
 .who small { display: none; } /* the name says the role */
 .who.alice { background: #fde8e4; color: #9b2c17; }

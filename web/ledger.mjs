@@ -37,3 +37,36 @@ export function waterfall(kind, price) {
   const held = kind === "sale" ? Math.round((price * 30) / 100) : Math.round(price / 2);
   return { seller: price - held - fee, fee, held, total: price };
 }
+
+/**
+ * An honest note on an early price ÷ revenue multiple. counted and price are
+ * in cents, bps is the share the offer sells, end is a ms timestamp (0: none).
+ * Returns null once there is a month of revenue: the multiple then speaks
+ * for itself.
+ */
+export function earlyNote({ days, counted, price, bps, end }) {
+  if (!(days > 0) || days >= 30 || !(counted > 0) || !(bps > 0)) return null;
+  const value = Math.round((price * 10000) / bps);
+  const multiple = `${(value / counted).toFixed(1)}×`;
+  const d = `${days} day${days === 1 ? "" : "s"} of revenue`;
+  const until = end ? ` until ${new Date(end).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}` : "";
+  return {
+    multiple,
+    short: `early: ${d}`,
+    text: `Early: ${d} (${fmt(counted)}). The price is ${fmt(price)} for ${bps / 100}% of earnings${until}.`,
+  };
+}
+
+/**
+ * "Investors so far" from the recorded open offer: each holder (bought by the
+ * MCP agent that invests by a fixed rule), then the page's own Invest-button
+ * transaction, signed by script. Each with a label saying which is which.
+ */
+export function investorList(offer) {
+  const out = (offer?.offer?.holders || []).map((h) => ({ account: h.account, bps: Number(h.bps), label: "MCP agent investor" }));
+  const ex = offer?.example_tx;
+  if (ex && ex.account && !out.some((h) => h.account === ex.account)) {
+    out.push({ account: ex.account, bps: Number(ex.holdings_bps || 0), tx: ex.tx, label: "Invest button tx, signed by script" });
+  }
+  return out;
+}

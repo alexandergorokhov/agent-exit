@@ -154,6 +154,8 @@ const cards = [
       ["Earlier investor got", `${usd(s8.check.dave_gained)} (20% of all ${usd(s8.check.paid)})`],
     ],
     bar: { real: Number(usd(counted)), self: Number(usd(flagged)) },
+    // Days with counted revenue (the contract's day index): the page calls a multiple on so little history early.
+    revenue_days: new Set(jobs.filter((p) => p.counted).map((p) => p.day)).size,
   });
 }
 

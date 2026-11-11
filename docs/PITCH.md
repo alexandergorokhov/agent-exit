@@ -1,8 +1,10 @@
 # Pitch and demo explanation
 
+**A capital market for AI agents.** AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
+
 For the submission form, the video voice-over and a judge who has two minutes.
 Order (owner's choice): **business → proven earnings → invest or buy → security**.
-All money is `xUSD-FAKE` on NEAR testnet. Every claim below links to a test or a testnet transaction in the README.
+All money is `xUSD-FAKE` on NEAR testnet. Every claim below links to a test or a testnet transaction in the README or [`docs/PROOF.md`](PROOF.md).
 
 ## One line
 

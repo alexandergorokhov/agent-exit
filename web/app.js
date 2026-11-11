@@ -6,7 +6,7 @@
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
 import { signUrl, investTx, claimTx, validAccount } from "./wallet-link.mjs";
-import { fmt, investorPayout, waterfall } from "./ledger.mjs";
+import { fmt, investorPayout, waterfall, earlyNote, investorList } from "./ledger.mjs";
 const params = new URLSearchParams(location.search);
 const network = params.get("network") === "testnet" ? "testnet" : "offline";
 
@@ -425,16 +425,17 @@ async function renderExchange() {
     const counted = c.bar.real, gross = c.bar.real + c.bar.self;
     const payers = Number((/from (\d+) paying/.exec((c.rows.find(([k]) => /^Counted/.test(k)) || [])[1] || "") || [])[1] || 0);
     const ask = Number((/([\d.]+)$/.exec(c.deal || "") || [])[1] || 0);
-    let deal = c.deal_short || c.deal, value = ask || null, target = `#case-${c.name}`, featured = false;
+    let deal = c.deal_short || c.deal, value = ask || null, target = `#case-${c.name}`, featured = false, early = null;
     if (o && o.agent === c.agent) {
       deal = `${Number(o.part_bps) / 100}% parts: ${money(usd(o.amount))} each`;
       value = usd(o.offer.price) * 10000 / Number(o.offer.bps);
       target = "#invest-yourself";
       featured = true;
+      early = offerNote(o, c);
     } else if (c.name === "translator") {
       deal = `sold to bob for ${money(ask)}`;
     }
-    rows.push({ name: c.name, counted, payers, deal, target, featured, flaggedPct: gross ? (100 * c.bar.self) / gross : 0,
+    rows.push({ name: c.name, counted, payers, deal, target, featured, early, flaggedPct: gross ? (100 * c.bar.self) / gross : 0,
       multiple: value && counted > 0 ? value / counted : Infinity });
   }
   // Featured first (the agent you can invest in now), then by price over revenue.
@@ -452,7 +453,9 @@ async function renderExchange() {
       el("td", { "data-label": "Self-paid", class: `num${flag(r) ? " bad" : ""}`, text: `${r.flaggedPct.toFixed(0)}%` }),
       el("td", { "data-label": "Customers", class: "num", text: String(r.payers) }),
       el("td", { "data-label": "Deal", class: "ex-deal", text: r.deal }),
-      el("td", { "data-label": "Price ÷ revenue", class: "num", text: flag(r) ? "price unsupported" : Number.isFinite(r.multiple) ? `${r.multiple.toFixed(1)}×` : "no real revenue" }))));
+      el("td", { "data-label": "Price ÷ revenue", class: "num", title: r.early ? r.early.text : null },
+        flag(r) ? "price unsupported" : Number.isFinite(r.multiple) ? `${r.multiple.toFixed(1)}×` : "no real revenue",
+        r.early ? el("small", { class: "ex-early", text: r.early.short }) : null))));
     box.querySelectorAll("th[data-k]").forEach((th) => {
       if (th.dataset.k === key) th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
     });
@@ -474,6 +477,14 @@ async function renderExchange() {
   box.hidden = false;
 }
 renderExchange().catch(() => { /* the board stays hidden */ });
+
+// The early-multiple note for the open offer, from the recorded data: the
+// days with counted revenue (diligence card) and the offer's own terms.
+function offerNote(o, card) {
+  if (!o || !card) return null;
+  const cents = (raw) => Math.round(Number(BigInt(raw)) / 1e4);
+  return earlyNote({ days: Number(card.revenue_days || 0), counted: Math.round(card.bar.real * 100), price: cents(o.offer.price), bps: Number(o.offer.bps), end: Number(BigInt(o.offer.end) / 1000000n) });
+}
 
 // "Invest yourself": the open offer recorded by scene 12. Hidden until the
 // offer exists in data/testnet.json. The wallet returns here with the tx hash,
@@ -518,6 +529,10 @@ async function renderInvestYourself() {
     term("You get", `${pct}% of every customer payment`),
     term("You pay", `${usd(o.amount)} test dollars`),
     term("Until", endText));
+  const dd = await fetch("data/diligence.json").then((r) => r.json()).catch(() => null);
+  const note = offerNote(o, dd && dd.cards.find((c) => c.agent === o.agent));
+  const early = document.getElementById("iy-early");
+  if (note) { early.textContent = note.text; early.hidden = false; }
   if (o.example_tx && o.example_tx.explorer) {
     document.getElementById("iy-example").replaceChildren(" · ",
       el("a", { href: o.example_tx.explorer, target: "_blank", rel: "noopener noreferrer", text: "see a recorded investment ↗" }));
@@ -551,14 +566,21 @@ function renderInvestors(o, liveHolders) {
   const ul = document.getElementById("iy-investors");
   const mine = loadMine().filter((m) => m.agent === o.agent);
   const mineAcc = new Set(mine.map((m) => m.account));
-  const holders = (liveHolders || o.offer.holders || []).filter((h) => !mineAcc.has(h.account));
+  // Recorded holders carry a label (the MCP agent investor; the page's Invest tx signed by script).
+  const known = new Map(investorList(o).map((h) => [h.account, h]));
+  const base = liveHolders ? liveHolders.map((h) => ({ ...known.get(h.account), ...h })) : [...known.values()];
+  for (const h of known.values()) if (!base.some((b) => b.account === h.account)) base.push(h);
+  const holders = base.filter((h) => !mineAcc.has(h.account));
   ul.replaceChildren(
     ...mine.map((m) => el("li", { class: "mine" },
       el("b", { text: m.account }), ` · ${m.pct}% · `,
       el("a", { href: `${NB}/txns/${m.tx}`, target: "_blank", rel: "noopener", text: "tx ↗" }), ` · ${ago(m.at)}`)),
     ...holders.map((h) => el("li", {},
       el("a", { href: `${NB}/address/${h.account}`, target: "_blank", rel: "noopener", text: h.account }),
-      ` · ${Number(h.bps) / 100}% · ${liveHolders ? "live" : "recorded"}`)));
+      ` · ${Number(h.bps) / 100}%`,
+      h.label ? ` · ${h.label}` : "",
+      h.tx ? [" · ", el("a", { href: `${NB}/txns/${h.tx}`, target: "_blank", rel: "noopener", text: "tx ↗" })] : "",
+      ` · ${liveHolders ? "live" : "recorded"}`)));
 }
 
 // One-click links to MyNearWallet's sign page (web/wallet-link.mjs). The wallet

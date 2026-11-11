@@ -206,7 +206,8 @@
       "bar": {
         "real": 50,
         "self": 20
-      }
+      },
+      "revenue_days": 1
     }
   ]
 }

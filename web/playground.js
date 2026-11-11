@@ -292,11 +292,14 @@ function renderMission() {
   }));
   document.getElementById("mission-intro").textContent = mission.intro;
   const next = mission.steps.find((k) => !done.has(k));
+  const nextNo = mission.steps.indexOf(next) + 1;
   document.getElementById("mission-steps").replaceChildren(...mission.steps.map((k, i) => {
     const a = ACTIONS[k];
     const state = done.has(k) ? "done" : k === next ? "next" : "later";
     const b = el("button", { type: "button", class: `act ${state}`, "data-action": k, disabled: state === "later" },
-      el("span", { class: "num", text: done.has(k) ? "✓" : String(i + 1) }), who(a.who), el("span", { class: "act-label", text: a.label }));
+      el("span", { class: "num", text: done.has(k) ? "✓" : String(i + 1) }), who(a.who), el("span", { class: "act-label" }, a.label,
+        state === "later" ? el("small", { class: "act-why", text: `Do step ${nextNo} first` }) : null));
+    if (state === "later") b.title = `Do step ${nextNo} first`;
     b.addEventListener("click", () => run(k));
     return el("li", {}, b);
   }));

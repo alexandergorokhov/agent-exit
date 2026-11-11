@@ -106,7 +106,8 @@ env = { AGENT_EXIT_NETWORK = "offline" }
 
 Environment: `AGENT_EXIT_NETWORK` = `offline` (default) or `testnet`
 (read-only; anything else, any mainnet RPC or non-`.testnet` account makes
-the server exit 2). Write tools (`buy_agent`, `list_for_sale`, `buy_share`) need
+the server exit 2). Write tools (`buy_agent`, `list_for_sale`, `buy_share`; `list_for_sale` works offline
+only: on testnet it returns `NOT_BUILT` and sends nothing) need
 `AGENT_EXIT_ALLOW_WRITE=1` and `AGENT_EXIT_ACCOUNT_ID`; without them they
 return `WRITE_DISABLED`. `buy_agent` also needs `AGENT_EXIT_RUNNER_PK`, the
 public key it installs as the bought agent's runner key; it is never a tool
