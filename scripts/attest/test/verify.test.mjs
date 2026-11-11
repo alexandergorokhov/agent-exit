@@ -49,3 +49,44 @@ test("G7 a replayed report (another nonce) fails", () => {
   assert.equal(c.nonce_echoed.status, "fail");
   assert.equal(c.tdx_report_data_binds_address_and_nonce.status, "fail");
 });
+
+// G7b: which code runs. The quote's registers equal the report's, the measured
+// docker compose is the one in the report, the RTMR3 event log replays to the
+// quote, and the OS image is a published dstack release.
+import { codeChecks } from "../verify-nearai-attestation.mjs";
+
+test("G7b the saved report passes the code-measurement checks", () => {
+  const c = byId(codeChecks(saved.report, { model: saved.model }));
+  for (const id of ["quote_registers_match_report", "compose_is_measured", "rtmr3_replays", "os_image_is_published_dstack_release"]) {
+    assert.equal(c[id].status, "pass", `${id}: ${c[id].reason}`);
+  }
+  assert.ok(["pass", "fail", "unverified"].includes(c.container_images_pinned.status));
+});
+
+test("G7b an edited docker compose fails (hash no longer matches the quote)", () => {
+  const r = structuredClone(saved.report);
+  const m = r.model_attestations.find((x) => x.model_name === saved.model);
+  const ac = JSON.parse(m.info.tcb_info.app_compose);
+  ac.docker_compose_file += "\n# injected\n";
+  m.info.tcb_info.app_compose = JSON.stringify(ac);
+  const c = byId(codeChecks(r, { model: saved.model }));
+  assert.equal(c.compose_is_measured.status, "fail");
+});
+
+test("G7b an edited event payload fails the RTMR3 replay", () => {
+  const r = structuredClone(saved.report);
+  const m = r.model_attestations.find((x) => x.model_name === saved.model);
+  const e = m.event_log.find((x) => x.imr === 3 && x.event === "os-image-hash");
+  e.event_payload = "00".repeat(32);
+  const c = byId(codeChecks(r, { model: saved.model }));
+  assert.equal(c.rtmr3_replays.status, "fail");
+});
+
+test("G7b an OS image hash that is not a published release fails", () => {
+  const r = structuredClone(saved.report);
+  const m = r.model_attestations.find((x) => x.model_name === saved.model);
+  m.info.os_image_hash = "ab".repeat(32);
+  m.info.tcb_info.os_image_hash = "ab".repeat(32);
+  const c = byId(codeChecks(r, { model: saved.model }));
+  assert.equal(c.os_image_is_published_dstack_release.status, "fail");
+});

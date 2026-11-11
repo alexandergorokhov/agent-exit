@@ -17,9 +17,15 @@
 //   tdx_quote_verifies           Intel DCAP verification of the quote by Phala's public verifier
 //   gpu_attestation_nras         NVIDIA NRAS result, its JWT signature checked against NVIDIA's JWKS
 //   address_in_testnet_signer_list  the contract on testnet lists the address in get_status.signers
-// Not checked: which code the TEE runs (the measurements are recorded, not compared
-// with a published reference build). The report costs nothing: no completion is made.
-import { createPublicKey, randomBytes, verify as edVerify } from "node:crypto";
+// Which code (G7b, local): the quote's MRTD/RTMR0-3 equal the report's; sha256 of
+// the report's app_compose is compose_hash and the quote's MRCONFIGID binds it; the
+// RTMR3 event log replays to the quote (digests recomputed from payloads); the
+// os_image_hash is a published dstack release; the compose's images are pinned.
+// Not checked: MRTD/RTMR0-2 against a reference (none is published; it takes
+// building the dstack image), image provenance, and the model-serving containers
+// the compose-manager launches (not in the measured compose). The report costs
+// nothing: no completion is made.
+import { createHash, createPublicKey, randomBytes, verify as edVerify } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -175,8 +181,80 @@ async function signerListed(addr, agents) {
     : result("address_in_testnet_signer_list", "fail", `no checked agent lists ${addr}`, { checked: agents });
 }
 
+// ------------------------------------------------------------------ G7b: which code runs
+// Published dstack OS releases (production images), copied from the meta-dstack
+// v0.5.12 release notes: https://github.com/Dstack-TEE/meta-dstack/releases
+export const PUBLISHED_OS_IMAGES = {
+  "91fd5d69ccee3e5ea4f2aeb8c9b632c4358c4ecfc29ba1aa6fb1e402af209829": "dstack-nvidia-0.5.12",
+  "8db40cb23008d6213668b5816702d100b37b859a8a5bfd18d938ae3a1b3715bd": "dstack-0.5.12",
+};
+export const OS_RELEASES_SOURCE = "https://github.com/Dstack-TEE/meta-dstack/releases (v0.5.12)";
+
+const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+const sha384 = (b) => createHash("sha384").update(b).digest();
+
+/** TDX quote v4 TD report fields (offset in the quote, 48-byte header first). */
+function tdxRegisters(quoteHex) {
+  const q = Buffer.from(hex(quoteHex), "hex");
+  if (q.length < 632 || q.readUInt16LE(0) !== 4) return null;
+  const f = (a) => q.subarray(a, a + 48).toString("hex");
+  return { mrtd: f(184), mrconfigid: f(232), rtmr0: f(376), rtmr1: f(424), rtmr2: f(472), rtmr3: f(520) };
+}
+
+/** dstack's RTMR3 event digest: sha384(event_type as u32 LE || ":" || name || ":" || payload). */
+function eventDigest(e) {
+  return sha384(Buffer.concat([Buffer.from(Uint32Array.of(e.event_type).buffer), Buffer.from(`:${e.event}:`), Buffer.from(hex(e.event_payload), "hex")]));
+}
+
+export function codeChecks(report, { model }) {
+  const m = modelAtt(report, model);
+  if (!m) return [result("model_in_report", "fail", `no attestation for ${model} in the report`)];
+  const tcb = typeof m.info?.tcb_info === "string" ? JSON.parse(m.info.tcb_info) : (m.info?.tcb_info ?? {});
+  const regs = tdxRegisters(m.intel_quote);
+  const out = [];
+  if (!regs) return [result("quote_registers_match_report", "fail", "not a TDX v4 quote")];
+  const names = ["mrtd", "rtmr0", "rtmr1", "rtmr2", "rtmr3"];
+  const diff = names.filter((k) => regs[k] !== hex(tcb[k]));
+  out.push(diff.length
+    ? result("quote_registers_match_report", "fail", `the quote's ${diff.join(", ")} differ from the report's tcb_info`)
+    : result("quote_registers_match_report", "pass", "MRTD and RTMR0-3 in the signed quote equal the report's tcb_info"));
+  const appCompose = String(tcb.app_compose ?? "");
+  const composeHash = hex(tcb.compose_hash ?? m.info?.compose_hash);
+  const ok = sha256(Buffer.from(appCompose)) === composeHash && regs.mrconfigid === "01" + composeHash + "00".repeat(15);
+  out.push(ok
+    ? result("compose_is_measured", "pass", `sha256 of the report's app_compose (its docker compose) is compose_hash ${composeHash.slice(0, 16)}…, and the quote's MRCONFIGID is 01 || compose_hash: the quote measured exactly this compose`, { compose_hash: composeHash })
+    : result("compose_is_measured", "fail", "the app_compose in the report is not the one the quote measured (sha256 or MRCONFIGID differs)"));
+  const ev = (m.event_log ?? []).filter((e) => e.imr === 3);
+  let r = Buffer.alloc(48);
+  for (const e of ev) r = sha384(Buffer.concat([r, eventDigest(e)]));
+  const payload = (name) => { const e = ev.find((x) => x.event === name); return e ? hex(e.event_payload) : null; };
+  const osHash = hex(tcb.os_image_hash ?? m.info?.os_image_hash);
+  const replay = r.toString("hex") === regs.rtmr3;
+  const bound = payload("compose-hash") === composeHash && payload("os-image-hash") === osHash;
+  out.push(replay && bound
+    ? result("rtmr3_replays", "pass", `the ${ev.length} RTMR3 events, digests recomputed from their payloads, replay to the quote's RTMR3; its compose-hash and os-image-hash events name the hashes above`)
+    : result("rtmr3_replays", "fail", replay ? "RTMR3 replays, but its compose-hash or os-image-hash event names another hash" : "the RTMR3 event log does not replay to the quote's RTMR3"));
+  const release = PUBLISHED_OS_IMAGES[osHash];
+  out.push(release
+    ? result("os_image_is_published_dstack_release", "pass", `os_image_hash ${osHash.slice(0, 16)}… is the published ${release} image (${OS_RELEASES_SOURCE})`, { os_image_hash: osHash, release })
+    : result("os_image_is_published_dstack_release", "fail", `os_image_hash ${osHash.slice(0, 16)}… is not in the published releases we compare with (${OS_RELEASES_SOURCE})`));
+  let compose = {};
+  try { compose = JSON.parse(appCompose); } catch { /* not JSON */ }
+  const allowed = new Set(compose.allowed_envs ?? []);
+  const images = [...String(compose.docker_compose_file ?? "").matchAll(/^\s*image:\s*(\S+)/gm)].map((x) => x[1]);
+  const unpinned = images.filter((i) => !/@sha256:[0-9a-f]{64}/.test(i));
+  const overridable = images.map((i) => /^\$\{([A-Z0-9_]+)/.exec(i)?.[1]).filter((v) => v && allowed.has(v));
+  const evidence = { images, overridable_by_allowed_env: overridable };
+  out.push(unpinned.length
+    ? result("container_images_pinned", "fail", `${unpinned.length} of ${images.length} images are not pinned by digest`, evidence)
+    : overridable.length
+      ? result("container_images_pinned", "unverified", `all ${images.length} images are pinned by sha256, but ${overridable.join(", ")} is an allowed launch-time env that can replace an image`, evidence)
+      : result("container_images_pinned", "pass", `all ${images.length} images in the measured compose are pinned by sha256 digest`, evidence));
+  return out;
+}
+
 export async function checkAll(report, { model, nonce, signer, offline = false, agents = [] }) {
-  const out = localChecks(report, { model, nonce, signer });
+  const out = [...localChecks(report, { model, nonce, signer }), ...codeChecks(report, { model })];
   const m = modelAtt(report, model);
   if (!m) return out;
   if (offline) {
@@ -228,7 +306,7 @@ async function main() {
       schema: "nearai-attestation-check.v1",
       what: "Is the key that signs NEAR AI 'verified' payments (gate G6) in an Intel TDX + NVIDIA GPU TEE? Report fetched from NEAR AI Cloud (no completion, no charge), checked locally and by public verifiers.",
       fetched_at, endpoint: url, model, nonce, contract_signer: signer,
-      not_checked: "which code the TEE runs: the measurements (mrtd, rtmr0-3, compose_hash, os_image_hash) are recorded in the report but not compared with a published reference build",
+      not_checked: "MRTD and RTMR0-2 are not compared with a reference: nobody publishes them, and they can only be computed by building the dstack image (dstack-mr measure). The compose's sha256-pinned images are not traced to source, and the model-serving containers the compose-manager launches are not in the measured compose",
       checks, report,
     }, null, 2) + "\n");
     console.log(`attest: wrote ${OUT} (fetched ${fetched_at}, nonce ${nonce.slice(0, 16)}…)`);
