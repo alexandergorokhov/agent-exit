@@ -10,7 +10,7 @@
 - [README.md](README.md): what it is, what is proven and where, honest limits
 - [docs/PROOF.md](docs/PROOF.md): the claims table: what is proven, where and by which scenario ids
 - [docs/TESTNET.md](docs/TESTNET.md): every testnet transaction, and a scene index (scenes 1-13, G1, G6: what each proves, its world, a key transaction)
-- [out/scenes/scene-13.json](out/scenes/scene-13.json): recorded testnet scenes (`scene-1.json` to `scene-13.json`; each has `pass`, `what`, `txs[]` with `explorer` links)
+- [out/scenes/scene-13.json](out/scenes/scene-13.json): recorded testnet scenes (`scene-1.json` to `scene-13.json`; each has `pass` and `what`; most have `txs[]` with `explorer` links; scene 3 is a read-only scan and scene 12's buy tx is in `out/agent-invests-testnet.json`)
 - [out/agent-invests-testnet.json](out/agent-invests-testnet.json): a scripted MCP agent invests on testnet (carol buys a 2.5% part)
 - [AGENTS.md](AGENTS.md): exact commands and expected outputs for AI agents
 - [Makefile](Makefile): every target; unbuilt ones print "not built yet" and exit 1

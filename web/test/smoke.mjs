@@ -44,7 +44,8 @@ async function noHorizontalScroll(p, what) {
 try {
   for (const vp of [{ width: 1280, height: 900 }, { width: 375, height: 740 }]) {
     const p = await page(vp);
-    await p.goto(base);
+    // The walkthrough is folded under "Offline replay"; #replay opens it on step 1.
+    await p.goto(`${base}#replay`);
     await p.waitForSelector('#step[data-step="break-in"]');
     assert.equal(await p.locator("#steps li").count(), 6);
     assert.match(await p.textContent("#mode"), /offline: recorded results/);
@@ -371,7 +372,9 @@ try {
       assert.ok(/100% of counted/.test(await vp.locator('#dd-cards [data-agent="translator3"]').textContent()), "M1: verified share shown");
       checks++;
       // V5: the hero proof strip lists the sale tx and every refused break-in call.
-      await vp.waitForSelector("#proof-strip .ps-list li");
+      await vp.waitForSelector("#proof-strip .ps-list li", { state: "attached" }); // folded under "See the 6 refused calls"
+      assert.equal(await vp.locator("#proof-strip .ps-stats li a[href^=\"https://testnet.nearblocks.io/txns/\"]").count(), 3, "V5: each stat tile has its tx link");
+      assert.match(await vp.locator("#proof-strip .ps-stats li").nth(2).textContent(), /6\/6/, "V5: the lockout tile counts the refused calls with a tx");
       const strip = await vp.locator("#proof-strip").textContent();
       assert.ok(/one transaction/.test(strip) && /All refused/.test(strip), "V5: proof strip text");
       assert.equal(await vp.locator("#proof-strip .ps-list li").count(), 6, "V5: six refused calls");
@@ -393,7 +396,10 @@ try {
       const ex = vp.locator("#exchange");
       if (rec.exchange) {
         await ex.waitFor({ state: "visible" });
-        assert.equal(await vp.locator("#ex-table tbody tr").count(), rec.exchange.agents.length, "V9: one row per agent");
+        // One cast: the board also lists the three case-file agents, translator3 (the open offer) first.
+        const dd = JSON.parse(readFileSync(new URL("../data/diligence.json", import.meta.url), "utf8"));
+        assert.equal(await vp.locator("#ex-table tbody tr").count(), rec.exchange.agents.length + dd.cards.length, "V9: one row per agent");
+        assert.equal(await vp.locator("#ex-table tbody tr.ex-featured td code").first().textContent(), "translator3", "V9: the open offer is on the board, first");
         const first = await vp.locator("#ex-table tbody tr td code").first().textContent();
         await vp.click('#ex-table th[data-k="name"]');
         const sorted = await vp.locator("#ex-table tbody tr td code").allTextContents();
@@ -414,6 +420,10 @@ try {
         assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W9: invest link disabled with no account");
         await vp.fill("#iy-account", "Bad Name!");
         assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W9: invalid account keeps it disabled");
+        // W11: a .near name says why nothing happens and where to get a testnet account.
+        await vp.fill("#iy-account", "softlynx.near");
+        assert.equal(await vp.locator("#iy-invest").getAttribute("aria-disabled"), "true", "W11: a .near account keeps it disabled");
+        assert.match(await vp.locator("#iy-out").textContent(), /real-money \.near account.*\.testnet/, "W11: a .near account gets a testnet hint");
         await vp.fill("#iy-account", "judge.testnet");
         const href = await vp.locator("#iy-invest").getAttribute("href");
         assert.ok(href.startsWith(`${WALLET_SIGN}?transactions=`), "W9: invest link goes to MyNearWallet sign");
@@ -444,7 +454,7 @@ try {
       const differs = pills.filter((p) => p.includes("differs")).length;
       if (!lie) {
         assert.equal(confirmed, txStages + scans, `V1: every recorded tx and the scan confirmed (${pills.join(" | ")})`);
-        assert.ok(pills.filter((p) => p === "no transaction").length >= 2, "V2: node-refused keys say 'no transaction'");
+        assert.ok(pills.filter((p) => p === "refused (as expected)").length >= 2, "V2: node-refused keys say 'refused (as expected)'");
         assert.ok(asked.includes("tx") && asked.includes("query"), "V1: the page asked the chain");
       } else {
         assert.equal(differs, txStages, `V3: a different signer on chain shows as a mismatch (${differs}/${txStages}: ${pills.join(" | ")})`);
@@ -463,6 +473,101 @@ try {
     assert.ok(refuse(tx({ signed_tx_base64: "AAAA", wait_until: "NONE" })), "V4: a signed tx is never relayed");
     assert.ok(refuse(tx({ tx_hash: "GAPESp9FLYhSNgomeJDDgx6mPTCfsYxWrSCzz8V4eC3K", sender_account_id: "bob.near", wait_until: "NONE" })), "V4: mainnet sender refused");
     checks += 3;
+  }
+
+  // U1-U4 (redesign): a short first screen with one main action, sections in reading order, no sideways scroll.
+  for (const vp of [{ width: 1280, height: 800 }, { width: 375, height: 812 }]) {
+    const q = await page(vp);
+    await q.goto(base);
+    await q.waitForSelector('#scenarios[data-ready="1"]');
+    await q.waitForSelector('#play[data-ready="1"]');
+    await q.waitForSelector("#dd-cards .dd-card");
+    await q.waitForSelector("#proof-strip .ps-stats li");
+    await q.locator("#exchange").waitFor({ state: "visible" });
+    await q.locator("#invest-yourself").waitFor({ state: "visible" });
+    assert.ok((await q.locator("header .cta .btn").count()) <= 2, `U1: at most 2 hero buttons at ${vp.width}px`);
+    assert.equal(await q.locator("header .cta .btn.primary").count(), 1, "U1: one primary hero button");
+    const words = await q.evaluate(() => document.body.innerText.split(/\s+/).filter((w) => /\w/.test(w)).length);
+    // Was 1,808 before the redesign. What is left is mostly UI: the table, the three case-file
+    // scorecards and the playground's live state; prose sits in closed folds.
+    assert.ok(words <= 740, `U2: ${words} visible words on load at ${vp.width}px (budget 740)`);
+    const order = await q.evaluate(() => ["exchange", "invest-yourself", "protect", "play", "evidence-run", "check", "for-judges"].map((id) => {
+      const e = document.getElementById(id); return e ? e.getBoundingClientRect().top + scrollY : -1; }));
+    assert.ok(order.every((y, i) => y >= 0 && (i === 0 || y > order[i - 1])), `U3: sections in order (${order.join(", ")})`);
+    assert.equal(await q.evaluate(() => document.getElementById("replay").open), false, "U3: the offline replay is folded on a plain load");
+    const h = await q.evaluate(() => document.documentElement.scrollHeight);
+    assert.ok(h <= (vp.width > 600 ? 4200 : 7500), `U4: page is ${h}px tall at ${vp.width}px`);
+    const banned = await q.evaluate(() => {
+      const judges = document.getElementById("for-judges").innerText + document.getElementById("ex-note").innerText + document.querySelector("footer").innerText;
+      return (document.body.innerText.match(/NotOwner|NotRunner|NEP-\d|nft_token|0xfe|born clean|age-weighted|escrow floor/g) || []).filter((w) => !judges.includes(w));
+    });
+    assert.deepEqual(banned, [], `U4: no code names in visible text at ${vp.width}px`);
+    await noHorizontalScroll(q, `whole page at ${vp.width}px`);
+    checks += 7;
+    await q.close();
+  }
+
+  // W11: back from the wallet, the transaction shows on the page and stays listed (localStorage).
+  {
+    const world = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
+    if (world.open_offer) {
+      const o = world.open_offer;
+      const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
+      await ctx.route("**/*", async (route) => {
+        const u = route.request().url();
+        if (!u.startsWith(base)) return route.abort();
+        if (!u.startsWith(`${base}api/rpc`)) return route.continue();
+        const b = JSON.parse(route.request().postData());
+        const value = b.params.method_name === "get_holdings" ? { holdings: [{ bps: 250 }], claimable: "1500000" }
+          : [{ ...o.offer, sold_bps: 500, holders: [...o.offer.holders, { account: "judge.testnet", bps: 250 }] }];
+        return route.fulfill({ contentType: "application/json", body: JSON.stringify({ jsonrpc: "2.0", id: b.id, result: { result: [...new TextEncoder().encode(JSON.stringify(value))] } }) });
+      });
+      const wp = await ctx.newPage();
+      wp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+      const h = "D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B";
+      await wp.goto(`${base}?iy=judge.testnet&transactionHashes=${h}`);
+      await wp.locator("#iy-receipt").waitFor({ state: "visible" });
+      assert.equal(await wp.locator(`#iy-receipt a[href="https://testnet.nearblocks.io/txns/${h}"]`).count(), 1, "W11: the receipt links the tx");
+      await wp.waitForFunction(() => /1\.50/.test(document.getElementById("iy-receipt").textContent));
+      assert.ok((await wp.textContent("#iy-investors")).includes("judge.testnet · 2.5%"), "W11: listed among investors");
+      await wp.waitForFunction(() => /2 of 10 parts sold/.test(document.getElementById("iy-live").textContent));
+      await wp.goto(base);
+      await wp.locator("#invest-yourself").waitFor({ state: "visible" });
+      await wp.waitForFunction(() => document.getElementById("iy-investors").textContent.includes("judge.testnet"));
+      assert.ok((await wp.locator('#iy-investors a[href^="https://testnet.nearblocks.io/txns/"]').count()) >= 1, "W11: still listed after a reload");
+      // A cancelled signature changes nothing.
+      await wp.goto(`${base}?iy=judge.testnet&errorCode=userRejected`);
+      await wp.waitForFunction(() => /did not send/.test(document.getElementById("iy-out").textContent));
+      assert.equal(await wp.locator("#iy-receipt").isVisible(), false, "W11: no receipt when the wallet sent nothing");
+      // The invest button looks disabled (grey) with no account; a click still asks for one instead of going nowhere.
+      await wp.goto(base);
+      await wp.locator("#invest-yourself").waitFor({ state: "visible" });
+      await wp.click("#iy-invest", { force: true }); // Playwright waits on aria-disabled; a person can still click it
+      assert.match(await wp.textContent("#iy-out"), /Type your testnet account first/, "W11: a click with no account says what to do");
+      assert.ok(await wp.evaluate(() => document.activeElement.id === "iy-account"), "W11: and focuses the account box");
+      checks += 6;
+      await ctx.close();
+    }
+  }
+
+  // D1: deep links open their fold.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    // #run-day runs the scenario: answer the relay with an error instead of reaching for the network.
+    await ctx.route("**/*", (r) => { const u = r.request().url(); if (!u.startsWith(base)) return r.abort(); if (u.startsWith(`${base}api/rpc`)) return r.fulfill({ contentType: "application/json", body: '{"jsonrpc":"2.0","id":1,"error":{"message":"offline test"}}' }); return r.continue(); });
+    const q = await ctx.newPage();
+    q.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+    for (const [hash, fold] of [["#concept", null], ["#backend", "how-it-works"], ["#break-in", "replay"], ["#run-day", "sc-more"]]) {
+      await q.goto(`${base}${hash}`);
+      if (fold === "sc-more") await q.waitForFunction(() => document.querySelector(".sc-more")?.open === true);
+      else if (fold) await q.waitForFunction((id) => document.getElementById(id).open, fold);
+      else await q.locator(hash).waitFor({ state: "visible" });
+      checks++;
+    }
+    await q.goto(`${base}?network=testnet`);
+    await q.waitForFunction(() => document.getElementById("replay").open);
+    checks++;
+    await ctx.close();
   }
 
   assert.deepEqual(problems, [], "no console errors");

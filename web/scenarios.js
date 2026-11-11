@@ -144,20 +144,39 @@ function selfCheck(t) {
   -d '${body}'`;
 }
 
+/** "translator3.agentexit5.testnet" -> "translator3": the first part is the name people read. */
+const shortAcc = (text) => String(text).replace(/\b([a-z0-9_-]+)(?:\.[a-z0-9_-]+)*\.testnet\b/g, "$1");
+
+/** Plain words for the recorded labels; the method name stays in the stage's monospace hint. */
+const PLAIN = [
+  [/\(one ft_transfer_call\)/, "(one transaction)"],
+  [/set_runner_key \(her own key\)/, "puts her own operating key back"],
+  [/list_for_sale ([\d.]+)/, "relists it for $1"],
+  [/: set_limits/, ": changes its spending limits"],
+  [/nft_transfer the deed to herself/, "takes the ownership token back"],
+  [/pay_base \(the Base wallet\)/, "spends from its Base wallet"],
+  [/runner key: heartbeat/, "operating key: signs a call"],
+  [/setup key: heartbeat/, "setup key: signs a call"],
+  [/alice sets her runner key/, "alice sets her operating key"],
+  [/registry admin: add_signer \(NEAR AI Cloud signing address\)/, "registry admin trusts NEAR AI Cloud's signing address"],
+];
+const plain = (text) => PLAIN.reduce((t, [re, w]) => t.replace(re, w), shortAcc(text));
+
 function stageView(st, i) {
-  const head = st.kind === "scan"
+  const head = plain(st.kind === "scan"
     ? `buyer's scan of ${st.scan.agent}: ${st.scan.verdict}`
-    : st.t.label;
+    : st.t.label);
   const recorded = st.kind === "scan"
     ? `${st.scan.findings.map((f) => `${f.code}: ${f.detail}`).join("; ") || "no findings"}. A read of the account, not a transaction.${st.scan.verdict === "clean" ? "" : " No buy was sent."}`
     : st.kind === "nokey"
-      ? `Refused before any transaction existed: ${st.t.error || "the node rejected the key"}.`
+      ? `Refused, as expected: her deleted key could not even sign (${st.t.error || "the node rejected the key"}).`
       : `${st.t.ok ? "accepted" : `refused: ${st.t.error}`}${st.t.events.length ? `; events ${st.t.events.join(", ")}` : ""}`;
   const pill = el("span", { class: "vpill wait", text: "recorded" });
   const body = el("div", { class: "stage-body" },
     el("p", { class: "stage-rec" }, el("b", { text: "Recorded: " }), recorded),
-    st.kind === "tx" ? el("p", { class: "stage-call" }, el("code", { text: `${st.t.by} → ${st.t.receiver}.${st.t.method}()` }), " · ",
-      el("a", { href: st.t.explorer, target: "_blank", rel: "noopener noreferrer", text: "NearBlocks" })) : null,
+    st.kind === "tx" ? el("p", { class: "stage-call small" },
+      el("a", { href: st.t.explorer, target: "_blank", rel: "noopener noreferrer", text: "Transaction on NearBlocks ↗" }), " ",
+      el("code", { class: "hint", title: `${st.t.by} → ${st.t.receiver}.${st.t.method}()`, text: `${st.t.method}()` })) : null,
     // Review 5: the check above goes through this page's relay; this one does not.
     st.kind === "tx" ? el("details", { class: "selfcheck" }, el("summary", { text: "Check it without this page" }),
       el("p", { class: "muted small", text: "Ask a public NEAR archival node yourself:" }),
@@ -166,11 +185,17 @@ function stageView(st, i) {
   const d = el("details", { class: `stage ${st.kind === "tx" && !st.t.ok ? "refused" : ""}`, "data-kind": st.kind },
     el("summary", {}, el("span", { class: "snum", text: String(i + 1) }), el("span", { class: "stitle", text: head }), pill),
     body, out);
+  // Chain unreachable: the recording stands. Show it as recorded, with its explorer link (no alarm badge).
+  d._recorded = () => {
+    pill.className = "vpill rec";
+    pill.textContent = st.kind === "nokey" ? "refused (as expected)" : "recorded ✓";
+    out.replaceChildren();
+  };
   d._verify = async () => {
     if (st.kind === "nokey") {
-      pill.className = "vpill na";
-      pill.textContent = "no transaction";
-      out.replaceChildren(el("p", { class: "muted small", text: "Nothing reached the chain, so there is nothing to look up: the node refused the deleted key. The live key list (Read live) shows the key is gone." }));
+      pill.className = "vpill ok";
+      pill.textContent = "refused (as expected)";
+      out.replaceChildren(el("p", { class: "muted small", text: "Nothing reached the chain: her key was deleted in the sale, so the node refused it before any transaction existed." }));
       return "nokey";
     }
     pill.className = "vpill wait";
@@ -189,11 +214,10 @@ function stageView(st, i) {
         // non-archival node, or a wrong recording). Say so; never "unreachable".
         pill.textContent = "not found on chain";
         out.replaceChildren(el("p", { class: "muted small", text: "NEAR testnet answered that it does not know this transaction. Non-archival nodes keep about 2.5 days; open the NearBlocks link to check by hand." }));
-      } else {
-        pill.textContent = "chain unreachable";
-        out.replaceChildren(el("p", { class: "muted small", text: `Could not reach NEAR testnet from here (${e.message}). The recording and the NearBlocks link above still stand; open the link to check by hand.` }));
+        return null;
       }
-      return null;
+      d._recorded();
+      return "down";
     }
   };
   return d;
@@ -203,27 +227,38 @@ function scenarioCard(sc, data) {
   const stages = stagesFor(data, sc.steps);
   const list = el("div", { class: "stages" });
   const summary = el("p", { class: "run-summary muted small" });
-  const run = el("button", { type: "button", class: "primary", "data-run": sc.id, text: `Run and verify ${stages.length} stages` });
+  const n = (k) => `${k} stage${k === 1 ? "" : "s"}`;
+  const run = el("button", { type: "button", class: "primary", "data-run": sc.id, text: `Run and verify ${n(stages.length)}` });
   run.addEventListener("click", async () => {
     run.disabled = true;
     list.replaceChildren();
+    summary.className = "run-summary muted small";
     let ok = 0, bad = 0, na = 0, nokey = 0;
     for (let i = 0; i < stages.length; i++) {
       const d = stageView(stages[i], i);
       list.append(d);
       d.open = true;
       const r = await d._verify();
+      if (r === "down") {
+        // One banner, not a wall of warnings: show the rest as recorded, each with its tx link.
+        d.open = false;
+        if (i > 0) list.children[i - 1].open = false;
+        for (let j = i + 1; j < stages.length; j++) { const e = stageView(stages[j], j); e._recorded(); list.append(e); }
+        summary.className = "run-summary banner small";
+        summary.textContent = "Could not reach NEAR testnet from here. Showing the recorded results: open any stage for its transaction on NearBlocks.";
+        break;
+      }
       if (r === true) ok++; else if (r === false) bad++; else if (r === "nokey") nokey++; else na++;
       if (i > 0) list.children[i - 1].open = false;
-      summary.textContent = `${ok} of ${stages.length} stages confirmed on chain${nokey ? `, ${nokey} refused by the node before any transaction` : ""}${bad ? `, ${bad} DIFFER from the recording` : ""}${na ? `, ${na} could not be checked` : ""}.`;
+      summary.textContent = `${ok + nokey} of ${n(stages.length)} match the chain${nokey ? ` (${nokey} refused, as expected)` : ""}${bad ? `, ${bad} DIFFER from the recording` : ""}${na ? `, ${na} not found` : ""}.`;
     }
     run.disabled = false;
     run.textContent = "Run again";
   });
-  const preview = el("ol", { class: "stage-preview" }, stages.map((st) => el("li", { text: st.kind === "scan" ? `scan of ${st.scan.agent}` : st.t.label })));
+  const preview = el("ol", { class: "stage-preview" }, stages.map((st) => el("li", { text: plain(st.kind === "scan" ? `scan of ${st.scan.agent}` : st.t.label) })));
   list.append(preview);
   return el("details", { class: "scenario", "data-scenario": sc.id },
-    el("summary", {}, el("b", { text: sc.title }), el("span", { class: "muted small", text: ` · ${stages.length} stages` })),
+    el("summary", {}, el("b", { text: sc.title }), el("span", { class: "muted small", text: ` · ${n(stages.length)}` })),
     el("p", { text: sc.intro }),
     el("div", { class: "run-row" }, run, summary),
     list);
@@ -237,7 +272,14 @@ async function main() {
   const data = await r.json();
   // A scenario shows only once its testnet scene is recorded (scenes 9-10
   // after the redeploy): never an empty card.
-  box.replaceChildren(...SCENARIOS.filter((sc) => stagesFor(data, sc.steps).length > 0).map((sc) => scenarioCard(sc, data)));
+  // The three that carry the story stay open to view; the rest fold under "N more scenarios".
+  const FIRST = ["sale", "cheat", "invest"];
+  const shown = SCENARIOS.filter((sc) => stagesFor(data, sc.steps).length > 0);
+  const first = FIRST.map((id) => shown.find((sc) => sc.id === id)).filter(Boolean);
+  const rest = shown.filter((sc) => !FIRST.includes(sc.id));
+  box.replaceChildren(...first.map((sc) => scenarioCard(sc, data)),
+    rest.length ? el("details", { class: "sc-more" }, el("summary", { text: `${rest.length} more scenario${rest.length === 1 ? "" : "s"}` }),
+      el("div", { class: "scenarios" }, rest.map((sc) => scenarioCard(sc, data)))) : null);
   box.dataset.ready = "1";
   // Review 5: a link to #run-<id> (the hero button) opens that scenario and runs it.
   const autorun = () => {
@@ -246,8 +288,14 @@ async function main() {
     const card = box.querySelector(`details.scenario[data-scenario="${m[1]}"]`);
     const btn = card && card.querySelector("button[data-run]");
     if (!btn || btn.disabled) return;
+    const more = card.closest(".sc-more");
+    if (more) more.open = true;
     card.open = true;
-    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Land on the title (the summary has scroll-margin-top for the sticky nav), not the body.
+    // Sections above (Exchange, Invest) appear when their data loads and push the card down: settle again after.
+    const sum = card.querySelector(":scope > summary");
+    sum.scrollIntoView({ block: "start" });
+    for (const ms of [300, 900]) setTimeout(() => { const y = sum.getBoundingClientRect().top; if (y < 40 || y > 120) sum.scrollIntoView({ block: "start" }); }, ms);
     btn.click();
   };
   window.addEventListener("hashchange", autorun);

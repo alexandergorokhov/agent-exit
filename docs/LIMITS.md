@@ -8,7 +8,7 @@ The README keeps a summary; this is the full list. What is not caught by design:
   (SC1-SC13) the buyer receives exactly the prompt and tool setup the listing
   committed to, encrypted to a one-time key, or the escrow comes back (the
   contract decrypts and hashes it itself in a dispute), and the bundle names
-  the API keys to rotate (page mission 6).
+  the API keys to rotate (page tab "Buy the brain").
 - Fake payers on aged or exchange-funded accounts look like real customers.
   The meter flags only what it can see (self, sub-accounts, round trips).
   After the sale the earn-out releases at most 50% of each payment, so

@@ -74,9 +74,9 @@ await p.waitForSelector("#dd-cards .dd-card");
 // Shot 1 (0:00-0:14): the claim, then the proof on the first screen.
 await card(["Agent Exit", "A capital market for AI agents.", "Invest in an agent by its proven revenue, or buy it whole. The seller is locked out."], 4000);
 await card([], 0);
-await caption("Recorded on NEAR testnet: 5 of 5 customer payments signed by NEAR AI and checked by the contract", 3800);
-await caption("An investor bought 20% of an agent's earnings and got exactly 20%", 3200);
-await caption("After a one-transaction sale, the old seller tried 6 ways back in on testnet. All refused.", 3500);
+await caption("Recorded on NEAR testnet: 5 of 5 customer payments signed by NEAR AI, checked on-chain", 3800);
+await caption("20% of earnings paid to an investor, exactly", 3200);
+await caption("After a one-transaction sale, the old seller tried 6 ways back in on testnet. All refused: 6 of 6.", 3500);
 
 // Shot 2 (0:14-0:34): what a buyer sees before paying.
 await scrollTo("#diligence");
@@ -132,6 +132,7 @@ await act("dispute_config", 4200);
 
 // Shot 6: recorded on testnet, the owner only sets the constraints.
 if (await p.locator('#scenarios [data-scenario="day"], [data-scenario="day"]').count()) {
+  await p.evaluate(() => { const m = document.querySelector(".sc-more"); if (m) m.open = true; });
   await scrollTo('[data-scenario="day"]');
   await caption("On testnet: a business day. The owner set limits once; the agent paid a supplier, hit its daily cap, and dave got exactly 20%", 5000);
 }
@@ -139,7 +140,7 @@ if (await p.locator('#scenarios [data-scenario="day"], [data-scenario="day"]').c
 // Shot 7: a judge can invest too, with their own testnet account.
 if (await p.locator("#invest-yourself:not([hidden])").count()) {
   await scrollTo("#invest-yourself");
-  await caption("Your turn: free test dollars, then buy 1% of a live agent's earnings with one transfer on NEAR testnet", 5000);
+  await caption("Your turn: free test dollars, then buy 2.5% of a live agent's earnings in one signature on NEAR testnet", 5000);
 }
 
 // End card.

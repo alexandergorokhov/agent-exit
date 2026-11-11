@@ -16,6 +16,10 @@ const worldOf = (cards) => (cards[0]?.agent || "").split(".").slice(1).join(".")
 const short = (a) => a.replace(/(\.w\d+)?\.agentexit\d*\.testnet$/, "");
 
 const s3 = scene(3), s4 = scene(4), s5 = scene(5), s8 = scene(8);
+// Scene 12 (optional): the open offer anyone can buy into, on the scene-8 agent.
+let s12 = null;
+try { s12 = scene(12); } catch { /* not recorded */ }
+const money = (x) => Number(usd(x)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function terms(l) {
   const t = l.terms;
@@ -58,13 +62,17 @@ function quality(e) {
   return { weighted, warn, text: `${e.counted_payers} paying accounts over ${e.days_total} day(s); ${pct(fresh, counted)}% of counted revenue from payers first seen in the last 7 days, so it weighs ${usd(weighted)} (new payers count half)${warn.length ? `. Weigh it down: ${warn.join("; ")}` : ""}` };
 }
 
-function saleCard(name, e, scanScene, verdict, why, run) {
+// role: the one-line part each agent plays on the page (one cast: the same names on the Exchange board).
+const ROLE = { translator: "The sold agent", cheat: "The cheat", translator3: "Open to investors" };
+
+function saleCard(name, e, scanScene, verdict, why, run, short) {
   const l = scanScene.scan_input.listing;
   const k = keys(scanScene.scan);
   const multiple = Number(e.counted) ? (Number(l.price) / Number(e.counted)).toFixed(1) : null;
   return {
     agent: scanScene.scan_input.agent,
     name,
+    role: ROLE[name],
     deal: `For sale at ${usd(l.price)}`,
     rows: [
       ["Revenue paid in", `${usd(e.gross)} from ${e.payments} payments`],
@@ -80,6 +88,17 @@ function saleCard(name, e, scanScene, verdict, why, run) {
     ok: k.ok && Number(e.counted) > 0,
     why,
     run,
+    // The verdict-first summary the page shows before "Full due diligence".
+    short,
+    // translator was then sold to bob (scene 5); the cheat never was.
+    deal_short: name === "translator" ? `Sold to bob for ${money(l.price)}` : `For sale at ${money(l.price)}`,
+    metrics: [
+      ["Real revenue", `${usd(e.counted)} (${pct(e.counted, e.gross)}%)`],
+      ["Self-paid", usd(e.flagged)],
+      ["Keys", k.ok ? "clean" : "hidden full-access key"],
+      ["Price ÷ revenue", multiple ? `${multiple}×` : "nothing proven"],
+    ],
+    bar: { real: Number(usd(e.counted)), self: Number(usd(e.flagged)) },
   };
 }
 
@@ -87,11 +106,13 @@ const cards = [
   saleCard("translator", s3.translator, s5,
     "Passes the buyer's checks",
     "72% of its revenue comes from 6 outside accounts and the scan is clean, but the customers are new, so weigh the revenue down; 30% of the price only reaches the seller if customers keep paying.",
-    "#run-sale"),
+    "#run-sale",
+    "Pass: 72% from 6 real customers, no hidden keys. Customers are new."),
   saleCard("cheat", s3.cheat, s4,
     "Blocked before any money moves",
     "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
-    "#run-cheat"),
+    "#run-cheat",
+    "Blocked: all 500 was self-paid, and a hidden key lets her take it back."),
 ];
 
 // Investor's card: translator3 (scene 8), a 20% slice of future earnings.
@@ -105,13 +126,15 @@ const cards = [
   cards.push({
     agent: s8.holdings_after_jobs.agent,
     name: "translator3",
+    role: ROLE.translator3,
     deal: `20% of future earnings for a year, ${usd(h.paid_in)}`,
     rows: [
+      ["As of", "scene 8, right after the 20% sale. Later scenes added more customer payments (100.00 counted when the MCP agent bought its part)."],
       ["Revenue paid in", `${usd(counted + flagged)} from ${jobs.length + 1} payments`],
       ["Counted (real customers)", `${usd(counted)} from ${jobs.length} paying accounts`],
       ["Signed by NEAR AI, checked on-chain", `${usd(verified)} (${pct(verified, counted)}% of counted): each job's output signed in a TEE by ${s8.jobs[0].nearai.signing_address.slice(0, 10)}…`],
       ["Flagged, not counted", `${usd(flagged)} from ${short(s8.flagged.payment.payer)} (the owner's sub-account); it still paid the investor ${usd(s8.flagged.split.to_investors)}`],
-      ["Investor received", `${usd(s8.check.dave_gained)} of ${usd(s8.check.paid)} paid in: exactly 20%`],
+      ["Investor received", `${usd(s8.check.dave_gained)} = 20% of all ${usd(s8.check.paid)} paid in. The payout is on all money paid in, self-paid too; the valuation uses only real revenue.`],
       ["Investor's money at risk", `half paid to the owner now, half (${usd(h.escrow)} left) in escrow and returned if the agent stops earning`],
       ["Keys and code", keys(s8.investor_scan).text],
     ],
@@ -120,12 +143,23 @@ const cards = [
     why: "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
     run: "#run-invest",
     tx: buy ? nb(buy.tx) : null,
+    short: "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
+    // dave's 20% stays in the proof scenario; the card points at the offer a visitor can buy.
+    deal_short: s12 && s12.agent === s8.holdings_after_jobs.agent ? `Open now: ${Number(s12.buy_part.part_bps) / 100}% parts, ${usd(s12.buy_part.amount)} each` : "20% sold to an investor",
+    deal_link: s12 && s12.agent === s8.holdings_after_jobs.agent ? "#invest-yourself" : null,
+    metrics: [
+      ["Real revenue", `${usd(counted)} (${pct(verified, counted)}% NEAR AI)`],
+      ["Self-paid", usd(flagged)],
+      ["Keys", keys(s8.investor_scan).ok ? "clean" : "hidden full-access key"],
+      ["Earlier investor got", `${usd(s8.check.dave_gained)} (20% of all ${usd(s8.check.paid)})`],
+    ],
+    bar: { real: Number(usd(counted)), self: Number(usd(flagged)) },
   });
 }
 
 const out = {
   schema: "diligence.v1",
-  note: `Recorded on NEAR testnet (out/scenes, world ${worldOf(cards)}). All money is xUSD-FAKE.`,
+  note: `Recorded on NEAR testnet (out/scenes, world ${worldOf(cards)}). All money is xUSD-FAKE, a test token.`,
   cards,
 };
 writeFileSync(new URL("web/data/diligence.json", root), JSON.stringify(out, null, 2) + "\n");

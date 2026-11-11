@@ -13,132 +13,112 @@
   <script type="module" src="account.js"></script>
 </head>
 <body>
+  <nav class="top" aria-label="Sections"><div class="wrap">
+    <a class="brand" href="#">Agent Exit</a>
+    <a href="#exchange">Exchange</a><a class="nav-m" href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a class="nav-m" href="#evidence-run">Proof</a><a class="nav-m nav-judges" href="#for-judges">For judges</a>
+  </div></nav>
+
   <header class="hero">
-    <div class="wrap">
-      <p class="tag">NEAR · AI agents · fake test money</p>
-      <h1>Agent Exit</h1>
-      <p class="lede"><b>A capital market for AI agents.</b><br>Invest in an AI agent by its proven, on-chain revenue, or buy the whole business in one transaction that locks the seller out.</p>
-      <div class="cta">
-        <a class="btn primary" href="#invest-yourself">Invest in an agent (test money)</a>
-        <a class="btn" href="#run-invest">Check an agent's earnings</a>
-        <a class="btn" href="#run-cheat">Watch a backdoor get caught</a>
-        <a class="btn" href="media/agent-exit-demo.mp4">2-minute demo</a>
-        <a class="btn" href="#for-judges">For judges</a>
+    <div class="wrap hero-grid">
+      <div class="hero-main">
+        <p class="tag">Live on NEAR testnet</p>
+        <h1>Agent Exit</h1>
+        <p class="lede"><b>A capital market for AI agents.</b> Buy a share of an agent's proven on-chain revenue, or the whole agent in one transaction that locks the seller out.</p>
+        <div class="cta">
+          <a class="btn primary" href="#invest-yourself">Invest 2.5% →</a>
+          <a class="btn" href="media/agent-exit-demo.mp4">Watch the 2-min demo</a>
+          <p class="verify-links small">Verify on testnet: <a href="#run-invest">earnings →</a> · <a href="#run-sale">lockout →</a> · <a href="#run-cheat">cheat caught →</a></p>
+        </div>
       </div>
-      <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet: one-transaction sale, then the old seller's break-in attempts, each refused. <a href="#evidence-run">See the runs</a>.</p></div>
-      <figure class="story"><img src="media/sold-means-locked-out.svg" width="1200" height="420" alt="Sold means locked out: before the sale alice owns translator; one transaction deletes her key, adds bob's and moves the deed; after the sale every way back in is refused on NEAR testnet"></figure>
+      <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet. <a href="#evidence-run">See the runs</a>.</p></div>
     </div>
   </header>
 
   <main class="wrap">
     <section id="exchange" class="exchange" hidden>
-      <h2>The Exchange: agents you can invest in or buy</h2>
-      <p class="muted">Every agent here was born clean in the factory on NEAR testnet (no key, ever) and has its own payment history. Revenue is split by who paid; the multiple is the asking price, or the value an offer implies, over counted revenue. Sort by any column.</p>
-      <div class="ex-wrap"><table id="ex-table" class="ex-table"><thead><tr>
-        <th data-k="name">Agent</th><th data-k="counted">Counted revenue</th><th data-k="flaggedPct">Flagged</th><th data-k="payers">Paying accounts</th><th data-k="deal">Deal</th><th data-k="multiple">Multiple</th>
+      <p class="eyebrow">Exchange</p>
+      <h2>Agents with on-chain revenue</h2>
+      <p class="lead-in">Self-paid revenue never counts. Click a row for its case file.</p>
+      <div class="ex-wrap card"><table id="ex-table" class="ex-table"><thead><tr>
+        <th data-k="name" scope="col">Agent</th><th data-k="counted" scope="col" class="num" title="paid by accounts not linked to the owner">Real revenue</th><th data-k="flaggedPct" scope="col" class="num" title="paid by the owner or the owner's own accounts: not counted">Self-paid</th><th data-k="payers" scope="col" class="num">Customers</th><th data-k="deal" scope="col">Deal</th><th data-k="multiple" scope="col" class="num" title="asking price, or the value an offer implies, over real revenue">Price ÷ revenue</th>
       </tr></thead><tbody></tbody></table></div>
-      <p class="small muted" id="ex-note"></p>
+      <div class="ex-foot">
+        <p class="small muted" id="ex-note"></p>
+        <p class="ex-bridge"><a class="btn" href="#invest-yourself">Invest 2.5% in translator3 →</a></p>
+      </div>
     </section>
 
     <section id="invest-yourself" class="invest-yourself" hidden>
-      <h2>Invest yourself, on NEAR testnet</h2>
-      <p class="muted">An open offer: <span id="iy-terms"></span> Use any testnet account you have in MyNearWallet, or the <a href="https://github.com/near/near-cli-rs">near-cli-rs</a> commands below (replace <code>YOU.testnet</code>). The token is free test money.</p>
-      <p id="iy-live" class="small" aria-live="polite"></p>
-      <div class="iy-wallet">
-        <label for="iy-account">Your testnet account</label>
-        <input id="iy-account" type="text" placeholder="you.testnet" autocomplete="off" spellcheck="false">
-        <a id="iy-invest" class="btn primary" aria-disabled="true">Invest with MyNearWallet</a>
-        <a id="iy-claim" class="btn" aria-disabled="true">Claim your earnings</a>
-        <button type="button" id="iy-read" disabled>See my holding (live)</button>
-        <p id="iy-out" class="small muted" aria-live="polite">One click signs one transaction in MyNearWallet (testnet): free test dollars from the faucet, then the smallest part of the offer bought with them. Nothing is real money.</p>
+      <p class="eyebrow">Invest</p>
+      <div class="card iy-card">
+        <div class="iy-main">
+        <h2 id="iy-title">Invest in an agent's earnings</h2>
+        <p id="iy-sum" class="iy-sum"></p>
+        <dl id="iy-terms" class="iy-terms"></dl>
+        <div class="iy-wallet">
+          <label for="iy-account" class="sr-only">Your testnet account</label>
+          <input id="iy-account" type="text" placeholder="you.testnet" autocomplete="off" spellcheck="false">
+          <a id="iy-invest" class="btn primary" role="button" aria-disabled="true">Invest with MyNearWallet</a>
+        </div>
+        <p id="iy-out" class="small muted" aria-live="polite">Sign once. Free test money.</p>
+        <p id="iy-noacc" class="small iy-noacc">No account? <a href="https://testnet.mynearwallet.com/create" target="_blank" rel="noopener noreferrer">Create one free ↗</a><span id="iy-example"></span></p>
+        <div id="iy-receipt" class="iy-receipt" hidden aria-live="polite"></div>
+        <div class="iy-after" hidden>
+          <a id="iy-claim" class="btn" aria-disabled="true">Claim your earnings</a>
+          <button type="button" id="iy-read" disabled>See my holding (live)</button>
+        </div>
+        </div>
+        <div class="iy-side">
+        <div class="iy-inv-head"><h3 class="iy-inv-title">Investors so far</h3><button type="button" id="iy-refresh" class="linkish">Refresh live</button></div>
+        <ul id="iy-investors" class="iy-investors"></ul>
+        <p id="iy-live" class="small muted" aria-live="polite"></p>
+        <details class="iy-cli"><summary>Or use near-cli-rs (5 commands)</summary>
+          <p class="small" id="iy-cli-note">Replace <code>YOU.testnet</code> with your account.</p>
+          <ol id="iy-steps" class="iy-steps"></ol>
+        </details>
+        </div>
       </div>
-      <details class="iy-cli"><summary>Or do it with near-cli-rs</summary>
-      <ol id="iy-steps" class="iy-steps"></ol>
+    </section>
+
+    <section id="protect" class="protect">
+      <p class="eyebrow">Buyer protection</p>
+      <h2>Can you trust the revenue? Can the seller take it back?</h2>
+      <ol class="story-steps" aria-label="Sold means locked out">
+        <li><b>Before</b><span>alice, the seller, holds translator's operating key.</span></li>
+        <li><b>One transaction</b><span>Her key deleted, bob's added, the ownership token moves to him.</span></li>
+        <li><b>After</b><span id="story-after">Every way back refused.</span><em>30% of the price waits for real customers.</em></li>
+      </ol>
+      <details class="story-fold" id="how-protect"><summary>Full picture and key terms</summary>
+      <ol id="concept" class="tiles">
+        <li><svg class="ico" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 14 L20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="2" fill="currentColor"/></svg><b>Earnings meter</b><span>Counts each payment by who paid.</span></li>
+        <li><svg class="ico" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M18 18 L25 25" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><b>Backdoor scan</b><span>Any extra key blocks the sale.</span></li>
+        <li><svg class="ico" viewBox="0 0 28 28" aria-hidden="true"><path d="M4 10 H22 M17 5 L22 10 L17 15 M24 18 H6 M11 13 L6 18 L11 23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>One-transaction handover</b><span>Seller's keys out, buyer's in.</span></li>
+        <li><svg class="ico" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="8" width="20" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 8 V6 a5 5 0 0 1 10 0 V8 M14 13 V18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>Paid later from real customers</b><span>30% of the price waits.</span></li>
+      </ol>
+        <dl class="glossary">
+          <div><dt>Ownership token</dt><dd>An NFT (NEP-171) that says who owns the agent. It moves to the buyer in the sale.</dd></div>
+          <div><dt>Operating key</dt><dd>The agent's limited key (a function-call key, the "runner key"). The owner's agent software signs with it.</dd></div>
+          <div><dt>No admin key</dt><dd>Exchange agents are created by a contract (the factory) that never adds one, so no seller ever held a key.</dd></div>
+        </dl>
+        <figure class="story"><img src="media/sold-means-locked-out.svg" width="1200" height="420" alt="Sold means locked out: before the sale alice owns translator; one transaction deletes her key, adds bob's and moves the ownership token; after the sale every way back in is refused on NEAR testnet"></figure>
       </details>
-    </section>
-
-    <section id="diligence" class="diligence">
-      <h2>What an investor or buyer sees before paying</h2>
-      <p class="muted">Three agents on NEAR testnet, as the contract and the buyer's scan report them. Revenue is split by who paid; only payments from outside accounts count.</p>
-      <div id="dd-cards" class="dd-cards"><p class="muted">Loading…</p></div>
-      <figure class="deed">
-        <img src="media/deed-translator.svg" width="400" height="240" alt="The deed NFT of translator: counted, verified and flagged revenue, and the share pledged to investors">
-        <figcaption class="small muted">The agent's ownership deed (NEP-171), as the contract's <code>nft_token</code> draws it from its own numbers on every view. Live on NEAR testnet: call <code>nft_token</code> on <code>translator.agentexit5.testnet</code>.</figcaption>
-      </figure>
-    </section>
-
-    <details id="how-it-works" class="how">
-      <summary>How it works: the problem, the fix, and what runs where</summary>
-    <section id="concept" class="concept">
-      <div class="problem">
-        <h2>The problem</h2>
-        <p>AI agents now earn money: they sell translations, research, trades. They are small businesses, yet no one can invest in one or buy one from a stranger, because two things cannot be trusted:</p>
-        <ol>
-          <li><b>The revenue.</b> The seller can pay their own agent to fake it.</li>
-          <li><b>The handover.</b> The seller can keep a hidden key and take the agent back.</li>
-        </ol>
-      </div>
-      <div class="flow" aria-label="How it works">
-        <h2>How Agent Exit fixes it</h2>
-        <ol class="flow-steps">
-          <li><b>Earnings meter</b><span>The agent is its own NEAR account. Its contract counts each payment by who paid. Payments from the owner or the owner's sub-accounts are flagged, not counted.</span></li>
-          <li><b>Backdoor scan</b><span>Before buying, the buyer's tools compare the keys on the account with the keys the contract added. Any extra full-access key blocks the sale.</span></li>
-          <li><b>One-transaction handover</b><span>The buyer pays once. In that same transaction the seller's keys are deleted, the buyer's key is added and ownership moves.</span></li>
-          <li><b>Earn-out</b><span>The seller gets 70% now, less a 1% protocol fee. The other 30% is released only from real customer payments after the sale.</span></li>
-        </ol>
-      </div>
-    </section>
-
-    <section id="backend" class="backend">
-      <h2>What runs where</h2>
-      <p class="muted">The page is a window onto a real system. The backend is NEAR itself: nothing of ours sits between a buyer and the contract (the page's only server code is a read-only relay for Read live).</p>
-      <div class="arch">
-        <div class="arch-box chain">
-          <h3>On NEAR (the backend)</h3>
-          <ul>
-            <li><b>The agent's own account</b>, e.g. <code>translator.agentexit5.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
-            <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
-            <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
-          </ul>
-        </div>
-        <div class="arch-box buyer">
-          <h3>On the buyer's side</h3>
-          <ul>
-            <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and blocks anything extra.</li>
-            <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
-          </ul>
-        </div>
-        <div class="arch-box page">
-          <h3>In this page</h3>
-          <ul>
-            <li><b>Try it yourself</b> runs the contract's own state machine and the scan, compiled from the same Rust into WebAssembly. It is the code the deployed contract is built from, not a mock-up. The contract only adds NEAR input and output around it: key batches, token transfers, events.</li>
-            <li><b>The testnet section</b> shows the deployed contract's real transactions, and Read live queries the chain now.</li>
-          </ul>
-        </div>
-      </div>
-      <p class="muted small">Under each result in the playground, open <b>How this works for real</b> to see the Rust function that ran, the NEAR call it corresponds to, and the same call on testnet when one was recorded.</p>
-    </section>
-    </details>
-
-    <section id="check" class="play">
-      <h2>Check any NEAR account</h2>
-      <p>Who else can take it? Paste any testnet account (an AI agent's wallet, a bot, a vault). The page reads its access keys and code from NEAR testnet now and names every key or method that lets someone other than its owner move the money or swap the code. Read-only.</p>
-      <form id="check-form" class="check-form">
-        <label for="check-account">Account</label>
-        <input id="check-account" name="account" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="64" placeholder="translator.agentexit5.testnet" required>
-        <button type="submit">Check</button>
-      </form>
-      <div id="check-out" aria-live="polite"></div>
+      <section id="diligence" class="diligence">
+        <h3>Case files from testnet</h3>
+        <div id="dd-cards" class="dd-cards"><p class="muted">Loading…</p></div>
+        <figure class="deed" id="deed-figure" hidden>
+          <img src="media/deed-translator.svg" width="400" height="240" alt="The deed NFT of translator: counted, verified and flagged revenue, and the share pledged to investors">
+          <figcaption class="small muted">The agent's ownership deed (NEP-171), drawn by the contract's <code>nft_token</code> from its own numbers. This one is from the offline sandbox run, after more customer payments had come in, so its numbers differ from the testnet card. On testnet, call <code>nft_token</code> on <code>translator.agentexit5.testnet</code>.</figcaption>
+        </figure>
+      </section>
     </section>
 
     <section id="play" class="play">
-      <div class="play-head">
-        <h2>Try it yourself</h2>
-        <p class="muted">This runs the <b>real contract logic and the real buyer scan</b>, compiled from the same Rust code into this page. Pick a mission and press the buttons in order. Under every result, "Behind the scenes" says what the contract checked.</p>
-      </div>
+      <p class="eyebrow">Playground</p>
+      <h2>Try to cheat it</h2>
+      <p class="lead-in">Play the seller and try. The real contract code, in your browser, stops you.</p>
       <div id="missions" class="missions" role="tablist"></div>
       <div class="play-grid">
-        <div class="guide">
+        <div class="guide card">
           <p id="mission-intro" class="intro"></p>
           <ol id="mission-steps" class="mission-steps"></ol>
           <p id="mission-lesson" class="lesson" hidden></p>
@@ -147,7 +127,7 @@
             <div id="free-actions" class="free-actions"></div>
           </details>
         </div>
-        <div class="state" aria-live="polite">
+        <div class="state card" aria-live="polite">
           <div id="pg-state"><p class="muted">Loading the contract…</p></div>
         </div>
       </div>
@@ -156,55 +136,113 @@
     </section>
 
     <section id="evidence-run" class="evidence">
-      <h2>The same story on NEAR testnet</h2>
-      <p class="muted">The deployed contract (code hash <code>5VqS52NR…</code>, rebuilt bit for bit from commit <code>70d06b2</code> with <code>make build</code>) ran these scenarios on NEAR testnet. Open one and press <b>Run and verify</b>: each stage opens in turn and the page asks the chain for that transaction right now (signer, method, outcome, the contract's event logs) and compares it with the recording.</p>
+      <p class="eyebrow">Proof</p>
+      <h2>Verify it on NEAR testnet</h2>
+      <p class="lead-in">Each run re-checks every transaction on chain, now.</p>
       <span id="scenarios-anchor"></span>
       <div id="scenarios" class="scenarios"><p class="muted">Loading the scenarios…</p></div>
-      <h3 class="walk-title">Step-by-step walkthrough</h3>
-      <div id="mode" class="mode" role="status"></div>
-      <nav aria-label="Demo steps">
-        <div class="progress"><span id="bar"></span></div>
-        <ol id="steps" class="steps"></ol>
-      </nav>
-      <section id="step" class="panel" aria-live="polite">
-        <p class="muted">Loading the recorded demo…</p>
-      </section>
-      <div class="pager">
-        <button id="prev" type="button">← Back</button>
-        <span id="count" class="muted"></span>
-        <button id="next" type="button" class="primary">Next →</button>
-      </div>
+      <details id="replay" class="replay">
+        <summary>Offline replay (sandbox run, not testnet)</summary>
+        <div id="mode" class="mode" role="status"></div>
+        <nav aria-label="Demo steps">
+          <div class="progress"><span id="bar"></span></div>
+          <ol id="steps" class="steps"></ol>
+        </nav>
+        <section id="step" class="panel" aria-live="polite">
+          <p class="muted">Loading the recorded demo…</p>
+        </section>
+        <div class="pager">
+          <button id="prev" type="button">← Back</button>
+          <span id="count" class="muted"></span>
+          <button id="next" type="button" class="primary">Next →</button>
+        </div>
+      </details>
     </section>
 
-    <aside id="why-near">
-      <h2>Why only on NEAR?</h2>
-      <div class="why">
-        <div><b>Keys can be deleted</b><span>The seller's key is removed on-chain, so "locked out" is a fact anyone can read.</span></div>
-        <div><b>Named accounts</b><span>bot.alice.testnet is visibly alice's sub-account, so her fake payments are flagged.</span></div>
-        <div><b>One wallet, any chain</b><span>Chain Signatures give the agent a Base wallet that moves with the sale.</span></div>
-        <div><b>Verified earnings</b><span>NEAR AI Cloud signatures are <strong>checked on-chain</strong>.</span></div>
-      </div>
-    </aside>
+    <section id="check" class="check">
+      <p class="eyebrow">Tool</p>
+      <h2>Scan any agent for backdoors</h2>
+      <p class="lead-in">Paste a testnet account to see every key that could take it.</p>
+      <form id="check-form" class="check-form">
+        <label for="check-account" class="sr-only">Account</label>
+        <input id="check-account" name="account" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="64" placeholder="translator.agentexit5.testnet" required>
+        <button type="submit" class="primary">Scan</button>
+      </form>
+      <p class="check-examples small"><span class="muted">Try:</span> <button type="button" class="chipbtn" data-example="translator.agentexit5.testnet">translator</button> <button type="button" class="chipbtn" data-example="cheat.agentexit5.testnet">cheat</button></p>
+      <div id="check-out" aria-live="polite"></div>
+    </section>
+
     <section id="for-judges" class="judges">
-      <h2>For judges: where each criterion is shown</h2>
+      <p class="eyebrow">For judges</p>
+      <h2>Where each criterion is shown</h2>
       <div class="crit">
-        <a href="#scenarios-anchor"><b>Technical implementation</b><span>Rust contract on NEAR testnet, rebuilt bit for bit (<code>make build</code> at commit <code>70d06b2</code>). Run a scenario and every stage is re-checked against the chain.</span></a>
-        <a href="#play"><b>Design</b><span>Six missions you play in a few minutes, against the real contract code. Each result says what the contract checked.</span></a>
-        <a href="#concept"><b>Impact</b><span>AI agents are becoming businesses. Agent Exit makes them sellable: real revenue, a clean handover.</span></a>
-        <a href="#why-near"><b>Originality</b><span>The agent is its own NEAR account. Selling it deletes the seller's keys on-chain, and the earn-out pays only from real customers.</span></a>
-        <a href="#backend"><b>Sustainability</b><span>Standard NEPs (NEP-141 token, NEP-171 deed), an MCP server any AI agent can use, MIT licence, 250+ Rust tests and 185 MCP tests.</span></a>
+        <a href="#how-it-works"><b>Technical</b><span>Rust contract, rebuilt bit for bit</span></a>
+        <a href="#play"><b>Design</b><span>Six missions against the real code</span></a>
+        <a href="#exchange"><b>Impact</b><span>Agents become businesses you can buy</span></a>
+        <a href="#why-near"><b>Originality</b><span>Selling deletes the seller's keys on-chain</span></a>
+        <a href="#backend"><b>Sustainability</b><span>Standard NEPs, MCP server, 250+ tests</span></a>
       </div>
-      <p class="tracks"><span class="muted small">Tracks:</span>
-        <span class="track">Autonomous Business: checked earnings, earn-out, shares of future earnings</span>
-        <span class="track">AI Security: seller lockout, backdoor scan, function-call keys, spending limits</span>
-        <span class="track">NFTs That Do Something: the deed is the agent account</span>
-        <span class="track">Agent Economy: an AI agent buys an agent</span></p>
+      <p class="tracks"><span class="track">Autonomous Business</span><span class="track">AI Security</span><span class="track">NFTs That Do Something</span><span class="track">Agent Economy</span></p>
+      <details id="why-near" class="why-near">
+        <summary>Why only on NEAR</summary>
+        <div class="why">
+          <div><b>Keys can be deleted</b><span>The seller's key is removed on-chain, for anyone to read.</span></div>
+          <div><b>Named accounts</b><span>bot.alice.testnet is visibly alice's, so her payments are flagged.</span></div>
+          <div><b>One wallet, any chain</b><span>Chain Signatures let the agent hold a wallet on other chains (e.g. Base) too.</span></div>
+          <div><b>Verified earnings</b><span>NEAR AI Cloud signatures are checked on-chain.</span></div>
+        </div>
+      </details>
+      <details id="how-it-works" class="how">
+        <summary>Technical details: build, code hash, what runs where</summary>
+        <p>The deployed contract has code hash <code>5VqS52NR…</code>, rebuilt bit for bit from commit <code>70d06b2</code> with <code>make build</code>. Each scenario re-checks the signer, method, outcome and event logs against the chain.</p>
+        <div class="problem">
+          <h3>The problem</h3>
+          <p>AI agents now earn money: they sell translations, research, trades. They are small businesses, yet no one can invest in one or buy one from a stranger, because two things cannot be trusted:</p>
+          <ol>
+            <li><b>The revenue.</b> The seller can pay their own agent to fake it.</li>
+            <li><b>The handover.</b> The seller can keep a hidden key and take the agent back.</li>
+          </ol>
+          <p>The fix, in detail: the agent is its own NEAR account and its contract counts each payment by who paid (the owner's sub-accounts are flagged). The buyer's tools compare the keys on the account with the keys the contract added. In the buy transaction the seller's keys are deleted and the buyer's operating key (a limited function-call key) is added. The seller gets 70% now, less a 1% protocol fee; 30% is released only from real customer payments after the sale (earn-out).</p>
+        </div>
+        <section id="backend" class="backend">
+          <h3>What runs where</h3>
+          <p class="muted">The page is a window onto a real system. The backend is NEAR itself: nothing of ours sits between a buyer and the contract (the page's only server code is a read-only relay for Read live).</p>
+          <div class="arch">
+            <div class="arch-box chain">
+              <h4>On NEAR (the backend)</h4>
+              <ul>
+                <li><b>The agent's own account</b>, e.g. <code>translator.agentexit5.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
+                <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
+                <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
+              </ul>
+            </div>
+            <div class="arch-box buyer">
+              <h4>On the buyer's side</h4>
+              <ul>
+                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and blocks anything extra.</li>
+                <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
+              </ul>
+            </div>
+            <div class="arch-box page">
+              <h4>In this page</h4>
+              <ul>
+                <li><b>Try to cheat it</b> runs the contract's own state machine and the scan, compiled from the same Rust into WebAssembly. It is the code the deployed contract is built from, not a mock-up. The contract only adds NEAR input and output around it: key batches, token transfers, events.</li>
+                <li><b>Verify it on NEAR testnet</b> shows the deployed contract's real transactions, and Read live queries the chain now.</li>
+              </ul>
+            </div>
+          </div>
+          <p class="muted small">Under each result in the playground, open <b>How this works for real</b> to see the Rust function that ran, the NEAR call it corresponds to, and the same call on testnet when one was recorded.</p>
+        </section>
+      </details>
+      <details class="limits">
+        <summary>Honest limits</summary>
+        <p>The attack suite is a regression suite, not independent evidence: we wrote both the attacks and the rules. The seller can keep a copy of an off-chain prompt, and before a sale new payers can be the seller in disguise. That is why 30% of the price waits for real revenue. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
+      </details>
     </section>
-
   </main>
 
   <footer class="wrap foot">
-    <p class="muted">All money is xUSD-FAKE, a fake test dollar with no value. Testnet only: no mainnet before an external audit. MIT licensed.</p>
+    <p class="muted">Test money only (a fake test dollar token). Testnet only, no mainnet before an external audit. MIT.</p>
     <details>
       <summary>Data and evidence</summary>
       <p id="source" class="muted"></p>

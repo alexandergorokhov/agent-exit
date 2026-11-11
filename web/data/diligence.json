@@ -1,10 +1,11 @@
 {
   "schema": "diligence.v1",
-  "note": "Recorded on NEAR testnet (out/scenes, world agentexit5.testnet). All money is xUSD-FAKE.",
+  "note": "Recorded on NEAR testnet (out/scenes, world agentexit5.testnet). All money is xUSD-FAKE, a test token.",
   "cards": [
     {
       "agent": "translator.agentexit5.testnet",
       "name": "translator",
+      "role": "The sold agent",
       "deal": "For sale at 1000.00",
       "rows": [
         [
@@ -43,11 +44,36 @@
       "verdict": "Passes the buyer's checks",
       "ok": true,
       "why": "72% of its revenue comes from 6 outside accounts and the scan is clean, but the customers are new, so weigh the revenue down; 30% of the price only reaches the seller if customers keep paying.",
-      "run": "#run-sale"
+      "run": "#run-sale",
+      "short": "Pass: 72% from 6 real customers, no hidden keys. Customers are new.",
+      "deal_short": "Sold to bob for 1,000.00",
+      "metrics": [
+        [
+          "Real revenue",
+          "360.00 (72%)"
+        ],
+        [
+          "Self-paid",
+          "140.00"
+        ],
+        [
+          "Keys",
+          "clean"
+        ],
+        [
+          "Price ÷ revenue",
+          "2.8×"
+        ]
+      ],
+      "bar": {
+        "real": 360,
+        "self": 140
+      }
     },
     {
       "agent": "cheat.agentexit5.testnet",
       "name": "cheat",
+      "role": "The cheat",
       "deal": "For sale at 500.00",
       "rows": [
         [
@@ -86,13 +112,42 @@
       "verdict": "Blocked before any money moves",
       "ok": false,
       "why": "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
-      "run": "#run-cheat"
+      "run": "#run-cheat",
+      "short": "Blocked: all 500 was self-paid, and a hidden key lets her take it back.",
+      "deal_short": "For sale at 500.00",
+      "metrics": [
+        [
+          "Real revenue",
+          "0.00 (0%)"
+        ],
+        [
+          "Self-paid",
+          "500.00"
+        ],
+        [
+          "Keys",
+          "hidden full-access key"
+        ],
+        [
+          "Price ÷ revenue",
+          "nothing proven"
+        ]
+      ],
+      "bar": {
+        "real": 0,
+        "self": 500
+      }
     },
     {
       "agent": "translator3.agentexit5.testnet",
       "name": "translator3",
+      "role": "Open to investors",
       "deal": "20% of future earnings for a year, 500.00",
       "rows": [
+        [
+          "As of",
+          "scene 8, right after the 20% sale. Later scenes added more customer payments (100.00 counted when the MCP agent bought its part)."
+        ],
         [
           "Revenue paid in",
           "70.00 from 6 payments"
@@ -111,7 +166,7 @@
         ],
         [
           "Investor received",
-          "14.00 of 70.00 paid in: exactly 20%"
+          "14.00 = 20% of all 70.00 paid in. The payout is on all money paid in, self-paid too; the valuation uses only real revenue."
         ],
         [
           "Investor's money at risk",
@@ -126,7 +181,32 @@
       "ok": true,
       "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
-      "tx": "https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B"
+      "tx": "https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B",
+      "short": "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
+      "deal_short": "Open now: 2.5% parts, 25.00 each",
+      "deal_link": "#invest-yourself",
+      "metrics": [
+        [
+          "Real revenue",
+          "50.00 (100% NEAR AI)"
+        ],
+        [
+          "Self-paid",
+          "20.00"
+        ],
+        [
+          "Keys",
+          "clean"
+        ],
+        [
+          "Earlier investor got",
+          "14.00 (20% of all 70.00)"
+        ]
+      ],
+      "bar": {
+        "real": 50,
+        "self": 20
+      }
     }
   ]
 }

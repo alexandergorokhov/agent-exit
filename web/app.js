@@ -280,13 +280,26 @@ async function main() {
   document.getElementById("source").textContent = `Data: ${demo.source}${testnet ? `, plus the NEAR testnet run of ${testnet.run} (${testnet.root}, agent code hash ${testnet.agent_code_hash})` : ""}. All results are recorded; in testnet mode \"Read live\" makes read-only view calls.`;
   document.getElementById("prev").addEventListener("click", () => go(current - 1));
   document.getElementById("next").addEventListener("click", () => go(current + 1));
-  addEventListener("hashchange", () => go(fromHash(), false));
+  addEventListener("hashchange", () => { openReplayFor(location.hash); go(fromHash(), false); });
   addEventListener("keydown", (e) => {
+    if (!document.getElementById("replay").open) return; // the arrows only page the replay while it is open
     if (e.target.closest && e.target.closest("input, textarea, summary, button")) return;
     if (e.key === "ArrowRight") go(current + 1);
     if (e.key === "ArrowLeft") go(current - 1);
   });
+  openReplayFor(location.hash);
   go(fromHash(), false);
+}
+
+// The offline replay is folded on a plain load. A step id in the hash
+// (#break-in, #cheat, ...) or testnet mode opens it; #run-cheat does not.
+function openReplayFor(hash) {
+  const d = document.getElementById("replay");
+  if (!d || d.open) return;
+  const isStep = demo && demo.steps.some((s) => `#${s.id}` === hash);
+  if (!isStep && network !== "testnet") return;
+  d.open = true;
+  if (isStep) requestAnimationFrame(() => d.scrollIntoView());
 }
 
 // Hero proof strip: the sale tx and the old seller's refused break-in calls,
@@ -306,35 +319,58 @@ async function renderProofStrip() {
   const jobs = inv.filter((x) => x.ok && /pays .* for a translation/.test(x.label || ""));
   const share = inv.find((x) => x.ok && x.method === "ft_transfer_call" && /buys the 20% slice/.test(x.label || ""));
   const claim = inv.find((x) => x.ok && /claim/i.test(x.label || ""));
-  const stat = (num, text, x) => el("li", {}, el("b", { class: "ps-num", text: num }), " ", el("span", { text }), x ? [" ", link(x, short(x.tx))] : []);
+  const stat = (num, text, x, more) => el("li", {},
+    el("b", { class: "ps-num", text: num }), " ",
+    el("span", { class: "ps-label", text }), " ",
+    el("span", { class: "ps-links" }, x ? link(x, "tx ↗") : null, more || null));
   const stats = [];
-  if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "customer payments signed by NEAR AI and checked on-chain", jobs[0]));
-  if (share && claim) stats.push(stat("20%", "of earnings bought by an investor, who got exactly 20%", claim));
-  stats.push(stat(`${tries.length}/${tries.length}`, "break-in attempts by the old seller refused after the sale", sale));
+  if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "customer payments signed by NEAR AI, checked on-chain", jobs[0]));
+  if (share && claim) stats.push(stat("exact", "investor payout, to the cent", claim));
+  stats.push(stat(`${tries.length}/${tries.length}`, "take-backs refused after a sale", tries[0]));
+  const after = document.getElementById("story-after");
+  if (after) after.textContent = `All ${tries.length} of her ways back refused.`;
   box.replaceChildren(
     el("ul", { class: "ps-stats" }, stats),
-    el("p", { class: "ps-head" }, "On NEAR testnet: ", el("b", { text: "bob bought the agent in one transaction" }), " (", link(sale, short(sale.tx)), "). ",
-      "Then the old seller tried to take it back ", el("b", { text: `${tries.length} times. All refused:` })),
-    el("ul", { class: "ps-list" }, tries.map((x) => el("li", {},
-      el("span", { class: "ps-x", text: "✗" }), " ",
-      el("span", { text: x.label.replace(/^alice: /, "") }), " ",
-      el("code", { text: x.error || "refused" }), " ", link(x, short(x.tx))))),
-    el("p", { class: "small muted" }, "Her old keys were deleted in the sale, so they fail at the node too. ", el("a", { href: "#evidence-run", text: "Re-check every step on chain" }), "."));
+    el("details", { class: "ps-more", id: "refused" },
+      el("summary", { text: `See the ${tries.length} refused calls` }),
+      el("p", { class: "ps-head" }, "On NEAR testnet: ", el("b", { text: "bob bought the agent in one transaction" }), " (", link(sale, short(sale.tx)), "). ",
+        "Then the old seller tried ", el("b", { text: `${tries.length} ways back in. All refused:` })),
+      el("ul", { class: "ps-list" }, tries.map((x) => el("li", {},
+        el("span", { class: "ps-x", text: "✗" }), " ",
+        el("span", { text: x.label.replace(/^alice: /, "") }), " ",
+        el("code", { text: x.error || "refused" }), " ", link(x, short(x.tx))))),
+      el("p", { class: "small muted" }, "Her old keys were deleted in the sale, so they fail at the node too. ", el("a", { href: "#evidence-run", text: "Re-check every step on chain" }), ".")));
+  openTarget();
 }
 renderProofStrip().catch(() => { /* the static fallback text stays */ });
 
-// Due-diligence cards (scripts/diligence-data.mjs, from the recorded testnet run).
+// Due-diligence cards (scripts/diligence-data.mjs, from the recorded testnet run):
+// verdict first, four numbers, a bar, and every original row under "Full due diligence".
 async function renderDiligence() {
   const box = document.getElementById("dd-cards");
   if (!box) return;
   const d = await (await fetch("data/diligence.json")).json();
   if (d.schema !== "diligence.v1") return;
-  box.replaceChildren(...d.cards.map((c) => el("article", { class: `dd-card ${c.ok ? "dd-ok" : "dd-no"}`, "data-agent": c.name },
-    el("h3", {}, el("code", { text: c.name }), " ", el("span", { class: "muted small", text: c.deal })),
-    el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
-    el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })),
-    el("p", { class: "small" }, el("a", { href: c.run, text: "Re-check it on NEAR testnet now" })))));
-  box.after(el("p", { class: "small muted", text: d.note }));
+  const deed = document.getElementById("deed-figure");
+  box.replaceChildren(...d.cards.map((c) => {
+    const total = (c.bar?.real || 0) + (c.bar?.self || 0);
+    const real = el("span", { class: "dd-real" });
+    const self = el("span", { class: "dd-self" });
+    if (total) { real.style.setProperty("width", `${(100 * c.bar.real) / total}%`); self.style.setProperty("width", `${(100 * c.bar.self) / total}%`); }
+    const full = el("details", { class: "dd-full" }, el("summary", { text: "Full due diligence" }),
+      el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
+      el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })));
+    if (c.name === "translator" && deed) { deed.hidden = false; full.append(deed); }
+    return el("article", { class: `dd-card card ${c.ok ? "dd-ok" : "dd-no"}`, "data-agent": c.name, id: `case-${c.name}` },
+      el("header", { class: "dd-head" }, el("div", {}, c.role ? el("p", { class: "dd-role", text: c.role }) : null, el("h3", {}, el("code", { text: c.name }))),
+        el("span", { class: `pill ${c.ok ? "pass" : "block"}`, text: c.ok ? "Pass" : "Blocked" })),
+      el("p", { class: "dd-deal small muted" }, c.deal_link ? el("a", { href: c.deal_link, text: c.deal_short || c.deal }) : (c.deal_short || c.deal)),
+      el("p", { class: "dd-why", text: (c.short || c.verdict).replace(/^(Pass|Blocked): (.)/, (_, _v, ch) => ch.toUpperCase()) }),
+      c.metrics ? el("dl", { class: "dd-metrics" }, c.metrics.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])) : null,
+      total ? el("div", { class: "dd-bar", role: "img", "aria-label": `real revenue ${c.bar.real}, self-paid ${c.bar.self}` }, real, self) : null,
+      el("div", { class: "dd-foot" }, full,
+        el("p", { class: "small dd-run" }, el("a", { href: c.run, text: "Re-check on chain →" }))));
+  }));
 }
 renderDiligence().catch(() => { /* the loading text stays */ });
 
@@ -348,37 +384,90 @@ async function renderExchange() {
   const x = t.exchange;
   if (!x || !Array.isArray(x.agents) || !x.agents.length) return;
   const usd = (raw) => Number(BigInt(raw)) / 1e6;
+  const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const rows = x.agents.map((a) => {
     const counted = usd(a.counted);
     const gross = usd(a.gross);
     const open = a.offers.find((o) => o.sold_bps < o.bps);
     const value = a.ask ? usd(a.ask) : open ? usd(open.price) * 10000 / open.bps : null;
-    const deal = a.ask ? `for sale at ${usd(a.ask).toFixed(2)}` : open ? `${open.bps / 100}% of earnings for ${usd(open.price).toFixed(2)}` : "not offered";
+    const deal = a.ask ? `for sale at ${money(usd(a.ask))}` : open ? `${open.bps / 100}% of earnings for ${money(usd(open.price))}` : "not offered";
     return { ...a, counted, flaggedPct: gross ? (100 * usd(a.flagged)) / gross : 0, deal, multiple: value !== null && counted > 0 ? value / counted : Infinity };
   });
-  let key = "multiple", dir = 1;
+  // One cast: the three case-file agents (translator, cheat, translator3) are on the board too,
+  // from the same recorded run (data/diligence.json); translator3 carries the open offer.
+  const dd = await fetch("data/diligence.json").then((r) => r.json()).catch(() => null);
+  const o = t.open_offer;
+  for (const c of (dd && dd.cards) || []) {
+    if (!c.bar) continue;
+    const counted = c.bar.real, gross = c.bar.real + c.bar.self;
+    const payers = Number((/from (\d+) paying/.exec((c.rows.find(([k]) => /^Counted/.test(k)) || [])[1] || "") || [])[1] || 0);
+    const ask = Number((/([\d.]+)$/.exec(c.deal || "") || [])[1] || 0);
+    let deal = c.deal_short || c.deal, value = ask || null, target = `#case-${c.name}`, featured = false;
+    if (o && o.agent === c.agent) {
+      deal = `${Number(o.part_bps) / 100}% parts: ${money(usd(o.amount))} each`;
+      value = usd(o.offer.price) * 10000 / Number(o.offer.bps);
+      target = "#invest-yourself";
+      featured = true;
+    } else if (c.name === "translator") {
+      deal = `sold to bob for ${money(ask)}`;
+    }
+    rows.push({ name: c.name, counted, payers, deal, target, featured, flaggedPct: gross ? (100 * c.bar.self) / gross : 0,
+      multiple: value && counted > 0 ? value / counted : Infinity });
+  }
+  // Featured first (the agent you can invest in now), then by price over revenue.
+  let key = null, dir = 1;
   const tbody = box.querySelector("tbody");
+  const cmp = (k) => (a, b) => (a[k] > b[k] ? dir : a[k] < b[k] ? -dir : 0);
   const draw = () => {
-    rows.sort((a, b) => (a[key] > b[key] ? dir : a[key] < b[key] ? -dir : 0));
-    tbody.replaceChildren(...rows.map((r) => el("tr", { class: r.flaggedPct >= 50 ? "ex-flag" : "" },
-      el("td", {}, el("code", { text: r.name }), r.born_clean ? el("span", { class: "badge ok", text: "born clean" }) : null),
-      el("td", { text: r.counted.toFixed(2) }),
-      el("td", { text: `${r.flaggedPct.toFixed(0)}%` }),
-      el("td", { text: String(r.payers) }),
-      el("td", { text: r.deal }),
-      el("td", { text: Number.isFinite(r.multiple) ? `${r.multiple.toFixed(1)}×` : "no counted revenue" }))));
+    if (key) rows.sort(cmp(key)); else rows.sort((a, b) => (Number(!!b.featured) - Number(!!a.featured)) || cmp("multiple")(a, b));
+    const flag = (r) => r.flaggedPct >= 50;
+    tbody.replaceChildren(...rows.map((r) => el("tr", { class: [flag(r) ? "ex-caught" : "", r.featured ? "ex-featured" : "", r.target ? "ex-link" : ""].join(" ").trim() || null, "data-target": r.target },
+      el("td", { "data-label": "Agent", class: "ex-name" }, r.target ? el("a", { href: r.target }, el("code", { text: r.name })) : el("code", { text: r.name }), " ",
+        flag(r) ? el("span", { class: "pill block", text: `caught: ${r.flaggedPct.toFixed(0)}% self-paid` })
+          : r.featured ? el("span", { class: "pill pass", text: "open to invest" }) : null),
+      el("td", { "data-label": "Real revenue", class: "num", text: r.counted.toFixed(2) }),
+      el("td", { "data-label": "Self-paid", class: `num${flag(r) ? " bad" : ""}`, text: `${r.flaggedPct.toFixed(0)}%` }),
+      el("td", { "data-label": "Customers", class: "num", text: String(r.payers) }),
+      el("td", { "data-label": "Deal", class: "ex-deal", text: r.deal }),
+      el("td", { "data-label": "Price ÷ revenue", class: "num", text: flag(r) ? "price unsupported" : Number.isFinite(r.multiple) ? `${r.multiple.toFixed(1)}×` : "no real revenue" }))));
+    box.querySelectorAll("th[data-k]").forEach((th) => {
+      if (th.dataset.k === key) th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
+    });
   };
-  box.querySelectorAll("th[data-k]").forEach((th) => th.addEventListener("click", () => {
-    dir = key === th.dataset.k ? -dir : 1; key = th.dataset.k; draw();
-  }));
+  // A whole row is a link to its case file (or the invest card): the name is the real link.
+  tbody.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-target]");
+    if (!tr || e.target.closest("a")) return;
+    location.hash = tr.dataset.target;
+  });
+  box.querySelectorAll("th[data-k]").forEach((th) => {
+    th.tabIndex = 0;
+    const sort = () => { dir = key === th.dataset.k ? -dir : 1; key = th.dataset.k; draw(); };
+    th.addEventListener("click", sort);
+    th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); } });
+  });
   draw();
-  document.getElementById("ex-note").textContent = `Recorded on NEAR testnet from the factory ${x.factory}. All money is xUSD-FAKE. A high flagged share means the owner paid the agent herself: the meter does not count it.`;
+  document.getElementById("ex-note").textContent = `${x.agents.map((a) => a.name).join(", ")}: born with no admin key. Recorded on testnet.`;
   box.hidden = false;
 }
 renderExchange().catch(() => { /* the board stays hidden */ });
 
-// "Invest yourself": the open offer recorded by scene 12, as copyable
-// near-cli-rs commands. Hidden until the offer exists in data/testnet.json.
+// "Invest yourself": the open offer recorded by scene 12. Hidden until the
+// offer exists in data/testnet.json. The wallet returns here with the tx hash,
+// which is shown as a receipt and kept in this browser (localStorage).
+const NB = "https://testnet.nearblocks.io";
+const MY_KEY = "ae.myInvestments";
+function loadMine() {
+  try { const v = JSON.parse(localStorage.getItem(MY_KEY) || "[]"); return Array.isArray(v) ? v.filter((x) => x && typeof x.account === "string" && typeof x.tx === "string") : []; } catch { return []; }
+}
+function saveMine(list) {
+  try { localStorage.setItem(MY_KEY, JSON.stringify(list.slice(0, 20))); } catch { /* storage blocked: the receipt still shows now */ }
+}
+const ago = (t) => {
+  const s = Math.max(0, (Date.now() - Number(t)) / 1000);
+  return s < 120 ? "just now" : s < 7200 ? `${Math.round(s / 60)} min ago` : s < 172800 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} days ago`;
+};
+
 async function renderInvestYourself() {
   const box = document.getElementById("invest-yourself");
   if (!box) return;
@@ -387,55 +476,127 @@ async function renderInvestYourself() {
   if (!o || !o.agent || !o.offer) return;
   const usd = (raw) => (Number(BigInt(raw)) / 1e6).toFixed(2);
   const pct = Number(o.part_bps) / 100;
-  const end = new Date(Number(BigInt(o.offer.end) / 1000000n)).toISOString().slice(0, 10);
-  document.getElementById("iy-terms").textContent =
-    `${o.agent} pays ${Number(o.offer.bps) / 100}% of every customer payment to its investors until ${end}, for ${usd(o.offer.price)} xUSD-FAKE in all. A ${pct}% part costs ${usd(o.amount)}.`;
+  const endDate = new Date(Number(BigInt(o.offer.end) / 1000000n));
+  const end = endDate.toISOString().slice(0, 10);
+  const endText = endDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const name = o.agent.split(".")[0];
+  const title = document.getElementById("iy-title");
+  const dollars = Math.round(Number(usd(o.amount)));
+  title.textContent = `Invest ${pct}% of ${name}'s earnings (${dollars} test $)`;
+  title.title = o.agent;
+  // One offer, one sentence: the pool, your part of it, what is sold. Same unit (%) as the buttons.
+  const pool = Number(o.offer.bps) / 100;
+  const parts = Number(o.offer.bps) / Number(o.part_bps);
+  const sold = Number(o.offer.sold_bps) / Number(o.part_bps);
+  document.getElementById("iy-sum").textContent =
+    `${name} shares ${pool}% of its earnings with investors. One part = ${pct}% of every customer payment. ${sold} of ${parts} parts sold.`;
+  const term = (k, v) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }));
+  document.getElementById("iy-terms").replaceChildren(
+    term("You get", `${pct}% of every customer payment`),
+    term("You pay", `${usd(o.amount)} test dollars`),
+    term("Until", endText));
+  if (o.example_tx && o.example_tx.explorer) {
+    document.getElementById("iy-example").replaceChildren(" · ",
+      el("a", { href: o.example_tx.explorer, target: "_blank", rel: "noopener noreferrer", text: "see a recorded investment ↗" }));
+  }
   const call = (to, method, args, gas, dep) => `near contract call-function as-transaction ${to} ${method} json-args '${JSON.stringify(args)}' prepaid-gas '${gas} Tgas' attached-deposit '${dep}' sign-as YOU.testnet network-config testnet sign-with-keychain send`;
   const view = (to, method, args) => `near contract call-function as-read-only ${to} ${method} json-args '${JSON.stringify(args)}' network-config testnet now`;
   const steps = [
     ["Take free test dollars (the faucet registers you)", [call(o.xusd, "faucet", { amount: o.amount }, 30, "0 NEAR")]],
     ["Check the agent before paying: its earnings by who paid, and the open offer", [view(o.agent, "get_earnings", {}), view(o.agent, "get_shares", {})]],
-    [`Buy a ${pct}% part: one transfer carries the offer's exact terms`, [call(o.xusd, "ft_transfer_call", { receiver_id: o.agent, amount: o.amount, msg: o.msg }, 150, "1 yoctoNEAR")]],
+    [`Buy a ${pct}% part: one transfer carries the offer's exact terms (until ${end})`, [call(o.xusd, "ft_transfer_call", { receiver_id: o.agent, amount: o.amount, msg: o.msg }, 150, "1 yoctoNEAR")]],
     ["See your holding; each customer payment adds to what you can claim", [view(o.agent, "get_holdings", { account_id: "YOU.testnet" })]],
     ["Claim your part of the earnings", [call(o.agent, "claim", {}, 50, "0 NEAR")]],
   ];
+  document.getElementById("iy-cli-note").replaceChildren("Agent ", el("code", { text: o.agent }), ". Replace ", el("code", { text: "YOU.testnet" }), " with your account.");
   document.getElementById("iy-steps").replaceChildren(...steps.map(([what, cmds]) =>
     el("li", {}, el("p", { text: what }), ...cmds.map((c) => el("pre", {}, el("code", { text: c }))))));
   box.hidden = false;
   document.getElementById("iy-invest").textContent = `Invest ${pct}% with MyNearWallet`;
-  wireWallet(o);
+  renderInvestors(o, null);
+  document.getElementById("iy-refresh").addEventListener("click", () => {
+    document.getElementById("iy-live").textContent = "Reading the offer on testnet…";
+    liveOffer(o).catch((e) => { document.getElementById("iy-live").textContent = `Live read failed: ${e.message}`; });
+  });
+  wireWallet(o, { pct, name });
+  openTarget();
+}
+
+// "Investors so far": this browser's own investments first, then the holders
+// (recorded in data/testnet.json, or live after "Refresh live").
+function renderInvestors(o, liveHolders) {
+  const ul = document.getElementById("iy-investors");
+  const mine = loadMine().filter((m) => m.agent === o.agent);
+  const mineAcc = new Set(mine.map((m) => m.account));
+  const holders = (liveHolders || o.offer.holders || []).filter((h) => !mineAcc.has(h.account));
+  ul.replaceChildren(
+    ...mine.map((m) => el("li", { class: "mine" },
+      el("b", { text: m.account }), ` · ${m.pct}% · `,
+      el("a", { href: `${NB}/txns/${m.tx}`, target: "_blank", rel: "noopener", text: "tx ↗" }), ` · ${ago(m.at)}`)),
+    ...holders.map((h) => el("li", {},
+      el("a", { href: `${NB}/address/${h.account}`, target: "_blank", rel: "noopener", text: h.account }),
+      ` · ${Number(h.bps) / 100}% · ${liveHolders ? "live" : "recorded"}`)));
 }
 
 // One-click links to MyNearWallet's sign page (web/wallet-link.mjs). The wallet
 // returns to ?iy=<account>&transactionHashes=… (or errorCode=… if cancelled).
-function wireWallet(o) {
+function wireWallet(o, { pct, name }) {
   const input = document.getElementById("iy-account");
   const invest = document.getElementById("iy-invest");
   const claim = document.getElementById("iy-claim");
   const read = document.getElementById("iy-read");
   const out = document.getElementById("iy-out");
+  const after = document.querySelector("#invest-yourself .iy-after");
+  const receipt = document.getElementById("iy-receipt");
   const back = (who) => { const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("iy", who); return u.toString(); };
-  const update = () => {
+  // typed: the visitor changed the box, so the status line may be rewritten.
+  const update = (typed) => {
     const who = input.value.trim().toLowerCase();
     const ok = validAccount(who) && who.endsWith(".testnet");
     for (const a of [invest, claim]) {
       if (ok) a.removeAttribute("aria-disabled"); else { a.setAttribute("aria-disabled", "true"); a.removeAttribute("href"); }
     }
     read.disabled = !ok;
-    if (!ok) return;
+    after.hidden = !ok;
+    if (ok) input.removeAttribute("aria-invalid");
+    if (!ok) {
+      if (!typed) return;
+      // Say why nothing happens: a .near name, or not an account name yet.
+      if (who.endsWith(".near")) out.textContent = `${who} is a real-money .near account. This demo runs on NEAR testnet: create a free account ending in .testnet (link below), then type it here.`;
+      else if (who.includes(".") && !who.endsWith(".testnet")) out.textContent = "Use a testnet account: its name ends in .testnet, e.g. you.testnet.";
+      else if (who && !validAccount(who)) out.textContent = "Account names use a-z, 0-9, - and _ and end in .testnet.";
+      else out.textContent = "Sign once. Free test money.";
+      return;
+    }
+    if (typed) out.textContent = "Ready: the button opens MyNearWallet to sign one transaction.";
     invest.href = signUrl([investTx(o, who)], back(who));
     claim.href = signUrl([claimTx(o, who)], back(who));
   };
-  input.addEventListener("input", update);
+  input.addEventListener("input", () => update(true));
+  // The button keeps its colour; with no valid account a click says what to do.
+  invest.addEventListener("click", (e) => {
+    if (invest.getAttribute("aria-disabled") !== "true") return;
+    e.preventDefault();
+    input.setAttribute("aria-invalid", "true");
+    input.focus();
+    invest.classList.remove("shake");
+    void invest.offsetWidth; // restart the animation
+    invest.classList.add("shake");
+    out.textContent = "Type your testnet account first, e.g. you.testnet.";
+  });
+  claim.addEventListener("click", (e) => { if (claim.getAttribute("aria-disabled") === "true") e.preventDefault(); });
+  const holding = async (who) => {
+    const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_holdings", args_base64: btoa(JSON.stringify({ account_id: who })) });
+    const h = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
+    return { bps: (h.holdings || []).reduce((n, x) => n + Number(x.bps), 0), claimable: (Number(h.claimable) / 1e6).toFixed(2) };
+  };
   read.addEventListener("click", async () => {
     const who = input.value.trim().toLowerCase();
     out.textContent = "Reading the agent's ledger on testnet…";
     try {
-      const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_holdings", args_base64: btoa(JSON.stringify({ account_id: who })) });
-      const h = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
-      const bps = (h.holdings || []).reduce((n, x) => n + Number(x.bps), 0);
+      const h = await holding(who);
       liveOffer(o).catch(() => { /* the recorded terms stay */ });
-      out.textContent = bps ? `${who} holds ${bps / 100}% of ${o.agent}'s revenue offer; claimable now: ${(Number(h.claimable) / 1e6).toFixed(2)} xUSD-FAKE.` : `${who} holds no part of ${o.agent} yet.`;
+      out.textContent = h.bps ? `${who} holds ${h.bps / 100}% of ${name}'s earnings offer; claimable now: ${h.claimable} test dollars.` : `${who} holds no part of ${name} yet.`;
     } catch (e) {
       out.textContent = `Live read failed (it needs the page's local server, make web): ${e.message}`;
     }
@@ -444,23 +605,43 @@ function wireWallet(o) {
   if (who && validAccount(who)) {
     input.value = who;
     const hashes = (params.get("transactionHashes") || "").split(",").filter((h) => /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(h));
-    if (hashes.length) out.replaceChildren("Signed and sent: ", ...hashes.map((h) => el("a", { href: `https://testnet.nearblocks.io/txns/${h}`, target: "_blank", rel: "noopener", text: `${h.slice(0, 8)}…` })), ". Press See my holding.");
-    else if (params.get("errorCode")) out.textContent = "The wallet did not send the transaction (cancelled or failed). Nothing changed.";
+    if (hashes.length) {
+      const h = hashes[hashes.length - 1];
+      const earn = el("span", { class: "iy-earn", text: "reading…" });
+      receipt.replaceChildren(
+        el("p", { class: "iy-ok" }, el("b", { text: `✓ Invested. You own ${pct}% of ${name}.` })),
+        el("p", { class: "small" }, el("a", { href: `${NB}/txns/${h}`, target: "_blank", rel: "noopener", text: `tx ${h.slice(0, 8)}… ↗` }),
+          " · Your earnings: ", earn, " (live)"));
+      receipt.hidden = false;
+      out.textContent = "Signed and sent from MyNearWallet.";
+      const mine = loadMine().filter((m) => m.tx !== h);
+      mine.unshift({ account: who, tx: h, pct, agent: o.agent, at: Date.now() });
+      saveMine(mine);
+      renderInvestors(o, null);
+      holding(who).then((x) => { earn.textContent = `${x.claimable} test dollars claimable`; }).catch(() => { earn.textContent = "not readable from here"; });
+      liveOffer(o).catch(() => { /* the recorded list stays */ });
+    } else if (params.get("errorCode")) {
+      out.textContent = "The wallet did not send it. Nothing changed.";
+      receipt.hidden = true;
+    }
     document.getElementById("invest-yourself").scrollIntoView();
   }
   update();
 }
 
-// Live count of parts sold in the open offer (read-only relay, on click only; only where the page's server runs).
+// Live count of parts sold in the open offer (read-only relay; on "Refresh live"
+// or on return from the wallet, never on a plain load).
 async function liveOffer(o) {
   const res = await rpcQuery({ request_type: "call_function", account_id: o.agent, method_name: "get_shares", args_base64: btoa("{}") });
   const offers = JSON.parse(new TextDecoder().decode(new Uint8Array(res.result)));
   const live = offers.find((x) => String(x.offer_id) === String(o.offer.offer_id));
-  if (!live) return;
+  if (!live) { document.getElementById("iy-live").textContent = "The offer is no longer open on testnet."; return; }
   const parts = Number(live.bps) / Number(o.part_bps);
   const sold = Number(live.sold_bps) / Number(o.part_bps);
   const who = new Set((live.holders || []).map((h) => h.account)).size;
   document.getElementById("iy-live").textContent = `Live on testnet now: ${sold} of ${parts} parts sold, to ${who} investor${who === 1 ? "" : "s"}.`;
+  // In the live list, keep this browser's own entries on top (they carry the tx).
+  renderInvestors(o, live.holders || []);
 }
 renderInvestYourself().catch(() => { /* the section stays hidden */ });
 
@@ -468,12 +649,24 @@ main().catch((e) => {
   document.getElementById("step").replaceChildren(el("p", { class: "err", text: `Could not load the demo: ${e.message}` }));
 });
 
-// A link into a folded section opens it (e.g. #backend inside "How it works").
+// A link into a folded section opens it (e.g. #backend inside "Technical details"),
+// and every closed fold around it.
 function openTarget() {
   const id = location.hash.slice(1);
   const t = id && document.getElementById(id);
-  const d = t && t.closest("details");
-  if (d && !d.open) { d.open = true; t.scrollIntoView(); }
+  if (!t) return;
+  let opened = false;
+  for (let d = t.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) {
+    if (!d.open) { d.open = true; opened = true; }
+  }
+  if (opened) t.scrollIntoView();
 }
+
+// "Scan any agent": the example buttons fill the account and submit.
+document.querySelectorAll("[data-example]").forEach((b) => b.addEventListener("click", () => {
+  const form = document.getElementById("check-form");
+  document.getElementById("check-account").value = b.dataset.example;
+  if (form.requestSubmit) form.requestSubmit(); else form.querySelector("button").click();
+}));
 addEventListener("hashchange", openTarget);
 openTarget();
