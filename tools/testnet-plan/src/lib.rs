@@ -11,6 +11,9 @@ use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
 pub const NETWORK: &str = "testnet";
+/// The born-clean factory account is `factory.ROOT`; the agent wasm of a world
+/// is built with `AGENT_EXIT_FACTORY=factory.ROOT` (make build does it).
+pub const FACTORY_NAME: &str = "factory";
 pub const DEFAULT_ROOT: &str = "agentexit.testnet";
 pub const MPC_SIGNER: &str = "v1.signer-prod.testnet";
 pub const BASE_CHAIN_ID: u64 = 84_532;
@@ -123,11 +126,25 @@ pub struct Config {
     pub keys_dir: String,
     /// Which secrets are present (names only).
     pub secrets_present: Vec<String>,
+    /// Agents created by the born-clean factory (`name.factory.ROOT`): every
+    /// agent that is sold. The contract refuses to list or sell any other
+    /// (`NotBornClean`, K8). Defaults: translator, INVEST_AGENT
+    /// (translator3), SEALED_AGENT (sealed1).
+    pub born: Vec<String>,
 }
 
 impl Config {
+    /// `name.ROOT`, or `name.factory.ROOT` for a factory-born agent.
     pub fn account(&self, name: &str) -> String {
-        format!("{name}.{}", self.root)
+        if self.born.iter().any(|b| b == name) {
+            format!("{name}.{}", self.factory())
+        } else {
+            format!("{name}.{}", self.root)
+        }
+    }
+
+    pub fn factory(&self) -> String {
+        format!("{FACTORY_NAME}.{}", self.root)
     }
 
     pub fn agent(&self) -> String {
@@ -212,7 +229,20 @@ pub fn check(env: &BTreeMap<String, String>) -> Result<Config, Vec<String>> {
     if !errs.is_empty() {
         return Err(errs);
     }
+    let named = |k: &str, d: &str| -> String {
+        std::env::var(k)
+            .ok()
+            .filter(|v| !v.is_empty())
+            .or_else(|| get(k).map(str::to_string))
+            .unwrap_or_else(|| d.to_string())
+    };
+    let born = vec![
+        "translator".to_string(),
+        named("INVEST_AGENT", "translator3"),
+        named("SEALED_AGENT", "sealed1"),
+    ];
     Ok(Config {
+        born,
         root,
         rpc,
         base_rpc,
@@ -252,9 +282,12 @@ pub enum Step {
     DeployXusd,
     MintXusd,
     DeriveBaseAddresses,
+    /// The born-clean factory: deployed, the agent wasm stored (hash-checked).
+    DeployFactory,
     DeployAgents,
     RunnerKeys,
-    LockTranslator,
+    /// Delete the factory's setup key: nobody can redeploy it (N4).
+    LockFactory,
     SeedWorld,
     // G1: key handover on a real node
     G1Deploy,
@@ -305,36 +338,37 @@ pub fn info(step: Step) -> StepInfo {
     use Step::*;
     let (id, what, needs, writes): (&str, &str, &[&str], &str) = match step {
         CheckRoot => ("check-root", "read ROOT's balance and keys on testnet (both RPCs); refuse below the NEAR the plan needs", &["AGENT_EXIT_ROOT_KEY"], ""),
-        CreateAccounts => ("create-accounts", "create sub-accounts of ROOT: xusd, translator, cheat, summarizer, alice, bob, carol, p1-p6, x.alice (each skipped if it exists); new keys go to ~/.agent-exit/keys (0600)", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/accounts.json"),
+        CreateAccounts => ("create-accounts", "create sub-accounts of ROOT: xusd, factory, cheat, summarizer, alice, bob, carol, p1-p6, x.alice (each skipped if it exists); new keys go to ~/.agent-exit/keys (0600). translator is not created here: the factory creates it", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/accounts.json"),
         DeployXusd => ("deploy-xusd", "deploy the FAKE test dollar to xusd.ROOT, new(admin_id = ROOT)", &[], "out/testnet/deploy.json"),
         MintXusd => ("mint-xusd", "mint xUSD-FAKE: bob, carol, summarizer 2,000.00; p1-p6 200.00; alice 500.00, x.alice 300.00; register both agents", &["AGENT_EXIT_ROOT_KEY"], "out/testnet/deploy.json"),
         DeriveBaseAddresses => ("derive-base", "read v1.signer-prod.testnet public_key; derive each agent's Base Sepolia address for path wallet-1 (tools/base-wallet)", &[], "out/testnet/deploy.json"),
-        DeployAgents => ("deploy-agents", "deploy agent_exit.wasm (contracts/res reproducible build when present, else target/near-testnet) to translator.ROOT and cheat.ROOT, new(owner_id = alice, base_address); check get_status token/admin/mpc and the code hash", &[], "out/testnet/deploy.json"),
+        DeployFactory => ("deploy-factory", "deploy agent_factory.wasm to factory.ROOT with new(code_hash = the agent build), then store_code: the factory takes only bytes with that sha256 (the agent wasm has factory.ROOT compiled in, K8)", &[], "out/testnet/deploy.json"),
+        DeployAgents => ("deploy-agents", "translator: factory.create_agent (one batch: account, code, new, no key; ROOT attaches 10.2 NEAR) = translator.factory.ROOT, owner alice, base_address; cheat: a plain deploy of the same wasm to cheat.ROOT (keeps its setup key, the planted backdoor), new(owner_id = alice, base_address); check get_status token/admin/mpc/factory, born_clean (translator true, cheat false) and the code hash", &[], "out/testnet/deploy.json"),
         RunnerKeys => ("runner-keys", "alice sets a runner key on both agents (set_runner_key, 1 yocto); wait for runner_key_confirmed", &[], "out/testnet/deploy.json"),
-        LockTranslator => ("lock-translator", "delete translator's setup full-access key (locked account); cheat keeps its own (the planted backdoor)", &[], "out/testnet/deploy.json"),
+        LockFactory => ("lock-factory", "delete the factory's setup full-access key after store_code (nobody can redeploy the factory or its code); translator was born with no key at all; cheat keeps its own (the planted backdoor)", &[], "out/testnet/deploy.json"),
         SeedWorld => ("seed-world", "fixed world: p1-p6 pay translator 5 x 12.00 each, alice 2 x 50.00, x.alice 40.00; alice and x.alice pay cheat 500.00", &[], "out/testnet/seed.json"),
-        G1Deploy => ("g1-deploy", "fresh agent g1-<time>.ROOT: deploy, new(owner alice), runner key, delete the setup key, list at 10.00", &["AGENT_EXIT_ROOT_KEY"], "out/gates/g1.json"),
+        G1Deploy => ("g1-deploy", "fresh agent g1-<time>.factory.ROOT created by the factory (no setup key to delete), new(owner alice), runner key, list at 10.00", &["AGENT_EXIT_ROOT_KEY"], "out/gates/g1.json"),
         G1Sell => ("g1-sell", "bob buys it with one ft_transfer_call; key list before/after", &[], "out/gates/g1.json"),
-        G1OldKeysFail => ("g1-old-keys", "alice's old runner key and the deleted setup key each sign a heartbeat: the node's real error (AccessKeyNotFound) is recorded", &[], "out/gates/g1.json"),
+        G1OldKeysFail => ("g1-old-keys", "alice's old runner key and a key the account never had each sign a heartbeat: the node's real error (AccessKeyNotFound) is recorded", &[], "out/gates/g1.json"),
         G2Derive => ("g2-derive", "derive translator's Base address from the live MPC key; compare with get_base_wallet.address", &[], "out/gates/g2-sign.json"),
         G2Sign => ("g2-sign", "alice sets Base limits (cap 5.00 USDC, payee BASE_PAYEE or the relayer); her runner calls pay_base 5 times (0.01 USDC, valid 300 s): in-contract MPC sign, latency per sample, every signature checked offline", &[], "out/gates/g2-sign.json"),
         G2Relay => ("g2-relay", "scripts/testnet/g2-relay.mjs: chainsig.js derives the same address; viem checks chain id 84532, USDC DOMAIN_SEPARATOR and balance; the relayer EOA broadcasts transferWithAuthorization (fund the derived address with Base Sepolia USDC first: Circle faucet)", &["BASE_RELAYER_KEY"], "out/gates/g2.json"),
         G6Completion => ("g6-completion", "one NEAR AI Cloud chat completion whose request names the agent, job, payer and amount (metadata)", &["NEARAI_API_KEY"], "out/gates/g6.json"),
         G6Signature => ("g6-signature", "GET /v1/signature/{chat_id}?model=&signing_algo=ecdsa; check text = model:sha256(request):sha256(response) and recover the signer offline (EIP-191)", &["NEARAI_API_KEY"], "out/gates/g6.json"),
         G6OnChain => ("g6-on-chain", "ROOT (registry admin) add_signer(signing_address); p1 pays translator 1.00 with the proof; the payment event must say verified: true", &["AGENT_EXIT_ROOT_KEY"], "out/gates/g6.json"),
-        Scene1BreakIn => ("scene-1", "break-in: alice calls withdraw, set_runner_key, list_for_sale, set_limits, nft_transfer, pay_base (each refused); her old runner key and the deleted setup key fail at the node; key list before/after", &[], "out/scenes/scene-1.json"),
+        Scene1BreakIn => ("scene-1", "break-in: alice calls withdraw, set_runner_key, list_for_sale, set_limits, nft_transfer, pay_base (each refused); her old runner key and a key the born-clean translator never had fail at the node; key list before/after", &[], "out/scenes/scene-1.json"),
         Scene2Business => ("scene-2", "business: bob sets limits; p1, p2 pay 25.00 (split 20/5); bob's runner pays summarizer 8.00; 45.00 fails PolicyViolation:DailyCap", &[], "out/scenes/scene-2.json"),
         Scene3Verified => ("scene-3", "verified vs unverified: get_earnings of translator and cheat side by side", &[], "out/scenes/scene-3.json"),
-        Scene4Cheat => ("scene-4", "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent", &[], "out/scenes/scene-4.json"),
+        Scene4Cheat => ("scene-4", "cheat refused by the contract and caught by the scan: alice (owner of cheat, a plain deploy that is not born clean) calls list_for_sale at 500.00 and the contract refuses, NotBornClean (K8; the failed transaction is recorded); bob sends a buy anyway and the token refunds him in full (NotBornClean); key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present and contract_not_born_clean", &[], "out/scenes/scene-4.json"),
         Scene5Sale => ("scene-5", "honest sale: waits until no Base authorization is open (A9); alice lists translator at 1,000.00; bob scans translator (clean) and buys in one ft_transfer_call; keys before/after; alice +700.00, escrow 300.00", &[], "out/scenes/scene-5.json"),
         Scene6AgentBuysAgent => ("scene-6", "agent buys agent: bob lists translator at 1,200.00; summarizer (an agent account) scans it and buys it, then checks bob is locked out (scripted client)", &[], "out/scenes/scene-6.json"),
-        Scene8Invest => ("scene-8", "invest (not part of `scenes`): creates a fresh agent (INVEST_AGENT, default translator3; locked agents cannot take new code) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 translation jobs (translated and NEAR AI-signed when NEARAI_API_KEY is set; the scene fails if any job is unverified then); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims", &[], "out/scenes/scene-8.json"),
-        Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
+        Scene8Invest => ("scene-8", "invest (not part of `scenes`): the factory creates a fresh agent (INVEST_AGENT, default translator3, translator3.factory.ROOT; ROOT attaches 10.2 NEAR) and dave; alice offers 20% of earnings for a year at 500.00; dave scans (investor scan) and buys it; 5 customers pay 10.00 for 5 translation jobs (translated and NEAR AI-signed when NEARAI_API_KEY is set; the scene fails if any job is unverified then); x.alice pays 20.00 (flagged, still pays dave); dave gets exactly 20% and claims", &[], "out/scenes/scene-8.json"),
+        Scene9BornClean => ("scene-9", "born clean (not part of `scenes`): factory.ROOT already exists from the deploy (scene 9 creates, deploys and stores only what is missing: contracts/res/agent_factory.wasm with new(code_hash = the agent build), the agent wasm via store_code); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean", &["AGENT_EXIT_ROOT_KEY"], "out/scenes/scene-9.json"),
         Scene13Exchange => ("scene-13", "the Exchange (after scene-9): the born-clean factory creates up to six agents for alice (translate-pro, research-desk, pump-bot, support-247, trend-trader, summarize-it; EXCHANGE_AGENTS=N runs the first N), each paid by its own mix of outside customers, the owner and her sub-account; some offer shares of earnings, the others are listed for sale; the page's board shows counted and flagged revenue and the price multiple", &[], "out/scenes/scene-13.json"),
         Scene12OpenOffer => ("scene-12", "an open offer for anyone (after scene-11): on the scene-8 agent (INVEST_AGENT, default translator3) alice offers 25% of every future payment for 250.00 xUSD-FAKE until 2026-11-30, sold in 10 parts of 2.5% (25.00 each); anyone with a testnet account takes free xUSD-FAKE from the faucet and buys a part with one ft_transfer_call; no purchase is made here", &[], "out/scenes/scene-12.json"),
         Scene11BusinessDay => ("scene-11", "a business day (not part of `scenes`; after scene-8): on the scene-8 agent (INVEST_AGENT, default translator3) the owner signs ONE transaction, set_limits (daily cap 8.00, the only payee summarizer, split 80/20); then no human key signs: 5 customers pay 10.00 each, after each the agent's runner key buys a 2.00 summarizer job (procurement), a fifth 2.00 job is refused PolicyViolation:DailyCap, a payment to a payee not on the list is refused PolicyViolation:Payee; dave (20% investor) is paid inside every customer payment and claims", &[], "out/scenes/scene-11.json"),
-        Scene10Sealed => ("scene-10", "sealed prompt (not part of `scenes`): a fresh agent (SEALED_AGENT, default sealed1) owned by alice, runner key, setup key deleted; alice commits to a 2 KB config bundle (sha256 + length + chunk Merkle root) and lists at 100.00; bob requests a random preview and alice proves each requested chunk against the root (SC21); bob scans and buys with a one-time X25519 delivery key; alice posts a FAKE bundle sealed to that key; bob reveals the key in dispute_config, the contract decrypts on-chain and finds a mismatch; bob claims and has his 100.00 back; alice got nothing; her late release_upfront is refused", &[], "out/scenes/scene-10.json"),
-        Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
+        Scene10Sealed => ("scene-10", "sealed prompt (not part of `scenes`): a fresh factory-born agent (SEALED_AGENT, default sealed1.factory.ROOT) owned by alice, runner key; alice commits to a 2 KB config bundle (sha256 + length + chunk Merkle root) and lists at 100.00; bob requests a random preview and alice proves each requested chunk against the root (SC21); bob scans and buys with a one-time X25519 delivery key; alice posts a FAKE bundle sealed to that key; bob reveals the key in dispute_config, the contract decrypts on-chain and finds a mismatch; bob claims and has his 100.00 back; alice got nothing; her late release_upfront is refused", &[], "out/scenes/scene-10.json"),
+        Scene7AiSetup => ("scene-7", "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays unlisted (the contract refused it, scene 4); then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet", &[], "out/scenes/scene-7.json"),
     };
     StepInfo {
         step,
@@ -405,9 +439,10 @@ pub fn plan(cmd: Command) -> Vec<Step> {
             DeployXusd,
             MintXusd,
             DeriveBaseAddresses,
+            DeployFactory,
             DeployAgents,
             RunnerKeys,
-            LockTranslator,
+            LockFactory,
             SeedWorld,
         ],
         Command::GateG1 => vec![CheckRoot, G1Deploy, G1Sell, G1OldKeysFail],
@@ -432,7 +467,8 @@ pub fn plan(cmd: Command) -> Vec<Step> {
 /// scan calls it insolvent (A46): 9.5 NEAR leaves ~0.8 spare.
 pub const FUNDING: [(&str, u32); 14] = [
     ("xusd", 2_500),
-    ("translator", 9_700),
+    // The factory holds the agent wasm (about 5.5 NEAR) and pays its own gas.
+    ("factory", 11_500),
     ("cheat", 9_700),
     ("summarizer", 1_000),
     ("alice", 1_000),
@@ -447,8 +483,11 @@ pub const FUNDING: [(&str, u32); 14] = [
     ("x.alice", 500),
 ];
 
+/// NEAR ROOT attaches to each `create_agent` (all of it goes to the agent;
+/// translator is born in the deploy, the others in G1 and the scenes).
+pub const BORN_MILLI: u32 = 10_200;
 /// The fresh agent each G1 run creates (not part of the deploy).
-pub const G1_AGENT_MILLI: u32 = 9_700;
+pub const G1_AGENT_MILLI: u32 = BORN_MILLI;
 
 /// Gas and storage the root itself spends during the deploy.
 pub const ROOT_MARGIN_MILLI: u32 = 1_000;
@@ -459,7 +498,9 @@ pub fn funding_milli(name: &str) -> Option<u32> {
 
 /// What the root must hold before `make deploy-testnet` starts.
 pub fn deploy_need_milli() -> u128 {
-    FUNDING.iter().map(|(_, m)| *m as u128).sum::<u128>() + ROOT_MARGIN_MILLI as u128
+    FUNDING.iter().map(|(_, m)| *m as u128).sum::<u128>()
+        + BORN_MILLI as u128 // translator, created by the factory
+        + ROOT_MARGIN_MILLI as u128
 }
 
 pub fn plan_json(cmd: Command, cfg: &Config, env_found: bool) -> Value {
@@ -595,7 +636,14 @@ mod tests {
         }
         let c = check(&default_env()).unwrap();
         assert_eq!(c.root, DEFAULT_ROOT);
-        assert_eq!(c.agent(), "translator.agentexit.testnet");
+        // Every sold agent is born in the factory (K8).
+        assert_eq!(c.agent(), "translator.factory.agentexit.testnet");
+        assert_eq!(c.cheat(), "cheat.agentexit.testnet");
+        assert_eq!(
+            c.account("translator3"),
+            "translator3.factory.agentexit.testnet"
+        );
+        assert_eq!(c.account("sealed1"), "sealed1.factory.agentexit.testnet");
         assert!(c.secrets_present.is_empty());
     }
 
@@ -625,7 +673,7 @@ mod tests {
                 .map(|s| s["id"].as_str().unwrap().to_string())
                 .collect()
         };
-        assert_eq!(ids(Command::Deploy).len(), 9);
+        assert_eq!(ids(Command::Deploy).len(), 10);
         assert_eq!(
             ids(Command::Gates),
             [

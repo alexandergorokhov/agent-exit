@@ -125,12 +125,12 @@ mcp-build-if-stale:
 	  && [ -z "$$(find mcp/src mcp/scripts schemas -newer mcp/dist/scripts/judge-check.js -print -quit)" ]; then :; else $(MAKE) -s mcp-build; fi
 
 # Exit 4 = setup error (scan binary not found; no claim judged).
-judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, K0 code hash + one PASS/FAIL row per README claim (K1-K7, offline; 8 rows; about 1 s once built) -> out/check-claims.json
+judge: mcp-build-if-stale ## For a judge's agent: start the MCP server from .mcp.json, call check_claims, K0 code hash + one PASS/FAIL row per README claim (K1-K8, offline; 9 rows; about 1 s once built) -> out/check-claims.json
 	@scan="$$($(SCAN_FIND))"; if [ -n "$$scan" ]; then export AGENT_EXIT_SCAN_BIN="$$scan"; fi; node mcp/dist/scripts/judge-check.js
 
 # The script exits 3 when no RPC answered; make then prints "Error 3" and exits 2.
 # For the raw code run: node mcp/dist/scripts/judge-check.js --testnet
-judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K8 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. No RPC: NOT CHECKED rows, make fails with Error 3 (exit 2); node mcp/dist/scripts/judge-check.js --testnet alone exits 3
+judge-testnet: mcp-build-if-stale ## [testnet, read-only, no key] K1-K9 from the agent-exit-testnet entry: recorded transactions re-read from archival nodes + live agents -> out/check-claims-testnet.json. No RPC: NOT CHECKED rows, make fails with Error 3 (exit 2); node mcp/dist/scripts/judge-check.js --testnet alone exits 3
 	@scan="$$($(SCAN_FIND))"; if [ -n "$$scan" ]; then export AGENT_EXIT_SCAN_BIN="$$scan"; fi; node mcp/dist/scripts/judge-check.js --testnet
 
 screen: ## The README's main offline claims, 7 rows with their promised outcome (1-3 min; make verify, attack and fuzz run separately) -> out/screen.json
@@ -166,7 +166,7 @@ translator-serve: mcp-build ## Translator worker on 127.0.0.1:8787: translates v
 .PHONY: playground-wasm
 playground-wasm: ## Build the page's playground: the real agent-core state machine + buyer scan as wasm -> web/playground.wasm
 	cargo build --quiet --locked --offline --release --target wasm32-unknown-unknown -p playground
-	cp target/wasm32-unknown-unknown/release/playground.wasm web/playground.wasm
+	cp "$${CARGO_TARGET_DIR:-target}"/wasm32-unknown-unknown/release/playground.wasm web/playground.wasm
 	cd web && sha256sum playground.wasm > playground.wasm.sha256
 
 .PHONY: agent-invests agent-invests-testnet
@@ -239,12 +239,12 @@ audit: ## cargo audit (needs cargo-audit + advisory DB) and check ignored adviso
 ci: lint verify mcp-test ## What CI runs offline (audit runs as its own CI job)
 
 .PHONY: build
-# The agent wasm compiles in the testnet token, admin and MPC accounts (the
+# The agent wasm compiles in the testnet token, admin, factory and MPC accounts (the
 # same values as build-testnet), so the published hash is the deployed one.
 # Needs Docker and a clean, committed tree (cargo-near builds a fresh clone).
 build: ## Reproducible wasm build with cargo-near (Docker), testnet accounts compiled in -> contracts/res + SHA256SUMS
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build reproducible-wasm --out-dir ../res
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet AGENT_EXIT_FACTORY=factory.$(TESTNET_ROOT) cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/xusd && cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/factory && cargo near build reproducible-wasm --out-dir ../res
 	cd contracts/res && sha256sum *.wasm > SHA256SUMS
@@ -275,19 +275,19 @@ FDSHIM = if ulimit -n 65535 2>/dev/null; then pre=""; else \
 test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21, SC-S1/S2 sealed dispute on a real local node)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
 
 test-born-sandbox: ## BC-S1: the born-clean factory creates an agent with no key on a real local node; a stranger cannot run new (~30 s)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm FACTORY_WASM=../../target/near-sandbox/agent_factory.wasm cargo test --locked --test born -- --test-threads=1 --nocapture
 
 test-sealed-sandbox: ## SC-S1/S2: sealed-config dispute + honest accept on a real local node, gas printed (~35 s)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked --test sealed -- --test-threads=1 --nocapture
 
 # Stress scenarios (docs/SCENARIOS.md "Stress (STR-*)"): scale and hostile load.
@@ -306,7 +306,7 @@ stress-mcp: mcp-build ## STR-16/17 daily spend cap under parallel buy_agent call
 stress-sandbox: ## STR-S1..S5 on a real local node (needs cargo-near; skipped with a message when missing)
 	@if ! command -v cargo-near >/dev/null; then echo "stress-sandbox: skipped, cargo-near not installed" >&2; exit 0; fi
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked --test stress -- --test-threads=1 --nocapture
 
 # ------------------------------------------------------------- testnet day
@@ -326,7 +326,7 @@ SUBMAKE = $(MAKE)
 build-testnet: ## [testnet] Build the three wasm (token, agent, factory) with the testnet token, admin and MPC signer compiled in -> target/near-testnet
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
-	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
+	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.$(TESTNET_ROOT) AGENT_EXIT_ADMIN=$(TESTNET_ROOT) AGENT_EXIT_MPC=v1.signer-prod.testnet AGENT_EXIT_FACTORY=factory.$(TESTNET_ROOT) cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
 	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-testnet
 
 testnet-setup: ## [testnet] npm install for the G2 relay (chainsig.js, viem); network once
@@ -435,7 +435,7 @@ attack-testnet: ## (not built yet) [testnet] A1 A5 A17-A21 live
 	$(call not_built,attack-testnet,M2 B2 on the owner's PC)
 demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-buys-agent replay, then how to open the page
 	@mkdir -p $(OUT)
-	@echo "== 1/3 verify subset: 73 checks replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
+	@echo "== 1/3 verify subset: 76 checks replayed through the real contract code, compared with the goldens (the full unit/property run is make verify)"
 	cargo run --quiet --locked --offline -p verify -- --json --out $(OUT)/verify.json --golden tests/golden/verify.json > /dev/null
 	cargo run --quiet --locked --offline -p attack -- --out $(OUT)/attack.json --golden tests/golden/attack.json > /dev/null
 	@echo "== 2/3 scripted replay: a fixed script (no AI model) plays the summarizer agent buying translator through the MCP tools"

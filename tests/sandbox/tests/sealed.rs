@@ -166,8 +166,13 @@ async fn sold(
 ) -> (World, AccountId, AccountId, Acc, Acc, u64) {
     let w = World::start().await;
     let xusd = w.account("xusd", 20).await;
-    let agent = w.account("translator", 30).await;
-    let alice = w.account("alice", 10).await;
+    let factory = w.account("factory", 40).await;
+    let alice = w.account("alice", 40).await;
+    let never_sk = generate_secret_key().unwrap();
+    let agent = Acc {
+        id: format!("translator.{}", factory.id).parse().unwrap(),
+        signer: Signer::from_secret_key(never_sk).unwrap(),
+    };
     let bob = w.account("bob", 10).await;
     let p1 = w.account("p1", 5).await;
     Contract::deploy(xusd.id.clone())
@@ -194,15 +199,36 @@ async fn sold(
         )
         .await;
     }
-    Contract::deploy(agent.id.clone())
-        .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
-        .with_init_call("new", json!({"owner_id": alice.id}))
+    // The agent is created through the factory (born clean, no access key):
+    // the contract refuses to list or sell any other agent (NotBornClean).
+    let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm");
+    let code_hash = near_api::types::CryptoHash::hash(&agent_wasm).to_string();
+    Contract::deploy(factory.id.clone())
+        .use_code(wasm("FACTORY_WASM", "agent_factory.wasm"))
+        .with_init_call("new", json!({"code_hash": code_hash}))
         .unwrap()
-        .with_signer(agent.signer.clone())
+        .with_signer(factory.signer.clone())
         .send_to(&w.net)
         .await
         .unwrap()
         .assert_success();
+    Contract(factory.id.clone())
+        .call_function_raw("store_code", agent_wasm)
+        .transaction()
+        .gas(NearGas::from_tgas(300))
+        .with_signer(factory.id.clone(), factory.signer.clone())
+        .send_to(&w.net)
+        .await
+        .unwrap()
+        .assert_success();
+    w.ok(
+        &alice,
+        &factory.id,
+        "create_agent",
+        json!({"name": "translator"}),
+        30_000 * 10u128.pow(21),
+    )
+    .await;
     let runner = generate_secret_key().unwrap();
     w.ok(
         &alice,
@@ -242,7 +268,13 @@ async fn sold(
     // proves each against the committed root before bob buys.
     // Review 5 P2: a request pays its storage (0.01 NEAR) and is bob's own.
     let r = w
-        .ok(&bob, &agent.id, "request_preview", json!({}), 10u128.pow(22))
+        .ok(
+            &bob,
+            &agent.id,
+            "request_preview",
+            json!({}),
+            10u128.pow(22),
+        )
         .await;
     let idx: Vec<u32> = serde_json::from_value(r["chunks"].clone()).unwrap();
     assert_eq!(

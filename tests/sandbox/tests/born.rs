@@ -172,14 +172,30 @@ async fn bc_s1_factory_births_an_agent_with_no_key() {
         .await
         .unwrap()
         .assert_success();
-    assert_eq!(w.view(&factory.id, "has_code", json!({})).await, json!(true));
+    assert_eq!(
+        w.view(&factory.id, "has_code", json!({})).await,
+        json!(true)
+    );
 
-    w.ok(&alice, &factory.id, "create_agent", json!({"name": "born1"}), 10_200 * 10u128.pow(21)).await;
+    w.ok(
+        &alice,
+        &factory.id,
+        "create_agent",
+        json!({"name": "born1"}),
+        10_200 * 10u128.pow(21),
+    )
+    .await;
     let agent: AccountId = format!("born1.{}", factory.id).parse().unwrap();
-    let birth = w.view(&factory.id, "get_agent", json!({"account_id": agent})).await;
+    let birth = w
+        .view(&factory.id, "get_agent", json!({"account_id": agent}))
+        .await;
     assert_eq!(birth["state"], json!("Born"), "{birth}");
     assert_eq!(birth["code_hash"], json!(code_hash));
-    let keys = Account(agent.clone()).list_keys().fetch_from(&w.net).await.unwrap();
+    let keys = Account(agent.clone())
+        .list_keys()
+        .fetch_from(&w.net)
+        .await
+        .unwrap();
     assert!(keys.data.is_empty(), "born with no key: {:?}", keys.data);
     let st = w.view(&agent, "get_status", json!({})).await;
     assert_eq!(st["owner"], json!(alice.id));
@@ -194,6 +210,45 @@ async fn bc_s1_factory_births_an_agent_with_no_key() {
         .await
         .unwrap()
         .assert_success();
-    let (r, _) = w.call(&alice, &lone.id, "new", json!({"owner_id": alice.id}), 0).await;
-    assert!(r.as_ref().is_err_and(|e| e.contains("InitNotAllowed")), "{r:?}");
+    let (r, _) = w
+        .call(&alice, &lone.id, "new", json!({"owner_id": alice.id}), 0)
+        .await;
+    assert!(
+        r.as_ref().is_err_and(|e| e.contains("InitNotAllowed")),
+        "{r:?}"
+    );
+}
+
+/// BC-S2: a plain deploy (not created by the pinned factory) cannot be listed
+/// or bought: the contract answers NotBornClean, even though the owner's own
+/// key could initialise it.
+#[tokio::test]
+async fn bc_s2_plain_deploy_cannot_be_listed() {
+    let w = World::start().await;
+    let alice = w.account("alice", 30).await;
+    let plain = w.account("translator", 20).await;
+    Contract::deploy(plain.id.clone())
+        .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
+        .with_init_call("new", json!({"owner_id": alice.id}))
+        .unwrap()
+        .with_signer(plain.signer.clone())
+        .send_to(&w.net)
+        .await
+        .unwrap()
+        .assert_success();
+    let st = w.view(&plain.id, "get_status", json!({})).await;
+    assert_eq!(st["born_clean"], json!(false), "{st}");
+    let (r, _) = w
+        .call(
+            &alice,
+            &plain.id,
+            "list_for_sale",
+            json!({"price": "1000000000", "code_hash": "sandbox"}),
+            1,
+        )
+        .await;
+    assert!(
+        r.as_ref().is_err_and(|e| e.contains("NotBornClean")),
+        "{r:?}"
+    );
 }

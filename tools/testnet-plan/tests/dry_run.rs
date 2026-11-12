@@ -44,7 +44,7 @@ fn dry_run_refuses_a_group_readable_env_file() {
 #[test]
 fn dry_run_without_an_env_file_prints_the_plan() {
     for (cmd, want) in [
-        ("deploy", "lock-translator"),
+        ("deploy", "lock-factory"),
         ("gates", "g2-relay"),
         ("scenes", "scene-6"),
         ("g6", "g6-on-chain"),
@@ -115,7 +115,7 @@ fn dry_run_names_secrets_but_never_prints_them() {
 /// and the 1 NEAR reserve, or the scan would call it insolvent (A46).
 #[test]
 fn lean_funding_still_keeps_agents_solvent() {
-    use testnet_plan::{deploy_need_milli, funding_milli, G1_AGENT_MILLI};
+    use testnet_plan::{deploy_need_milli, funding_milli, BORN_MILLI, G1_AGENT_MILLI};
     let wasm = std::fs::metadata(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../contracts/res/agent_exit.wasm"
@@ -124,18 +124,21 @@ fn lean_funding_still_keeps_agents_solvent() {
     .unwrap_or(522_403);
     // 1e19 yocto per byte = 1e-5 NEAR = 0.01 milliNEAR per byte.
     let need_milli = (wasm + 8_000 /* state */ + (512 + 400) * 200) / 100 + 1_000;
-    for a in ["translator", "cheat"] {
-        let f = funding_milli(a).expect(a) as u128;
-        assert!(
-            f >= need_milli + 300,
-            "{a}: {f} mNEAR < {need_milli} + 300 margin"
-        );
-    }
+    let f = funding_milli("cheat").expect("cheat") as u128;
+    assert!(
+        f >= need_milli + 300,
+        "cheat: {f} mNEAR < {need_milli} + 300 margin"
+    );
+    // Every factory-born agent (translator, translator3, g1, sealed1, the
+    // Exchange) gets the whole attached deposit.
+    assert!(BORN_MILLI as u128 >= need_milli + 300);
     assert!(G1_AGENT_MILLI as u128 >= need_milli + 300);
+    // The factory keeps the agent wasm (stored once) and pays its own gas.
+    assert!(funding_milli("factory").expect("factory") as u128 >= need_milli + 300);
     let total = deploy_need_milli();
     assert!(
-        total <= 30_000,
-        "deploy needs {total} mNEAR; keep it under 30 NEAR"
+        total <= 42_000,
+        "deploy needs {total} mNEAR; keep it under 42 NEAR"
     );
 }
 

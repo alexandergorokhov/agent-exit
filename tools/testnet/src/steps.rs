@@ -179,6 +179,109 @@ pub async fn run(cmd: Command, cfg: Config, env: BTreeMap<String, String>) -> Re
     }
 }
 
+// ---------------------------------------------------------- born-clean agents
+
+/// `factory.ROOT`: created if missing, the factory code deployed and the agent
+/// wasm stored (the factory refuses bytes whose sha256 is not the pinned
+/// build). Idempotent. The agent wasm must have this factory compiled in
+/// (`AGENT_EXIT_FACTORY=factory.ROOT`, `make build`), or the contract would
+/// not know its own factory and would refuse every sale.
+async fn ensure_factory(c: &Chain, out: &mut Out, agent_wasm: &[u8]) -> Res<String> {
+    let agent_hash = sha256_b58(agent_wasm);
+    let fid = c.id("factory");
+    if !agent_wasm.windows(fid.len()).any(|w| w == fid.as_bytes()) {
+        return Err(format!(
+            "the agent wasm does not have {fid} compiled in: run make build (AGENT_EXIT_FACTORY={fid}) first"
+        ));
+    }
+    out.set("agent_code_hash", json!(agent_hash));
+    if !c.exists(&fid).await {
+        let t = c
+            .create(
+                &format!("create {fid}"),
+                &c.root,
+                &fid,
+                "factory",
+                FACTORY_MILLI,
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    if c.view(&fid, "get_code_hash", json!({})).await.is_err() {
+        let f = c.acct("factory")?;
+        let t = c
+            .deploy(
+                "deploy the factory",
+                &f,
+                wasm("FACTORY_WASM", "agent_factory.wasm")?,
+                json!({"code_hash": agent_hash}),
+            )
+            .await?;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    let pinned = c.view(&fid, "get_code_hash", json!({})).await?;
+    if pinned != json!(agent_hash) {
+        return Err(format!(
+            "factory pins {pinned}, the agent build is {agent_hash}"
+        ));
+    }
+    if c.view(&fid, "has_code", json!({})).await? != json!(true) {
+        let f = c.acct("factory")?;
+        let t = c
+            .call_raw(
+                "factory: store_code (the published agent wasm)",
+                &f,
+                &fid,
+                "store_code",
+                agent_wasm.to_vec(),
+                300,
+            )
+            .await;
+        out.tx(&t);
+        ok(&t)?;
+    }
+    Ok(fid)
+}
+
+/// `name.factory.ROOT`, owned by alice, created by the factory in one batch
+/// (account, code, `new`; no access key). ROOT pays. Skipped if it exists.
+async fn create_born(
+    c: &Chain,
+    out: &mut Out,
+    name: &str,
+    base_address: Option<String>,
+) -> Res<String> {
+    let fid = c.id("factory");
+    let id = format!("{name}.{fid}");
+    if c.exists(&id).await {
+        println!("  skip {id} (exists)");
+        return Ok(id);
+    }
+    let mut args = json!({"name": name, "owner_id": c.id("alice")});
+    if let Some(b) = base_address {
+        args["base_address"] = json!(b);
+    }
+    let t = c
+        .call(
+            &format!("create_agent {name} for alice (one batch, no key)"),
+            &c.root,
+            &fid,
+            "create_agent",
+            args,
+            BORN_YOCTO,
+            300,
+        )
+        .await;
+    out.tx(&t);
+    ok(&t)?;
+    if t.events("agent_born").is_empty() {
+        return Err(format!("no agent_born event: {:?}", t.logs));
+    }
+    Ok(id)
+}
+
 // ------------------------------------------------------------------ deploy
 
 async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
@@ -325,13 +428,25 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
     out.set("mpc", json!({"signer": MPC_SIGNER, "public_key": mpc_pk}));
     out.set("base_addresses", json!(base));
 
+    println!("deploy-factory");
+    let fid = ensure_factory(c, &mut out, &agent_wasm).await?;
+    out.set("factory", json!(fid));
+    out.write()?;
+
     println!("deploy-agents");
     for a in ["translator", "cheat"] {
         let id = c.id(a);
         let has = c.code(&id).await.map(|(h, _)| h).ok();
         if has.as_deref() == Some(agent_hash.as_str()) {
             println!("  skip {id} (deployed)");
+        } else if a == "translator" {
+            // K8: every agent that is sold is created by the factory, in one
+            // batch with no key; the contract then knows it is born clean.
+            create_born(c, &mut out, a, Some(base[a].clone())).await?;
         } else {
+            // The cheat is a plain deploy: it keeps its setup full-access key
+            // (the planted backdoor) and is NOT born clean, so the contract
+            // refuses to list it (NotBornClean).
             let t = c
                 .deploy(
                     &format!("deploy {id}"),
@@ -350,6 +465,9 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
             "admin": st["admin"] == json!(c.cfg.root),
             "mpc": w["mpc"] == json!(MPC_SIGNER),
             "base_address": w["address"] == json!(base[a]),
+            "factory": st["factory"] == json!(fid),
+            // translator: created by the factory; cheat: a plain deploy.
+            "born_clean": st["born_clean"] == json!(a == "translator"),
         });
         out.push("agent_checks", json!({"agent": id, "checks": checks}));
         if checks
@@ -358,7 +476,7 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         {
             out.write()?;
             return Err(format!(
-                "{id}: {checks}. Build with make build-testnet (AGENT_EXIT_TOKEN={}, AGENT_EXIT_ADMIN={})",
+                "{id}: {checks}. Build with make build-testnet (AGENT_EXIT_TOKEN={}, AGENT_EXIT_ADMIN={}, AGENT_EXIT_FACTORY={fid})",
                 c.id("xusd"),
                 c.cfg.root
             ));
@@ -401,23 +519,28 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
         }
     }
 
-    println!("lock-translator");
-    let tr = c.acct("translator")?;
-    if c.keys(tr.id.as_ref())
-        .await?
-        .iter()
-        .any(|k| k.public_key == tr.pk)
-    {
-        let t = c
-            .delete_key("translator: delete setup key", &tr, &tr.pk.clone())
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
+    println!("lock-factory");
+    // The factory's setup key only deployed it and stored the code. Delete
+    // it: nobody can redeploy the factory or change the code it deploys (N4).
+    // translator has never had a key; cheat keeps its own (the backdoor).
+    if let Ok(f) = c.acct("factory") {
+        if c.keys(&fid).await?.iter().any(|k| k.public_key == f.pk) {
+            let t = c
+                .delete_key("factory: delete setup key", &f, &f.pk.clone())
+                .await?;
+            out.tx(&t);
+            ok(&t)?;
+        }
     }
-    let keys = c.keys(tr.id.as_ref()).await?;
+    let fkeys = c.keys(&fid).await?;
+    out.set("factory_keys_after_lock", json!(fkeys));
+    if fkeys.iter().any(|k| k.is_full()) {
+        return Err("the factory still has a full-access key".into());
+    }
+    let keys = c.keys(&c.id("translator")).await?;
     out.set("translator_keys_after_lock", json!(keys));
     if keys.iter().any(|k| k.is_full()) {
-        return Err("translator still has a full-access key".into());
+        return Err("translator has a full-access key".into());
     }
     out.write()?;
 
@@ -551,28 +674,15 @@ fn remaining_payments(seed: &[(&'static str, u128)], gross: u128) -> Vec<(&'stat
 async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
     let mut out = Out::new("out/gates/g1.json", secrets);
     out.set("schema", json!("gate-g1.v1"));
-    out.set("gate", json!("G1 key handover on a real node: the old runner key and the deleted setup key fail with the node's own error"));
+    out.set("gate", json!("G1 key handover on a real node: the old runner key and a key the born-clean agent never had fail with the node's own error"));
     let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
     let stamp = now_ns() / 1_000_000_000;
     let name = format!("g1-{stamp}");
-    let id = c.id(&name);
+    // K8: the agent that is sold is created by the factory (no setup key).
+    ensure_factory(c, &mut out, &agent_wasm).await?;
+    let id = format!("{name}.{}", c.id("factory"));
     println!("g1-deploy {id}");
-    let t = c
-        .create(&format!("create {id}"), &c.root, &id, &name, G1_AGENT_MILLI)
-        .await?;
-    out.tx(&t);
-    ok(&t)?;
-    let agent = c.acct(&name)?;
-    let t = c
-        .deploy(
-            "deploy + new(owner alice)",
-            &agent,
-            agent_wasm.clone(),
-            json!({"owner_id": c.id("alice")}),
-        )
-        .await?;
-    out.tx(&t);
-    ok(&t)?;
+    create_born(c, &mut out, &name, None).await?;
     let alice = c.acct("alice")?;
     let alice_runner = c.keys.get_or_create(&format!("{name}-alice-runner"))?;
     let t = c
@@ -599,12 +709,6 @@ async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
             30,
         )
         .await;
-    out.tx(&t);
-    ok(&t)?;
-    let setup_pk = agent.pk.clone();
-    let t = c
-        .delete_key("delete the setup full-access key", &agent, &setup_pk)
-        .await?;
     out.tx(&t);
     ok(&t)?;
     let t = c
@@ -658,10 +762,13 @@ async fn g1(c: &Chain, secrets: Vec<String>) -> Res<()> {
             30,
         )
         .await;
-    let setup = acct(&id, &c.keys.get(&name).ok_or("setup key")?)?;
+    let setup = acct(
+        &id,
+        &c.keys.get_or_create(&format!("{name}-never-on-agent"))?,
+    )?;
     let t_setup = c
         .call(
-            "deleted setup key: heartbeat",
+            "a key the account never had: heartbeat",
             &setup,
             &id,
             "heartbeat",
@@ -1072,6 +1179,7 @@ async fn scan_agent_born(
             "open_approvals": st["open_approvals"],
             "open_auth_until": w["open_auth_until"].as_str().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0),
             "frozen": st["frozen"], "admin": st["admin"], "token": st["token"],
+            "born_clean": st["born_clean"],
             "paid_to_total": st["paid_to_total"],
             "near_storage_solvent": st["near_storage"]["solvent"],
             "base_wallet": {"address": w["address"], "path": w["path"], "mpc_public_key": mpc_pk},
@@ -1204,16 +1312,74 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
             Ok(())
         }
         4 => {
-            list(c, &mut out, "alice", "cheat", 500 * USD).await?;
-            let (input, report) = scan_agent(c, &c.id("cheat"), None).await?;
+            // K8: cheat is a plain deploy (not created by the factory), so the
+            // contract itself refuses to list it. The scan blocks it too.
+            let cid = c.id("cheat");
+            let st0 = c.view(&cid, "get_status", json!({})).await?;
+            out.set("cheat_born_clean", st0["born_clean"].clone());
+            out.set("factory", st0["factory"].clone());
+            let alice = c.acct("alice")?;
+            let (hash, _) = c.code(&cid).await?;
+            wait_no_open_auth(c, &cid).await?;
+            let t_list = c
+                .call(
+                    "alice: list_for_sale 500.00 on cheat (refused: NotBornClean)",
+                    &alice,
+                    &cid,
+                    "list_for_sale",
+                    json!({"price": (500 * USD).to_string(), "code_hash": hash}),
+                    1,
+                    50,
+                )
+                .await;
+            out.tx(&t_list);
+            let list_refused = !t_list.ok && t_list.err().contains("NotBornClean");
+            out.set("list_refused", json!(list_refused));
+            // A buyer who sends the payment by hand anyway: refunded in full.
+            let st = c.view(&cid, "get_status", json!({})).await?;
+            let bob = c.acct("bob")?;
+            let bob_runner = c.keys.get_or_create("cheat-bob-runner")?;
+            let msg = json!({"kind": "buy", "listing_version": st["listing_version"],
+                             "known_keys_hash": st["known_keys_hash"],
+                             "buyer_runner_pk": bob_runner.public_key().to_string()});
+            let bal0 = balance(c, "bob").await;
+            let t_buy = c
+                .call(
+                    "bob pays cheat 500.00 anyway (refunded in full: NotBornClean)",
+                    &bob,
+                    &c.id("xusd"),
+                    "ft_transfer_call",
+                    json!({"receiver_id": cid, "amount": (500 * USD).to_string(), "msg": msg.to_string()}),
+                    1,
+                    300,
+                )
+                .await;
+            out.tx(&t_buy);
+            let bal1 = balance(c, "bob").await;
+            let st1 = c.view(&cid, "get_status", json!({})).await?;
+            let buy_refunded = t_buy.ok
+                && bal1 == bal0
+                && st1["owner"] == json!(c.id("alice"))
+                && t_buy
+                    .events("refused")
+                    .iter()
+                    .any(|e| e["reason"] == json!("NotBornClean"));
+            out.set("buy_refunded", json!(buy_refunded));
+            out.set("buy_sent", json!(true));
+            let (input, report) = scan_agent(c, &cid, None).await?;
             out.set("scan_input", input);
             out.set("scan", serde_json::to_value(&report).unwrap_or_default());
-            out.set("buy_sent", json!(false));
-            if report.blocks() && report.codes().contains(&"full_access_key_present") {
+            if st0["born_clean"] == json!(false)
+                && list_refused
+                && buy_refunded
+                && report.blocks()
+                && report.codes().contains(&"full_access_key_present")
+                && report.codes().contains(&"contract_not_born_clean")
+            {
                 Ok(())
             } else {
                 Err(format!(
-                    "expected a block for full_access_key_present, got {} {:?}",
+                    "expected NotBornClean on list ({list_refused}) and on a buy ({buy_refunded}) and a block for full_access_key_present + contract_not_born_clean, got {} {:?}",
                     report.verdict,
                     report.codes()
                 ))
@@ -1319,10 +1485,12 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
                     30,
                 )
                 .await;
-            let setup = c.acct("translator")?;
+            // translator was born with no key. A key the account never had
+            // fails the same way a deleted one does: the node refuses it.
+            let setup = acct(&tr, &c.keys.get_or_create("never-on-translator")?)?;
             let t_setup = c
                 .call(
-                    "translator's deleted setup key: heartbeat",
+                    "a key translator never had: heartbeat",
                     &setup,
                     &tr,
                     "heartbeat",
@@ -1416,7 +1584,9 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
         }
         7 => {
             // The stage for the AI buyer: translator listed by its owner after
-            // scene 6 (summarizer), cheat still listed by alice (scene 4).
+            // scene 6 (summarizer). cheat stays unlisted: the contract refused to
+            // list it (scene 4, NotBornClean), so the AI buyer's cheat is blocked
+            // by the scan and cannot be bought at all.
             let st = c.view(&tr, "get_status", json!({})).await?;
             let owner = st["owner"].as_str().unwrap_or_default().to_string();
             if owner != c.id("summarizer") && st["status"] != "Listed" {
@@ -1431,10 +1601,10 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
             out.set("cheat_status", ch_st["status"].clone());
             out.set("buyer", json!(c.id("carol")));
             out.set("buyer_xusd", json!(balance(c, "carol").await.to_string()));
-            if tr_st["status"] == "Listed" && ch_st["status"] == "Listed" {
+            if tr_st["status"] == "Listed" && ch_st["status"] != "Listed" {
                 Ok(())
             } else {
-                Err("expected translator and cheat both Listed".into())
+                Err("expected translator Listed and cheat not Listed (NotBornClean)".into())
             }
         }
         _ => {
@@ -1598,7 +1768,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     let t2 = c.id(n);
 
     println!("  accounts");
-    for (name, milli) in [(n, 9_500u32), ("dave", 500)] {
+    for (name, milli) in [("dave", 500u32)] {
         let id = c.id(name);
         if !c.exists(&id).await {
             let t = c
@@ -1639,21 +1809,14 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         ok(&t)?;
     }
 
-    println!("  deploy {n}");
+    // K8: sold agents are created by the factory, in one batch, with no key.
+    println!("  create {n} through the factory");
+    ensure_factory(c, &mut out, &agent_wasm).await?;
     if c.code(&t2).await.map(|(h, _)| h).ok().as_deref() != Some(agent_hash.as_str()) {
         let mpc_pk = c.view(MPC_SIGNER, "public_key", json!({})).await?;
         let root_pk = base_wallet::parse_near_secp_pk(mpc_pk.as_str().unwrap_or_default())?;
         let base = base_wallet::derive_address(&root_pk, &t2, agent_core::base::BASE_PATH);
-        let t = c
-            .deploy(
-                &format!("deploy {n} (shares build)"),
-                &c.acct(n)?,
-                agent_wasm.clone(),
-                json!({"owner_id": c.id("alice"), "base_address": base}),
-            )
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
+        create_born(c, &mut out, n, Some(base)).await?;
     }
     out.set("code_hash", json!(agent_hash));
     let st = c.view(&t2, "get_status", json!({})).await?;
@@ -1663,7 +1826,7 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         ));
     }
 
-    println!("  runner key + lock");
+    println!("  runner key");
     let alice = c.acct("alice")?;
     let sk = c.keys.get_or_create(&format!("{n}-alice-runner"))?;
     let pk = sk.public_key().to_string();
@@ -1685,15 +1848,6 @@ async fn invest(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let tr = c.acct(n)?;
-    if c.keys(&t2).await?.iter().any(|k| k.public_key == tr.pk) {
-        let t = c
-            .delete_key(&format!("{n}: delete setup key"), &tr, &tr.pk.clone())
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
-    }
-
     println!("  offer");
     let mut offers = c.view(&t2, "get_shares", json!({})).await?;
     if offers.as_array().is_none_or(|a| a.is_empty()) {
@@ -2367,58 +2521,13 @@ async fn born_clean(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<Stri
     println!("scene-9");
     let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm")?;
     let agent_hash = sha256_b58(&agent_wasm);
-    let factory_wasm = wasm("FACTORY_WASM", "agent_factory.wasm")?;
-    let fid = c.id("factory");
+    // Created, deployed and loaded with the agent wasm by `make deploy-testnet`
+    // already (and locked there); this only fills in what is missing.
+    println!("  factory");
+    let fid = ensure_factory(c, &mut out, &agent_wasm).await?;
     out.set("factory", json!(fid));
     out.set("agent_code_hash", json!(agent_hash));
-
-    println!("  factory");
-    if !c.exists(&fid).await {
-        let t = c
-            .create(
-                &format!("create {fid}"),
-                &c.root,
-                &fid,
-                "factory",
-                FACTORY_MILLI,
-            )
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
-    }
-    let f = c.acct("factory")?;
-    if c.view(&fid, "get_code_hash", json!({})).await.is_err() {
-        let t = c
-            .deploy(
-                "deploy the factory",
-                &f,
-                factory_wasm,
-                json!({"code_hash": agent_hash}),
-            )
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
-    }
-    let pinned = c.view(&fid, "get_code_hash", json!({})).await?;
-    if pinned != json!(agent_hash) {
-        return Err(format!(
-            "factory pins {pinned}, the agent build is {agent_hash}"
-        ));
-    }
-    if c.view(&fid, "has_code", json!({})).await? != json!(true) {
-        let t = c
-            .call_raw(
-                "factory: store_code (the published agent wasm)",
-                &f,
-                &fid,
-                "store_code",
-                agent_wasm,
-                300,
-            )
-            .await;
-        out.tx(&t);
-        ok(&t)?;
-    }
+    out.set("factory_keys", json!(c.keys(&fid).await?));
 
     let name = std::env::var("BORN_AGENT")
         .ok()
@@ -2557,14 +2666,8 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
     let n = name.as_str();
     let ag = c.id(n);
 
-    println!("  account + deploy {n}");
-    if !c.exists(&ag).await {
-        let t = c
-            .create(&format!("create {ag}"), &c.root, &ag, n, 9_500)
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
-    }
+    println!("  create {n} through the factory (K8)");
+    ensure_factory(c, &mut out, &agent_wasm).await?;
     for (who, want) in [(n, 0), ("bob", PRICE)] {
         let id = c.id(who);
         let registered = c
@@ -2595,16 +2698,7 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         ok(&t)?;
     }
     if c.code(&ag).await.map(|(h, _)| h).ok().as_deref() != Some(agent_hash.as_str()) {
-        let t = c
-            .deploy(
-                &format!("deploy {n}"),
-                &c.acct(n)?,
-                agent_wasm.clone(),
-                json!({"owner_id": c.id("alice")}),
-            )
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
+        create_born(c, &mut out, n, None).await?;
     }
     out.set("code_hash", json!(agent_hash));
     let st = c.view(&ag, "get_status", json!({})).await?;
@@ -2635,15 +2729,6 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         out.tx(&t);
         ok(&t)?;
     }
-    let me = c.acct(n)?;
-    if c.keys(&ag).await?.iter().any(|k| k.public_key == me.pk) {
-        let t = c
-            .delete_key(&format!("{n}: delete setup key"), &me, &me.pk.clone())
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
-    }
-
     println!("  commit + list");
     let honest = sealed_bundle("Spanish");
     let commit = ConfigCommit::of(&honest);

@@ -139,8 +139,8 @@ impl World {
 async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
     let w = World::start().await;
     let xusd = w.account("xusd", 20).await;
-    let agent = w.account("translator", 30).await;
-    let alice = w.account("alice", 10).await;
+    let factory = w.account("factory", 40).await;
+    let alice = w.account("alice", 40).await;
     let bob = w.account("bob", 10).await;
     let p1 = w.account("p1", 5).await;
 
@@ -153,6 +153,45 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
         .await
         .unwrap()
         .assert_success();
+    // The agent is created through the factory (born clean, no access key at
+    // all): the contract refuses to list or sell any other agent (NotBornClean).
+    let agent_wasm = wasm("AGENT_WASM", "agent_exit.wasm");
+    let code_hash = near_api::types::CryptoHash::hash(&agent_wasm).to_string();
+    Contract::deploy(factory.id.clone())
+        .use_code(wasm("FACTORY_WASM", "agent_factory.wasm"))
+        .with_init_call("new", json!({"code_hash": code_hash}))
+        .unwrap()
+        .with_signer(factory.signer.clone())
+        .send_to(&w.net)
+        .await
+        .unwrap()
+        .assert_success();
+    Contract(factory.id.clone())
+        .call_function_raw("store_code", agent_wasm)
+        .transaction()
+        .gas(near_api::types::NearGas::from_tgas(300))
+        .with_signer(factory.id.clone(), factory.signer.clone())
+        .send_to(&w.net)
+        .await
+        .unwrap()
+        .assert_success();
+    w.call(
+        &alice,
+        &factory.id,
+        "create_agent",
+        json!({"name": "translator"}),
+        30_000 * 10u128.pow(21),
+    )
+    .await
+    .unwrap();
+    // A key that was never on the account: the born agent has none.
+    let never_sk = generate_secret_key().unwrap();
+    let agent = Acc {
+        id: format!("translator.{}", factory.id).parse().unwrap(),
+        sk: never_sk.clone(),
+        signer: Signer::from_secret_key(never_sk).unwrap(),
+    };
+
     for (who, amt) in [(&bob, 1_000 * USD), (&p1, 100 * USD), (&alice, 0)] {
         w.call(
             &xusd,
@@ -174,15 +213,6 @@ async fn listed() -> (World, AccountId, Acc, Acc, Acc, SecretKey, SecretKey) {
     .await
     .unwrap();
 
-    Contract::deploy(agent.id.clone())
-        .use_code(wasm("AGENT_WASM", "agent_exit.wasm"))
-        .with_init_call("new", json!({"owner_id": alice.id}))
-        .unwrap()
-        .with_signer(agent.signer.clone())
-        .send_to(&w.net)
-        .await
-        .unwrap()
-        .assert_success();
     // The token and admin are compiled in (A26): `make test-sandbox` builds
     // the wasm with AGENT_EXIT_TOKEN=xusd.sandbox.
     let st = w.view(&agent.id, "get_status", json!({})).await;
@@ -261,14 +291,8 @@ fn is_missing_key(err: &str) -> bool {
 async fn s5_a17_a21_buy_one_step_then_old_keys_fail() {
     let (w, xusd, agent, alice, bob, alice_runner, setup) = listed().await;
 
-    // Locked account: delete the setup full-access key before the sale.
-    Account(agent.id.clone())
-        .delete_key(setup.public_key())
-        .with_signer(agent.signer.clone())
-        .send_to(&w.net)
-        .await
-        .unwrap()
-        .assert_success();
+    // Born clean: there is no setup full-access key to delete before the sale.
+    let _ = &setup;
     let before = w.keys(&agent.id).await;
     assert_eq!(before, vec![(alice_runner.public_key().to_string(), false)]);
 
@@ -310,7 +334,7 @@ async fn s5_a17_a21_buy_one_step_then_old_keys_fail() {
         .unwrap_err();
     println!("A17 real error: {e}");
     assert!(is_missing_key(&e), "{e}");
-    // A21: the setup full-access key deleted before listing.
+    // A21: a full-access key the account never had (born clean) fails too.
     let e = w
         .call(&agent, &agent.id, "heartbeat", json!({}), 0)
         .await
@@ -333,10 +357,18 @@ async fn s5_a17_a21_buy_one_step_then_old_keys_fail() {
 #[tokio::test]
 async fn e5_rollback_refunds_buyer() {
     let (w, xusd, agent, alice, bob, alice_runner, setup) = listed().await;
-    // The buyer's key is already on the account (the setup key is still
+    // The buyer's key is already on the account (alice's runner key is
     // there), so add_key fails and the whole batch reverts.
+    let _ = &setup;
     let before = w.keys(&agent.id).await;
-    let _ = buy(&w, &xusd, &agent.id, &bob, setup.public_key().to_string()).await;
+    let _ = buy(
+        &w,
+        &xusd,
+        &agent.id,
+        &bob,
+        alice_runner.public_key().to_string(),
+    )
+    .await;
     assert_eq!(w.keys(&agent.id).await, before, "key list unchanged");
     let bob_bal = w
         .view(&xusd, "ft_balance_of", json!({"account_id": bob.id}))
