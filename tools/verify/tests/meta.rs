@@ -53,6 +53,11 @@ fn anchors_resolve(file: &str) {
     }
 }
 
+/// The README plus docs/DETAILS.md, where its long sections moved.
+fn readme_all() -> String {
+    read("README.md") + &read("docs/DETAILS.md")
+}
+
 #[test]
 fn s17_llms_txt_paths_exist() {
     let l = links("llms.txt");
@@ -370,7 +375,11 @@ fn s22_docs_do_not_overclaim() {
         "{total} attack families, {counted} counted (A9 Base not counted until live); each blocked by its rule"
     );
     for f in ["README.md", "AGENTS.md", "llms.txt"] {
-        let t = read(f);
+        let t = if f == "README.md" {
+            readme_all()
+        } else {
+            read(f)
+        };
         assert!(
             t.contains(&claim),
             "{f}: missing the claim built from the golden: {claim}"
@@ -380,7 +389,7 @@ fn s22_docs_do_not_overclaim() {
             "{f}"
         );
     }
-    let r = read("README.md");
+    let r = readme_all();
     assert!(r.contains("A9"), "README: A9 excluded");
     // A5 is honest about its hash: the reproducible-build hash once
     // contracts/res/SHA256SUMS is committed, a placeholder until then.
@@ -405,9 +414,12 @@ fn s22_readme_hero_comes_first() {
     let at = |s: &str| r.find(s).unwrap_or_else(|| panic!("README lacks {s}"));
     let fold = at("## The problem, and what the contract does");
     assert!(at("make demo") < fold);
-    assert!(at("```mermaid") < fold);
-    assert!(at("609b135") < fold && at("63d597c") < fold);
-    assert!(at("Live on NEAR testnet") < fold);
+    // The sale diagram and the real-node evidence moved to docs/DETAILS.md,
+    // linked above the fold.
+    assert!(at("docs/DETAILS.md") < fold);
+    let d = read("docs/DETAILS.md");
+    assert!(d.contains("```mermaid") && d.contains("609b135") && d.contains("63d597c"));
+    assert!(at("## Proven on NEAR testnet") < fold);
     assert!(
         !r[..fold].contains("| Claim |"),
         "claims table must be below the fold"
@@ -482,9 +494,13 @@ fn s24_page_has_csp_and_vendored_connector() {
 /// the A47 real-node finding honestly, and list A43-A49 in the scenarios.
 #[test]
 fn s25_docs_explain_paying_and_the_found_bug() {
-    let readme = read("README.md");
+    let readme = readme_all();
     for f in ["README.md", "AGENTS.md", "llms.txt"] {
-        let t = read(f);
+        let t = if f == "README.md" {
+            readme_all()
+        } else {
+            read(f)
+        };
         assert!(t.contains("storage_deposit"), "{f}: how to pay");
         assert!(t.contains("0.024 NEAR"), "{f}: the payer row price");
     }
@@ -565,7 +581,7 @@ fn s25_mcp_test_count_is_one_number_and_not_below_the_files() {
 #[test]
 fn s25_readme_first_screen() {
     let r = read("README.md");
-    let first_screen = &r[..r.find("## One sale").unwrap()];
+    let first_screen = &r[..r.find("## What is real, and what is not yet").unwrap()];
     for want in [
         "docs/img/demo.png",
         "Why only on NEAR",
@@ -663,7 +679,7 @@ fn readme_testnet_links_are_recorded_runs() {
 /// the README's numbers match the goldens and the fee-era payout.
 #[test]
 fn readme_numbers_match_the_goldens() {
-    let r = read("README.md");
+    let r = readme_all();
     let v: serde_json::Value = serde_json::from_str(&read("tests/golden/verify.json")).unwrap();
     let n = v["summary"]["passed"].as_u64().expect("summary.passed");
     assert!(
@@ -875,10 +891,13 @@ fn readme_top_is_short_and_links_the_moved_proof() {
             "## What is real, and what is not yet",
             "docs/PROOF.md#what-is-real-and-what-is-not-yet",
         ),
-        ("## Evidence", "docs/PROOF.md#evidence"),
+        ("## Evidence", "PROOF.md#evidence"),
     ] {
         assert!(p.contains(sec), "docs/PROOF.md has {sec}");
-        assert!(r.contains(anchor), "README links {anchor}");
+        assert!(
+            r.contains(anchor) || read("docs/DETAILS.md").contains(anchor),
+            "README (or docs/DETAILS.md, linked from it) links {anchor}"
+        );
     }
     for moved in [
         "re-recorded 2026-11-10 on `agentexit5.testnet` with every link checked",
