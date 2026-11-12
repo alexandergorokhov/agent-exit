@@ -282,7 +282,7 @@ export class OfflineBackend implements Backend {
 
   async sealedConfig(id: string, saleId: number): Promise<Json | null> {
     const e = this.sealedFixtures().agents?.[id];
-    if (!e) throw new ToolError("UNKNOWN_AGENT", `${id} has no sealed sale in the offline fixtures (fixtures/mcp/sealed.json: brainy.testnet, swapped.testnet)`);
+    if (!e) throw new ToolError("UNKNOWN_AGENT", `${id} has no sealed sale in the offline fixtures (fixtures/mcp/sealed.json); known agents: ${Object.keys(this.sealedFixtures().agents ?? {}).sort().join(", ")}`);
     if (e.sale_id !== saleId) throw new ToolError("UNKNOWN_SALE", `sale ${saleId} not found on ${id}`);
     const { demo_buyer_sk: _secret, ...view } = e;
     // The fixture's own clock (its deadlines are relative to it).
@@ -576,10 +576,18 @@ export class TestnetBackend implements Backend {
    * keeps failing (RR2). Key lists the scan compares are read per provider. */
   private async view(id: string, method: string, args: Json = {}): Promise<Json> {
     try {
-      return await this.viewAt(this.cfg.rpc[0], id, method, args);
+      try {
+        return await this.viewAt(this.cfg.rpc[0], id, method, args);
+      } catch (e) {
+        if (!(e instanceof ToolError) || e.code !== "RPC_ERROR" || !/: HTTP \d+$|unreachable/.test(e.message)) throw e;
+        return await this.viewAt(this.cfg.rpc[1], id, method, args);
+      }
     } catch (e) {
-      if (!(e instanceof ToolError) || e.code !== "RPC_ERROR" || !/: HTTP \d+$|unreachable/.test(e.message)) throw e;
-      return this.viewAt(this.cfg.rpc[1], id, method, args);
+      // JF3: no such account, or no contract on it: not an agent.
+      if (e instanceof ToolError && e.code === "RPC_ERROR" && /UNKNOWN_ACCOUNT|does not exist|CodeDoesNotExist|NO_CONTRACT_CODE/i.test(e.message)) {
+        throw new ToolError("UNKNOWN_AGENT", `${id} is not an agent on testnet (no such account, or no contract on it)`);
+      }
+      throw e;
     }
   }
 

@@ -27,6 +27,18 @@
       "maxLength": 64,
       "pattern": "^[a-z0-9._-]+$"
     },
+    "account_checked": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9._-]+$",
+      "description": "present when account was not passed: the account the checks ran on (same as account)"
+    },
+    "account_source": {
+      "type": "string",
+      "pattern": "^default: recorded seller",
+      "description": "present when account was not passed: where the default came from"
+    },
     "locked_out": {
       "type": "boolean"
     },

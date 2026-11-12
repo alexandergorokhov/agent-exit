@@ -16,7 +16,7 @@ import { Ajv, type ValidateFunction } from "ajv";
 import { type Backend, type Json, OfflineBackend, type TxOutcome, type MinTerms, type ScanExpect, type ShareTerms, ToolError } from "./backend.js";
 import type { Config } from "./config.js";
 import { createHash, generateKeyPairSync } from "node:crypto";
-import { Sandbox } from "./sandbox.js";
+import { Sandbox, sandboxHelp } from "./sandbox.js";
 
 export const TOOL_NAMES = [
   "list_agents",
@@ -41,13 +41,13 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   get_earnings: "Earnings meter of one agent by payer and day: gross, counted, verified (NEAR AI signature checked on-chain), flagged. Read-only.",
   scan_agent: "Backdoor scan of an agent account before buying: extra or unknown keys, wrong code hash, upgrade methods, open approvals, listing changes. Also reports born_clean (true: the factory created the account with no key ever) when the server has AGENT_EXIT_FACTORY set (testnet); otherwise null. Read-only. Buy only if verdict is clean.",
   buy_agent: "Buy a listed agent in one transaction (deed moves, seller's runner key deleted, your runner key added, 70% paid now, 30% earn-out). WRITE: needs confirm: true and max_price; scans first and refuses on any finding; refuses an agent whose revenue is half or more flagged (REVENUE_MOSTLY_FLAGGED) unless accept_flagged_revenue: true.",
-  verify_lockout: "After a sale: check that an account (the old seller) no longer owns the agent, has no key on it, and that owner-only calls are refused. Read-only.",
+  verify_lockout: "After a sale: check that an account (default: the recorded seller of the last sale) no longer owns the agent, has no key on it, and that owner-only calls are refused. Read-only.",
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. pct must be at least the offer's min_part_pct from list_offers (else SHARE_TOO_SMALL). WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
   check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share, a swapped sealed prompt refunded in full: K1-K7) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes, reads the live agents and adds K8 (a real NEAR AI signature, gate G6, on the previous world agentexit4). Read-only; changes nothing in this server. Returns per claim status pass, fail or unverified_network (testnet: no RPC answered, so not checked) and the tool calls to repeat it yourself.",
   check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
-  sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action reset.",
+  sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action help (every action, its args and example sequences) or reset.",
   sealed_delivery: "Before a buy, action preview shows (or, with confirm, requests) random chunks of the listed sealed config that the seller must prove against the committed Merkle root; buy_agent refuses a listing with a root until its preview is proven. After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
   portfolio: "Share holdings of one investor across agents: % held, paid in, earned, escrow still held, and what can be claimed now. Read-only.",
 };
@@ -662,8 +662,37 @@ export class Tools {
   }
   private engine: string | null = null;
 
+  private sandboxEngine(): string {
+    if (!this.engine) {
+      const wasm = join(this.cfg.repo, "web", "playground.wasm");
+      let hash: string;
+      try {
+        hash = createHash("sha256").update(readFileSync(wasm)).digest("hex");
+      } catch {
+        throw new ToolError("SANDBOX_UNAVAILABLE", "web/playground.wasm is missing: run make playground-wasm");
+      }
+      this.engine = `web/playground.wasm sha256:${hash} (contracts/agent-core + tools/scan, make playground-wasm)`;
+    }
+    return this.engine;
+  }
+
   /** sandbox: one action through the playground wasm (see sandbox.ts). */
   private runSandbox(a: Json): Json {
+    if (a.action === "help") {
+      return {
+        schema_version: "agent-exit.mcp.sandbox.v1",
+        network: this.backend.network,
+        sandbox: true,
+        engine: this.sandboxEngine(),
+        step: this.sandbox.step,
+        action: "help",
+        who: "",
+        ok: true,
+        result: "every sandbox action with its args, and three example sequences (invest, honest_sale, cheat); nothing ran",
+        state: {},
+        help: sandboxHelp(),
+      };
+    }
     const action: Json = { op: a.action };
     if (a.action === "list") {
       if (a.price !== undefined) action.price = a.price;
@@ -672,10 +701,6 @@ export class Tools {
     if (a.action === "buy" && a.skip_scan !== undefined) action.skip_scan = a.skip_scan;
     if (a.action === "wait" && a.days !== undefined) action.days = a.days;
     const { last, view } = this.sandbox.call(action);
-    if (!this.engine) {
-      const wasm = join(this.cfg.repo, "web", "playground.wasm");
-      this.engine = `web/playground.wasm sha256:${createHash("sha256").update(readFileSync(wasm)).digest("hex")} (contracts/agent-core + tools/scan, make playground-wasm)`;
-    }
     const { log: _log, ...state } = view;
     // `view` and `reset` answer with the state only.
     const l: Json = last ?? { who: "", ok: true, text: a.action === "view" ? "the current state (nothing changed)" : "" };
@@ -683,7 +708,7 @@ export class Tools {
       schema_version: "agent-exit.mcp.sandbox.v1",
       network: this.backend.network,
       sandbox: true,
-      engine: this.engine,
+      engine: this.sandboxEngine(),
       step: this.sandbox.step,
       action: a.action,
       who: String(l.who ?? ""),
@@ -716,7 +741,7 @@ export class Tools {
       // whose message echoes that data) is reported without its text.
       const err =
         e instanceof ToolError
-          ? { code: e.code, message: untrusted(e.message), ...(e.details === undefined ? {} : { details: safeDetails(e.details) }) }
+          ? { code: e.code, message: await this.withKnownAgents(e), ...(e.details === undefined ? {} : { details: safeDetails(e.details) }) }
           : { code: "BAD_INPUT", message: `internal error (${untrusted((e as Error)?.name ?? "Error").slice(0, 40)}): the agent's data could not be read; nothing was sent` };
       const body = { schema_version: "agent-exit.mcp.error.v1", ok: false, error: err, sent: false };
       if (!this.schemas.validateError(body)) {
@@ -724,6 +749,24 @@ export class Tools {
       }
       return { ok: false, body };
     }
+  }
+
+  /** JF3: an UNKNOWN_AGENT message ends with the agents this server knows
+   * (offline: the world's agents; testnet: AGENT_EXIT_AGENTS), unless the
+   * thrower already named them. */
+  private async withKnownAgents(e: ToolError): Promise<string> {
+    const msg = untrusted(e.message);
+    if (e.code !== "UNKNOWN_AGENT" || /known agents: /.test(msg)) return msg;
+    let known: string[];
+    try {
+      known = this.cfg.network === "testnet" ? [...this.cfg.agents].sort() : await this.backend.listAgents();
+    } catch {
+      return msg;
+    }
+    const list = known.map((a) => untrusted(a).slice(0, 64)).join(", ") || (this.cfg.network === "testnet" ? "none (AGENT_EXIT_AGENTS is empty)" : "none");
+    const tail = `; known agents: ${list}`;
+    // error.v1 caps the message at 400: shorten the known list, never the cause.
+    return tail.length + msg.length <= 400 ? msg + tail : `${msg}${tail}`.slice(0, 396) + "...";
   }
 
   private run(tool: ToolName, a: Json): Promise<Json> {
@@ -1288,8 +1331,25 @@ export class Tools {
     };
   }
 
-  private async verifyLockout(agent: string, account: string, accountKeys?: string[]): Promise<Json> {
+  private async verifyLockout(agent: string, given: string | undefined, accountKeys?: string[]): Promise<Json> {
     const v = await this.backend.agent(agent);
+    // JF1: no account named -> the recorded seller: the last sale's seller,
+    // or (not sold yet) the current listing's seller.
+    let account = given ?? "";
+    let source: string | null = null;
+    if (given === undefined) {
+      const sales = (Array.isArray(v.sales) ? v.sales : []).filter((x: Json) => typeof x?.seller === "string" && ACCOUNT_RE.test(x.seller));
+      const last = sales.sort((x: Json, y: Json) => Number(y.sale_id) - Number(x.sale_id))[0];
+      if (last) {
+        account = last.seller;
+        source = `default: recorded seller (sale ${Number(last.sale_id)})`;
+      } else if (typeof v.listing?.seller === "string" && ACCOUNT_RE.test(v.listing.seller)) {
+        account = v.listing.seller;
+        source = "default: recorded seller (current listing; not sold yet)";
+      } else {
+        throw new ToolError("BAD_INPUT", `${agent} has no recorded seller (no sale, no listing): pass account, the account to check`);
+      }
+    }
     const keys =
       accountKeys ?? Object.entries(v.key_owners).filter(([, who]) => who === account).map(([k]) => k);
     const onChain = new Set((v.access_keys as Json[]).map((k) => k.public_key));
@@ -1346,6 +1406,7 @@ export class Tools {
       ...this.base("verify_lockout"),
       agent,
       account,
+      ...(source ? { account_checked: account, account_source: source } : {}),
       locked_out: locked,
       ...(inconclusive ? { inconclusive: true } : {}),
       checks,

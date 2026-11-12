@@ -13,7 +13,42 @@
     "who": { "type": "string" },
     "ok": { "type": "boolean", "description": "false = the contract or the NEAR node refused it" },
     "result": { "type": "string", "description": "the contract's answer, with its error name when refused" },
-    "state": { "type": "object", "description": "owner, status, keys on the account (and whether the contract knows them), listing, earnings, scan, sale, escrow, claimable balances, share slices, solvent" }
+    "state": { "type": "object", "description": "owner, status, keys on the account (and whether the contract knows them), listing, earnings, scan, sale, escrow, claimable balances, share slices, solvent (empty for help)" },
+    "help": {
+      "type": "object",
+      "description": "action help only: every action (who acts, its optional args, what it does) and example sequences, from the server's action table",
+      "required": ["actions", "examples"],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["action", "who", "args", "does"],
+            "properties": {
+              "action": { "type": "string" },
+              "who": { "type": "string" },
+              "args": { "type": "object", "additionalProperties": { "type": "string" } },
+              "does": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "examples": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["what", "steps"],
+            "properties": {
+              "what": { "type": "string" },
+              "steps": { "type": "array", "items": { "type": "object", "required": ["action"], "properties": { "action": { "type": "string" } } } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
   },
   "required": ["schema_version", "network", "sandbox", "engine", "step", "action", "who", "ok", "result", "state"],
   "additionalProperties": false

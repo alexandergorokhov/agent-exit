@@ -24,7 +24,7 @@ sequenceDiagram
 The long version, with every link: "Evidence" in [`docs/PROOF.md`](PROOF.md#evidence).
 
 - **Real node:** the handover tests passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`); the sealed-prompt dispute too (`make test-sealed-sandbox`).
-- **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 193 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
+- **Offline, every run:** 73 checks through the real contract code against checked-in goldens (`make verify`), property tests, 205 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
 - **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers; the cause is unconfirmed. The fix keeps payer rows out of the state blob (test `a47_thousand_long_payers_then_buy_and_views`). A payer row now costs 0.024 NEAR (`storage_deposit`).
 - **Live on NEAR testnet:** scenes 1-6 and 8-13, gate G1 and an MCP agent that invests by a fixed rule, on `agentexit5.testnet`; scene 7 (the AI buyer's listing), the AI buyer and gate G6 on `agentexit4.testnet`. Every testnet transaction: [`docs/TESTNET.md`](TESTNET.md).
 
@@ -58,7 +58,7 @@ Rust (pinned in `rust-toolchain.toml`), `make`, Node >= 20. No NEAR account and 
 | `make demo` | the offline story in one command: the verify replay and the scripted agent-buys-agent replay |
 | `make verify` | unit and property tests, then the fixed world through the real contract code equals `tests/golden/verify.json` and `tests/golden/attack.json` |
 | `make attack` | 200 seeded attack variants and 50 clean agents through the scan; 0/50 false positives |
-| `make mcp-test` | the MCP server's 193 tests offline, then the scripted run equals `tests/golden/agent-buys-agent.json` |
+| `make mcp-test` | the MCP server's 205 tests offline, then the scripted run equals `tests/golden/agent-buys-agent.json` |
 | `make web` | the demo page at http://127.0.0.1:8080 (offline; `?network=testnet` reads live through a read-only relay) |
 | `make test-sandbox`, `make test-sealed-sandbox` | the handover and the sealed-prompt dispute on a real local NEAR node |
 

@@ -8,15 +8,83 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Json, ToolError } from "./backend.js";
 
-export const SANDBOX_ACTIONS = [
-  "reset", "view",
-  "pay_customer", "pay_verified", "pay_self", "pay_sub", "pay_fresh",
-  "plant_key", "remove_key", "toggle_upgrade",
-  "list", "cancel", "scan", "buy",
-  "withdraw", "relist", "set_key", "old_key", "hidden_key", "hidden_redeploy",
-  "wait", "offer_share", "buy_share", "claim_share", "end_share",
-  "commit_config", "deliver_config", "deliver_fake", "open_config", "dispute_config", "claim_undelivered", "accept_config",
-] as const;
+/** One sandbox action: who acts, its optional args, what it does. The input
+ * schema's enum, `{action: "help"}` and the docs come from this table. */
+export interface SandboxAction {
+  who: string;
+  args: Record<string, string>;
+  does: string;
+}
+
+const NONE: Record<string, string> = {};
+
+/** Every sandbox action, in the order `help` lists them. */
+export const SANDBOX_ACTION_TABLE = {
+  reset: { who: "page", args: NONE, does: "a new world: alice owns translator, 3 real customers paid it; step 0" },
+  view: { who: "page", args: NONE, does: "the current state; changes nothing" },
+  pay_customer: { who: "a customer", args: NONE, does: "a stranger pays 25: counted as real revenue" },
+  pay_verified: { who: "a customer", args: NONE, does: "a stranger pays with a NEAR AI signature" },
+  pay_self: { who: "the owner", args: NONE, does: "the owner pays their own agent 200: flagged, not counted" },
+  pay_sub: { who: "bot.<owner>", args: NONE, does: "a sub-account of the owner pays: flagged" },
+  pay_fresh: { who: "the seller", args: NONE, does: "the seller pays 200 from a wallet nothing links to them" },
+  plant_key: { who: "alice", args: NONE, does: "adds a hidden full-access key the contract never sees" },
+  remove_key: { who: "alice", args: NONE, does: "removes the hidden key" },
+  toggle_upgrade: { who: "alice", args: NONE, does: "adds or removes an upgrade method" },
+  list: {
+    who: "alice",
+    args: { price: "price in xUSD-FAKE dollars (default 1000)", pay_from_revenue: "true: hold the whole price; the seller is paid only by customer payments after the sale" },
+    does: "list_for_sale",
+  },
+  cancel: { who: "alice", args: NONE, does: "cancels the listing" },
+  scan: { who: "bob", args: NONE, does: "the buyer's scan of the listed agent" },
+  buy: { who: "bob", args: { skip_scan: "true: buy without a clean scan (the real SDK and MCP buy_agent never do)" }, does: "buys in one transaction: owner, keys and money move together" },
+  withdraw: { who: "alice", args: NONE, does: "after a sale: the old seller tries to withdraw" },
+  relist: { who: "alice", args: NONE, does: "after a sale: the old seller tries to list again" },
+  set_key: { who: "alice", args: NONE, does: "after a sale: the old seller tries to add a key" },
+  old_key: { who: "alice", args: NONE, does: "after a sale: the old seller tries her old key" },
+  hidden_key: { who: "alice", args: NONE, does: "runs the agent with the hidden key" },
+  hidden_redeploy: { who: "alice", args: NONE, does: "takes the agent back with the hidden key (works only if the buy skipped the scan)" },
+  wait: { who: "clock", args: { days: "days that pass (default 30)" }, does: "time passes; the earn-out closes" },
+  offer_share: { who: "alice", args: NONE, does: "offers 20% of every payment for 500" },
+  buy_share: { who: "dave", args: NONE, does: "buys the share: 245.00 to alice now after the 1% fee, 250.00 held" },
+  claim_share: { who: "dave", args: NONE, does: "claims what the share earned" },
+  end_share: { who: "alice", args: NONE, does: "ends the share slice" },
+  commit_config: { who: "alice", args: NONE, does: "commits to the sealed prompt bundle before listing" },
+  deliver_config: { who: "alice", args: NONE, does: "delivers the committed bundle sealed to bob's one-time key" },
+  deliver_fake: { who: "alice", args: NONE, does: "delivers a different prompt instead" },
+  open_config: { who: "bob", args: NONE, does: "decrypts the delivery and checks it against the commitment" },
+  dispute_config: { who: "bob", args: NONE, does: "proves a mismatch on-chain and gets the whole price back" },
+  claim_undelivered: { who: "bob", args: NONE, does: "no delivery in 2 days: the whole price back" },
+  accept_config: { who: "bob", args: NONE, does: "accepts: the held upfront part goes to alice and releases start" },
+} satisfies Record<string, SandboxAction>;
+
+export type SandboxActionName = keyof typeof SANDBOX_ACTION_TABLE;
+export const SANDBOX_ACTIONS = Object.keys(SANDBOX_ACTION_TABLE) as SandboxActionName[];
+
+/** Example sequences for `help`; a test runs each one in the real wasm. */
+export const SANDBOX_EXAMPLES: Record<string, { what: string; steps: ({ action: SandboxActionName } & Record<string, unknown>)[] }> = {
+  invest: {
+    what: "dave buys 20% of translator's revenue; a customer pays; dave claims 5.00",
+    steps: [{ action: "reset" }, { action: "offer_share" }, { action: "buy_share" }, { action: "pay_customer" }, { action: "claim_share" }],
+  },
+  honest_sale: {
+    what: "a clean scan, a one-transaction buy, alice locked out, the earn-out closes; bob owns it",
+    steps: [{ action: "reset" }, { action: "pay_customer" }, { action: "list" }, { action: "scan" }, { action: "buy" }, { action: "withdraw" }, { action: "wait", days: 30 }],
+  },
+  cheat: {
+    what: "alice fakes revenue (flagged) and hides a key; the scan blocks and the buy is refused with SCAN_BLOCKED",
+    steps: [{ action: "reset" }, { action: "pay_self" }, { action: "plant_key" }, { action: "list" }, { action: "scan" }, { action: "buy" }],
+  },
+};
+
+/** The body of `{action: "help"}`: built from the table, so it cannot drift. */
+export function sandboxHelp(): Json {
+  return {
+    actions: SANDBOX_ACTIONS.map((action) => ({ action, ...SANDBOX_ACTION_TABLE[action] })),
+    examples: SANDBOX_EXAMPLES,
+    note: "send one action per call, in any order; the contract decides. Try your own: e.g. after the cheat steps, buy with skip_scan true, then hidden_redeploy.",
+  };
+}
 
 interface Exports {
   memory: WebAssembly.Memory;
