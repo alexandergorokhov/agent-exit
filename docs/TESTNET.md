@@ -12,7 +12,7 @@ Recorded on 2026-11-10 in a fresh world under `agentexit5.testnet` (agent code h
 | Old seller changes the spending limits: `NotOwner` | [H5EJSLwN…](https://testnet.nearblocks.io/txns/H5EJSLwN3WmSV2h3pDZJH7urTZo6gBDwoEFHE6YjocoX) |
 | Old seller moves the deed to herself: `NotOwner` | [Dj94EMuX…](https://testnet.nearblocks.io/txns/Dj94EMuXnthsHSZenaWXDSf7QDE6EkebaGnppN4eKVRE) |
 | Old seller spends from the Base wallet: `NotRunner` | [JA1eZDta…](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) |
-| Old seller's runner key and the deleted setup key | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
+| Old seller's runner key and a key the born-clean agent never had | no transaction possible: the node answers "access key … does not exist" (`out/scenes/scene-1.json`) |
 | New owner's runner key works | [BjG6o91U…](https://testnet.nearblocks.io/txns/BjG6o91UwvUcD1pLJBWqB8St9VpeFZ91aiy8vnYRpE13) |
 | Spending limit: 8.00 + 45.00 > daily cap 50.00, `PolicyViolation:DailyCap` | [GjNyoNJj…](https://testnet.nearblocks.io/txns/GjNyoNJjf2KLW4dzTiPfrm2iBbowfpCxNNSFEo769y1y) |
 | An agent account (summarizer) buys translator; scripted client, no AI model | [Bp48FRJG…](https://testnet.nearblocks.io/txns/Bp48FRJGDYUEMuMDTKRdNVY73YjBcRZfnheK6GibD88q) |

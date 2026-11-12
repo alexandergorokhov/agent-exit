@@ -6,9 +6,9 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 
 | Do | See |
 |---|---|
-| `make judge` | Starts the `agent-exit` server from `.mcp.json` and calls `check_claims`: K0 (the committed wasm hash equals every testnet record), then one PASS/FAIL row per claim K1-K7, last line `judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)`, `out/check-claims.json`. About 1 s once built; it builds only when `mcp/dist` is older than the sources. Without make: `node mcp/dist/scripts/judge-check.js`. |
-| `make judge-testnet` | The same from the read-only `agent-exit-testnet` server: K1-K8 (K8 = gate G6, world `agentexit4.testnet`), each recorded transaction re-read from archival nodes plus live reads. Exit 0 all pass, 1 a claim failed, 3 no RPC answered (claims `unverified_network`: not checked, not failed). |
-| `make demo` | The offline story in one command: the verify replay (73 checks, both goldens), the scripted agent-buys-agent replay, then how to open the page. Faster than `make verify` (no cargo test run). |
+| `make judge` | Starts the `agent-exit` server from `.mcp.json` and calls `check_claims`: K0 (the committed wasm hash equals every testnet record), then one PASS/FAIL row per claim K1-K8, last line `judge: 9/9 claims pass (offline sandbox, real contract code, xUSD-FAKE)`, `out/check-claims.json`. About 1 s once built; it builds only when `mcp/dist` is older than the sources. Without make: `node mcp/dist/scripts/judge-check.js`. |
+| `make judge-testnet` | The same from the read-only `agent-exit-testnet` server: K1-K9 (K9 = gate G6, world `agentexit4.testnet`), each recorded transaction re-read from archival nodes plus live reads. Exit 0 all pass, 1 a claim failed, 3 no RPC answered (claims `unverified_network`: not checked, not failed). |
+| `make demo` | The offline story in one command: the verify replay (76 checks, both goldens), the scripted agent-buys-agent replay, then how to open the page. Faster than `make verify` (no cargo test run). |
 | `make verify` | Unit + property tests pass, then the fixed world replays through the real contract code and `out/verify.json` equals `tests/golden/verify.json`, and the attack report equals `tests/golden/attack.json` (`... output equals ...` lines on stderr). About 1 min warm, longer on a cold build; offline. |
 | `cargo run -q -p verify` | A PASS/FAIL table, one row per scenario id (S*, E*, A*). |
 | `cargo run -q -p verify -- --json` | The same as JSON (`verify-output.v1`). |
@@ -28,7 +28,7 @@ account, no network after the first `make setup` (`cargo fetch` + `npm ci`).
 | `make test` | All tests (`PROP_CASES=10000` property cases, fixed seed). |
 | `make lint` | `rustfmt --check` and `clippy -D warnings`. |
 | `make audit` | `cargo audit` (needs `cargo install cargo-audit`). Four advisories in near-sdk's native test runtime are ignored in `.cargo/audit.toml`; the same target proves those crates are not in the contract wasm. |
-| `make test-sandbox` | Builds the wasm (`cargo-near`) and runs `tests/sandbox` on a real local node: key list before/after the buy, the old runner key and the deleted setup key failing with the node's error (S5, A17, A21), and a failed key batch refunding the buyer (E5). **Passed on a local NEAR node at `609b135` and `63d597c`.** Needs a machine that can raise the open-file limit near-sandbox needs. |
+| `make test-sandbox` | Builds the wasm (`cargo-near`) and runs `tests/sandbox` on a real local node: key list before/after the buy, the old runner key and a never-installed key (the agent is born clean through the factory) failing with the node's error (S5, A17, A21), and a failed key batch refunding the buyer (E5). **Passed on a local NEAR node at `609b135` and `63d597c`.** Needs a machine that can raise the open-file limit near-sandbox needs. |
 | `make help` | Every target. Targets that are not built yet are marked `(not built yet)` in the help and exit 1. |
 
 AI agents: start with [`AGENTS.md`](../AGENTS.md) and [`llms.txt`](../llms.txt).

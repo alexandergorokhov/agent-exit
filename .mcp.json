@@ -22,7 +22,7 @@
         "AGENT_EXIT_AGENTS": "translator.agentexit5.testnet,translator3.agentexit5.testnet,cheat.agentexit5.testnet,born1.factory.agentexit5.testnet,translate-pro.factory.agentexit5.testnet,research-desk.factory.agentexit5.testnet,pump-bot.factory.agentexit5.testnet",
         "AGENT_EXIT_TOKEN": "xusd.agentexit5.testnet",
         "AGENT_EXIT_ADMIN": "agentexit5.testnet",
-        "AGENT_EXIT_CODE_HASH": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+        "AGENT_EXIT_CODE_HASH": "F56WyouMoT7N6zQSEVHWtJz1zqJDutJVaRPjvDXy6VwY",
         "AGENT_EXIT_RPC": "https://rpc.testnet.fastnear.com",
         "AGENT_EXIT_RPC_2": "https://test.rpc.fastnear.com",
         "AGENT_EXIT_RUNNER_PK": "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb",

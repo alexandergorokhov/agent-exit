@@ -13,11 +13,11 @@
 ```bash
 # needs Rust (rustup reads rust-toolchain.toml) and Node 20+; no NEAR account, keys or wallet; offline unless marked; all money is xUSD-FAKE
 make setup && make mcp-build   # once: crates, npm, the MCP server, the scan binary (first build: a few minutes)
-make judge                     # ~1 s: K0 + K1-K7, last line: judge: 8/8 claims pass (offline sandbox, real contract code, xUSD-FAKE)
+make judge                     # ~1 s: K0 + K1-K8, last line: judge: 9/9 claims pass (offline sandbox, real contract code, xUSD-FAKE)
 make demo                      # ~1-2 min: the offline story (verify replay vs goldens, then an agent buys an agent)
 make screen                    # ~1-3 min: 7 rows, each with its promised result -> out/screen.json; last line: all 7 rows pass
 make web                       # the market page on http://127.0.0.1:8080 (WEB_PORT=8090 make web if 8080 is taken)
-make judge-testnet             # optional, read-only testnet (needs RPC): re-reads every recorded tx (K1-K8); no RPC = "NOT CHECKED (no RPC)", not a fail
+make judge-testnet             # optional, read-only testnet (needs RPC): re-reads every recorded tx (K1-K9); no RPC = "NOT CHECKED (no RPC)", not a fail
 ```
 
 **Talk to it over MCP (machine to machine).** Run `make mcp-build` first, then open Claude Code in this repo: it offers the two servers in [`.mcp.json`](.mcp.json) (approve them), `agent-exit` (offline; you act as a buyer, nothing is sent) and `agent-exit-testnet` (read-only, live `agentexit5.testnet`). Then run the prompt `/mcp__agent-exit__judge_tour`, or call `check_claims` directly. Behind an HTTP proxy, set `NODE_USE_ENV_PROXY=1` (Node 22.21+) for the testnet reads. Raw exit codes: `node mcp/dist/scripts/judge-check.js [--testnet]` gives 0 all pass, 1 a claim failed, 3 no RPC answered (not checked), 4 setup error (scan binary missing: run `make mcp-build`). **Codex:** `codex mcp add agent-exit --env AGENT_EXIT_NETWORK=offline -- node "$PWD/mcp/dist/src/server.js"`.
@@ -85,7 +85,7 @@ The full list is in [`docs/LIMITS.md`](docs/LIMITS.md), and what is not caught b
 - The seller can keep copies of off-chain code, prompts and API keys. A sealed config guarantees the buyer gets exactly the committed bundle, or the whole price back, and names the keys to rotate.
 - Fake payers on aged accounts look like customers. Before a sale that is cheap, so new payers count half and "pay from revenue" lets a buyer hold the whole price; after a sale, faking costs the seller money.
 - A contract cannot list its own keys: the buyer's scan catches a hidden key before the sale (agents from the born-clean factory never had one; live on testnet since 2026-11-10, scene 9).
-- The registry admin and token are build-time constants; mocked-runtime tests do not run promises (the real-node and testnet runs do); the wasm is about 626 KiB (641,087 bytes); no external audit; NEAR Intents (mainnet-only) is not used.
+- The registry admin and token are build-time constants; mocked-runtime tests do not run promises (the real-node and testnet runs do); the wasm is about 619 KiB (633,861 bytes); no external audit; NEAR Intents (mainnet-only) is not used.
 
 ## Built with
 

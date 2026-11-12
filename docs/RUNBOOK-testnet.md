@@ -26,8 +26,12 @@ Clone into the Linux file system (`~/src/near-transparent-agent-market`), not
 
 1. Create the root account (free, sponsored by the faucet):
    `near account create-account sponsor-by-faucet-service agentexit.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create`
-2. Fund it. The deploy needs **30 NEAR** (lean plan: 28.5 for the accounts + 1
-   for gas); gate G1 needs **9 more** per run. Use near-faucet.io or the NEAR
+2. Fund it. The deploy needs **about 42 NEAR** (the factory 11.5, the factory
+   creates translator with 10.2, the other accounts, 1 for margin); every other
+   agent a gate or scene sells is created through the factory too and costs
+   **10.2 NEAR** (G1, scene 8, scene 9, scene 10, each Exchange agent in scene 13).
+   Plan on about 55 NEAR for deploy + G1 + scenes 3-6 and about 120 NEAR for
+   everything (see `docs/REDEPLOY-NOTES.md`). Use near-faucet.io or the NEAR
    docs faucet (about 2 NEAR per request), or new faucet-sponsored accounts
    deleted with `beneficiary agentexit.testnet` (about 10 NEAR each).
 3. Secrets live only in `~/.agent-exit.env` (chmod 600), never in the repo.
@@ -60,7 +64,7 @@ The stale-build note of 2026-11-02 is resolved: the fixed build is deployed on `
 ## 4. Deploy and seed
 
     make deploy-testnet DRY_RUN=1   # the plan, offline; nothing is sent
-    make deploy-testnet             # create accounts, deploy, runner keys, lock translator, seed
+    make deploy-testnet             # create accounts, deploy the factory, create translator through it, runner keys, lock the factory, seed
 
 Every step skips what is already done, so after any error fix the cause and
 run the same command again. Afterwards `translator` and `cheat` each show
@@ -69,7 +73,7 @@ Output: `out/testnet/deploy.json`.
 
 ## 5. Gates
 
-    make gate-g1     # key handover on a real node: about 9 NEAR (creates a fresh agent)
+    make gate-g1     # key handover on a real node: about 10.5 NEAR (the factory creates a fresh agent)
     make gate-g6     # NEAR AI signature on-chain: needs NEAR AI credit
     make gate-g2     # Chain Signatures on Base Sepolia: needs BASE_RELAYER_KEY or BASE_PAYEE
                      # then make testnet-setup && make gate-g2-relay
@@ -86,7 +90,7 @@ The links below are from the first run, on an older world. The current recording
 | Scene | What it shows | First-run proof |
 |---|---|---|
 | 3 | Verified vs unverified revenue: `get_earnings` of translator (360.00 of 500.00 counted, 140.00 flagged) next to cheat (all 500.00 flagged as self-paid) | out/scenes/scene-3.json (views only, no tx) |
-| 4 | Cheat caught: alice lists cheat at 500.00; the buyer's scan (keys from both RPCs + `get_status`) blocks it with `full_access_key_present`; no buy is sent | scene-4.json |
+| 4 | Cheat refused: alice (cheat is a plain deploy) calls `list_for_sale` and the contract answers `NotBornClean` (K8; the failed tx is recorded); a buy sent anyway is refunded; the scan (keys from both RPCs + `get_status`) blocks it with `full_access_key_present` and `contract_not_born_clean` | scene-4.json |
 | 5 | The honest sale: bob buys `translator` in one transaction | [Auv99RhD…](https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF) |
 | 1 | Break-in: the old seller is refused on-chain (withdraw, own key, re-list, `set_limits` NotOwner, deed move NotOwner, `pay_base` NotRunner); her old keys are rejected by the node | [set_limits refused](https://testnet.nearblocks.io/txns/A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB) |
 | 2 | Spending limits: cap 50.00, a pay of 8.00 passes, 45.00 is refused (PolicyViolation) | [refused pay](https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci) |
