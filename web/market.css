@@ -106,7 +106,7 @@ p.mk-ill { margin: 4px 0 0; }
 .mk-act-row .btn[aria-disabled="true"] { opacity: .55; }
 .mk-bad { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
 .mk-sold { background: var(--sold-bg); color: var(--sold); }
-.mcp { margin: 8px 0; padding: 10px 12px; background: var(--surface); border-radius: 8px; overflow-x: auto; font-size: var(--fs-xs); }
+.mcp { margin: 8px 0; padding: 10px 12px; background: var(--surface); border-radius: 8px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-xs); }
 .dd summary { cursor: pointer; font-weight: 700; }
 .dd dl { display: grid; grid-template-columns: 11em 1fr; gap: 8px 14px; margin: 12px 0 0; font-size: var(--fs-sm); }
 .dd dt { color: var(--muted); }
@@ -172,5 +172,5 @@ p.mk-ill { margin: 4px 0 0; }
 .mk-logo { grid-column: 2; grid-row: 1 / span 2; width: 100%; height: auto; border-radius: 24px; }
 @media (max-width: 860px) {
   .mk-intro { grid-template-columns: 1fr; }
-  .mk-logo { grid-column: 1; grid-row: auto; max-width: 420px; margin-bottom: 20px; order: -1; }
+  .mk-logo { grid-column: 1; grid-row: auto; max-width: 240px; margin-top: 20px; order: 3; }
 }

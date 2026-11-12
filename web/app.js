@@ -521,7 +521,8 @@ async function renderInvestYourself() {
   const endDate = new Date(Number(BigInt(o.offer.end) / 1000000n));
   const end = endDate.toISOString().slice(0, 10);
   const endText = endDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  const name = o.agent.split(".")[0];
+  const acct = o.agent.split(".")[0];
+  const name = TITLES[acct] || acct; // the brand name people read; the account id stays in the tooltip
   const title = document.getElementById("iy-title");
   const dollars = Math.round(Number(usd(o.amount)));
   title.textContent = `Invest ${pct}% of ${name}'s earnings (${dollars} test $)`;

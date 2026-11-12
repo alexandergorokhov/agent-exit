@@ -1,6 +1,6 @@
 # Agent Exit: submission
 
-AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so an investor can buy a share of an agent's earnings, or the whole agent, safely.
+AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so an investor can buy a share of an agent's earnings, or the whole agent.
 
 ## Three proofs (NEAR testnet, all money xUSD-FAKE)
 

@@ -618,7 +618,7 @@ try {
       assert.equal(await q.locator('header.hero a[href$="docs/BUSINESS.md"]').count(), 1, "B2: links BUSINESS.md");
       assert.equal(await q.locator('header.hero a', { hasText: "Source code" }).count(), 1, "B9: source code link in the hero");
       const ex = await q.textContent("#exchange");
-      for (const t of ["translator sold for 1,000.00, so the fee was 10.00", "13 MCP tools", "Only on NEAR"]) assert.ok(ex.includes(t), `B3: Exchange says "${t}"`);
+      for (const t of ["Polyglot sold for 1,000.00, so the fee was 10.00", "13 MCP tools", "Only on NEAR"]) assert.ok(ex.includes(t), `B3: Exchange says "${t}"`);
       const sums = await q.$$eval("#waterfall .wf-deal", (ds) => ds.map((d) => [Number(d.dataset.total), [...d.querySelectorAll("[data-cents]")].reduce((a, e) => a + Number(e.dataset.cents), 0)]));
       assert.deepEqual(sums, [[100000, 100000], [50000, 50000]], "B3: waterfall parts add up on the page");
       // B6: one proof section; no duplicate limits text, no tiles, no eyebrows, no arrows on links.

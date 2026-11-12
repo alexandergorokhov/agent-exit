@@ -245,7 +245,7 @@ function renderState() {
     el("span", { class: `chip ${k.known_to_contract ? "green" : "red"}`, text: k.known_to_contract ? "added by the contract" : "unknown to the contract" }))));
   const kids = [
     el("div", { class: "agent-card" },
-      el("div", {}, el("div", { class: "agent-name", text: "translator.factory.testnet" }), el("div", { class: "muted small", text: "an AI translation agent" })),
+      el("div", {}, el("div", { class: "agent-name", text: "Polyglot (simulated)" }), el("code", { class: "muted small", text: "translator.factory.testnet" })),
       el("span", { class: `status ${status.toLowerCase()}`, text: status })),
     el("dl", { class: "facts-grid" },
       el("dt", { text: "Owner" }), el("dd", { class: "owner", text: v.owner }),

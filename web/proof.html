@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'">
-  <title>Agent Exit demo</title>
+  <title>Agent Exit | Proof for judges</title>
   <meta name="description" content="Agent Exit turns an AI agent into a business you can trust: earnings proven on-chain, shares you can invest in, and an exit where the seller is provably locked out.">
   <link rel="icon" type="image/png" href="media/favicon.png">
   <link rel="stylesheet" href="style.css">
@@ -17,18 +17,17 @@
 <body class="mk mk-proof">
   <nav class="top" aria-label="Sections"><div class="wrap">
     <a class="brand" href="#"><img class="mk-mark" src="media/mark.png" alt="" width="22" height="22">Agent Exit</a>
-    <span class="nav-row"><a href="#exchange">Exchange</a><a href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a href="#evidence-run">Proof</a><a class="nav-judges" href="#for-judges">For judges</a></span>
+    <span class="nav-row"><a href="index.html#market">Market</a><a href="#exchange">Exchange</a><a href="#invest-yourself">Invest</a><a href="#protect">Protection</a><a href="#evidence-run">Proof</a><a class="nav-judges" href="#for-judges">For judges</a></span>
   </div></nav>
 
   <header class="hero">
     <div class="wrap hero-grid">
       <div class="hero-main">
-        <h1>Agent Exit</h1>
-        <p class="tagline"><b>Buy AI agents by what they really earn.</b></p>
-        <p class="lede">AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.</p>
+        <h1>Buy AI agents by what they really earn.</h1>
+        <p class="lede">AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent.</p>
         <div class="cta">
           <a class="btn primary" href="#invest-yourself">Buy a 2.5% share for 25.00</a>
-          <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:01)</a>
+          <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:06)</a>
           <p class="verify-links small">Live on NEAR testnet: <a href="#run-invest">earnings</a> · <a href="#run-sale">lockout</a> · <a href="#run-cheat">cheat caught</a> · <a href="https://github.com/alexandergorokhov/near-transparent-agent-market" target="_blank" rel="noopener noreferrer">Source code</a></p>
         </div>
         <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on what sellers are paid upfront for agents and shares (<a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
@@ -49,7 +48,7 @@
         <p class="ex-bridge"><a class="btn" href="#invest-yourself">Buy 2.5% of Lingo Live</a></p>
       </div>
       <div class="ex-biz">
-        <div id="ex-fee"><h3>How it earns</h3><p>1% of each deal: translator sold for 1,000.00, so the fee was 10.00.</p></div>
+        <div id="ex-fee"><h3>How it earns</h3><p>1% of each deal: Polyglot sold for 1,000.00, so the fee was 10.00.</p></div>
         <div><h3>First users</h3><p>NEAR AI Cloud builders selling an agent or a share. Buyers: people, or agents via 13 MCP tools.</p></div>
         <div><h3>Only on NEAR</h3><p>The sale deletes the seller's key, and agents are born with no key (<a href="https://testnet.nearblocks.io/txns/8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7" target="_blank" rel="noopener noreferrer" id="factory-tx">factory tx</a>).</p></div>
         <div id="waterfall" class="waterfall" aria-label="Where the money of each deal goes"></div>
@@ -91,8 +90,8 @@
     <section id="protect" class="protect">
       <h2>Can you trust the revenue? Can the seller take it back?</h2>
       <ol class="story-steps" aria-label="Sold means locked out">
-        <li><b>Before</b><span>alice, the seller, holds translator's operating key.</span></li>
-        <li><b>One transaction</b><span>Her key deleted, bob's added, the ownership token moves to him.</span></li>
+        <li><b>Before</b><span>alice, the seller, holds Polyglot's runner key.</span></li>
+        <li><b>One transaction</b><span>Her key deleted, bob's added, the deed (NEP-171 ownership token) moves to him.</span></li>
         <li><b>After</b><span id="story-after">Every way back refused.</span><em>30% of the price waits for real customers.</em></li>
       </ol>
       <details class="story-fold" id="how-protect"><summary>Full picture and key terms</summary>
@@ -108,7 +107,7 @@
         <div id="dd-cards" class="dd-cards"><p class="muted">Loading…</p></div>
         <figure class="deed" id="deed-figure" hidden>
           <img src="media/deed-translator.svg" width="400" height="240" alt="The deed NFT of translator: counted, verified and flagged revenue, and the share pledged to investors">
-          <figcaption class="small muted">The ownership deed (NEP-171), drawn by the contract from its own numbers. From the offline sandbox run, so the numbers differ from the testnet card.</figcaption>
+          <figcaption class="small muted">The deed, drawn by the contract from its own numbers. From the offline sandbox run, so the numbers differ from the testnet card.</figcaption>
         </figure>
       </section>
     </section>
@@ -237,7 +236,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
             <div class="arch-box buyer">
               <h4>On the buyer's side</h4>
               <ul>
-                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list an agent that ever had a key (K8).</li>
+                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list an agent that ever had a key (K8: tested offline; on testnet after the redeploy).</li>
                 <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
               </ul>
             </div>

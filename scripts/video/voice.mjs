@@ -19,7 +19,7 @@ const manifest = {};
 for (const raw of lines) {
   const text = speech(raw);
   const file = `${createHash("sha256").update(text).digest("hex").slice(0, 12)}.wav`;
-  if (!existsSync(OUT + file)) execFileSync(PIPER, ["-m", PIPER_MODEL, ...(PIPER_SPEAKER ? ["-s", PIPER_SPEAKER] : []), "-f", OUT + file, "--length_scale", "0.95", "--sentence_silence", "0.15"], { input: text });
+  if (!existsSync(OUT + file)) execFileSync(PIPER, ["-m", PIPER_MODEL, ...(PIPER_SPEAKER ? ["-s", PIPER_SPEAKER] : []), "-f", OUT + file, "--length_scale", "1.25", "--sentence_silence", "0.35"], { input: text });
   const dur = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", OUT + file]).toString().trim());
   manifest[text] = { file, dur };
 }

@@ -1,6 +1,6 @@
 # Pitch and demo explanation
 
-**Buy AI agents by what they really earn.** A capital market for AI agents on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
+**Buy AI agents by what they really earn.** A capital market for AI agents on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent.
 
 For the submission form, the video voice-over and a judge who has two minutes.
 Order (owner's choice): **business → proven earnings → invest or buy → security**.

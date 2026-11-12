@@ -73,7 +73,7 @@ async function caption(text, ms = 1200, line = null, big = false) {
     if (!c) {
       c = document.createElement("div");
       c.id = "vid-cap";
-      c.style.cssText = "position:fixed;inset:0 0 auto 0;margin:0;border:0;width:auto;z-index:99999;background:rgba(10,20,16,.94);color:#fff;font:600 26px/1.3 Inter,system-ui,sans-serif;padding:14px 40px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.25)";
+      c.style.cssText = "position:fixed;inset:0 0 auto 0;margin:0;border:0;width:auto;z-index:99999;background:#0a1410;color:#fff;font:600 26px/1.3 Inter,system-ui,sans-serif;padding:14px 40px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.25)";
       c.setAttribute("popover", "manual"); // the top layer, so an open agent panel's backdrop does not dim it
       document.body.appendChild(c);
     }
@@ -89,25 +89,110 @@ async function caption(text, ms = 1200, line = null, big = false) {
   const spoken = line ? say(speech(line)) : 0;
   if (ms) await wait(Math.max(ms, spoken));
 }
-// A closing card: the logo flashes for a second, then the video ends.
-async function card(lines, ms) {
+// Full-screen scenes (the opening counter, the lock-out climax, the end card), built from a small
+// spec with DOM calls and the Web Animations API, because the page's strict CSP blocks inline styles
+// in markup. N(css, children|text, opts): opts.at = seconds after the scene starts (fade and rise in),
+// opts.stamp = a stamp that slams in, opts.grow = a bar that grows from the left, opts.counts = number
+// counters [{from, to, at, dur, pre}], opts.color = [[at, "#hex"]] colour changes.
+const N = (s, c = [], o = {}) => ({ s, c, o });
+let trim = 0;
+async function scene(spec, { ms = 0, line = null, during = null, first = false } = {}) {
   await quiet();
-  await p.evaluate((lines) => {
-    let c = document.getElementById("vid-card");
-    if (!c) {
-      c = document.createElement("div");
-      c.id = "vid-card";
-      c.style.cssText = "position:fixed;inset:0;z-index:100000;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:600 30px/1.35 Inter,system-ui,sans-serif;text-align:center;padding:40px";
-      document.body.appendChild(c);
-    }
-    c.replaceChildren(...lines.map((l, i) => {
-      if (l.startsWith("img:")) { const im = document.createElement("img"); im.src = l.slice(4); im.alt = ""; im.style.cssText = "width:520px;border-radius:24px"; return im; }
-      const d = document.createElement("div"); d.textContent = l; if (i === 1) d.style.cssText = "font-size:48px;font-weight:800"; return d;
-    }));
-    c.style.display = lines.length ? "flex" : "none";
-  }, lines);
-  if (ms) await wait(ms);
+  await p.evaluate(([spec, z]) => {
+    document.getElementById("vid-card")?.remove();
+    const root = document.createElement("div");
+    root.id = "vid-card";
+    root.style.cssText = "position:fixed;inset:0;z-index:100000;pointer-events:none;background:#000;color:#fff;overflow:hidden;font-family:Inter,system-ui,sans-serif;";
+    document.documentElement.style.zoom = "1"; // the scene is drawn at 100%, the page behind comes back to its zoom afterwards
+    const make = (n) => {
+      const e = document.createElement("div");
+      e.style.cssText = n.s;
+      const o = n.o || {};
+      if (typeof n.c === "string") e.textContent = n.c; else for (const c of n.c) e.append(make(c));
+      if (o.img) { const i = document.createElement("img"); i.src = o.img; i.alt = ""; i.style.cssText = n.s; return i; }
+      const ms = (x) => Math.round(x * 1000);
+      if (o.at !== undefined) e.animate([{ opacity: 0, transform: "translateY(24px)" }, { opacity: 1, transform: "none" }], { delay: ms(o.at), duration: 350, fill: "both", easing: "ease-out" });
+      if (o.stamp !== undefined) e.animate([{ opacity: 0, transform: "rotate(-7deg) scale(2.6)" }, { opacity: 1, transform: "rotate(-7deg) scale(1)" }], { delay: ms(o.stamp), duration: 220, fill: "both", easing: "cubic-bezier(.2,1.4,.4,1)" });
+      if (o.out !== undefined) e.animate([{ opacity: 1 }, { opacity: 0 }], { delay: ms(o.out), duration: 250, fill: "forwards" });
+      if (o.grow !== undefined) e.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { delay: ms(o.grow), duration: 350, fill: "both", easing: "ease-out" });
+      for (const [at, col] of o.color || []) e.animate([{ color: getComputedStyle(e).color }, { color: col }], { delay: ms(at), duration: 250, fill: "forwards" });
+      for (const k of o.counts || []) {
+        const t0 = performance.now() + k.at * 1000;
+        const tick = (now) => {
+          if (now < t0) return requestAnimationFrame(tick);
+          const f = Math.min(1, (now - t0) / (k.dur * 1000));
+          e.textContent = (k.pre || "") + Math.round(k.from + (k.to - k.from) * (1 - Math.pow(1 - f, 3)));
+          if (f < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+      return e;
+    };
+    root.append(make(spec));
+    document.body.appendChild(root);
+  }, [spec, ZOOM]);
+  if (first) { T0 = Date.now(); trim = (T0 - V0) / 1000 + 0.05; } // the video starts on this card; encode.sh cuts the page load before it
+  const t0 = Date.now();
+  const spoken = line ? say(speech(line)) : 0;
+  if (during) await during();
+  const left = Math.max(ms, spoken) - (Date.now() - t0);
+  if (left > 0) await wait(left);
 }
+const clearScene = () => p.evaluate((z) => { document.getElementById("vid-card")?.remove(); document.documentElement.style.zoom = String(z); }, ZOOM);
+const RED = "#FF6B5E", GREEN = "#00EC97", MUTE = "#9aa0a6";
+const MONO_ = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+const FULL = "display:flex;flex-direction:column;align-items:center;justify-content:center;width:100vw;height:100vh;box-sizing:border-box;text-align:center;gap:28px;";
+const eyebrow = (t, at = 0) => N(`font:600 30px ${MONO_};letter-spacing:4px;color:${GREEN}`, t, { at });
+
+// Opening: TrendPulse claims 410, 400 is its owner paying itself, only 10 counts (voice: 7.5 s).
+const openingScene = N(FULL + "background:#050505", [
+  eyebrow("TRENDPULSE · AN ILL-INTENDED TEST AGENT"),
+  N("position:relative;display:flex;flex-direction:column;align-items:center;gap:6px", [
+    N(`font:800 340px/1 Inter,system-ui,sans-serif;letter-spacing:-12px;color:#fff;min-width:900px`, "$0",
+      { counts: [{ from: 0, to: 410, at: 0.1, dur: 1.2, pre: "$" }, { from: 410, to: 10, at: 7.9, dur: 1.1, pre: "$" }], color: [[7.9, GREEN]] }),
+    N(`position:absolute;left:0;right:0;top:170px;height:14px;background:${RED};border-radius:7px;transform-origin:left`, [], { grow: 4.3, out: 7.9 }),
+    N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "revenue it claims", { at: 1.3, out: 7.9 }),
+    N(`position:absolute;left:0;right:0;top:346px;text-align:center;font:600 44px Inter,system-ui,sans-serif;color:${GREEN}`, "revenue that counts", { at: 8.0 }),
+  ]),
+  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$400 paid by its own owner", { at: 4.3 }),
+  N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $10 counts: price flagged", { at: 8.1 }),
+]);
+// A 4 s card: the problem in four words.
+const problemScene = N(FULL + "background:#000", [
+  N(`font:800 190px/1 Inter,system-ui,sans-serif;letter-spacing:-6px;color:#fff`, "Fake revenue.", { at: 0.1 }),
+  N(`font:800 190px/1 Inter,system-ui,sans-serif;letter-spacing:-6px;color:${RED}`, "Hidden keys.", { at: 1.1 }),
+  N(`font:500 48px Inter,system-ui,sans-serif;color:${MUTE};margin-top:24px`, "Buying an AI agent today is blind trust.", { at: 2.1 }),
+]);
+// The climax, modelled on the deck's "how" slide: three red rows, each stamped REFUSED in time with the voice, then the struck-out key.
+const row = (label, err, at, stampAt) => N(`display:flex;align-items:center;justify-content:space-between;gap:40px;width:1500px;padding:26px 48px;background:#1b0b0a;border:4px solid ${RED};border-radius:24px;position:relative`, [
+  N(`font:700 58px Inter,system-ui,sans-serif;color:#fff;text-align:left`, label),
+  N(`font:600 46px ${MONO_};color:${RED}`, err),
+  N(`font:900 60px Inter,system-ui,sans-serif;letter-spacing:4px;color:${RED};border:6px solid ${RED};border-radius:14px;padding:6px 26px;background:#000`, "REFUSED", { stamp: stampAt }),
+], { at });
+const keyIcon = (col) => N("display:flex;align-items:center", [
+  N(`width:44px;height:44px;border-radius:50%;border:8px solid ${col};box-sizing:border-box`),
+  N(`width:70px;height:8px;background:${col}`), N(`width:8px;height:22px;background:${col};margin:22px 0 0 -26px`),
+]);
+const climaxScene = N(FULL + "background:#000;gap:26px", [
+  eyebrow("AFTER THE SALE · ALICE TRIES EVERY WAY BACK IN"),
+  row("Withdraw the treasury", "NotOwner", 1.7, 2.35),
+  row("Add her own key", "NotOwner", 2.9, 3.45),
+  row("Use her old key", "AccessKeyNotFound", 4.0, 5.3),
+  N("display:flex;align-items:center;gap:90px;margin-top:10px", [
+    N("display:flex;align-items:center;gap:20px;position:relative", [keyIcon(RED), N(`font:700 50px Inter,system-ui,sans-serif;color:${RED}`, "Alice's key"),
+      N(`position:absolute;left:-14px;right:-14px;top:50%;height:8px;background:#fff;transform-origin:left`, [], { grow: 5.8 })], { at: 5.6 }),
+    N("display:flex;align-items:center;gap:20px", [keyIcon(GREEN), N(`font:700 50px Inter,system-ui,sans-serif;color:${GREEN}`, "Bob's key")], { at: 5.6 }),
+  ]),
+  N(`font:800 76px Inter,system-ui,sans-serif;color:#fff`, "Sold means locked out.", { at: 6.3 }),
+]);
+// The end card: tagline, URL, the one command, and the testnet line.
+const endScene = N(FULL + "background:#000;gap:30px", [
+  N("width:460px;height:auto;border-radius:24px", [], { img: "media/logo.png" }),
+  N(`font:800 76px Inter,system-ui,sans-serif;letter-spacing:-2px;color:#fff`, "Buy AI agents by what they really earn.", { at: 0.2 }),
+  N(`font:600 44px ${MONO_};color:${GREEN}`, "near-transparent-agent-market-web.vercel.app", { at: 1.0 }),
+  N(`display:flex;font:700 54px ${MONO_};color:#fff;border:4px solid ${GREEN};border-radius:20px;padding:16px 44px;white-space:pre`, [N("", "make judge \u2192 "), N(`color:${GREEN}`, "9/9")], { at: 1.8 }),
+  N(`font:500 36px Inter,system-ui,sans-serif;color:${MUTE}`, "Live on NEAR testnet. Test money only (xUSD-FAKE).", { at: 2.6 }),
+]);
 // Bring an element into view, instantly (smooth scrolling and page zoom do not mix well).
 async function show(sel, block = "start") {
   await p.evaluate(([s, b]) => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: b, behavior: "instant" }); }, [sel, block]);
@@ -145,30 +230,33 @@ async function home() {
   await wait(300);
 }
 
-// Shot 1: the hook, on the market page in the first second: Alice, Polyglot, the question.
+// Shot 0: open on motion (TrendPulse 410 -> 10), then a 4 s problem card. The page is already loaded behind.
 await home();
-T0 = Date.now();
-const trim = (T0 - V0) / 1000; // the page load before the first caption; encode.sh cuts it
-await caption("Alice built Polyglot. She wants to sell it. Can a buyer trust the revenue?", 800, LINES.hook, true);
-await caption("Fake revenue. Hidden keys. Buying an agent today is blind trust.", 800, LINES.problem);
+await scene(openingScene, { ms: 9700, line: LINES.hook, first: true });
+await scene(problemScene, { ms: 4000, line: LINES.problem });
+await clearScene();
+
+// Shot 1: the market page, 2 s of hero, then the verdict cards. Alice and Polyglot come in with the voice.
+await caption("Alice built Polyglot to sell. Every agent here carries a verdict, counted from who actually paid", 0, LINES.market, true);
+await wait(1800);
 await show("#market", "start");
 await p.evaluate(() => window.scrollBy(0, -140));
-await caption("Every agent carries a verdict, counted from who actually paid", 800, LINES.market);
+await caption("Alice built Polyglot to sell. Every agent here carries a verdict, counted from who actually paid", 800);
 
 // Shot 2: the verdicts a buyer sees before paying.
 await p.click('#filters button[data-f="flag"]');
 await openAgent("pump-bot", 0);
 await glow(".mk-panel .kpis");
-await caption("TrendPulse (ill-intended test): 400 of 410 is self-paid", 800, LINES.pump);
+await caption("TrendPulse (ill-intended test): 400 of 410 is self-paid, so the price is flagged", 800, LINES.pump);
 await closeAgent();
 await openAgent("cheat", 0);
 await glow(".mk-panel .mk-bad");
-await caption("QuickQuote (test): the scan catches the key. New rule: the contract refuses to list a keyed agent (K8, offline)", 800, LINES.cheat);
+await caption("QuickQuote (test): the scan catches the key. K8: the contract refuses a keyed agent (tested offline; testnet after the redeploy)", 800, LINES.cheat);
 await closeAgent();
 await p.click('#filters button[data-f="sold"]');
 await openAgent("translator", 0);
 await glow(".mk-panel .mk-sold");
-await caption("Polyglot: sold in one transaction; 6 take-backs refused, old key gone", 800, LINES.sold);
+await caption("Polyglot: sold in one transaction; 6 take-backs refused, Alice's key gone", 800, LINES.sold);
 await closeAgent();
 
 // Shot 3: check it, on the proof page: Run and verify ticks through the recorded testnet transactions.
@@ -179,41 +267,41 @@ await zoom(1.5);
 await wait(600);
 await show('[data-run="sale"]', "start");
 await p.evaluate(() => window.scrollBy(0, -260));
-await caption("Run and verify: each recorded testnet transaction, checked step by step (answers replayed in this recording)", 0, LINES.evidence);
+await caption("Every step re-checked on testnet (answers replayed in this recording)", 0, LINES.evidence);
 await wait(1200);
 await p.locator('[data-run="sale"]').click();
-await wait(1500);
-await show('[data-run="sale"]', "start");
-await p.evaluate(() => window.scrollBy(0, 330));
-await wait(2200);
-await show('[data-run="sale"]', "start");
-await p.evaluate(() => window.scrollBy(0, 1080));
-await wait(1800);
+await wait(1400);
+await p.waitForFunction(() => /Run again/.test(document.querySelector('[data-run="sale"]').textContent));
+await wait(300);
+// All 12 stages are checked: show the list, where every refused attack carries a red "refused, confirmed on chain" badge.
+await show('[data-scenario="sale"] .stages', "start");
+await p.evaluate(() => window.scrollBy(0, -150));
+await wait(3000);
 
-// Shot 4: invest, and AI buyers (back on the market page).
+// Shot 4: invest, and AI buyers (back on the market page). The MCP scene is 4 s.
 await home();
 await p.click('#filters button[data-f="all"]');
 await openAgent("translator3", 0);
 await p.fill("#mk-account", "judge.testnet");
 await glow("#mk-invest");
-await caption("Invest: 2.5% of Lingo Live's earnings for 25 test dollars", 800, LINES.invest);
+await caption("Dave invests: 2.5% of Lingo Live's earnings for 25 test dollars", 800, LINES.invest);
 await closeAgent();
 await openAgent("research-desk", 0);
 await glow(".mk-panel pre.mcp");
-await caption("AI agents can buy too, over MCP", 800, LINES.mcp);
+await caption("AI agents can buy too, over MCP: scan first", 3700, LINES.mcp);
 await glow(null);
 await closeAgent();
 
-// Shot 5: the playground, about 35 seconds: the page zoomed so the changing panel reads at 1080p.
+// Shot 5: the playground, the page zoomed so the changing panel reads at 1080p.
 await zoom(1.5);
 await show("#missions", "start");
 await p.evaluate(() => window.scrollBy(0, -110));
 await p.locator('#missions button[data-mission="invest"]').click();
 await wait(300);
-await caption("The same contract code, run in your browser: alice sells 20% to dave", 0, LINES.playInvest);
+await caption("The same contract code, run in your browser: Alice sells 20% to Dave", 0, LINES.playInvest);
 await act("offer_share", 900);
 await act("buy_share", 1000);
-await caption("Each payment pays dave first, even alice's fake one", 0, LINES.playPay);
+await caption("Each payment pays Dave first, even Alice's fake one", 0, LINES.playPay);
 await act("pay_customer_inv", 1000);
 await act("pay_self_inv", 1200, "feed");
 
@@ -222,21 +310,25 @@ await show("#missions", "start");
 await p.evaluate(() => window.scrollBy(0, -110));
 await p.locator('#missions button[data-mission="honest"]').click();
 await wait(300);
-await caption("One transaction: bob pays, alice's keys are deleted", 0, LINES.playBuy);
+await caption("One transaction: Bob pays, Alice's keys are deleted", 0, LINES.playBuy);
 await act("list", 600);
 await act("scan", 600);
 await act("buy", 1200);
-await caption("alice tries to get back in", 0, LINES.breakin);
-await act("withdraw", 700, "feed");
-await act("set_key", 700, "feed");
-await act("old_key", 900, "feed");
+// The climax: a full-screen card; Alice's three real attempts run in the playground behind it.
+await caption("", 0);
+await scene(climaxScene, { ms: 7800, line: LINES.breakin, during: async () => {
+  await act("withdraw", 300, "feed");
+  await act("set_key", 300, "feed");
+  await act("old_key", 300, "feed");
+} });
+await clearScene();
 
 await quiet();
 await show("#missions", "start");
 await p.evaluate(() => window.scrollBy(0, -110));
 await p.locator('#missions button[data-mission="brain"]').click();
 await wait(300);
-await caption("The prompt is sealed by its hash; a cheaper one is delivered; bob is refunded in full", 0, LINES.brain);
+await caption("The prompt is sealed by its hash; a cheaper one is delivered; Bob is refunded in full", 0, LINES.brain);
 await act("commit_config", 600);
 await act("list", 500);
 await act("scan", 500);
@@ -246,12 +338,10 @@ await act("deliver_fake", 700);
 await act("open_config", 700);
 await act("dispute_config", 1400, "feed");
 
-// Shot 6: what is new, the tagline, and a one-second logo flash.
-await home();
-await caption("Code, not trust, locks the seller out. An agent that ever had a key can't be listed.", 800, LINES.whyNew, true);
-await caption("Buy AI agents by what they really earn. Live on NEAR testnet, test dollars only.", 800, LINES.close, true);
+// Shot 6: what is new, then the end card.
 await caption("", 0);
-await card(["img:media/logo.png", "Buy AI agents by what they really earn."], 1200);
+await scene(N(FULL + "background:#000", [N(`font:800 84px/1.15 Inter,system-ui,sans-serif;letter-spacing:-2px;max-width:1500px`, "Code, not trust, locks the seller out.", { at: 0.1 })]), { ms: 3400, line: LINES.whyNew });
+await scene(endScene, { ms: 6400, line: LINES.close });
 
 await quiet();
 await ctx.close();

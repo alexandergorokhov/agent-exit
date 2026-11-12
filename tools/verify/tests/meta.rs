@@ -801,7 +801,7 @@ fn readme_names_the_second_project() {
 }
 
 /// Loop 45 round 3: the judge findings stay fixed.
-const LEDE: &str = "AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.";
+const LEDE: &str = "AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent.";
 
 #[test]
 fn list_for_sale_says_not_built_on_testnet_wherever_listed() {

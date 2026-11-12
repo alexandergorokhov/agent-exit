@@ -19,15 +19,15 @@ function el(tag, attrs = {}, ...kids) {
 
 const SCENARIOS = [
   { id: "sale", title: "Sell an agent, lock the seller out", steps: ["honest-sale", "break-in"],
-    intro: "alice lists translator, bob buys it in one transaction, then alice tries every way back in." },
+    intro: "alice lists Polyglot, bob buys it in one transaction, then alice tries every way back in." },
   { id: "cheat", title: "A cheat is caught before the sale", steps: ["cheat"],
     intro: "alice lists an agent that carries a hidden full-access key. bob's scan reads the account's keys and refuses to buy." },
   { id: "business", title: "The agent runs inside its limits", steps: ["business"],
     intro: "bob, the new owner, sets a daily spending cap. Customers pay the agent; the agent pays a supplier; an over-cap payment is refused." },
   { id: "agent", title: "An AI agent buys an agent", steps: ["agent-buys-agent"],
-    intro: "summarizer, itself an agent account, scans translator and buys it from bob through the same contract." },
+    intro: "summarizer, itself an agent account, scans Polyglot and buys it from bob through the same contract." },
   { id: "invest", title: "Invest in an agent: 20% of its earnings", steps: ["invest"],
-    intro: "alice offers 20% of translator3's earnings for a year; dave scans it and buys. Five customers pay for real NEAR AI translations, each signature checked by the contract; the owner's own sub-account pays too and is flagged. dave gets exactly 20% of every payment and claims it." },
+    intro: "alice offers 20% of Lingo Live's earnings for a year; dave scans it and buys. Five customers pay for real NEAR AI translations, each signature checked by the contract; the owner's own sub-account pays too and is flagged. dave gets exactly 20% of every payment and claims it." },
   { id: "born", title: "Born clean: an agent no one ever held a key to", steps: ["born-clean"],
     intro: "The factory creates the agent account and deploys the published code in one transaction, so no seller key ever existed. The buyer's scan reads the factory's record." },
   { id: "sealed", title: "The seller swaps the prompt: the whole price comes back", steps: ["sealed-prompt"],
@@ -68,7 +68,7 @@ function failureText(status) {
   if (!status || !status.Failure) return null;
   const s = JSON.stringify(status.Failure);
   const m = /"(?:FunctionCallError|ExecutionError)":"?([^"}]+)/.exec(s) || /PanicMsg[^:]*:\\?"?([^"\\]+)/.exec(s);
-  return (m ? m[1] : s).slice(0, 140);
+  return m ? m[1].slice(0, 140) : "rejected by the contract"; // never a cut-off JSON fragment
 }
 
 /** The recorder's label for an action batch (same rule as mcp/src/backend.ts txLabel). */
@@ -150,17 +150,19 @@ const shortAcc = (text) => String(text).replace(/\b([a-z0-9_-]+)(?:\.[a-z0-9_-]+
 /** Plain words for the recorded labels; the method name stays in the stage's monospace hint. */
 const PLAIN = [
   [/\(one ft_transfer_call\)/, "(one transaction)"],
-  [/set_runner_key \(her own key\)/, "puts her own operating key back"],
+  [/set_runner_key \(her own key\)/, "puts her own runner key back"],
   [/list_for_sale ([\d.]+)/, "relists it for $1"],
   [/: set_limits/, ": changes its spending limits"],
-  [/nft_transfer the deed to herself/, "takes the ownership token back"],
+  [/nft_transfer the deed to herself/, "takes the deed back"],
   [/pay_base \(the Base wallet\)/, "spends from its Base wallet"],
-  [/runner key: heartbeat/, "operating key: signs a call"],
+  [/runner key: heartbeat/, "runner key: signs a call"],
   [/setup key: heartbeat/, "setup key: signs a call"],
-  [/alice sets her runner key/, "alice sets her operating key"],
+  [/alice sets her runner key/, "alice sets her runner key"],
   [/registry admin: add_signer \(NEAR AI Cloud signing address\)/, "registry admin trusts NEAR AI Cloud's signing address"],
 ];
-const plain = (text) => PLAIN.reduce((t, [re, w]) => t.replace(re, w), shortAcc(text));
+// People read brand names and capitalised persons; account ids stay in the hint and the links.
+const BRAND = [[/\btranslator3\b/g, "Lingo Live"], [/\btranslator\b/g, "Polyglot"], [/\balice\b/g, "Alice"], [/\bbob\b/g, "Bob"], [/\bdave\b/g, "Dave"]];
+const plain = (text) => BRAND.reduce((t, [re, w]) => t.replace(re, w), PLAIN.reduce((t, [re, w]) => t.replace(re, w), shortAcc(text)));
 
 function stageView(st, i) {
   const head = plain(st.kind === "scan"
@@ -202,8 +204,10 @@ function stageView(st, i) {
     pill.textContent = "checking chain…";
     try {
       const v = st.kind === "scan" ? await verifyScan(st.scan) : await verifyTx(st.t);
-      pill.className = `vpill ${v.matches ? "ok" : "bad"}`;
-      pill.textContent = v.matches ? "✓ confirmed on chain" : "✗ differs from the recording";
+      // An attack the contract refused is shown red: the chain confirms the refusal, not a success.
+      const refusedTx = st.kind === "tx" && !st.t.ok;
+      pill.className = `vpill ${v.matches ? (refusedTx ? "refused" : "ok") : "bad"}`;
+      pill.textContent = v.matches ? (refusedTx ? "✗ refused, confirmed on chain" : "✓ confirmed on chain") : "✗ differs from the recording";
       out.replaceChildren(el("p", { class: "chain-title", text: "What NEAR testnet answers now:" }),
         el("dl", { class: "facts-grid" }, v.rows.map(([k, val]) => [el("dt", { text: k }), el("dd", { text: String(val ?? "?") })])));
       return v.matches;
