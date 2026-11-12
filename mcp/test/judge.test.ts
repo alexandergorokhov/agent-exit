@@ -8,15 +8,15 @@ import { join } from "node:path";
 import { connect } from "../src/client.js";
 import { REPO, valid, writer } from "./helpers.js";
 
-test("J1 check_claims: K1-K7 pass, schema-valid, every claim names its calls", async () => {
+test("J1 check_claims: K1-K8 pass, schema-valid, every claim names its calls", async () => {
   const s = await connect({});
   try {
     const r = await s.call("check_claims", {});
     assert.ok(valid("check_claims", r), JSON.stringify(r.body));
     assert.equal(r.ok, true);
-    assert.deepEqual(r.body.claims.map((c: { id: string }) => c.id), ["K1", "K2", "K3", "K4", "K5", "K6", "K7"]);
+    assert.deepEqual(r.body.claims.map((c: { id: string }) => c.id), ["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8"]);
     for (const c of r.body.claims) assert.equal(c.pass, true, `${c.id}: ${c.observed}`);
-    assert.equal(r.body.passed, 7);
+    assert.equal(r.body.passed, 8);
     assert.equal(r.body.failed, 0);
     assert.equal(r.body.pass, true);
     const k4 = r.body.claims.find((c: { id: string }) => c.id === "K4");
@@ -35,7 +35,7 @@ test("J2 check_claims runs in its own sandbox: the server's state and spend are 
     const after = await s.call("list_agents", {});
     assert.deepEqual(after.body, before.body);
     // The real buy still works afterwards, inside the server's own cap.
-    const buy = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+    const buy = await s.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true });
     assert.equal(buy.ok, true, JSON.stringify(buy.body));
     assert.equal(buy.body.session_spent, "1000.00");
   } finally {

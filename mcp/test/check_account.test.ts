@@ -23,11 +23,11 @@ async function check(account: string) {
 }
 
 test("CA1 an Agent Exit agent with only its runner's function-call key is locked", async () => {
-  const b = await check("translator.testnet");
+  const b = await check("translator.factory.testnet");
   assert.equal(b.verdict, "locked");
   assert.equal(b.full_access_keys, 0);
   assert.equal(b.code.published_agent_exit_build, true);
-  assert.match(b.keys[0].can, /^call heartbeat, accept_job, pay, pay_base on translator\.testnet/);
+  assert.match(b.keys[0].can, /^call heartbeat, accept_job, pay, pay_base on translator\.factory\.testnet/);
 });
 
 test("CA2 the cheat's hidden full-access key is a backdoor risk", async () => {
@@ -145,13 +145,13 @@ test("CA9 testnet: a missing second provider is reported, not silently skipped",
 test("CA10 the published build is not locked when a key has no gas cap or any-method rights; a null permission is treated as full access", async () => {
   const dir = mkdtempSync(join(tmpdir(), "agent-exit-ca10-"));
   const w = structuredClone(world);
-  const t = w.agents["translator.testnet"].scan_input.chain;
+  const t = w.agents["translator.factory.testnet"].scan_input.chain;
   t.keys = [...t.keys, { public_key: "ed25519:Unknown", permission: { receiver_id: "evil.testnet", method_names: ["drain"], allowance: null } }];
   writeFileSync(join(dir, "world.json"), JSON.stringify(w));
   writeFileSync(join(dir, "accounts.json"), JSON.stringify({ accounts: { "nullperm.testnet": { code_hash: "11111111111111111111111111111111", methods: [], keys: [{ public_key: "ed25519:N", permission: null }] } } }));
   const s = await connect({ AGENT_EXIT_WORLD: join(dir, "world.json") });
   try {
-    const r: any = (await s.call("check_account", { account: "translator.testnet" })).body;
+    const r: any = (await s.call("check_account", { account: "translator.factory.testnet" })).body;
     assert.notEqual(r.verdict, "locked");
     const n = await s.call("check_account", { account: "nullperm.testnet" });
     assert.ok(n.ok && valid("check_account", n), JSON.stringify(n.body));
@@ -180,7 +180,7 @@ test("CA11 testnet: the code hash is read from both providers, and key permissio
 test("CA12 the published build with a key the contract never installed, or a key aimed at another contract, is not locked", async () => {
   const dir = mkdtempSync(join(tmpdir(), "agent-exit-ca12-"));
   const w = structuredClone(world);
-  const t = w.agents["translator.testnet"].scan_input.chain;
+  const t = w.agents["translator.factory.testnet"].scan_input.chain;
   const runner = t.keys[0];
   t.keys = [
     ...t.keys,
@@ -190,7 +190,7 @@ test("CA12 the published build with a key the contract never installed, or a key
   writeFileSync(join(dir, "world.json"), JSON.stringify(w));
   const s = await connect({ AGENT_EXIT_WORLD: join(dir, "world.json") });
   try {
-    const r = await s.call("check_account", { account: "translator.testnet" });
+    const r = await s.call("check_account", { account: "translator.factory.testnet" });
     assert.ok(valid("check_account", r), JSON.stringify(r.body));
     const b: any = r.body;
     assert.equal(b.verdict, "backdoor_risk");

@@ -23,7 +23,7 @@ test("RQ2 old, spread-out revenue keeps its full weight and has no warnings", ()
 test("RQ3 get_earnings returns revenue_quality, schema-valid", async () => {
   const s = await connect({});
   try {
-    const r = await s.call("get_earnings", { agent: "translator.testnet" });
+    const r = await s.call("get_earnings", { agent: "translator.factory.testnet" });
     assert.ok(valid("get_earnings", r));
     assert.equal(r.body.revenue_quality.counted_payers, 6);
     assert.match(r.body.revenue_quality.rule, /count half/);

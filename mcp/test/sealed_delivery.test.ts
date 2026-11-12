@@ -82,7 +82,7 @@ test("SD5 accepting an honest delivery pays the seller 690.00 (700 less the 1% f
 });
 
 test("SD6 disputing a swapped prompt returns the whole price; only the buyer may dispute", async () => {
-  const other = await writer("research.testnet");
+  const other = await writer("research.factory.testnet");
   try {
     const r = await other.call("sealed_delivery", { agent: "swapped.testnet", sale_id: 1, action: "dispute", confirm: true });
     assert.equal((r.body as any).error.code, "CONTRACT_REFUSED");

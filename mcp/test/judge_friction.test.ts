@@ -21,9 +21,9 @@ const offline = () => new Tools(loadConfig(env), new OfflineBackend(WORLD), load
 
 test("JF1 verify_lockout without account checks the recorded seller of the last sale", async () => {
   const t = offline();
-  const buy = await t.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
+  const buy = await t.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true });
   assert.equal(buy.ok, true, JSON.stringify(buy.body));
-  const r = await t.call("verify_lockout", { agent: "translator.testnet" });
+  const r = await t.call("verify_lockout", { agent: "translator.factory.testnet" });
   assert.ok(valid("verify_lockout", r), JSON.stringify(r.body));
   assert.equal(r.ok, true, JSON.stringify(r.body));
   assert.equal(r.body.account, "alice.testnet");
@@ -32,20 +32,20 @@ test("JF1 verify_lockout without account checks the recorded seller of the last 
   assert.match(r.body.account_source, /sale 1/);
   assert.equal(r.body.locked_out, true);
   // Same answer as naming the account.
-  const named = await t.call("verify_lockout", { agent: "translator.testnet", account: "alice.testnet" });
+  const named = await t.call("verify_lockout", { agent: "translator.factory.testnet", account: "alice.testnet" });
   assert.equal(named.body.locked_out, true);
   assert.deepEqual(named.body.checks, r.body.checks);
 });
 
 test("JF1 an explicit account keeps the old output (no default fields)", async () => {
-  const r = await offline().call("verify_lockout", { agent: "translator.testnet", account: "alice.testnet" });
+  const r = await offline().call("verify_lockout", { agent: "translator.factory.testnet", account: "alice.testnet" });
   assert.equal(r.ok, true);
   assert.equal(r.body.account_checked, undefined);
   assert.equal(r.body.account_source, undefined);
 });
 
 test("JF1 before any sale it falls back to the listing's seller and says so", async () => {
-  const r = await offline().call("verify_lockout", { agent: "translator.testnet" });
+  const r = await offline().call("verify_lockout", { agent: "translator.factory.testnet" });
   assert.ok(valid("verify_lockout", r), JSON.stringify(r.body));
   assert.equal(r.body.account_checked, "alice.testnet");
   assert.match(r.body.account_source, /^default: recorded seller \(current listing/);
@@ -53,7 +53,7 @@ test("JF1 before any sale it falls back to the listing's seller and says so", as
 });
 
 test("JF1 no sale and no listing: BAD_INPUT asking for account", async () => {
-  const r = await offline().call("verify_lockout", { agent: "research.testnet" });
+  const r = await offline().call("verify_lockout", { agent: "research.factory.testnet" });
   assert.ok(valid("verify_lockout", r));
   assert.equal(r.ok, false);
   assert.equal(r.body.error.code, "BAD_INPUT");
@@ -108,7 +108,7 @@ test("JF2 every example sequence runs as described in the real wasm", async () =
       if (name === "honest_sale") assert.equal(last.state.owner, "bob.testnet");
       if (name === "cheat") {
         assert.equal(last.ok, false);
-        assert.match(last.result, /SCAN_BLOCKED/);
+        assert.match(last.result, /NotBornClean/);
       }
     } finally {
       await s.close();
@@ -129,12 +129,12 @@ test("JF3 offline UNKNOWN_AGENT lists the world's agents", async () => {
     const r = await t.call(tool, args);
     assert.equal(r.ok, false);
     assert.equal(r.body.error.code, "UNKNOWN_AGENT", tool);
-    assert.match(r.body.error.message, /known agents: cheat\.testnet, research\.testnet, translator\.testnet$/, tool);
+    assert.match(r.body.error.message, /known agents: cheat\.testnet, research\.factory\.testnet, translator\.factory\.testnet$/, tool);
   }
 });
 
 test("JF3 a sealed-delivery unknown agent lists the sealed fixtures' agents once", async () => {
-  const r = await offline().call("sealed_delivery", { agent: "translator.testnet", sale_id: 1, action: "status" });
+  const r = await offline().call("sealed_delivery", { agent: "translator.factory.testnet", sale_id: 1, action: "status" });
   assert.equal(r.body.error.code, "UNKNOWN_AGENT");
   assert.match(r.body.error.message, /known agents: brainy\.testnet, swapped\.testnet$/);
   assert.equal(r.body.error.message.match(/known agents/g).length, 1);

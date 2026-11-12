@@ -17,6 +17,8 @@ export interface Setup {
   goal: string;
   names: { cheat: string; translator: string };
   root?: string;
+  /** The born-clean factory account when the world has one (translator and translator3 live under it). */
+  factory?: string;
 }
 
 /** --network testnet: carol buys on the live world `make scene-7` set up. */
@@ -41,7 +43,7 @@ export function testnetSetup(repo: string, argv: string[] = process.argv, env: N
   } catch (e) {
     return { refused: `${keyFile}: ${(e as Error).message}` };
   }
-  let deploy: { root?: string; agent_code_hash?: string };
+  let deploy: { root?: string; agent_code_hash?: string; factory?: string };
   try {
     deploy = JSON.parse(readFileSync(join(repo, "out", "testnet", "deploy.json"), "utf8"));
   } catch {
@@ -49,7 +51,8 @@ export function testnetSetup(repo: string, argv: string[] = process.argv, env: N
   }
   if (deploy.root !== root) return { refused: `out/testnet/deploy.json is for ${deploy.root}, not ${root}` };
   const buyer = `carol.${root}`;
-  const names = { cheat: `cheat.${root}`, translator: `translator.${root}` };
+  // K8: translator is created by the factory (translator.factory.<root>); cheat is a plain deploy.
+  const names = { cheat: `cheat.${root}`, translator: deploy.factory ? `translator.${deploy.factory}` : `translator.${root}` };
   const serverEnv: Record<string, string> = {
     AGENT_EXIT_NETWORK: "testnet",
     AGENT_EXIT_ALLOW_WRITE: "1",
@@ -63,6 +66,7 @@ export function testnetSetup(repo: string, argv: string[] = process.argv, env: N
     AGENT_EXIT_ADMIN: root,
     AGENT_EXIT_CODE_HASH: deploy.agent_code_hash ?? "",
     AGENT_EXIT_SPEND_FILE: join(repo, "out", "mcp-spend-testnet.json"),
+    ...(deploy.factory ? { AGENT_EXIT_FACTORY: deploy.factory } : {}),
   };
   // fastnear first: rpc.testnet.near.org rate-limits (HTTP 429) a run of
   // a dozen tool calls (night run 2026-11-04).
@@ -76,6 +80,7 @@ export function testnetSetup(repo: string, argv: string[] = process.argv, env: N
     goal: GOAL_TESTNET("carol"),
     names,
     root,
+    ...(deploy.factory ? { factory: deploy.factory } : {}),
   };
 }
 

@@ -49,7 +49,7 @@ async function main(): Promise<number> {
   if (arg("--network") === "testnet") {
     const setup = testnetSetup(REPO);
     if ("refused" in setup) { process.stderr.write(`agent-invests: refused: ${setup.refused}\n`); return 2; }
-    const agents = arg("--agents") ?? `translator3.${setup.root}`;
+    const agents = arg("--agents") ?? `translator3.${setup.factory ?? setup.root}`;
     env = { ...setup.serverEnv, AGENT_EXIT_AGENTS: agents, AGENT_EXIT_SESSION_CAP: "50" };
     investor = setup.buyer;
     network = `testnet (${setup.root}); the MCP server signs as ${investor} with its own key`;
@@ -57,7 +57,7 @@ async function main(): Promise<number> {
     investor = "dave.testnet";
     env = { AGENT_EXIT_ALLOW_WRITE: "1", AGENT_EXIT_ACCOUNT_ID: investor, AGENT_EXIT_SESSION_CAP: "200" };
     network = "offline (recorded fixtures); nothing is sent";
-    // The fixtures recorded one buy: dave takes 10% of research.testnet.
+    // The fixtures recorded one buy: dave takes 10% of research.factory.testnet.
     pctOverride ??= 10;
   }
   const s = await connect(env);

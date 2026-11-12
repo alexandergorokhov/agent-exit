@@ -49,6 +49,7 @@
             "SCAN_UNAVAILABLE",
             "NOT_LISTED",
             "NOT_OWNER",
+            "NOT_BORN_CLEAN",
             "UNKNOWN_AGENT",
             "UNKNOWN_ACCOUNT",
             "SANDBOX_UNAVAILABLE",

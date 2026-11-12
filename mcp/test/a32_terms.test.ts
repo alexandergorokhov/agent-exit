@@ -9,13 +9,13 @@ import { join } from "node:path";
 import { valid, world, writer } from "./helpers.js";
 
 const buy = (extra: Record<string, unknown> = {}) => ({
-  agent: "translator.testnet", max_price: 1000, confirm: true, ...extra,
+  agent: "translator.factory.testnet", max_price: 1000, confirm: true, ...extra,
 });
 
 /** A copy of the offline world with translator changed by `edit`. */
 function worldWith(edit: (t: any) => void): string {
   const w = structuredClone(world);
-  edit(w.agents["translator.testnet"]);
+  edit(w.agents["translator.factory.testnet"]);
   const dir = mkdtempSync(join(tmpdir(), "agent-exit-a32-"));
   const p = join(dir, "world.json");
   writeFileSync(p, JSON.stringify(w));

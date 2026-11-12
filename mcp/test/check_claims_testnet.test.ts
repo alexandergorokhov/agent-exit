@@ -56,7 +56,7 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   const body: any = r.body;
   assert.equal(schemas.validateOutput.check_claims(body), true, JSON.stringify(schemas.validateOutput.check_claims.errors));
   const by = Object.fromEntries(body.claims.map((c: any) => [c.id, c]));
-  for (const id of ["K4", "K6", "K8"]) assert.equal(by[id].pass, true, `${id}: ${by[id].observed}`);
+  for (const id of ["K4", "K6", "K9"]) assert.equal(by[id].pass, true, `${id}: ${by[id].observed}`);
   assert.match(by.K4.observed, /^2\/2 recorded transactions confirmed on chain$/);
   // The live reads were refused by the mock (no RPC answered), so those claims
   // are not checked: never a pass, and never reported as a false claim.
@@ -67,7 +67,7 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   assert.notEqual(body.pass, true);
   assert.equal(body.status, "unverified_network");
   assert.equal(body.failed, 0);
-  assert.equal(by.K8.world, "agentexit4.testnet");
+  assert.equal(by.K9.world, "agentexit4.testnet");
   assert.equal(by.K4.world, data.root);
   assert.ok(urls.every((u) => ARCHIVAL_RPC.includes(u) || cfg.rpc.includes(u)), "only allowlisted hosts");
 
@@ -87,9 +87,9 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   recorded.delete(g);
   try {
     const r3: { ok: boolean; body: any } = await new Tools(cfg, new TestnetBackend(cfg, t3.f, null), schemas).call("check_claims", {});
-    const k8 = r3.body.claims.find((c: any) => c.id === "K8");
-    assert.equal(k8.status, "fail", k8.observed);
-    assert.equal(k8.pass, false);
+    const k9 = r3.body.claims.find((c: any) => c.id === "K9");
+    assert.equal(k9.status, "fail", k9.observed);
+    assert.equal(k9.pass, false);
   } finally {
     recorded.set(g, data.steps["nearai-check"].txs[0]);
   }

@@ -65,7 +65,7 @@ test("BC18 without AGENT_EXIT_FACTORY there is no born check; offline scan_agent
   assert.equal(input.born, undefined);
   const s = await connect({});
   try {
-    const r = await s.call("scan_agent", { agent: "translator.testnet" });
+    const r = await s.call("scan_agent", { agent: "translator.factory.testnet" });
     assert.ok(valid("scan_agent", r));
     const body: any = r.body;
     assert.equal(body.born_clean, null);

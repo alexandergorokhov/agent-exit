@@ -11,10 +11,10 @@ import { loadSchemas, Tools } from "../src/tools.js";
 import { REPO } from "./helpers.js";
 import { connect } from "../src/client.js";
 
-const AGENT = "translator.testnet";
+const AGENT = "translator.factory.testnet";
 const MPC = "v1.signer-prod.testnet";
 // The address and MPC root key the offline fixture world uses for the translator.
-const ADDR = "0xf1e4aa61e3f624e873f4f92217dcee594e092544";
+const ADDR = "0xa31c7c3634658837152f98a470070281ce6fc31d";
 const MPC_PK = "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8";
 const RPC1 = "https://rpc.testnet.near.org";
 const RPC2 = "https://test.rpc.fastnear.com";

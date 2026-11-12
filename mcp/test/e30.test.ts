@@ -12,25 +12,25 @@ for (const env of envs) {
     try {
       for (const [tool, args] of [
         ["list_agents", {}],
-        ["get_earnings", { agent: "translator.testnet" }],
-        ["scan_agent", { agent: "translator.testnet" }],
-        ["verify_lockout", { agent: "translator.testnet", account: "alice.testnet" }],
+        ["get_earnings", { agent: "translator.factory.testnet" }],
+        ["scan_agent", { agent: "translator.factory.testnet" }],
+        ["verify_lockout", { agent: "translator.factory.testnet", account: "alice.testnet" }],
       ] as const) {
         const r = await s.call(tool, args);
         assert.equal(r.ok, true, `${tool}: ${JSON.stringify(r.body)}`);
         assert.ok(valid(tool, r));
       }
       const b = await s.call("buy_agent", {
-        agent: "translator.testnet", max_price: 1000, confirm: true,
+        agent: "translator.factory.testnet", max_price: 1000, confirm: true,
       });
       assert.equal(b.body.error.code, "WRITE_DISABLED");
       // A blocked agent is still reported as blocked: the scan is a read.
       const c = await s.call("buy_agent", { agent: "cheat.testnet", max_price: 600, confirm: true });
       assert.equal(c.body.error.code, "SCAN_BLOCKED", JSON.stringify(c.body));
       assert.equal(c.body.sent, false);
-      const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
+      const l = await s.call("list_for_sale", { agent: "translator.factory.testnet", price: 1200, confirm: true });
       assert.equal(l.body.error.code, "WRITE_DISABLED");
-      const sh = await s.call("buy_share", { agent: "research.testnet", offer_id: 1, pct: 10, max_price: 150, confirm: true });
+      const sh = await s.call("buy_share", { agent: "research.factory.testnet", offer_id: 1, pct: 10, max_price: 150, confirm: true });
       assert.equal(sh.body.error.code, "WRITE_DISABLED");
       const tools = await s.client.listTools();
       const ro = Object.fromEntries(tools.tools.map((t) => [t.name, t.annotations?.readOnlyHint]));

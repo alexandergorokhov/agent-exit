@@ -16,7 +16,7 @@ const WORLD = join(REPO, "fixtures", "mcp", "world.json");
 const scanBin: Record<string, string> = process.env.AGENT_EXIT_SCAN_BIN ? { AGENT_EXIT_SCAN_BIN: process.env.AGENT_EXIT_SCAN_BIN } : {};
 const baseEnv = { ...scanBin, AGENT_EXIT_ALLOW_WRITE: "1", AGENT_EXIT_ACCOUNT_ID: "summarizer.testnet", AGENT_EXIT_RUNNER_PK: RUNNER_PK };
 const mk = (env: Record<string, string>) => new Tools(loadConfig({ ...baseEnv, ...env }), new OfflineBackend(WORLD), loadSchemas(REPO));
-const BUY = { agent: "translator.testnet", max_price: 1000, confirm: true };
+const BUY = { agent: "translator.factory.testnet", max_price: 1000, confirm: true };
 const tmp = () => mkdtempSync(join(tmpdir(), "str-"));
 const day = () => new Date().toISOString().slice(0, 10);
 const spent = (file: string) => BigInt(JSON.parse(readFileSync(file, "utf8"))["summarizer.testnet"]?.[day()] ?? "0");

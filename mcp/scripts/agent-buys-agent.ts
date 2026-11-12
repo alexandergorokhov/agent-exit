@@ -46,19 +46,19 @@ async function main(): Promise<number> {
   const refused = await step("try to buy it anyway: refused before any transaction", "buy_agent", {
     agent: "cheat.testnet", max_price: 600, confirm: true,
   });
-  const earn = await step("translator: real customers?", "get_earnings", { agent: "translator.testnet" });
-  const scan = await step("scan translator", "scan_agent", { agent: "translator.testnet" });
+  const earn = await step("translator: real customers?", "get_earnings", { agent: "translator.factory.testnet" });
+  const scan = await step("scan translator", "scan_agent", { agent: "translator.factory.testnet" });
   const before = await step("seller still in control before the sale", "verify_lockout", {
-    agent: "translator.testnet", account: "alice.testnet",
+    agent: "translator.factory.testnet", account: "alice.testnet",
   });
   const buy = await step("buy translator inside max_price, confirmed", "buy_agent", {
-    agent: "translator.testnet", max_price: 1000, confirm: true,
+    agent: "translator.factory.testnet", max_price: 1000, confirm: true,
   });
   const lock = await step("is the old seller locked out?", "verify_lockout", {
-    agent: "translator.testnet", account: "alice.testnet",
+    agent: "translator.factory.testnet", account: "alice.testnet",
   });
   const resale = await step("resale: list translator again at 1,200.00", "list_for_sale", {
-    agent: "translator.testnet", price: 1200, confirm: true,
+    agent: "translator.factory.testnet", price: 1200, confirm: true,
   });
   await s.close();
 

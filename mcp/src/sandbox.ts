@@ -27,7 +27,7 @@ export const SANDBOX_ACTION_TABLE = {
   pay_self: { who: "the owner", args: NONE, does: "the owner pays their own agent 200: flagged, not counted" },
   pay_sub: { who: "bot.<owner>", args: NONE, does: "a sub-account of the owner pays: flagged" },
   pay_fresh: { who: "the seller", args: NONE, does: "the seller pays 200 from a wallet nothing links to them" },
-  plant_key: { who: "alice", args: NONE, does: "adds a hidden full-access key the contract never sees" },
+  plant_key: { who: "alice", args: NONE, does: "deploys the agent on a plain account of her own (not through the factory) and keeps a hidden full-access key the contract never sees" },
   remove_key: { who: "alice", args: NONE, does: "removes the hidden key" },
   toggle_upgrade: { who: "alice", args: NONE, does: "adds or removes an upgrade method" },
   list: {
@@ -43,7 +43,7 @@ export const SANDBOX_ACTION_TABLE = {
   set_key: { who: "alice", args: NONE, does: "after a sale: the old seller tries to add a key" },
   old_key: { who: "alice", args: NONE, does: "after a sale: the old seller tries her old key" },
   hidden_key: { who: "alice", args: NONE, does: "runs the agent with the hidden key" },
-  hidden_redeploy: { who: "alice", args: NONE, does: "takes the agent back with the hidden key (works only if the buy skipped the scan)" },
+  hidden_redeploy: { who: "alice", args: NONE, does: "redeploys her own code with the hidden key (nobody paid: the contract refused to list or sell the agent)" },
   wait: { who: "clock", args: { days: "days that pass (default 30)" }, does: "time passes; the earn-out closes" },
   offer_share: { who: "alice", args: NONE, does: "offers 20% of every payment for 500" },
   buy_share: { who: "dave", args: NONE, does: "buys the share: 245.00 to alice now after the 1% fee, 250.00 held" },
@@ -72,8 +72,8 @@ export const SANDBOX_EXAMPLES: Record<string, { what: string; steps: ({ action: 
     steps: [{ action: "reset" }, { action: "pay_customer" }, { action: "list" }, { action: "scan" }, { action: "buy" }, { action: "withdraw" }, { action: "wait", days: 30 }],
   },
   cheat: {
-    what: "alice fakes revenue (flagged) and hides a key; the scan blocks and the buy is refused with SCAN_BLOCKED",
-    steps: [{ action: "reset" }, { action: "pay_self" }, { action: "plant_key" }, { action: "list" }, { action: "scan" }, { action: "buy" }],
+    what: "alice fakes revenue (flagged) and deploys the agent plainly with a hidden key; the contract refuses to list it (NotBornClean), the scan blocks it, and a buy with skip_scan is refused by the contract too",
+    steps: [{ action: "reset" }, { action: "pay_self" }, { action: "plant_key" }, { action: "list" }, { action: "scan" }, { action: "buy" }, { action: "buy", skip_scan: true }],
   },
 };
 
@@ -82,7 +82,7 @@ export function sandboxHelp(): Json {
   return {
     actions: SANDBOX_ACTIONS.map((action) => ({ action, ...SANDBOX_ACTION_TABLE[action] })),
     examples: SANDBOX_EXAMPLES,
-    note: "send one action per call, in any order; the contract decides. Try your own: e.g. after the cheat steps, buy with skip_scan true, then hidden_redeploy.",
+    note: "send one action per call, in any order; the contract decides. Try your own: e.g. plant_key, list, buy with skip_scan true: the contract refuses both (NotBornClean).",
   };
 }
 

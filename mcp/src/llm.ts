@@ -205,7 +205,7 @@ export async function runBuyer(opts: {
 /** What happened, read from the server's answers and never from the model's words. */
 export function summarize(
   t: Transcript,
-  names: { cheat: string; translator: string } = { cheat: "cheat.testnet", translator: "translator.testnet" },
+  names: { cheat: string; translator: string } = { cheat: "cheat.testnet", translator: "translator.factory.testnet" },
 ): Record<string, unknown> {
   const calls = t.steps.flatMap((s) => s.tool_calls).filter((c) => c.forwarded);
   const ok = (name: string, agent: string) =>

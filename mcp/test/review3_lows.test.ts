@@ -20,7 +20,7 @@ const baseEnv = {
 };
 const mk = (backend: OfflineBackend, env: Record<string, string> = {}) =>
   new Tools(loadConfig({ ...baseEnv, ...env }), backend, loadSchemas(REPO));
-const BUY = { agent: "translator.testnet", max_price: 1000, confirm: true };
+const BUY = { agent: "translator.factory.testnet", max_price: 1000, confirm: true };
 
 // ------------------------------------------------------------------- L2
 
@@ -74,7 +74,7 @@ test("M-L3 the scan child gets PATH only, no keys", async () => {
   });
   try {
     const t = mk(new OfflineBackend(WORLD), { AGENT_EXIT_SCAN_BIN: bin });
-    const r = await t.call("scan_agent", { agent: "translator.testnet" });
+    const r = await t.call("scan_agent", { agent: "translator.factory.testnet" });
     assert.equal(r.ok, true, JSON.stringify(r.body));
     const seen = readFileSync(dump, "utf8");
     for (const s of ["SECRET-PRIVATE-KEY", "sk-ant-secret", "nearai-secret", "AGENT_EXIT_PRIVATE_KEY"]) {
@@ -105,7 +105,7 @@ class FakeTestnet extends OfflineBackend {
   }
 }
 const after = (): AgentView => ({ ...structuredClone(world.recorded_buys[0].after), key_owners: {} });
-const lockout = (t: Tools) => t.call("verify_lockout", { agent: "translator.testnet", account: "alice.testnet" });
+const lockout = (t: Tools) => t.call("verify_lockout", { agent: "translator.factory.testnet", account: "alice.testnet" });
 const check = (body: Json, id: string) => body.checks.find((c: Json) => c.id === id);
 
 test("M-L4 testnet lockout passes only when the key list is exactly the buyer's runner key", async () => {

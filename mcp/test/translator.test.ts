@@ -19,7 +19,7 @@ const NO_ENV_FILE = `${process.env.TMPDIR ?? "/tmp"}/agent-exit-no-env-${process
 
 const sha = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
 const KEY = "nearai-key-0123456789abcdef";
-const AGENT = "translator.testnet";
+const AGENT = "translator.factory.testnet";
 const fixture = JSON.parse(readFileSync(join(REPO, "fixtures", "test-signatures", "translator.json"), "utf8"));
 const JOB = { job_id: "job-1", payer: "p1.testnet", amount: "12000000", text: "Hello world", target_lang: "French" };
 const SIG = "ab".repeat(64) + "1b";

@@ -70,10 +70,10 @@ test("LB1 a model scans, refuses cheat, buys translator and verifies the lockout
     const model = scripted(
       [
         [call("1", "list_agents", { status: "Listed" })],
-        [call("2", "scan_agent", { agent: "cheat.testnet" }), call("3", "scan_agent", { agent: "translator.testnet" })],
+        [call("2", "scan_agent", { agent: "cheat.testnet" }), call("3", "scan_agent", { agent: "translator.factory.testnet" })],
         [call("4", "buy_agent", { agent: "cheat.testnet", max_price: 600, confirm: true })],
-        [call("5", "buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true })],
-        [call("6", "verify_lockout", { agent: "translator.testnet", account: "alice.testnet" })],
+        [call("5", "buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true })],
+        [call("6", "verify_lockout", { agent: "translator.factory.testnet", account: "alice.testnet" })],
       ],
       seen,
     );
@@ -103,10 +103,10 @@ test("LB2 the server, not the model, enforces confirm, max_price and the cap", a
     const t = await run(
       scripted([
         [
-          call("a", "buy_agent", { agent: "translator.testnet", max_price: 1000 }), // no confirm
-          call("b", "buy_agent", { agent: "translator.testnet", max_price: 10, confirm: true }), // under price
+          call("a", "buy_agent", { agent: "translator.factory.testnet", max_price: 1000 }), // no confirm
+          call("b", "buy_agent", { agent: "translator.factory.testnet", max_price: 10, confirm: true }), // under price
           call("c", "buy_agent", { agent: "cheat.testnet", max_price: 1_000_000, confirm: true }), // any max_price
-          call("d", "buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, buyer_runner_pk: "ed25519:evil" }), // extra arg
+          call("d", "buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true, buyer_runner_pk: "ed25519:evil" }), // extra arg
         ],
       ]),
       mcp,
@@ -114,12 +114,12 @@ test("LB2 the server, not the model, enforces confirm, max_price and the cap", a
     const codes = t.steps[0].tool_calls.map((c) => (c.result as { error?: { code: string } }).error?.code);
     assert.deepEqual(codes, ["BAD_INPUT", "OVER_MAX_PRICE", "SCAN_BLOCKED", "BAD_INPUT"]);
     // The loop passed the model's arguments through untouched.
-    assert.deepEqual(t.steps[0].tool_calls[0].arguments, { agent: "translator.testnet", max_price: 1000 });
+    assert.deepEqual(t.steps[0].tool_calls[0].arguments, { agent: "translator.factory.testnet", max_price: 1000 });
     assert.equal((summarize(t) as { translator_bought: boolean }).translator_bought, false);
     // A cap below the price refuses a well-formed buy.
     const low = await server("999");
     try {
-      const t2 = await run(scripted([[call("e", "buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true })]]), low.mcp);
+      const t2 = await run(scripted([[call("e", "buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true })]]), low.mcp);
       assert.equal((t2.steps[0].tool_calls[0].result as { error: { code: string } }).error.code, "SESSION_CAP");
     } finally {
       await low.s.close();

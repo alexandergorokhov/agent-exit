@@ -74,15 +74,17 @@ test("SB3 pay from revenue: nothing now, and faking revenue after the sale costs
   }
 });
 
-test("SB4 skipping the scan lets the hidden key take the agent back (why the scan is the defence)", async () => {
+test("SB4 a plain deploy cannot be listed or bought even with the scan skipped (the contract is the defence)", async () => {
   const { s, go } = await session();
   try {
     await go("reset");
     await go("plant_key");
-    await go("list");
-    assert.equal((await go("buy", { skip_scan: true })).ok, true);
-    const t = await go("hidden_redeploy");
-    assert.equal(t.state.taken_over, true);
+    const l = await go("list");
+    assert.match(String(l.result), /NotBornClean/);
+    const b = await go("buy", { skip_scan: true });
+    assert.match(String(b.result), /NotBornClean/);
+    assert.notEqual(b.state.owner, "bob.testnet");
+    assert.notEqual(b.state.taken_over, true);
   } finally {
     await s.close();
   }

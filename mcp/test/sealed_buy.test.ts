@@ -12,12 +12,12 @@ test("SC13 a sealed-config listing: the buy names a one-time key; the secret sta
   const dir = mkdtempSync(join(tmpdir(), "agent-exit-sc13-"));
   const w = structuredClone(world);
   const commit = { hash: "a".repeat(64), bytes: 120 };
-  w.agents["translator.testnet"].listing.config = commit;
+  w.agents["translator.factory.testnet"].listing.config = commit;
   const wf = join(dir, "world.json");
   writeFileSync(wf, JSON.stringify(w));
   const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
   try {
-    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
+    const r = await s.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     assert.ok(valid("buy_agent", r), JSON.stringify(r.body));
     const sc = (r.body as any).sealed_config;
     assert.equal(sc.hash, commit.hash);
@@ -40,26 +40,26 @@ test("SC13b a retry after a buy that was not sent reuses the same one-time key; 
   const dir = mkdtempSync(join(tmpdir(), "agent-exit-sc13b-"));
   const w = structuredClone(world);
   const commit = { hash: "b".repeat(64), bytes: 120 };
-  w.agents["translator.testnet"].listing.config = commit;
-  const v = w.agents["translator.testnet"].listing_version ?? w.agents["translator.testnet"].listing.listing_version;
+  w.agents["translator.factory.testnet"].listing.config = commit;
+  const v = w.agents["translator.factory.testnet"].listing_version ?? w.agents["translator.factory.testnet"].listing.listing_version;
   const wf = join(dir, "world.json");
   writeFileSync(wf, JSON.stringify(w));
   // A key file left by an earlier attempt at the same listing version.
-  const file = join(dir, `delivery-translator.testnet-v${Number(v)}.json`);
-  writeFileSync(file, JSON.stringify({ agent: "translator.testnet", listing_version: v, commit, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
+  const file = join(dir, `delivery-translator.factory.testnet-v${Number(v)}.json`);
+  writeFileSync(file, JSON.stringify({ agent: "translator.factory.testnet", listing_version: v, commit, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
   const s = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend.json") });
   try {
-    const r = await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
+    const r = await s.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     assert.ok(valid("buy_agent", r), JSON.stringify(r.body));
     assert.equal((r.body as any).sealed_config.delivery_pk, "c".repeat(64), "the earlier key is reused, not a crash");
   } finally {
     await s.close();
   }
   // A file for another commitment is replaced by a fresh key.
-  writeFileSync(file, JSON.stringify({ agent: "translator.testnet", listing_version: v, commit: { hash: "e".repeat(64), bytes: 1 }, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
+  writeFileSync(file, JSON.stringify({ agent: "translator.factory.testnet", listing_version: v, commit: { hash: "e".repeat(64), bytes: 1 }, delivery_pk: "c".repeat(64), delivery_sk: "d".repeat(64) }), { mode: 0o600 });
   const s2 = await writer("summarizer.testnet", { AGENT_EXIT_WORLD: wf, AGENT_EXIT_SPEND_FILE: join(dir, "spend2.json") });
   try {
-    const r = await s2.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
+    const r = await s2.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true, accept_no_preview: true });
     const pk = (r.body as any).sealed_config.delivery_pk;
     assert.notEqual(pk, "c".repeat(64));
     assert.equal(JSON.parse(readFileSync(file, "utf8")).delivery_pk, pk);

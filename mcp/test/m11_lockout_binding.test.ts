@@ -34,8 +34,8 @@ async function buyThen(lockArgs: Record<string, unknown>) {
     const t = await runBuyer({
       model: scripted([
         [call("1", "scan_agent", { agent: "cheat.testnet" })],
-        [call("2", "scan_agent", { agent: "translator.testnet" })],
-        [call("3", "buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true })],
+        [call("2", "scan_agent", { agent: "translator.factory.testnet" })],
+        [call("3", "buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true })],
         [call("4", "verify_lockout", lockArgs)],
       ]),
       mcp,
@@ -51,7 +51,7 @@ async function buyThen(lockArgs: Record<string, unknown>) {
 test("M11 a key-less account with no probes is inconclusive, not locked out", async () => {
   const s = await writer();
   try {
-    const r = await s.call("verify_lockout", { agent: "translator.testnet", account: "nobody.testnet", account_keys: [] });
+    const r = await s.call("verify_lockout", { agent: "translator.factory.testnet", account: "nobody.testnet", account_keys: [] });
     assert.ok(valid("verify_lockout", r));
     assert.equal(r.body.locked_out, false, JSON.stringify(r.body).slice(0, 400));
     assert.equal(r.body.inconclusive, true);
@@ -61,19 +61,19 @@ test("M11 a key-less account with no probes is inconclusive, not locked out", as
 });
 
 test("M11 the recorded seller is still proven locked out", async () => {
-  const sum = await buyThen({ agent: "translator.testnet", account: "alice.testnet" });
+  const sum = await buyThen({ agent: "translator.factory.testnet", account: "alice.testnet" });
   assert.equal(sum.seller_locked_out, true);
   assert.equal(sum.pass, true);
 });
 
 test("M11 a lockout of some other account does not count", async () => {
-  const sum = await buyThen({ agent: "translator.testnet", account: "nobody.testnet", account_keys: [] });
+  const sum = await buyThen({ agent: "translator.factory.testnet", account: "nobody.testnet", account_keys: [] });
   assert.equal(sum.seller_locked_out, false);
   assert.equal(sum.pass, false);
 });
 
 test("M11 a lockout on another agent does not count", async () => {
-  const sum = await buyThen({ agent: "research.testnet", account: "alice.testnet" });
+  const sum = await buyThen({ agent: "research.factory.testnet", account: "alice.testnet" });
   assert.equal(sum.seller_locked_out, false);
   assert.equal(sum.pass, false);
 });

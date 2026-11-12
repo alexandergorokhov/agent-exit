@@ -87,6 +87,17 @@
           "frozen": {
             "type": "boolean"
           },
+          "born_clean": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "get_status.born_clean: the pinned factory created this agent (a plain deploy cannot be listed or sold: NotBornClean); null = the contract did not say"
+          },
           "shares_pct": {
             "type": "number",
             "minimum": 0,

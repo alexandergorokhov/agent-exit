@@ -5,7 +5,7 @@
   "description": "Any NEAR account id (offline: the Agent Exit agents and the illustrative fixtures in fixtures/mcp/accounts.json).",
   "type": "object",
   "properties": {
-    "account": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9._-]+$", "description": "e.g. translator.testnet; on testnet any .testnet account or an implicit account (64 hex, or 0x + 40 hex)" }
+    "account": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-z0-9._-]+$", "description": "e.g. translator.factory.testnet; on testnet any .testnet account or an implicit account (64 hex, or 0x + 40 hex)" }
   },
   "required": ["account"],
   "additionalProperties": false

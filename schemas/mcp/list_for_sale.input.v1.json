@@ -10,7 +10,7 @@
       "minLength": 2,
       "maxLength": 64,
       "pattern": "^[a-z0-9._-]+$",
-      "description": "the agent account, e.g. translator.testnet"
+      "description": "the agent account, e.g. translator.factory.testnet"
     },
     "price": {
       "type": "number",

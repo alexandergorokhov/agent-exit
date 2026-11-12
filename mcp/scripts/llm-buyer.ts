@@ -143,7 +143,7 @@ function offlineSetup(): Setup {
     buyer: "summarizer.testnet",
     buyerName: "summarizer",
     goal: GOAL,
-    names: { cheat: "cheat.testnet", translator: "translator.testnet" },
+    names: { cheat: "cheat.testnet", translator: "translator.factory.testnet" },
   };
 }
 

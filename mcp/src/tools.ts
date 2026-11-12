@@ -45,7 +45,7 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   list_for_sale: "List an agent you own for sale (resale). WRITE: needs confirm: true.",
   list_offers: "Open share offers: slices of an agent's future earnings (pct of every payment, price, end date, what is still open), next to the agent's counted earnings. Read-only.",
   buy_share: "Buy part of a share offer: that % of every future customer payment, until the slice ends. pct must be at least the offer's min_part_pct from list_offers (else SHARE_TOO_SMALL). WRITE: needs confirm: true and max_price; runs the investor scan first and refuses on any finding. Half the price is held and released to the owner only by counted payments.",
-  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share, a swapped sealed prompt refunded in full: K1-K7) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes, reads the live agents and adds K8 (a real NEAR AI signature, gate G6, on the previous world agentexit4). Read-only; changes nothing in this server. Returns per claim status pass, fail or unverified_network (testnet: no RPC answered, so not checked) and the tool calls to repeat it yourself.",
+  check_claims: "Start here if you are judging or reviewing Agent Exit: checks the README's main claims (earnings counted by who paid, the scan blocks a hidden key, a blocked buy moves no money, the one-transaction sale with the 1% fee, the old seller locked out, an investor's share, a swapped sealed prompt refunded in full, a plain-deploy agent refused at the listing: K1-K8) by running the other tools in a private offline sandbox recorded from the real contract code; on testnet it re-reads every recorded transaction from archival nodes, reads the live agents and adds K8 again on chain once its scene is recorded (the cheat's list_for_sale refused NotBornClean) and K9 (a real NEAR AI signature, gate G6, on the previous world agentexit4). Read-only; changes nothing in this server. Returns per claim status pass, fail or unverified_network (testnet: no RPC answered, so not checked) and the tool calls to repeat it yourself.",
   check_account: "Who can take this account? A read-only check of ANY NEAR account (an AI agent's wallet, a bot, a vault), not only Agent Exit agents: every access key and what it can do (a full-access key can replace the code, delete keys and move all NEAR without the contract seeing it), function-call keys that may call every method or have no allowance cap, the deployed code hash and methods that can change the code or the keys. Verdict: locked (only the contract's own rules act), key_controlled, or backdoor_risk (code plus a full-access key or an upgrade path). On testnet it reads two RPC providers and flags any disagreement.",
   sandbox: "Live sandbox, any action in any order: the real contract state machine (contracts/agent-core) and the buyer's scan (tools/scan) compiled to wasm from this repo, the same file the demo page runs. Act as alice (seller), bob (buyer), dave (investor) or a customer: fake revenue, hide a backdoor key, list (optionally paid only from revenue), scan, buy with or without the scan, try every way back in, let the earn-out close, sell shares. Each answer is what the contract code returned, with its error name. In-memory only: nothing touches a chain. Start with action help (every action, its args and example sequences) or reset.",
   sealed_delivery: "Before a buy, action preview shows (or, with confirm, requests) random chunks of the listed sealed config that the seller must prove against the committed Merkle root; buy_agent refuses a listing with a root until its preview is proven. After buying an agent that sold its sealed config (its off-chain brain: prompt, model, tools, keys to rotate): status reads the delivery; open decrypts it with your one-time key (written by buy_agent, never shown) and checks it against the commitment; accept pays the seller the held upfront part and starts earn-out releases; dispute reveals the one-time key on-chain so the contract decrypts and proves a swapped bundle, and the whole price comes back. accept and dispute are WRITE (confirm: true) and are refused before sending when open says they would be wrong. If you do nothing for 7 days after delivery, the seller is paid anyway.",
@@ -58,15 +58,15 @@ export const JUDGE_TOUR = {
   description: "A 5-minute guided check of Agent Exit for a judge or reviewer: verify the README's claims yourself with the tools, then try to break it.",
   text: [
     "You are reviewing Agent Exit, a capital market for AI agents on NEAR: invest in a share of an agent's earnings, or buy the whole agent, with the earnings and the handover checked on-chain. All money is xUSD-FAKE (a test token).",
-    "Steps 1-7 use the offline server (agent-exit in .mcp.json; you act as summarizer.testnet). The account names in them (cheat.testnet, translator.testnet, alice.testnet, research.testnet ...) exist only offline.",
-    "1. Call check_claims. Offline it re-runs the README's main claims K1-K7 in a private sandbox of the real contract code and reports pass or fail with the exact calls.",
+    "Steps 1-7 use the offline server (agent-exit in .mcp.json; you act as summarizer.testnet). The account names in them (cheat.testnet, translator.factory.testnet, alice.testnet, research.factory.testnet ...) exist only offline.",
+    "1. Call check_claims. Offline it re-runs the README's main claims K1-K8 in a private sandbox of the real contract code and reports pass or fail with the exact calls.",
     "2. Repeat at least two claims yourself with the listed calls, and compare the numbers.",
-    "3. Try to break it: buy cheat.testnet anyway; buy translator.testnet without confirm or above max_price; list translator.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
-    "4. Buy translator.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
-    "5. Invest, in the sandbox tool (works as shipped, no restart): sandbox action reset, then offer_share (alice offers 20% of every payment for 500), buy_share (dave pays 500: 245.00 to alice now after the 1% fee, 250.00 held), pay_customer (a customer pays 25: 5.00 to dave, 5.00 of the held part released to alice), claim_share (5.00 sent to dave). Optional: list_offers shows research.testnet offer 1; the tool buy_share replays only its recorded buy, as dave.testnet, which needs AGENT_EXIT_ACCOUNT_ID=dave.testnet in .mcp.json and a restart (as summarizer.testnet it answers OFFLINE_NO_RECORDING).",
-    "6. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key, list, buy with skip_scan true, hidden_redeploy; or list with pay_from_revenue true, buy, pay_fresh.",
+    "3. Try to break it: buy cheat.testnet anyway; list_for_sale on cheat.testnet is refused NotBornClean (a plain deploy); buy translator.factory.testnet without confirm or above max_price; list translator.factory.testnet for sale before you own it. Each must be refused before anything is sent (sent: false).",
+    "4. Buy translator.factory.testnet (max_price 1000, confirm true), then verify_lockout with account alice.testnet: the old seller must be locked out.",
+    "5. Invest, in the sandbox tool (works as shipped, no restart): sandbox action reset, then offer_share (alice offers 20% of every payment for 500), buy_share (dave pays 500: 245.00 to alice now after the 1% fee, 250.00 held), pay_customer (a customer pays 25: 5.00 to dave, 5.00 of the held part released to alice), claim_share (5.00 sent to dave). Optional: list_offers shows research.factory.testnet offer 1; the tool buy_share replays only its recorded buy, as dave.testnet, which needs AGENT_EXIT_ACCOUNT_ID=dave.testnet in .mcp.json and a restart (as summarizer.testnet it answers OFFLINE_NO_RECORDING).",
+    "6. Try your own attack in the sandbox tool (the real contract core and scan compiled to wasm, any action in any order): for example reset, plant_key (a plain deploy with a hidden key), list (the contract refuses: NotBornClean), buy with skip_scan true (refused too, nothing paid); or list with pay_from_revenue true, buy, pay_fresh.",
     "7. check_account on any NEAR account (offline: trading-bot.testnet, locked-vault.testnet) names every key and code-change method that lets someone other than the owner move funds or swap the code. The sealed prompt: sealed_delivery on swapped.testnet sale 1, open (matches false), then dispute with confirm true: refund_to_buyer 1000.00; brainy.testnet: open, accept.",
-    "8. Live testnet (agent-exit-testnet, read-only, needs RPC): check_claims gives K1-K8 (K8 = gate G6 on the previous world agentexit4). A claim with status unverified_network was not checked because no RPC answered: that is not a failure. scan_agent born1.factory.agentexit5.testnet shows born_clean true; list_agents and list_offers show the Exchange agents translate-pro, research-desk and pump-bot (.factory.agentexit5.testnet).",
+    "8. Live testnet (agent-exit-testnet, read-only, needs RPC): check_claims gives K1-K9 (K8 = NotBornClean on chain, shown once recorded; K9 = gate G6 on the previous world agentexit4). A claim with status unverified_network was not checked because no RPC answered: that is not a failure. scan_agent born1.factory.agentexit5.testnet shows born_clean true; list_agents and list_offers show the Exchange agents translate-pro, research-desk and pump-bot (.factory.agentexit5.testnet).",
     "9. No RPC? Every testnet transaction is recorded in out/scenes/*.json (txs[].explorer is its NearBlocks link); docs/PROOF.md maps each claim to its offline check and its recorded transaction.",
     "10. Report a table: claim, what you called, what you saw, pass or fail, and anything that did not match the README.",
   ].join("\n"),
@@ -899,6 +899,28 @@ export class Tools {
       `fake: open ${fo.ok ? "matches" : "does not match"}, dispute ${fd.ok ? "ok" : "refused"}, bob claimable ${fd.view.claimable?.bob}, alice ${fake.alice} -> ${fd.view.claimable?.alice}; honest: dispute ${hd.ok ? "ok" : `refused: ${hd.text.slice(0, 60)}`}`,
       !fo.ok && fd.ok && fd.view.claimable?.bob === "1,000.00" && fd.view.claimable?.alice === fake.alice && !hd.ok && /ConfigMatches/.test(hd.text));
 
+    // K8: the contract refuses to list (and to sell) an agent that the pinned
+    // factory did not create. Three views of the same rule: the recorded
+    // contract refusal (fixtures/mcp/world.json), the list_for_sale tool, and
+    // the real contract core in a fresh sandbox (web/playground.wasm).
+    const rr = (world.recorded_refusals ?? [])[0] ?? {};
+    const alice = sandbox(String(rr.seller ?? "alice.testnet"));
+    const lc = await alice.call("list_for_sale", { agent: rr.agent ?? "cheat.testnet", price: Number(rr.price ?? 0) / 1e6, confirm: true });
+    const la0 = await buyer.call("list_agents", {});
+    const rows = (la0.body.agents ?? []) as Json[];
+    const bcOf = (id: string) => rows.find((x) => x.agent === id)?.born_clean;
+    sx.call({ op: "reset" });
+    sx.call({ op: "plant_key" });
+    const sl = sx.call({ op: "list" });
+    const sb = sx.call({ op: "buy", skip_scan: true });
+    const refusedText = (r: Json) => String(r.last?.text ?? "");
+    add("K8", "The contract refuses to list an agent that was not born clean (NotBornClean), so no buy can happen without the guarantee",
+      [`list_agents {}`, `list_for_sale {"agent":"${rr.agent}","price":${Number(rr.price ?? 0) / 1e6},"confirm":true} as ${rr.seller}`, "sandbox actions: reset, plant_key, list, buy (skip_scan)"],
+      "cheat (plain deploy, born_clean false): list_for_sale refused NotBornClean, a buy sent anyway refunded; translator born_clean true",
+      `born_clean: cheat ${bcOf(String(rr.agent))}, translator ${bcOf(rb.agent)}; recorded refusal ${rr.error}, buy anyway refunded ${rr.buy_anyway_unused === rr.price}; tool ${errCode(lc)}; sandbox list: ${refusedText(sl).slice(0, 60)}; sandbox buy: ${refusedText(sb).slice(0, 60)}`,
+      rr.error === "NotBornClean" && rr.buy_anyway_unused === rr.price && bcOf(String(rr.agent)) === false && bcOf(rb.agent) === true &&
+        !lc.ok && lc.body.error?.code === "NOT_BORN_CLEAN" && /NotBornClean/.test(refusedText(sl)) && /NotBornClean/.test(refusedText(sb)));
+
     const passed = claims.filter((x) => x.pass).length;
     return {
       ...this.base("check_claims"),
@@ -967,7 +989,10 @@ export class Tools {
       claims.push({ id, claim, calls: calls.slice(0, 6).map((c) => c.slice(0, 160)), expected, observed: untrusted(observed).slice(0, 300), pass: status === "unverified_network" ? null : pass, status, world: world.slice(0, 64) });
     };
     const nb = (h: string[]) => h.slice(0, 2).map((x) => `tx ${x}`);
-    const a = (n: string) => `${n}.${root}`;
+    // A factory-born agent is `name.factory.<root>` (K8); the recorded
+    // transactions name it. Anything else is `name.<root>`.
+    const recorded = new Set<string>(Object.values(data.steps as Json).flatMap((st) => ((st as Json).txs ?? []) as Json[]).flatMap((t) => [t.receiver, t.by]).filter((x): x is string => typeof x === "string"));
+    const a = (n: string) => [...recorded].find((x) => x.startsWith(`${n}.`) && x.endsWith(`.${root}`) && x.split(".").length <= 4 && !x.startsWith(`${n}.${root}.`) && x.slice(n.length + 1, -(root.length + 1)).split(".").every((p) => p === "factory")) ?? `${n}.${root}`;
 
     const inv = await confirm("invest", (t) => /pays translator3/.test(String(t.label)));
     const e3 = await live("get_earnings", { agent: a("translator3") });
@@ -1014,11 +1039,28 @@ export class Tools {
         sp.n > 0 && sp.ok === sp.n && disp?.ok === true, [sp]);
     }
 
+    // K8 (scene 4 of the redeployed world): the contract refused to list the
+    // plain-deploy cheat, and a buy sent to it anyway was refunded; the agents
+    // that were sold are factory-born. Shown once that scene is recorded.
+    const chTxs = ((data.steps.cheat?.txs ?? []) as Json[]);
+    if (chTxs.some((t) => t.method === "list_for_sale" && t.ok === false && /NotBornClean/.test(String(t.error)))) {
+      const ch = await confirm("cheat");
+      const lr = await live("list_agents", {});
+      const rows = ((lr.agents ?? []) as Json[]);
+      const bc = (id: string) => rows.find((x) => x.agent === id)?.born_clean;
+      const sold = [a("translator"), a("translator3")];
+      const okLive = bc(a("cheat")) === false && sold.every((id) => bc(id) !== false);
+      add("K8", "The contract refuses to list an agent that was not born clean (NotBornClean): the cheat's list_for_sale and a buy sent to it anyway were refused on chain, and the agents that were sold were created by the factory", nb(ch.txs),
+        "the refused list_for_sale and the refunded buy confirmed as recorded; cheat born_clean false, the sold agents not false (live)",
+        `${ch.text}; live: cheat born_clean ${bc(a("cheat"))}, ${sold.map((id) => `${id.split(".")[0]} ${bc(id)}`).join(", ")}`,
+        ch.n > 0 && ch.ok === ch.n && okLive, [ch, seen(lr, okLive)]);
+    }
+
     const g6 = await confirm("nearai-check");
     // G6 was recorded on the previous world (agentexit4): name it from the signer.
     const g6by = String(((data.steps["nearai-check"]?.txs ?? []) as Json[])[0]?.by ?? root);
     const g6world = g6by.split(".").slice(-2).join(".");
-    add("K8", `A real NEAR AI Cloud signature was checked by the contract (gate G6, world ${g6world.slice(0, 40)})`, nb(g6.txs),
+    add("K9", `A real NEAR AI Cloud signature was checked by the contract (gate G6, world ${g6world.slice(0, 40)})`, nb(g6.txs),
       "the signer registration and the verified payment confirmed", g6.text, g6.n > 0 && g6.ok === g6.n, [g6], g6world);
 
     const passed = claims.filter((x) => x.status === "pass").length;
@@ -1061,6 +1103,7 @@ export class Tools {
         verified: usd(e.verified),
         flagged: usd(e.flagged),
         frozen: v.status.frozen,
+        born_clean: typeof v.status.born_clean === "boolean" ? v.status.born_clean : null,
       });
     }
     return { ...this.base("list_agents"), agents: out };
@@ -1181,7 +1224,20 @@ export class Tools {
     // Price, listing version and terms all come from this one read (A32);
     // the scan checks them again and the contract refuses a changed version.
     const v = await this.backend.agent(agent);
-    if (v.status.status !== "Listed" || !v.listing) throw new ToolError("NOT_LISTED", `${agent} is ${statusName(v.status.status)}, not listed`);
+    if (v.status.status !== "Listed" || !v.listing) {
+      // K8: an agent the pinned factory did not create can never be listed, so
+      // say what the scan says about it rather than only "not listed".
+      if (v.status.born_clean === false) {
+        const r = await this.scan(agent, {}).catch(() => null);
+        if (r && r.verdict === "blocked") {
+          throw new ToolError("SCAN_BLOCKED", `scan verdict ${r.verdict}: ${agent} was not created by the pinned factory (NotBornClean), so the contract refuses to list or sell it; nothing was sent`, {
+            findings: findings(r).filter((f) => f.severity === "block"),
+            untrusted_notice: UNTRUSTED_NOTICE,
+          });
+        }
+      }
+      throw new ToolError("NOT_LISTED", `${agent} is ${statusName(v.status.status)}, not listed`);
+    }
     const quoted = v.listing;
     const price = BigInt(quoted.price);
     const min = this.minTerms(a);
@@ -1427,6 +1483,11 @@ export class Tools {
     }
     const v = await this.backend.agent(agent);
     if (v.status.owner !== seller) throw new ToolError("NOT_OWNER", `${seller} does not own ${agent} (owner: ${acct(v.status.owner)})`);
+    // K8: the contract refuses to list an agent the pinned factory did not
+    // create (NotBornClean). Say so before sending a transaction that must fail.
+    if (v.status.born_clean === false) {
+      throw new ToolError("NOT_BORN_CLEAN", `NotBornClean: ${agent} was not created by the pinned factory, so the contract refuses to list or sell it (it may hold a full-access key no contract can list). Nothing was sent.`);
+    }
     const r = await this.backend.list(agent, seller, units(price));
     const l = r.listing;
     return {

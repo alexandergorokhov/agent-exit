@@ -16,7 +16,7 @@ import { REPO, RUNNER_PK } from "./helpers.js";
 const WORLD = join(REPO, "fixtures", "mcp", "world.json");
 const baseEnv = { AGENT_EXIT_ALLOW_WRITE: "1", AGENT_EXIT_ACCOUNT_ID: "summarizer.testnet", AGENT_EXIT_RUNNER_PK: RUNNER_PK };
 const mk = (env: Record<string, string>, backend = new OfflineBackend(WORLD)) => new Tools(loadConfig({ ...baseEnv, ...env }), backend, loadSchemas(REPO));
-const BUY = { agent: "translator.testnet", max_price: 1000, confirm: true };
+const BUY = { agent: "translator.factory.testnet", max_price: 1000, confirm: true };
 const tmp = () => mkdtempSync(join(tmpdir(), "m4-"));
 
 /** An offline world that counts every read, so a refusal can be shown to happen first. */
@@ -45,7 +45,7 @@ test("M4-L4a on testnet, buy_agent only buys agents in AGENT_EXIT_AGENTS, before
   assert.equal(b.reads, 0);
   // in the list: gets past the check
   b = new Counting(WORLD);
-  await mk({ ...env, AGENT_EXIT_AGENTS: "translator.testnet", AGENT_EXIT_SPEND_FILE: join(tmp(), "s.json") }, b).call("buy_agent", BUY);
+  await mk({ ...env, AGENT_EXIT_AGENTS: "translator.factory.testnet", AGENT_EXIT_SPEND_FILE: join(tmp(), "s.json") }, b).call("buy_agent", BUY);
   assert.ok(b.reads > 0);
   // offline keeps its fixtures: no list needed
   r = await mk({}).call("buy_agent", BUY);

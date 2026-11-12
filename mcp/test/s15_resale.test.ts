@@ -8,25 +8,25 @@ test("S15 resale through MCP", async () => {
   try {
     // Before the sale alice owns translator, but it is already listed and
     // this price was not recorded: nothing is faked.
-    const r = await alice.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
+    const r = await alice.call("list_for_sale", { agent: "translator.factory.testnet", price: 1200, confirm: true });
     assert.equal(r.body.error.code, "OFFLINE_NO_RECORDING");
   } finally {
     await alice.close();
   }
   const s = await writer();
   try {
-    const nc = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: false });
+    const nc = await s.call("list_for_sale", { agent: "translator.factory.testnet", price: 1200, confirm: false });
     assert.equal(nc.body.error.code, "CONFIRM_REQUIRED");
-    const early = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
+    const early = await s.call("list_for_sale", { agent: "translator.factory.testnet", price: 1200, confirm: true });
     assert.equal(early.body.error.code, "NOT_OWNER");
-    await s.call("buy_agent", { agent: "translator.testnet", max_price: 1000, confirm: true });
-    const l = await s.call("list_for_sale", { agent: "translator.testnet", price: 1200, confirm: true });
+    await s.call("buy_agent", { agent: "translator.factory.testnet", max_price: 1000, confirm: true });
+    const l = await s.call("list_for_sale", { agent: "translator.factory.testnet", price: 1200, confirm: true });
     assert.ok(valid("list_for_sale", l));
     assert.equal(l.ok, true, JSON.stringify(l.body));
     assert.deepEqual([l.body.seller, l.body.price, l.body.paid_now, l.body.escrow], ["summarizer.testnet", "1200.00", "840.00", "360.00"]);
     assert.equal(l.body.listing_version, 3);
     const list = await s.call("list_agents", { status: "Listed" });
-    const t = list.body.agents.find((a: { agent: string }) => a.agent === "translator.testnet");
+    const t = list.body.agents.find((a: { agent: string }) => a.agent === "translator.factory.testnet");
     assert.deepEqual([t.owner, t.price, t.counted], ["summarizer.testnet", "1200.00", "360.00"], "history travels");
   } finally {
     await s.close();

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { loadConfig } from "../src/config.js";
 import { valid, writer } from "./helpers.js";
 
-const list = { agent: "translator.testnet", price: 1000, confirm: true };
+const list = { agent: "translator.factory.testnet", price: 1000, confirm: true };
 
 test("M15 a listing below the operator floor is refused before anything is sent", async () => {
   const s = await writer("alice.testnet", { AGENT_EXIT_MIN_LIST_PRICE: "2000" });

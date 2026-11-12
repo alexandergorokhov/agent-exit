@@ -9,7 +9,7 @@ import { RETRY_429_MS, TestnetBackend } from "../src/backend.js";
 import { loadConfig } from "../src/config.js";
 
 RETRY_429_MS.splice(0, RETRY_429_MS.length, 1, 1);
-const AGENT = "translator.testnet";
+const AGENT = "translator.factory.testnet";
 const RPC1 = "https://rpc.testnet.near.org";
 const RPC2 = "https://test.rpc.fastnear.com";
 const STATUS = { status: "Active", owner: "bob.testnet" };

@@ -9,7 +9,7 @@ import { TestnetBackend } from "../src/backend.js";
 import { loadConfig } from "../src/config.js";
 import { b58encode } from "../src/nearsign.js";
 
-const AGENT = "translator.testnet";
+const AGENT = "translator.factory.testnet";
 const RPC1 = "https://rpc.testnet.near.org";
 const RPC2 = "https://test.rpc.fastnear.com";
 const CODE = Buffer.from([0, 0x61, 0x73, 0x6d, 1, 0, 0, 0]);

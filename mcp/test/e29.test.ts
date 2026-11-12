@@ -16,12 +16,12 @@ test("E29 refusals happen before anything is sent", async () => {
   const s = await writer();
   try {
     const cases: [Record<string, unknown>, string][] = [
-      [buy("translator.testnet", { confirm: false }), "CONFIRM_REQUIRED"],
-      [buy("translator.testnet", { max_price: 999.99 }), "OVER_MAX_PRICE"],
+      [buy("translator.factory.testnet", { confirm: false }), "CONFIRM_REQUIRED"],
+      [buy("translator.factory.testnet", { max_price: 999.99 }), "OVER_MAX_PRICE"],
       [buy("cheat.testnet", { max_price: 600 }), "SCAN_BLOCKED"],
-      [{ agent: "translator.testnet", confirm: true }, "BAD_INPUT"], // no max_price
+      [{ agent: "translator.factory.testnet", confirm: true }, "BAD_INPUT"], // no max_price
       // The runner key is not a tool argument (A37).
-      [buy("translator.testnet", { buyer_runner_pk: RUNNER_PK }), "BAD_INPUT"],
+      [buy("translator.factory.testnet", { buyer_runner_pk: RUNNER_PK }), "BAD_INPUT"],
       [buy("nobody.testnet", {}), "UNKNOWN_AGENT"],
     ];
     for (const [args, code] of cases) {
@@ -32,13 +32,15 @@ test("E29 refusals happen before anything is sent", async () => {
       assert.equal(r.body.sent, false);
     }
     const blocked = await s.call("buy_agent", buy("cheat.testnet", { max_price: 600 }));
+    // The cheat is a plain deploy (K8): the contract refuses to list it, so the
+    // scan also says so, and there is no listing to quote.
     assert.deepEqual(
       blocked.body.error.details.findings.map((f: { code: string }) => f.code),
-      ["full_access_key_present"],
+      ["full_access_key_present", "contract_not_born_clean", "not_listed", "listing_missing"],
     );
     // Nothing changed: translator is still alice's and still listed.
     const list = await s.call("list_agents");
-    const t = list.body.agents.find((a: { agent: string }) => a.agent === "translator.testnet");
+    const t = list.body.agents.find((a: { agent: string }) => a.agent === "translator.factory.testnet");
     assert.deepEqual([t.owner, t.status], ["alice.testnet", "Listed"]);
   } finally {
     await s.close();
@@ -48,7 +50,7 @@ test("E29 refusals happen before anything is sent", async () => {
 test("E29 session spend cap", async () => {
   const s = await writer("summarizer.testnet", { AGENT_EXIT_SESSION_CAP: "999" });
   try {
-    const r = await s.call("buy_agent", buy("translator.testnet", {}));
+    const r = await s.call("buy_agent", buy("translator.factory.testnet", {}));
     assert.equal(r.body.error.code, "SESSION_CAP");
   } finally {
     await s.close();
@@ -58,7 +60,7 @@ test("E29 session spend cap", async () => {
 test("E29 an unrecorded offline buy is refused, not faked", async () => {
   const s = await writer("carol.testnet");
   try {
-    const r = await s.call("buy_agent", buy("translator.testnet", {}));
+    const r = await s.call("buy_agent", buy("translator.factory.testnet", {}));
     assert.equal(r.body.error.code, "OFFLINE_NO_RECORDING");
   } finally {
     await s.close();
@@ -68,7 +70,7 @@ test("E29 an unrecorded offline buy is refused, not faked", async () => {
 test("A40 concurrent buy_agent calls cannot each pass the session cap", async () => {
   const s = await writer("summarizer.testnet", { AGENT_EXIT_SESSION_CAP: "1500" });
   try {
-    const rs = await Promise.all([s.call("buy_agent", buy("translator.testnet", {})), s.call("buy_agent", buy("translator.testnet", {}))]);
+    const rs = await Promise.all([s.call("buy_agent", buy("translator.factory.testnet", {})), s.call("buy_agent", buy("translator.factory.testnet", {}))]);
     const codes = rs.map((r) => (r.ok ? "ok" : r.body.error.code)).sort();
     // Exactly one buy goes through. Which refusal the other gets depends on
     // timing: SESSION_CAP if it reserves while the first is in flight,
@@ -97,7 +99,7 @@ test("A40 a refused buy releases its reservation", async () => {
   try {
     const blocked = await s.call("buy_agent", buy("cheat.testnet", { max_price: 600 }));
     assert.equal(blocked.body.error.code, "SCAN_BLOCKED");
-    const r = await s.call("buy_agent", buy("translator.testnet", {}));
+    const r = await s.call("buy_agent", buy("translator.factory.testnet", {}));
     assert.equal(r.ok, true, JSON.stringify(r.body));
     assert.equal(r.body.session_spent, "1000.00");
   } finally {

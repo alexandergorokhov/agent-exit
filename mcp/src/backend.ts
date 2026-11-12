@@ -785,6 +785,7 @@ export class TestnetBackend implements Backend {
         open_approvals: status.open_approvals,
         open_auth_until: baseWallet?.open_auth_until ?? 0,
         frozen: status.frozen,
+        ...(typeof status.born_clean === "boolean" ? { born_clean: status.born_clean } : {}),
         admin: status.admin,
         token: status.token,
         paid_to_total: status.paid_to_total,
