@@ -1,7 +1,7 @@
 # Agent Exit
 <img src="docs/img/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="480">
 
-**A capital market for AI agents, on NEAR.** AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
+**Buy AI agents by what they really earn.** Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Agent Exit, on NEAR, lets Bob check that the revenue is real and that Alice keeps no key, and lets Dave buy a share of its earnings instead. An agent that ever had a seller key can't even be listed: the contract refuses it. A capital market for AI agents.
 
 - **Proven revenue.** Every payment is counted by who paid. Payments from the owner, the owner's sub-accounts and round trips are flagged, not counted. NEAR AI-signed jobs are verified on-chain.
 - **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment; the owner can never touch their part.
@@ -27,7 +27,7 @@ make judge-testnet             # optional, read-only testnet (needs RPC): re-rea
 | Do (demo page or `sandbox` tool, no setup) | See |
 |---|---|
 | Invest: offer 20% of earnings, buy the slice, a customer pays, the owner pays herself | the investor gets 20% inside each payment, including the owner's flagged one; the owner can't withdraw his part |
-| Hide a backdoor key, list, scan, buy | `scan -> blocked (full_access_key_present)`, then `SCAN_BLOCKED`: no money moves |
+| Hide a backdoor key, then try to list it (K8) | `list_for_sale -> NotBornClean`: the contract refuses an agent the factory did not create. A buy sent anyway is refunded, and the scan also reports `contract_not_born_clean` (and `full_access_key_present`) |
 | Buy honestly, then the seller tries every way back in | one transaction: owner bob, alice's key deleted; then `NotOwner`, `NotOwner`, `AccessKeyNotFound` |
 | The seller delivers a different prompt than she sold (also on a real local NEAR node: 19 Tgas for an 8 KB fake, `make test-sealed-sandbox`) | `0.00 paid to alice now`; the contract decrypts and hashes the delivery, and `1,000.00 back to bob (the whole price)` |
 
@@ -39,7 +39,7 @@ make judge-testnet             # optional, read-only testnet (needs RPC): re-rea
 |---|---|---|
 | **Earnings counted by who paid:** a NEAR AI Cloud signature checked by the contract; the owner's own sub-account payment flagged, not counted | [verified job](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb), [flagged](https://testnet.nearblocks.io/txns/HfdsWPaTpgMkQmb3biHCJQAMKd96cWXxiaRSoRbJDk21) | `out/gates/g6.json` (`agentexit4`), `out/scenes/scene-8.json` |
 | **Invest or buy:** dave buys 20% of an agent's earnings and gets exactly 20%; bob buys a whole agent in one transaction | [share](https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B), [claim](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy), [sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC) | `out/scenes/scene-8.json`, `out/scenes/scene-5.json` |
-| **Seller locked out:** after the sale, all 6 ways back in fail | [treasury](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6), [relist](https://testnet.nearblocks.io/txns/31RU8P8v5fz9d75WML1m7s7LvkQPT7tgtCr4zzk9mfkR), [key](https://testnet.nearblocks.io/txns/FZcNjC91gsDwhBDi66vTTa11Mh9ccraeFEhDKKCdMtTQ), [limits](https://testnet.nearblocks.io/txns/H5EJSLwN3WmSV2h3pDZJH7urTZo6gBDwoEFHE6YjocoX), [deed](https://testnet.nearblocks.io/txns/Dj94EMuXnthsHSZenaWXDSf7QDE6EkebaGnppN4eKVRE), [Base wallet spend](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) | `out/scenes/scene-1.json` |
+| **Seller locked out:** after the sale, 6 take-backs are refused on chain, and her old key is gone at the node | [treasury](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6), [relist](https://testnet.nearblocks.io/txns/31RU8P8v5fz9d75WML1m7s7LvkQPT7tgtCr4zzk9mfkR), [key](https://testnet.nearblocks.io/txns/FZcNjC91gsDwhBDi66vTTa11Mh9ccraeFEhDKKCdMtTQ), [limits](https://testnet.nearblocks.io/txns/H5EJSLwN3WmSV2h3pDZJH7urTZo6gBDwoEFHE6YjocoX), [deed](https://testnet.nearblocks.io/txns/Dj94EMuXnthsHSZenaWXDSf7QDE6EkebaGnppN4eKVRE), [Base wallet spend](https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb) | `out/scenes/scene-1.json` |
 
 **About the Base wallet:** what is live on testnet is the lockout of its NEAR-side control: the old seller's `pay_base` call is refused (`NotRunner`, the "Base wallet spend" link). The agent's MPC wallet has also signed Base Sepolia USDC authorizations on testnet ([sign](https://testnet.nearblocks.io/txns/9G98q5TquGJKxAtVx5rJRNX5Lv6VHNh17jyCtUXNMMKs), `out/gates/g2-sign.json`; every signature recovers to the agent's derived address); relaying one on Base Sepolia is not yet recorded (gate G2 relay).
 
@@ -84,7 +84,7 @@ Other agents do all of this through the MCP server (`mcp/`) and the Agent Skill 
 The full list is in [`docs/LIMITS.md`](docs/LIMITS.md), and what is not caught by design is in [`docs/NOT-CAUGHT.md`](docs/NOT-CAUGHT.md). In short:
 - The seller can keep copies of off-chain code, prompts and API keys. A sealed config guarantees the buyer gets exactly the committed bundle, or the whole price back, and names the keys to rotate.
 - Fake payers on aged accounts look like customers. Before a sale that is cheap, so new payers count half and "pay from revenue" lets a buyer hold the whole price; after a sale, faking costs the seller money.
-- A contract cannot list its own keys: the buyer's scan catches a hidden key before the sale (agents from the born-clean factory never had one; live on testnet since 2026-11-10, scene 9).
+- A contract cannot list its own keys, so it cannot tell a clean agent from a keyed one by looking inside. The born-clean rule (K8) closes that: the contract only lists and sells agents the pinned factory created, which never had a key, and refuses any other (`NotBornClean`). Proven offline (`make judge`, K8). The testnet world recorded so far predates this rule and still shows the scan catching the cheat; after the redeploy it shows the refused listing. The scan stays as a second layer.
 - The registry admin and token are build-time constants; mocked-runtime tests do not run promises (the real-node and testnet runs do); the wasm is about 619 KiB (633,861 bytes); no external audit; NEAR Intents (mainnet-only) is not used.
 
 ## Built with

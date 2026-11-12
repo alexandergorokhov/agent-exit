@@ -116,7 +116,7 @@ async function liveRead(out) {
       el("ul", { class: "find live" }, rows.map((r) => el("li", {},
         el("code", { text: r.account }), ` owner ${r.owner}, ${r.status}, treasury ${r.treasury ?? "?"}; `,
         `${r.keys} access keys, ${r.full} full-access; code hash `, el("code", { text: r.code_hash }), ` (${same(r.code_hash)})`))),
-      el("p", { class: "muted", text: "Read-only view calls through the page's relay. The cheat agent is expected to show a full-access key: that is what the buyer's scan blocks." }));
+      el("p", { class: "muted", text: "Read-only view calls through the page's relay. The cheat agent is expected to show a full-access key: that is what the buyer's scan flags." }));
   } catch (e) {
     out.replaceChildren(el("p", { class: "err", text: `Live read failed: ${e && e.message ? e.message : e}` }));
   }
@@ -381,11 +381,12 @@ async function renderDiligence() {
     const self = el("span", { class: "dd-self" });
     if (total) { real.style.setProperty("width", `${(100 * c.bar.real) / total}%`); self.style.setProperty("width", `${(100 * c.bar.self) / total}%`); }
     const full = el("details", { class: "dd-full" }, el("summary", { text: "Full due diligence" }),
+      c.name === "cheat" ? el("p", { class: "small dd-k8" }, el("b", { text: "New rule (K8): " }), "the contract now refuses to list an agent that ever had a key (offline; testnet after the redeploy).") : null,
       el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
       el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })));
     if (c.name === "translator" && deed) { deed.hidden = false; full.append(deed); }
     return el("article", { class: `dd-card card ${c.ok ? "dd-ok" : "dd-no"}`, "data-agent": c.name, id: `case-${c.name}` },
-      el("header", { class: "dd-head" }, el("div", {}, c.role ? el("p", { class: "dd-role", text: c.role }) : null, el("h3", {}, el("code", { text: c.name }))),
+      el("header", { class: "dd-head" }, el("div", {}, c.role ? el("p", { class: "dd-role", text: c.role }) : null, el("h3", {}, TITLES[c.name] ? TITLES[c.name] : el("code", { text: c.name }), TITLES[c.name] ? el("small", { class: "ex-title" }, " ", el("code", { text: c.name })) : null)),
         el("span", { class: `pill ${c.ok ? "pass" : "block"}`, text: c.ok ? "Pass" : "Blocked" })),
       el("p", { class: "dd-deal small muted" }, c.deal_link ? el("a", { href: c.deal_link, text: c.deal_short || c.deal }) : (c.deal_short || c.deal)),
       el("p", { class: "dd-why", text: (c.short || c.verdict).replace(/^(Pass|Blocked): (.)/, (_, _v, ch) => ch.toUpperCase()) }),
@@ -450,8 +451,8 @@ async function renderExchange() {
     if (key) rows.sort(cmp(key)); else rows.sort((a, b) => (Number(!!b.featured) - Number(!!a.featured)) || cmp("multiple")(a, b));
     const flag = (r) => r.flaggedPct >= 50;
     tbody.replaceChildren(...rows.map((r) => el("tr", { class: [flag(r) ? "ex-caught" : "", r.featured ? "ex-featured" : "", r.target ? "ex-link" : ""].join(" ").trim() || null, "data-target": r.target },
-      el("td", { "data-label": "Agent", class: "ex-name" }, r.target ? el("a", { href: r.target }, el("code", { text: r.name })) : el("code", { text: r.name }),
-        TITLES[r.name] ? el("small", { class: "ex-title", text: ` ${TITLES[r.name]}` }) : null, " ",
+      el("td", { "data-label": "Agent", class: "ex-name" }, r.target ? el("a", { href: r.target }, TITLES[r.name] || el("code", { text: r.name })) : (TITLES[r.name] || el("code", { text: r.name })),
+        TITLES[r.name] ? el("small", { class: "ex-title" }, " ", el("code", { text: r.name })) : null, " ",
         flag(r) ? el("span", { class: "pill block", text: `caught: ${r.flaggedPct.toFixed(0)}% self-paid` })
           : r.featured ? el("span", { class: "pill pass", text: "open to invest" }) : null),
       el("td", { "data-label": "Real revenue", class: "num", text: r.counted.toFixed(2) }),

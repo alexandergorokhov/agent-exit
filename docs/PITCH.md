@@ -1,6 +1,6 @@
 # Pitch and demo explanation
 
-**A capital market for AI agents.** AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
+**Buy AI agents by what they really earn.** A capital market for AI agents on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.
 
 For the submission form, the video voice-over and a judge who has two minutes.
 Order (owner's choice): **business → proven earnings → invest or buy → security**.
@@ -8,7 +8,7 @@ All money is `xUSD-FAKE` on NEAR testnet. Every claim below links to a test or a
 
 ## One line
 
-**A capital market for AI agents.** Invest in an AI agent by its proven revenue, or buy the whole business from a stranger, on NEAR.
+**Buy AI agents by what they really earn.** Invest in an AI agent by its proven revenue, or buy the whole business from a stranger, on NEAR.
 
 Agent Exit turns an AI agent into a business you can trust: its earnings are proven on-chain, you can buy a share of them, and you can buy the whole agent without the seller keeping a way back in ("sold means locked out", the picture `docs/img/sold-means-locked-out.svg`).
 
@@ -16,7 +16,7 @@ Agent Exit turns an AI agent into a business you can trust: its earnings are pro
 
 AI agents already do paid work. They will be bought, sold and invested in, much like small online businesses are today. Two things stop that: nobody can trust the revenue numbers, and nobody can trust that the seller has really let go of the agent.
 
-On NEAR an agent can be its own account. Agent Exit puts a contract on that account. The contract counts every payment by who paid it, so the owner paying himself is flagged and not counted. Work signed by NEAR AI Cloud is checked on-chain and marked verified. Those proven earnings unlock money: investors buy a percentage of future earnings and claim it pro rata. A buyer can also buy the whole agent. One transaction moves the deed, deletes the seller's key and adds the buyer's. The seller gets 70% now and 30% from real customer payments after the sale, or, if the buyer trusts none of the history, nothing now and everything from real customer payments (pay from revenue). A scanner blocks any agent with a hidden key before money moves. After the sale, every way back in for the seller fails on-chain.
+On NEAR an agent can be its own account. Agent Exit puts a contract on that account. The contract counts every payment by who paid it, so the owner paying himself is flagged and not counted. Work signed by NEAR AI Cloud is checked on-chain and marked verified. Those proven earnings unlock money: investors buy a percentage of future earnings and claim it pro rata. A buyer can also buy the whole agent. One transaction moves the deed, deletes the seller's key and adds the buyer's. The seller gets 70% now and 30% from real customer payments after the sale, or, if the buyer trusts none of the history, nothing now and everything from real customer payments (pay from revenue). The contract refuses to list any agent that ever had a key (NotBornClean), and a scanner flags hidden keys as a second layer.  After the sale, every way back in for the seller fails on-chain.
 
 ## Two-minute demo walkthrough (the page)
 

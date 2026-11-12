@@ -24,7 +24,7 @@
     <div class="wrap hero-grid">
       <div class="hero-main">
         <h1>Agent Exit</h1>
-        <p class="tagline"><b>A capital market for AI agents.</b></p>
+        <p class="tagline"><b>Buy AI agents by what they really earn.</b></p>
         <p class="lede">AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so you can buy a share of an agent's earnings, or the whole agent, safely.</p>
         <div class="cta">
           <a class="btn primary" href="#invest-yourself">Buy a 2.5% share for 25.00</a>
@@ -40,13 +40,13 @@
   <main class="wrap">
     <section id="exchange" class="exchange" hidden>
       <h2>Agents with on-chain revenue</h2>
-      <p class="lead-in">Self-paid revenue never counts. Click a row for its case file.</p>
+      <p class="lead-in">Self-paid revenue never counts. </p>
       <div class="ex-wrap card"><table id="ex-table" class="ex-table"><thead><tr>
         <th data-k="name" scope="col">Agent</th><th data-k="counted" scope="col" class="num" title="paid by accounts not linked to the owner">Real revenue</th><th data-k="flaggedPct" scope="col" class="num" title="paid by the owner or the owner's own accounts: not counted">Self-paid</th><th data-k="payers" scope="col" class="num">Customers</th><th data-k="deal" scope="col">Deal</th><th data-k="multiple" scope="col" class="num" title="asking price, or the value an offer implies, over real revenue">Price ÷ revenue</th>
       </tr></thead><tbody></tbody></table></div>
       <div class="ex-foot">
         <p class="small muted" id="ex-note"></p>
-        <p class="ex-bridge"><a class="btn" href="#invest-yourself">Buy a 2.5% share of translator3</a></p>
+        <p class="ex-bridge"><a class="btn" href="#invest-yourself">Buy 2.5% of Lingo Live</a></p>
       </div>
       <div class="ex-biz">
         <div id="ex-fee"><h3>How it earns</h3><p>1% of each deal: translator sold for 1,000.00, so the fee was 10.00.</p></div>
@@ -115,7 +115,7 @@
 
     <section id="play" class="play">
       <h2>Try to cheat it</h2>
-      <p class="lead-in">Play the seller and try. The real contract code, in your browser, stops you.</p>
+      <p class="lead-in">Play the seller and try. The same contract code, run in your browser, stops you.</p>
       <div id="missions" class="missions" role="tablist"></div>
       <div class="play-grid">
         <div class="guide card">
@@ -188,14 +188,14 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
       </div>
       <section id="why-near" class="built-on" aria-labelledby="built-on-title">
         <h3 id="built-on-title">Built on NEAR</h3>
-        <p class="small muted">Why only on NEAR. Written up as <a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/STANDARD.md" target="_blank" rel="noopener noreferrer">a standard</a>, not just this marketplace.</p>
+        <p class="small muted">Written up as <a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/STANDARD.md" target="_blank" rel="noopener noreferrer">a standard</a>.</p>
         <ul class="bon">
           <li><b>Deed</b><span>NEP-171 token from the agent's own account</span><a href="https://testnet.nearblocks.io/txns/354LsbDdYkbEB1pgxsevvXVRr7QcqQA4vCJn7WQUUzHa" target="_blank" rel="noopener noreferrer">minted</a></li>
           <li><b>Payments</b><span>NEP-141, counted by who paid</span><a href="https://testnet.nearblocks.io/txns/65r5dJFDddzMdvT2VE7nQxkZGywMBbQu1gPG5jhHyYtq" target="_blank" rel="noopener noreferrer">paid</a></li>
           <li><b>Sale</b><span>seller's key deleted, buyer's function-call key added, one transaction</span><a href="https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC" target="_blank" rel="noopener noreferrer">sale</a></li>
           <li><b>No key, ever</b><span>agent account made by a factory with no key</span><a href="https://testnet.nearblocks.io/txns/8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7" target="_blank" rel="noopener noreferrer">birth</a></li>
           <li><b>Base wallet</b><span>Chain Signatures; NEAR-side lockout live, Base Sepolia payment not yet</span><a href="https://testnet.nearblocks.io/txns/JA1eZDtaaF18extyCQDcHfWMU1HSryKVWbNmLrSYEweb" target="_blank" rel="noopener noreferrer">refused</a></li>
-          <li><b>Verified</b><span>NEAR AI Cloud signature checked on-chain (agentexit4)</span><a href="https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb" target="_blank" rel="noopener noreferrer">job</a></li>
+          <li><b>Verified</b><span>NEAR AI Cloud signature checked on-chain (agentexit4); proves the job ran, not that the payer is independent</span><a href="https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb" target="_blank" rel="noopener noreferrer">job</a></li>
           <li><b>Agent buyers</b><span>MCP; a Claude model bought an agent (agentexit4)</span><a href="https://testnet.nearblocks.io/txns/Dh5QgrRbcij4JcARs1e7YpZVX4wKPtv2ca1RpgTprFXD" target="_blank" rel="noopener noreferrer">buy</a></li>
         </ul>
       </section>
@@ -237,7 +237,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
             <div class="arch-box buyer">
               <h4>On the buyer's side</h4>
               <ul>
-                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and blocks anything extra.</li>
+                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list an agent that ever had a key (K8).</li>
                 <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
               </ul>
             </div>

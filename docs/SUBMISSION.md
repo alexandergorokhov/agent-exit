@@ -6,7 +6,7 @@ AI agents earn money, but their revenue can be faked and their sellers can keep 
 
 1. **Revenue counted by who paid.** A NEAR AI Cloud signature is checked by the contract ([verified job](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb)); the owner's own payment is flagged, not counted ([flagged](https://testnet.nearblocks.io/txns/HfdsWPaTpgMkQmb3biHCJQAMKd96cWXxiaRSoRbJDk21)).
 2. **Invest.** dave buys 20% of an agent's earnings and claims exactly 20% ([claim](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy)).
-3. **Exit.** One transaction sells the whole agent ([sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC)); then all 6 ways back in fail ([one of them](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6)).
+3. **Exit.** One transaction sells the whole agent ([sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC)); then 6 take-backs are refused on chain and her old key is gone at the node ([one of them](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6)).
 
 ## Verify it
 

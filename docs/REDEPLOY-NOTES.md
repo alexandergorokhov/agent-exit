@@ -101,3 +101,13 @@ The minimum to record scenes 1-6 with the K8 evidence: about 55 NEAR.
 
 - `tests/sandbox` (real local node) was updated to create every sold agent through the factory (b1, sealed, stress, plus a new BC-S2 plain-deploy test), builds with `cargo check --tests`, but could not be run here (no sandbox binary). Run `make test-sandbox` on the PC. `str_s5_near_stake_knife_edge` is `#[ignore]`d: it needs an agent funded just above its stake, which a factory-born agent never is (the factory attaches at least 10 NEAR).
 - `nft_transfer` (deed move) is not gated by the rule: no money passes through the contract on that path (see `docs/NOT-CAUGHT.md` N4).
+
+## Page and video wording that must change after the redeploy (K8)
+
+Until the redeploy, the pages and the video describe the OLD recorded world for the cheat (listed at 500.00, scan says `full_access_key_present`, buy never sent) and add the K8 rule as the contract's rule (offline, `make judge` K8). After the redeploy and re-recording:
+
+1. `web/market.js`: the QuickQuote card line "New rule: the contract now refuses to list agents that ever had a key (K8, offline; on testnet after the redeploy)" becomes plain fact; the cheat card already switches to "listing refused (NotBornClean)" when scene 4 records a `NotBornClean` tx.
+2. `web/app.js`: the `dd-k8` note in the QuickQuote case file and the `cheat` line in `SHORT` ("The buyer's scan finds it and blocks the sale") become "the contract refuses to list it".
+3. `web/proof.html` and `README.md`: drop the "predates this rule" sentence in Honest limits and the "(K8, tested offline; on testnet after the redeploy)" text on `web/index.html`.
+4. `scripts/video/script.mjs` and `record.mjs`: the `cheat` scene says the scan caught the key and that the contract now refuses to list a keyed agent. After the redeploy, show the real refused `list_for_sale` tx (scene 4) and drop "offline". Re-record, mix, encode; update the length in `docs/VIDEO.md`, `web/proof.html` and `README.md`.
+5. The page claims "the live world predates K8" must go once `web/data/testnet.json` has the NotBornClean tx.

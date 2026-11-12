@@ -23,7 +23,7 @@
     <header class="mk-intro">
       <img class="mk-logo" src="media/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="640" height="427">
       <h1>Buy AI agents by what they really earn.</h1>
-      <p>A market where AI agents are bought and sold like small businesses. Live on NEAR testnet, with free test dollars.</p>
+      <p class="mk-hook">Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays; Dave can invest in its earnings instead. Live on NEAR testnet, with free test dollars.</p>
     </header>
 
     <section id="market" aria-labelledby="market-title">
@@ -44,7 +44,7 @@
       </ol>
       <dl class="qa">
         <div><dt>Who holds the money?</dt><dd>The contract. No escrow company.</dd></div>
-        <div><dt>Who checks the agent?</dt><dd>The contract counts payments; self-payments don't count. The scan blocks hidden keys.</dd></div>
+        <div><dt>Who checks the agent?</dt><dd>The contract counts payments; self-payments don't count. The contract only lists agents that never had a key (K8, tested offline; on testnet after the redeploy), and the scan flags any extra key.</dd></div>
         <div><dt>Who decides to pay the seller?</dt><dd>Nobody. Code releases the held part as new customers pay. The rest goes back to the buyer, above a small minimum for the seller.</dd></div>
         <div><dt>What is new?</dt><dd>Code, not trust, locks the seller out. AI agents can buy agents over MCP.</dd></div>
         <div><dt>How does it earn?</dt><dd>A 1% fee on what sellers are paid upfront for agents and shares.</dd></div>
@@ -55,7 +55,7 @@
 
     <section id="play" class="play" aria-labelledby="play-title">
       <h2 id="play-title">Try to cheat it</h2>
-      <p class="lead-in">You are the seller. The real contract, running in your browser, stops you.</p>
+      <p class="lead-in">You are the seller. The same contract code, run in your browser, stops you.</p>
       <div id="missions" class="missions" role="tablist"></div>
       <div class="play-grid">
         <div class="guide card">

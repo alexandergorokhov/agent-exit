@@ -48,7 +48,7 @@ export function buildCatalog(t, dd) {
     const until = day(o.offer.end);
     out.push({
       name: "translator3", account: o.agent, kind: "invest", stamp: ["Verified", "ok"],
-      judgement: ver == null ? "Its counted jobs are signed by NEAR AI." : `${money(ver)} of its ${money(real)} counted revenue is signed by NEAR AI.`,
+      judgement: ver == null ? "Its counted jobs are signed by NEAR AI (proves the job ran, not that the payer is independent)." : `${money(ver)} of its ${money(real)} counted revenue is signed by NEAR AI (proves the job ran, not that the payer is independent).`,
       real, self, customers: 5, keys: "clean",
       deal: `${pct}% of its earnings for ${money(usd(o.amount))}, until ${until}`,
       dealShort: `${pct}% for ${money(usd(o.amount))}`,
@@ -56,7 +56,7 @@ export function buildCatalog(t, dd) {
       rows: e ? [
         ["Revenue paid in", money(Number(e.gross))],
         ["Counted (real customers)", money(real)],
-        ["Signed by NEAR AI", money(ver)],
+        ["Signed by NEAR AI", `${money(ver)}. The signature proves the job ran, not that the payer is independent.`],
         ["Self-paid, not counted", money(self)],
         ["Offer", `${Number(o.offer.bps) / 100}% of earnings in parts of ${pct}%, ${Number(o.offer.sold_bps) / 100}% sold, until ${until}`],
       ] : t3.rows, offer: o, txs: [{ label: "an investor buys 2.5%", url: o.example_tx.explorer, ok: true }, ...tx("invest", /translation$/, "a customer pays"), ...tx("invest", /claims$/, "the investor is paid")],
@@ -96,7 +96,7 @@ export function buildCatalog(t, dd) {
   const tr = card("translator");
   if (tr) out.push({
     name: "translator", account: tr.agent, kind: "sold", stamp: ["Sold", "sold"],
-    judgement: "Sold. The seller tried 6 ways back in; all failed.",
+    judgement: "Sold. The seller tried 6 ways back in; all refused, and her old key is gone.",
     real: tr.bar.real, self: tr.bar.self, customers: 6, keys: "seller's key deleted",
     deal: "sold to bob for 1,000.00", dealShort: "sold, 1,000.00",
     rows: tr.rows, txs: [...tx("honest-sale", /buys translator/, "the sale"), ...tx("break-in", /withdraw/, "seller tries to withdraw"), ...tx("break-in", /old runner key/, "seller's old key")],
@@ -167,7 +167,7 @@ function actionFor(a) {
       el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. Buying needs a write-enabled server with your own testnet account. ", link("https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/AGENTS.md", "Connect your agent")));
   }
   if (a.kind === "held") return el("div", { class: "mk-act" }, el("p", { text: "Not offered for sale right now." }));
-  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }));
+  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }), a.kind === "blocked" ? el("p", { class: "small", text: "New rule: the contract now refuses to list agents that ever had a key (K8, offline; on testnet after the redeploy)." }) : null);
   return el("div", { class: "mk-act mk-sold" }, el("p", { text: "The new owner holds the only key. 300.00 of the price is released to the seller only as customers keep paying." }));
 }
 
