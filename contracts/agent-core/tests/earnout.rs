@@ -7,7 +7,7 @@ const ALICE_PK: &str = "ed25519:alice-runner";
 const BOB_PK: &str = "ed25519:bob-runner";
 
 fn sold_agent() -> Machine {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
@@ -177,7 +177,7 @@ fn pay_from_revenue_terms() -> Terms {
 /// alice lists at 1,000 with the whole price held; bob buys. The protocol
 /// fee account is on, as in the contract.
 fn sold_from_revenue() -> Machine {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     m.fee_to = "fees".into();
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
@@ -214,7 +214,7 @@ fn pr1_pay_from_revenue_sale_pays_the_seller_nothing_now() {
 #[test]
 fn pr2_the_fee_never_exceeds_the_upfront_part() {
     // 99% held: upfront 10.00, fee 1% of 1,000 = 10.00, seller gets 0 now.
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     m.fee_to = "fees".into();
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);

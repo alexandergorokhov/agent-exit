@@ -6,7 +6,7 @@ const T0: Ts = 1_767_225_600 * NANOS_PER_SEC;
 
 #[test]
 fn fresh_payers_are_reported_but_still_counted() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     assert!(m.register_payer("old.testnet") && m.register_payer("new.testnet"));
     m.pay("old.testnet", 10 * USD, false, T0);
     m.pay("new.testnet", 10 * USD, false, T0 + 9 * DAY_NS);
@@ -23,7 +23,7 @@ fn fresh_payers_are_reported_but_still_counted() {
 #[test]
 fn e16_unregistered_payers_pool_into_other() {
     // A50: no cap on rows; payers without a row are pooled.
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     for i in 0..1_200 {
         assert!(m.register_payer(&format!("payer{i}.testnet")));
         m.pay(&format!("payer{i}.testnet"), USD, false, T0);
@@ -41,7 +41,7 @@ fn e16_unregistered_payers_pool_into_other() {
 
 #[test]
 fn a50_only_empty_rows_unregister() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     assert!(m.register_payer("a.testnet"));
     assert!(m.register_payer("b.testnet"));
     assert_eq!(m.meter.empty_payers, 2);
@@ -56,7 +56,7 @@ fn a50_only_empty_rows_unregister() {
 
 #[test]
 fn a49_payments_alone_never_add_a_payer_row() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     for i in 0..50 {
         m.pay(&format!("faucet-{i}.testnet"), 100 * USD, false, T0);
     }

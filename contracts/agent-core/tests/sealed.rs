@@ -18,7 +18,7 @@ fn bob_delivery_pk() -> String {
 /// alice commits to BUNDLE, lists at 1,000 (default terms), bob buys with a
 /// one-time delivery key.
 fn sold_sealed() -> Machine {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
@@ -273,7 +273,7 @@ fn sc14b_accepted_or_undisputed_pays_the_seller_and_closes_disputes() {
 
 #[test]
 fn sc10_commitment_rules() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     assert_eq!(
         m.commit_config("bob", Some(ConfigCommit::of(BUNDLE))),
         Err(Error::NotOwner)
@@ -321,7 +321,7 @@ fn sc10_commitment_rules() {
 
 #[test]
 fn sc11_listings_without_a_config_are_unchanged() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     let l = m
@@ -349,7 +349,7 @@ fn sc11_listings_without_a_config_are_unchanged() {
 
 #[test]
 fn sc15_a_low_order_delivery_key_is_refused_at_the_buy() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
@@ -455,7 +455,7 @@ fn sc19_upfront_held_is_in_the_ledger() {
 /// SC20 (review 4 L2): a commitment does not pass with the deed.
 #[test]
 fn sc20_commitment_does_not_pass_with_the_deed() {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m.commit_config("alice", Some(ConfigCommit::of(BUNDLE)))
@@ -512,7 +512,7 @@ fn sc21_chunk_proofs() {
 }
 
 fn listed_with(commit: ConfigCommit) -> Machine {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m.commit_config("alice", Some(commit)).unwrap();

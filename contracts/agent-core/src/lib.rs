@@ -43,6 +43,10 @@ pub const DAY_NS: u64 = 86_400 * NANOS_PER_SEC;
 pub enum Error {
     NotOwner,
     NotRunner,
+    /// K8: the agent was not created by the pinned born-clean factory, so no
+    /// guarantee that it never had a hidden full-access key. It cannot be
+    /// listed or bought (share offers stay open).
+    NotBornClean,
     NotListed,
     AlreadyListed,
     SaleInProgress,
@@ -537,6 +541,12 @@ pub struct Machine<S = MemStore> {
     /// relists to redraw shows up here; it never goes down.
     #[serde(default)]
     pub preview_draws: u64,
+    /// K8: `new` ran as the direct child of the pinned factory, which never
+    /// adds a key. Only such an agent can be listed or bought; a plain
+    /// deploy cannot (its deployer may hold a full-access key no contract
+    /// can list). Fixed at init (`mark_birth`), never changed.
+    #[serde(default)]
+    pub born_clean: bool,
     /// Per-payer and per-day rows (A47). In the contract this is a handle to
     /// separate storage keys and adds nothing to the state blob.
     #[serde(skip)]
@@ -576,8 +586,17 @@ pub fn keys_hash<'a>(keys: impl IntoIterator<Item = &'a Key>) -> String {
 }
 
 impl Machine {
+    /// Not born clean (a plain deploy).
     pub fn new(agent: &str, owner: &str) -> Self {
         Machine::with_store(agent, owner)
+    }
+
+    /// An agent the factory created (what the offline fixtures and the
+    /// core tests sell).
+    pub fn new_born(agent: &str, owner: &str) -> Self {
+        let mut m = Machine::with_store(agent, owner);
+        m.born_clean = true;
+        m
     }
 }
 
@@ -630,8 +649,17 @@ impl<S: Store + Default> Machine<S> {
             config_commit: None,
             previews: Vec::new(),
             preview_draws: 0,
+            born_clean: false,
             store: S::default(),
         }
+    }
+
+    /// K8: record how the agent was born. Clean only if the caller of `new`
+    /// was the agent's direct parent and that parent is the pinned factory.
+    /// A plain deploy (caller is the agent itself) is never clean.
+    pub fn mark_birth(&mut self, predecessor: &str, factory: &str) {
+        let parent = self.agent.split_once('.').map(|(_, p)| p);
+        self.born_clean = parent == Some(factory) && parent == Some(predecessor);
     }
 
     pub fn known_keys_hash(&self) -> String {
@@ -942,6 +970,9 @@ impl<S: Store + Default> Machine<S> {
     ) -> Res<Listing> {
         self.only_owner(caller)?;
         self.not_settling()?;
+        if !self.born_clean {
+            return Err(Error::NotBornClean);
+        }
         if self.frozen {
             return Err(Error::Frozen);
         }
@@ -1032,6 +1063,9 @@ impl<S: Store + Default> Machine<S> {
     ) -> Res<BuyPlan> {
         if self.status == Status::Settling {
             return Err(Error::SaleInProgress);
+        }
+        if !self.born_clean {
+            return Err(Error::NotBornClean);
         }
         if self.frozen {
             return Err(Error::Frozen);

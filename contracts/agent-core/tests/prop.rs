@@ -996,7 +996,7 @@ fn runner() -> TestRunner {
 fn prop_invariants_random_sequences() {
     let mut r = runner();
     r.run(&prop::collection::vec(act(), 1..120), |acts| {
-        let mut m = Machine::new("translator", "alice");
+        let mut m = Machine::new_born("translator", "alice");
         // The protocol fee is on, as in the contract.
         m.fee_to = "fees".into();
         let deleted = m
@@ -1117,7 +1117,7 @@ fn prop_release_le_half() {
 #[test]
 fn prop_storage_bounded() {
     // E16 / I11: payments never add rows; only registered payers have one.
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     for i in 0..1_005 {
         if i < 1_000 {
             assert!(m.register_payer(&format!("payer{i}")));
@@ -1160,7 +1160,7 @@ fn prop_buyer_cannot_shrink_earnout() {
         1 => (0u64..10 * 86_400).prop_map(PostSale::Time),
     ];
     r.run(&prop::collection::vec(post, 1..60), |acts| {
-        let mut m = Machine::new("translator", "alice");
+        let mut m = Machine::new_born("translator", "alice");
         let d = m.set_runner_key("alice", "ed25519:a", T0).unwrap();
         m.runner_key_done(m.key_batch, &[], &d, "ed25519:a", true);
         // Pre-sale history so the seller has round trips of their own.

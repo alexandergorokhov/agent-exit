@@ -68,7 +68,7 @@ proptest! {
     #![proptest_config(ProptestConfig { cases: cases(), ..ProptestConfig::default() })]
     #[test]
     fn shares_conserve_tokens(ops in prop::collection::vec(op(), 1..60)) {
-        let mut m = Machine::new("translator", "alice");
+        let mut m = Machine::new_born("translator", "alice");
         let deleted = m.set_runner_key("alice", PK, T0).unwrap();
         m.runner_key_done(m.key_batch, &[], &deleted, PK, true);
         let mut now = T0;

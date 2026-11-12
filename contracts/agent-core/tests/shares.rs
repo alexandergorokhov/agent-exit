@@ -9,7 +9,7 @@ const ALICE_PK: &str = "ed25519:alice-runner";
 const BOB_PK: &str = "ed25519:bob-runner";
 
 fn agent() -> Machine {
-    let mut m = Machine::new("translator", "alice");
+    let mut m = Machine::new_born("translator", "alice");
     let deleted = m.set_runner_key("alice", ALICE_PK, T0).unwrap();
     m.runner_key_done(m.key_batch, &[], &deleted, ALICE_PK, true);
     m

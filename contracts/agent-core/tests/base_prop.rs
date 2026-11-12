@@ -43,7 +43,7 @@ proptest! {
     #![proptest_config(ProptestConfig { cases: cases(), ..ProptestConfig::default() })]
     #[test]
     fn i8_base_wallet_stays_inside_its_limits(ops in prop::collection::vec(op(), 1..60)) {
-        let mut m = Machine::new("translator.testnet", "alice.testnet");
+        let mut m = Machine::new_born("translator.testnet", "alice.testnet");
         m.base.address = Some(ADDR.into());
         let mut owner = "alice.testnet".to_string();
         let set = |m: &mut Machine, owner: &str, cap: u128| {
