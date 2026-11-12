@@ -85,12 +85,13 @@ export function buildCatalog(t, dd) {
     });
   }
   const cheat = card("cheat");
+  const cheatRefused = ((t.steps.cheat && t.steps.cheat.txs) || []).some((y) => /NotBornClean/.test(y.label));
   if (cheat) out.push({
     name: "cheat", account: cheat.agent, kind: "blocked", stamp: ["Blocked", "bad"],
     judgement: "Self-paid revenue and a hidden seller key.",
     real: cheat.bar.real, self: cheat.bar.self, customers: 0, keys: "hidden full-access key",
-    deal: "listed for 500.00; every buy is refused", dealShort: "buy refused",
-    rows: cheat.rows, txs: tx("cheat", /lists cheat/, "the listing"),
+    deal: cheatRefused ? "a plain deploy: the contract refuses to list it (NotBornClean)" : "listed for 500.00; every buy is refused", dealShort: cheatRefused ? "listing refused" : "buy refused",
+    rows: cheat.rows, txs: tx("cheat", /lists cheat|list_for_sale.*cheat/, cheatRefused ? "the refused listing" : "the listing"),
   });
   const tr = card("translator");
   if (tr) out.push({

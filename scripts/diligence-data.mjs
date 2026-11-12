@@ -12,8 +12,8 @@ const usd = (x) => (Number(x) / USD).toFixed(2);
 const pct = (a, b) => (Number(b) ? Math.round((100 * Number(a)) / Number(b)) : 0);
 const nb = (tx) => `https://testnet.nearblocks.io/txns/${tx}`;
 // The world is the account the agents live under, e.g. agentexit4.testnet.
-const worldOf = (cards) => (cards[0]?.agent || "").split(".").slice(1).join(".") || "unknown";
-const short = (a) => a.replace(/(\.w\d+)?\.agentexit\d*\.testnet$/, "");
+const worldOf = (cards) => (cards[0]?.agent || "").split(".").slice(-2).join(".") || "unknown";
+const short = (a) => a.replace(/(\.factory)?(\.w\d+)?\.agentexit\d*\.testnet$/, "");
 
 const s3 = scene(3), s4 = scene(4), s5 = scene(5), s8 = scene(8);
 // Scene 12 (optional): the open offer anyone can buy into, on the scene-8 agent.
@@ -68,21 +68,23 @@ const ROLE = { translator: "The sold agent", cheat: "The cheat", translator3: "O
 function saleCard(name, e, scanScene, verdict, why, run, short) {
   const l = scanScene.scan_input.listing;
   const k = keys(scanScene.scan);
-  const multiple = Number(e.counted) ? (Number(l.price) / Number(e.counted)).toFixed(1) : null;
+  // K8: a plain deploy (the cheat) cannot be listed at all: the contract refuses (NotBornClean).
+  const refused = !l;
+  const multiple = !refused && Number(e.counted) ? (Number(l.price) / Number(e.counted)).toFixed(1) : null;
   return {
     agent: scanScene.scan_input.agent,
     name,
     role: ROLE[name],
-    deal: `For sale at ${usd(l.price)}`,
+    deal: refused ? "Not for sale: the contract refused to list it (NotBornClean)" : `For sale at ${usd(l.price)}`,
     rows: [
       ["Revenue paid in", `${usd(e.gross)} from ${e.payments} payments`],
       ["Counted (real customers)", `${usd(e.counted)} (${pct(e.counted, e.gross)}%) from ${e.counted_payers} paying accounts`],
       ["Flagged, not counted", `${usd(e.flagged)}: owner self-pay ${usd(e.flagged_self)}, seller sub-accounts ${usd(e.flagged_seller_subaccount)}, round trips ${usd(e.flagged_round_trip)}`],
       ["Payer age and spread", Number(e.counted) ? quality(e).text : "no counted revenue to weigh"],
-      ["Price ÷ counted revenue", multiple ? `${multiple}× the counted revenue recorded so far (${(Number(l.price) / quality(e).weighted).toFixed(1)}× the age-weighted figure)` : "no counted revenue: the price buys nothing proven"],
+      ["Price ÷ counted revenue", refused ? "no price: it cannot be listed" : multiple ? `${multiple}× the counted revenue recorded so far (${(Number(l.price) / quality(e).weighted).toFixed(1)}× the age-weighted figure)` : "no counted revenue: the price buys nothing proven"],
       ["Keys and code", k.text],
-      ["Payment terms", terms(l)],
-      ["Cost to fake this revenue", costToFake(l)],
+      ["Payment terms", refused ? "none: list_for_sale was refused NotBornClean (a plain deploy, not created by the born-clean factory, may hold a key no contract can list), and a buy sent anyway is refunded" : terms(l)],
+      ["Cost to fake this revenue", refused ? "not applicable: nothing can be sold" : costToFake(l)],
     ],
     verdict,
     ok: k.ok && Number(e.counted) > 0,
@@ -91,7 +93,7 @@ function saleCard(name, e, scanScene, verdict, why, run, short) {
     // The verdict-first summary the page shows before "Full due diligence".
     short,
     // translator was then sold to bob (scene 5); the cheat never was.
-    deal_short: name === "translator" ? `Sold to bob for ${money(l.price)}` : `For sale at ${money(l.price)}`,
+    deal_short: refused ? "Refused: NotBornClean" : name === "translator" ? `Sold to bob for ${money(l.price)}` : `For sale at ${money(l.price)}`,
     metrics: [
       ["Real revenue", `${usd(e.counted)} (${pct(e.counted, e.gross)}%)`],
       ["Self-paid", usd(e.flagged)],
@@ -108,11 +110,19 @@ const cards = [
     "72% of its revenue comes from 6 outside accounts and the scan is clean, but the customers are new, so weigh the revenue down; 30% of the price only reaches the seller if customers keep paying.",
     "#run-sale",
     "Pass: 72% from 6 real customers, no hidden keys. Customers are new."),
-  saleCard("cheat", s3.cheat, s4,
-    "Blocked before any money moves",
-    "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
-    "#run-cheat",
-    "Blocked: all 500 was self-paid, and a hidden key lets her take it back."),
+  s4.scan_input.listing
+    // The world recorded before the born-clean rule (K8): the cheat was listed and the scan blocked it.
+    ? saleCard("cheat", s3.cheat, s4,
+      "Blocked before any money moves",
+      "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
+      "#run-cheat",
+      "Blocked: all 500 was self-paid, and a hidden key lets her take it back.")
+    // After the rule: a plain deploy cannot be listed; the contract refuses (NotBornClean).
+    : saleCard("cheat", s3.cheat, s4,
+      "Refused by the contract and blocked by the scan",
+      "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back. It is a plain deploy, not created by the factory, so the contract itself refuses to list it.",
+      "#run-cheat",
+      "Refused: not born clean, so it cannot be listed. All 500 was self-paid and a hidden key lets her take it back."),
 ];
 
 // Investor's card: translator3 (scene 8), a 20% slice of future earnings.

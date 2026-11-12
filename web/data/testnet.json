@@ -1066,7 +1066,7 @@
   },
   "run": "2026-11-11",
   "root": "agentexit5.testnet",
-  "agent_code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+  "agent_code_hash": "F56WyouMoT7N6zQSEVHWtJz1zqJDutJVaRPjvDXy6VwY",
   "exchange": {
     "factory": "factory.agentexit5.testnet",
     "agents": [

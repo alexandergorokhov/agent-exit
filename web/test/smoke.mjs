@@ -74,7 +74,7 @@ try {
     assert.equal(createHash("sha256").update(readFileSync(new URL("../playground.wasm", import.meta.url))).digest("hex"), sum, "P0: playground.wasm matches its pinned SHA-256 (make playground-wasm)");
     const want = {
       fake: ["FLAGGED: the owner paid their own agent", "FLAGGED: paid from the owner's sub-account", "Verified (NEAR AI signature; signed with a test key here"],
-      backdoor: ["scan -> blocked (full_access_key_present)", "SCAN_BLOCKED", "hidden key is still on the account", "Only the scan protects the buyer"],
+      backdoor: ["list_for_sale -> NotBornClean", "scan -> blocked (", "full_access_key_present", "contract_not_born_clean", "buy -> NotBornClean"],
       revenue: ["0.00 paid to alice now: all 1,000.00 is held", "paid 200.00 and got 100.00 back: faking revenue cost 100.00", "earn-out closed"],
       brain: ["commit_config(sha256", "DIFFERENT prompt", "does NOT match the commitment", "1,000.00 back to bob (the whole price"],
       honest: ["scan -> clean", "690.00 paid to alice now (after the 1% protocol fee, 10.00), 300.00 held as earn-out", "withdraw -> NotOwner", "AccessKeyNotFound", "earn-out closed"],

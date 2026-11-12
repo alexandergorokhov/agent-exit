@@ -30,6 +30,8 @@ try {
 } catch {}
 if (!/^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(ownerPk ?? "")) throw new Error("out/scenes/scene-6.json has no verify_lockout public key");
 const r = deploy.root;
+// K8: every agent that is sold is created by the factory (factory.<root>, in the deploy record once the world is redeployed): translator.factory.<root>.
+const factory = typeof deploy.factory === "string" ? deploy.factory : null;
 // After testnet scene 9 the born-clean factory and its first agent are named too.
 let born = null;
 try { born = read("out/scenes/scene-9.json"); } catch {}
@@ -61,7 +63,7 @@ const cfg = {
       args: ["mcp/dist/src/server.js"],
       env: {
         AGENT_EXIT_NETWORK: "testnet",
-        AGENT_EXIT_AGENTS: [...["translator", "translator3", "cheat"].map((a) => `${a}.${r}`), ...(born ? [born.agent] : []), ...exchange].join(","),
+        AGENT_EXIT_AGENTS: [...new Set([...["translator", "translator3"].map((a) => `${a}.${factory ?? r}`), `cheat.${r}`, ...(born ? [born.agent] : []), ...exchange])].join(","),
         AGENT_EXIT_TOKEN: `xusd.${r}`,
         AGENT_EXIT_ADMIN: r,
         AGENT_EXIT_CODE_HASH: deploy.agent_code_hash,
@@ -71,7 +73,7 @@ const cfg = {
         AGENT_EXIT_RPC: "https://rpc.testnet.fastnear.com",
         AGENT_EXIT_RPC_2: "https://test.rpc.fastnear.com",
         AGENT_EXIT_RUNNER_PK: ownerPk,
-        ...(born ? { AGENT_EXIT_FACTORY: born.factory } : {}),
+        ...(factory ?? born?.factory ? { AGENT_EXIT_FACTORY: factory ?? born.factory } : {}),
       },
     },
   },
