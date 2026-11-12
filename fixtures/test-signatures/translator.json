@@ -3,18 +3,18 @@
   "label": "TEST FIXTURE: signed with local test keys (secp256k1 0x11..11 and 0x22..22). NOT a NEAR AI Cloud signature.",
   "test_signer": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
   "rogue_signer": "0x1563915e194d8cfba1943570603f7606a3115508",
-  "agent": "translator.testnet",
+  "agent": "translator.factory.testnet",
   "entries": [
     {
       "job_id": "job-1",
       "payer": "p1.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 1\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-1\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 1\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-1\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-1\"}}]}",
       "response_sha256": "3551cee58aca496fb70a166dd2fc49a13d83e4c57afc012d588f318d2a4ec9e6",
-      "text": "test-model/fixture-v1:9d4f7f6e485f70f82ee3cc8ea0543fbbfff0642e6446d771a6916848f518f84b:3551cee58aca496fb70a166dd2fc49a13d83e4c57afc012d588f318d2a4ec9e6",
-      "signature": "abe76bf83794e8a1d2b5e74ad67c7607325a2c83b42f341f8040d5136b3d8b077c6ae8bb67bb92537d65f3b239eaf22f85a15ee465a20067b049a313347df8f01b",
+      "text": "test-model/fixture-v1:425e8430b324b8fd02c656c2d0624b724d2360c86936c5b48cd77022f595a4ed:3551cee58aca496fb70a166dd2fc49a13d83e4c57afc012d588f318d2a4ec9e6",
+      "signature": "632daa6a6d9f63f66aecc8837760bc07cc9d159f5dd06defb3281f8704617d9a406f274d3f61900a0d7ef304b7f0ddf0b194ac427e1ac5fd90c432677c503a351b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -22,11 +22,11 @@
       "payer": "p2.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 2\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-2\",\"payer\":\"p2.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 2\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-2\",\"payer\":\"p2.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-2\"}}]}",
       "response_sha256": "63c0e86bdd165fe332681aa7bf0f4977b1e495fbdc587ab8d7954b7654ae8725",
-      "text": "test-model/fixture-v1:a6c2dfe0dc83040f6d3de53f985207171f27aeab6aa97e2fb2250e5e4af8629b:63c0e86bdd165fe332681aa7bf0f4977b1e495fbdc587ab8d7954b7654ae8725",
-      "signature": "425514130f21b3ba9ad038f3c50472778b691852f2341748a73b6e150f8167fc55167a70de22434e69fac653fa63f7a84028363fb8a71e49671b5f8130522b331b",
+      "text": "test-model/fixture-v1:5c5f06fa92e81e26546fe231da5f99a22ec722da4fadfd3e08737c440bf9c94d:63c0e86bdd165fe332681aa7bf0f4977b1e495fbdc587ab8d7954b7654ae8725",
+      "signature": "f0e0b7a353765d52c1a4881ebe991dc95f378e836f16a827c2c069894f3b3aae4e2e39e1550520b9720d0db1c44bc672d55baf518faad008d03f1bcd6c1bb7f41b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -34,11 +34,11 @@
       "payer": "p3.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 3\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-3\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 3\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-3\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-3\"}}]}",
       "response_sha256": "84133cc096ae4a3b04945cd18b216294e05e571d5d5aea3acde4dfa9ba18b08c",
-      "text": "test-model/fixture-v1:81f23c28e3cf96430c922b2a65f7b764d7e81f54ae438fd9e27b48f631a5df8f:84133cc096ae4a3b04945cd18b216294e05e571d5d5aea3acde4dfa9ba18b08c",
-      "signature": "7dd714b350949ffdc68cccef629a4553d2e46262ae0e408823c261667a7ef205024a8b0f45dbe0b6b4d62a5964259832f98b3e34f33b2e895652cd6a6a1b52101c",
+      "text": "test-model/fixture-v1:37a3b2e1524d82bcb841ea08ba3c9caa5ea887fd8e6d245dc8d113242c9c2761:84133cc096ae4a3b04945cd18b216294e05e571d5d5aea3acde4dfa9ba18b08c",
+      "signature": "e65fc28954456ad4aa9a6c7bb42e2f1a5bb6ae0d1cf6d2bdc238b8cbe6f7df575a3b81d518a738f45c9ddd1358345d132396c4a8ae438a949ef1d146304b80421b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -46,11 +46,11 @@
       "payer": "p4.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 4\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-4\",\"payer\":\"p4.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 4\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-4\",\"payer\":\"p4.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-4\"}}]}",
       "response_sha256": "45b738182f33bf44331cc8f3c4edcf696130fe2b4108dce6b85f29bfe034f1cf",
-      "text": "test-model/fixture-v1:abcfc3d54a3a7dd97bf1c1b7e0e4f03d2632a768d14809cdff9310838e08d8d4:45b738182f33bf44331cc8f3c4edcf696130fe2b4108dce6b85f29bfe034f1cf",
-      "signature": "d9cc2bae1fa5360074b727d42471aaee43d29072a680a3baa8d7313bd483080910669a0c6caae4e73f50c1c093ee43fd4f6ced9e77a865f8adbcb40cb0f580a81c",
+      "text": "test-model/fixture-v1:723f44f68a99d29806b0e543fae874d6191e0307b1e61ec9c4409784afc1bff4:45b738182f33bf44331cc8f3c4edcf696130fe2b4108dce6b85f29bfe034f1cf",
+      "signature": "d3b33de3fa4c1d93a8dd23adae564f732d7c2c5433a33b765a659e68f523206647babe095cadf3840bd8696eabaf73aa32232681c0f64e0c186f93ea1e9049fe1c",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -58,11 +58,11 @@
       "payer": "p5.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 5\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-5\",\"payer\":\"p5.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 5\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-5\",\"payer\":\"p5.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-5\"}}]}",
       "response_sha256": "4faad8c714688f624d80c9bbbc913efeed7442034faab385802d8b0048971d51",
-      "text": "test-model/fixture-v1:dc18f9b1d3d3d53332cfbd31303ffbba6535119fe5173dc2e1ce4320f132af53:4faad8c714688f624d80c9bbbc913efeed7442034faab385802d8b0048971d51",
-      "signature": "68c3c177689a6736c6c97b2246ae5b4badf82392995ba48be910cbeb84b60fa6679870e632e164389bd713108e648de7fd28a30831bb9a6d009a5a2e015a69581c",
+      "text": "test-model/fixture-v1:a2ee4a9501799b05abf9c7880c9cca43ae9d08f07124ae2b1c99a1bf72662b78:4faad8c714688f624d80c9bbbc913efeed7442034faab385802d8b0048971d51",
+      "signature": "4a0abc44d2a8d95cf3b6bd54899cab6a0b85da6cbc5128a386ef44f23743b07a21ff8f677f89f7094c8e0ee5ac3959846a04c3dac2327669fdda564c90f35ace1b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -70,11 +70,11 @@
       "payer": "p6.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 6\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-6\",\"payer\":\"p6.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 6\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-6\",\"payer\":\"p6.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-6\"}}]}",
       "response_sha256": "25f4057844c41a1b8d009b4fd9d1274a3e4f2bc3bdbcdd907e697137694d8b1d",
-      "text": "test-model/fixture-v1:df51dc2057aebf23c503e098919cf499e5512f69b620313895f17d04c3b6349d:25f4057844c41a1b8d009b4fd9d1274a3e4f2bc3bdbcdd907e697137694d8b1d",
-      "signature": "10a04bcea641c1eef715fdfa4a954979a05a45bd6fc03a705e07cf27d71fee5526db54a76eb76ae14f03da4c162dd1caa46a34f88f9d20bbfba5b228274f8f5e1c",
+      "text": "test-model/fixture-v1:c0f85c143d32fb6551733c87fbb2f9952324f794ee96442dc71175890487eaed:25f4057844c41a1b8d009b4fd9d1274a3e4f2bc3bdbcdd907e697137694d8b1d",
+      "signature": "265d13335f3d00b44b528768071ffe93cc7f91fd0f96d3bdc18b5b8ca9dbb7177a1eb0026f75b1c3afd6f1f00f1de7b0485a572ac71f70a4926fc3b4000be89c1b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -82,11 +82,11 @@
       "payer": "p1.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 7\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-7\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 7\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-7\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-7\"}}]}",
       "response_sha256": "68e819ac0b95e4404a5a60e2b7a518b5cb4a33a47a4063b422cf2bbe5e612759",
-      "text": "test-model/fixture-v1:9a5356f17989af222c6687ee06986b9c3b02fd6f15f1eddbec13853192242693:68e819ac0b95e4404a5a60e2b7a518b5cb4a33a47a4063b422cf2bbe5e612759",
-      "signature": "b0b0865385708561c8e75e6d442f1ae3310f3105d1890724e8a704dcd2e3a4b10a0610a9685cdec0622c2d1e3880959706a12fc234918af208448a989b18a2461c",
+      "text": "test-model/fixture-v1:b9d9e020877aa0e9e3c5dc43b783bbfffa8f1c476e0937cfde6c614179cc6340:68e819ac0b95e4404a5a60e2b7a518b5cb4a33a47a4063b422cf2bbe5e612759",
+      "signature": "68b5eeb5e3c91cebad6b3937c73c6690a24c2d03e789ab6e2a1872cd779414a356b07c446234ea70f9a3b113e1ea6e5138b6fa82706bbc9c9d27d42157b471871c",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -94,11 +94,11 @@
       "payer": "p2.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 8\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-8\",\"payer\":\"p2.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 8\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-8\",\"payer\":\"p2.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-8\"}}]}",
       "response_sha256": "8cb2ad911c05ffcf3ee9e3a2ca9b630e6b5f2be2c279dbbaaef04deffda52d2e",
-      "text": "test-model/fixture-v1:2930cf32ab3900bc5553a7f19c1183a43645b356201f2e208c000653bd8a1f2e:8cb2ad911c05ffcf3ee9e3a2ca9b630e6b5f2be2c279dbbaaef04deffda52d2e",
-      "signature": "8ed2bb4e7c26544c83727d6d00c9d8027a3ab6108d0231442a7ec545f91317ad75a1fc22ebde00d571283604398f230ac6c7676656adfe1bd88d4437e690e00e1b",
+      "text": "test-model/fixture-v1:d6a11afd4d8f0c9d092039f4e98bf0f3cc0f2de7ba287ea679a0879074a2db57:8cb2ad911c05ffcf3ee9e3a2ca9b630e6b5f2be2c279dbbaaef04deffda52d2e",
+      "signature": "46514ef5f607431aaca5a098ddb1a531f2119e00f0fd52e4011db9e87ecef3921ca5328e387822ca8dad1783858c1d13401a2017e4aa39d158b982cfb82f3f211b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -106,11 +106,11 @@
       "payer": "p3.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 9\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-9\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 9\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-9\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-9\"}}]}",
       "response_sha256": "456791eefd99dffab5f1076dae8ee849bfd89a4d5db2d46d7e4763a5afc87153",
-      "text": "test-model/fixture-v1:c93f07612b54b8f2b38a9d3ea69f8fdb85a90b639032ef7811b8c7e2aa3e2741:456791eefd99dffab5f1076dae8ee849bfd89a4d5db2d46d7e4763a5afc87153",
-      "signature": "23ebf4430a2355ac9a3da9fb7740903359f0bb6f0208060e5434e1928d470f996cdc2fb4e6e62c2a8e35a4c7898d85c7a95f10504b237301b49cf13e6e7936101c",
+      "text": "test-model/fixture-v1:869cd7832b87d2501b113f52d8f49b02a055a25ab103f142502e36c198724440:456791eefd99dffab5f1076dae8ee849bfd89a4d5db2d46d7e4763a5afc87153",
+      "signature": "b445c5a2f6f0f50b4c98f37b8bbe81ad278ee09b08f3398ba2854d8ac7b901005552e74330b0aadd494e6a505cc2ece209587735c60ca781e81d46f259c1e1981c",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     },
     {
@@ -118,11 +118,11 @@
       "payer": "p4.testnet",
       "amount": "12000000",
       "model": "test-model/fixture-v1",
-      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 10\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-10\",\"payer\":\"p4.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+      "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"translate text 10\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-10\",\"payer\":\"p4.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
       "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-10\"}}]}",
       "response_sha256": "58671b25e83d527990c1a719c7926bb8f00e5fbc29ee23754736d50f5b2416be",
-      "text": "test-model/fixture-v1:65b4615c82cd0d7689bc43efd9ca413bca6a01414da5365a2a1e9bd9e5cde402:58671b25e83d527990c1a719c7926bb8f00e5fbc29ee23754736d50f5b2416be",
-      "signature": "e95dc4f911a58537aa01fa9ddfe65ee14a81f1446911cf532e3c3151bcf6c80f326f0bb8bb35c83eb38a685d965852f0c939d7dcc74b291972d30db1b0efc7731c",
+      "text": "test-model/fixture-v1:e9a9b3f7f60dcce07e3d7c0047084261956759dda7154e946fa619b60b3c073e:58671b25e83d527990c1a719c7926bb8f00e5fbc29ee23754736d50f5b2416be",
+      "signature": "776f0db98a70bd4477dbd5631e4438be3b2e78809ddd56ad3095f4eec08e76dc15cba2445e8cfbba4c13cb6afd899c923860ec4040411e04f5cc8438460baf311b",
       "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
     }
   ],
@@ -143,11 +143,11 @@
     "payer": "p3.testnet",
     "amount": "12000000",
     "model": "test-model/fixture-v1",
-    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"signed by a key nobody allowlisted\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-r\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"signed by a key nobody allowlisted\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-r\",\"payer\":\"p3.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
     "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-r\"}}]}",
     "response_sha256": "bb3743f1cb607fccbef9142c5ba38396d5324cec805133487d4c0808821f5d9e",
-    "text": "test-model/fixture-v1:928a7d5fd77af061a3d7845c739a783859b39243fd47b4ec3c95a0d3ee8a4fcb:bb3743f1cb607fccbef9142c5ba38396d5324cec805133487d4c0808821f5d9e",
-    "signature": "df8b73317a9103905539b72eb4e0fc25a668bf253f25ba3ebcf6e0fe921fdb5f0f1ed0f2d5f72169d05bc9e397e94438dd3cefe0f3d80b66542d2a8d1be2c69b1b",
+    "text": "test-model/fixture-v1:9694f3f253d5759661ccd4a640bb0943146881ca04d48c63a555556a9134c889:bb3743f1cb607fccbef9142c5ba38396d5324cec805133487d4c0808821f5d9e",
+    "signature": "fcbe96389c7ab29062c076a95e2cba761501b59b59b985c75e6e1b5a9cd6de1e0607151b31a8e5d84fe64c73261bf6e1c512694f674876da61627f21b039f61b1b",
     "signing_address": "0x1563915e194d8cfba1943570603f7606a3115508"
   },
   "extra": {
@@ -155,11 +155,11 @@
     "payer": "p1.testnet",
     "amount": "12000000",
     "model": "test-model/fixture-v1",
-    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"post-sale job\"}],\"metadata\":{\"agent\":\"translator.testnet\",\"job_id\":\"job-11\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
+    "request": "{\"model\":\"test-model/fixture-v1\",\"messages\":[{\"role\":\"user\",\"content\":\"post-sale job\"}],\"metadata\":{\"agent\":\"translator.factory.testnet\",\"job_id\":\"job-11\",\"payer\":\"p1.testnet\",\"amount\":\"12000000\",\"signed_at\":\"1767229200\"}}",
     "response": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"answer to job-11\"}}]}",
     "response_sha256": "979e1d6192328b34e0714a10fcfe7eaf2de11d6168075c29ade430beb9e12f9f",
-    "text": "test-model/fixture-v1:4f7f844a778d903cab8a40860f2ccf177fdbe39b422f55d64616b7da503af497:979e1d6192328b34e0714a10fcfe7eaf2de11d6168075c29ade430beb9e12f9f",
-    "signature": "cff83ca7ba89172f98b61408f11a7666871742d3c18552af945d6d7dcdb59d5a3192f5598b9efa7b1c434683078c0503bbdfe54047e3f754bd83753f730d3ae71b",
+    "text": "test-model/fixture-v1:de384498450f9a3cf9f1d44cbecc61c2c7c320d5dae6d192b63e072e8ee958c7:979e1d6192328b34e0714a10fcfe7eaf2de11d6168075c29ade430beb9e12f9f",
+    "signature": "95b7ef2bc19c6249cee05d978e2bb31746b970eb721dd14a0f4595036411bb22681de5b301783eb5fe92a67ebf3599f5e37091baec1c56e8875836e5378d9f9e1b",
     "signing_address": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
   }
 }

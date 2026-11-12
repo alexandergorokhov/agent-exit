@@ -60,7 +60,7 @@ fn sign(sk: &SigningKey, agent: &str, job: &str, payer: &str, prompt: &str) -> V
 fn build() -> String {
     let good = SigningKey::from_bytes(&TEST_SIGNER_SK.into()).expect("key");
     let rogue = SigningKey::from_bytes(&ROGUE_SK.into()).expect("key");
-    let agent = "translator.testnet";
+    let agent = "translator.factory.testnet";
     // Job i is paid by p((i-1) % 6 + 1): day 0 p1-p6, day 1 p1-p4.
     let entries: Vec<Value> = (1..=10)
         .map(|i| {

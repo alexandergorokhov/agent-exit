@@ -200,14 +200,14 @@ mod tests {
     #[test]
     fn derivation_is_stable_and_per_account_and_path() {
         let m = MockMpc::default();
-        let a = m.derive_address("translator.testnet", "wallet-1");
-        assert_eq!(a, m.derive_address("translator.testnet", "wallet-1"));
-        assert_ne!(a, m.derive_address("translator.testnet", "wallet-2"));
+        let a = m.derive_address("translator.factory.testnet", "wallet-1");
+        assert_eq!(a, m.derive_address("translator.factory.testnet", "wallet-1"));
+        assert_ne!(a, m.derive_address("translator.factory.testnet", "wallet-2"));
         assert_ne!(a, m.derive_address("cheat.testnet", "wallet-1"));
         assert!(b::parse_address(&a).is_some());
         // Public derivation (root pk only) equals the private one.
         let pk = parse_near_secp_pk(&near_secp_pk(&m.public_key())).unwrap();
-        assert_eq!(derive_address(&pk, "translator.testnet", "wallet-1"), a);
+        assert_eq!(derive_address(&pk, "translator.factory.testnet", "wallet-1"), a);
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod tests {
                 ..Default::default()
             };
             let d = [7u8; 32];
-            let r = m.sign("translator.testnet", "wallet-1", &d);
+            let r = m.sign("translator.factory.testnet", "wallet-1", &d);
             let big_r = hex::decode(r["big_r"]["affine_point"].as_str().unwrap()).unwrap();
             let s: [u8; 32] = hex::decode(r["s"]["scalar"].as_str().unwrap())
                 .unwrap()
@@ -239,7 +239,7 @@ mod tests {
                     .unwrap();
             assert_eq!(
                 address(&PublicKey::from(&vk)),
-                m.derive_address("translator.testnet", "wallet-1")
+                m.derive_address("translator.factory.testnet", "wallet-1")
             );
         }
     }

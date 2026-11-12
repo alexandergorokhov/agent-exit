@@ -45,6 +45,8 @@ use std::collections::{BTreeSet, HashMap};
 #[cfg(test)]
 mod base_tests;
 #[cfg(test)]
+mod born_clean_tests;
+#[cfg(test)]
 mod fuzz_tests;
 pub mod meter_store;
 #[cfg(test)]
@@ -85,6 +87,17 @@ pub const FEE_ACCOUNT: &str = match option_env!("AGENT_EXIT_FEE_ACCOUNT") {
 pub const PAYMENT_TOKEN: &str = match option_env!("AGENT_EXIT_TOKEN") {
     Some(t) => t,
     None => "xusd.testnet",
+};
+/// The born-clean factory (contracts/factory), pinned like the token (K8).
+/// An agent whose `new` ran as a direct child of this account never had an
+/// access key, and this contract only ever adds function-call keys, so the
+/// contract itself knows the agent is clean. Only such an agent can be
+/// listed or bought (`NotBornClean`). Set at build time with
+/// `AGENT_EXIT_FACTORY` (the same variable the MCP server reads); the
+/// default is the offline fixture factory.
+pub const FACTORY: &str = match option_env!("AGENT_EXIT_FACTORY") {
+    Some(f) => f,
+    None => "factory.testnet",
 };
 /// Shortest earn-out window a listing may have, in seconds (A32). The
 /// published (prod) build uses 30 days. A demo build may shorten it with
@@ -395,6 +408,8 @@ impl AgentExit {
             owner_id.as_str(),
         );
         m.terms_min = TERMS_MIN;
+        // K8: clean only if the pinned factory ran this init.
+        m.mark_birth(by.as_str(), FACTORY);
         m.fee_to = FEE_ACCOUNT.into();
         m.base.address = base_address.map(|a| norm_address(&a));
         // NEP-171: the deed exists from init; indexers see its mint.
@@ -1771,6 +1786,8 @@ impl AgentExit {
             "listing_version": self.m.listing_version,
             "paused": self.m.paused,
             "frozen": self.m.frozen,
+            "born_clean": self.m.born_clean,
+            "factory": FACTORY,
             "token": self.token,
             "admin": self.admin,
             "signers": self.signers,
@@ -2311,6 +2328,7 @@ impl AgentExit {
             "sales": self.m.sales.len() as u64 + self.m.closed_sales,
             "escrow_left": amt(self.m.escrow_left()),
             "frozen": self.m.frozen,
+            "born_clean": self.m.born_clean,
             "known_keys_hash": self.m.known_keys_hash(),
             "limits": {"daily_cap": amt(self.m.limits.daily_cap),
                        "allowed_payees": self.m.limits.allowed_payees.len(),

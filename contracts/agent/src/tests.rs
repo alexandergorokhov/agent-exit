@@ -409,7 +409,7 @@ fn a10_a11_a12_wash_flags() {
     s.pay(X_ALICE, 5 * USD);
     assert_eq!(events("payment")[0]["flags"]["seller_subaccount"], true);
     // A sub-account of the agent itself is flagged too.
-    s.pay("x.translator.testnet", 5 * USD);
+    s.pay("x.translator.factory.testnet", 5 * USD);
     assert_eq!(events("payment")[0]["counted"], false);
     let e = s.c.get_earnings();
     assert_eq!(e.counted, 360 * USD);
@@ -1272,7 +1272,7 @@ fn sc22_preview_through_the_contract() {
 #[test]
 fn h1_init_accepts_self_and_parent_factory() {
     let s0 = Sim::new(AGENT, ALICE);
-    for who in [AGENT, "testnet"] {
+    for who in [AGENT, FACTORY] {
         s0.env(&s0.call(who));
         let _ = crate::AgentExit::new(acc(ALICE), None);
     }

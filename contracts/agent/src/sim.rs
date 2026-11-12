@@ -16,7 +16,9 @@ pub const USD: u128 = agent_core::USD;
 pub const T0: u64 = 1_767_225_600 * agent_core::NANOS_PER_SEC;
 pub const DAY: u64 = agent_core::DAY_NS;
 
-pub const AGENT: &str = "translator.testnet";
+/// Created by the factory: born clean.
+pub const AGENT: &str = "translator.factory.testnet";
+/// A plain deploy with a hidden full-access key: not born clean.
 pub const CHEAT: &str = "cheat.testnet";
 /// The pinned payment token (A26).
 pub const TOKEN: &str = crate::PAYMENT_TOKEN;
@@ -102,7 +104,14 @@ impl Sim {
         // The agent's Base address under the offline TEST MPC signer.
         let base =
             base_wallet::MockMpc::default().derive_address(agent, agent_core::base::BASE_PATH);
+        // Born clean: the factory ran init (create batch). A plain deploy: the
+        // account ran it itself.
+        let parent = agent.split_once('.').map(|(_, p)| p);
+        if parent == Some(crate::FACTORY) {
+            s.env(&s.call(crate::FACTORY));
+        }
         s.c = AgentExit::new(acc(owner), Some(base));
+        s.env(&s.call(agent));
         // The registry admin allowlists the LOCAL TEST signer.
         s.by_1y(ADMIN).add_signer(test_signer());
         s
