@@ -190,6 +190,30 @@
       "detail": {}
     },
     {
+      "id": "BC19",
+      "what": "a plain deploy (not born clean) cannot be listed: NotBornClean",
+      "pass": true,
+      "detail": {
+        "born_clean": false
+      }
+    },
+    {
+      "id": "BC20",
+      "what": "a buy sent to a plain deploy anyway is refunded in full, nothing is held",
+      "pass": true,
+      "detail": {
+        "refund": "500.00"
+      }
+    },
+    {
+      "id": "BC21",
+      "what": "a factory-born agent is born clean (get_status) and lists; share offers need no birth",
+      "pass": true,
+      "detail": {
+        "factory": "factory.testnet"
+      }
+    },
+    {
       "id": "E15",
       "what": "0.05 payment refunded, no payer entry",
       "pass": true,
@@ -547,8 +571,8 @@
       "what": "1,000 distinct 64-character payers do not grow the state blob (payer, day, payout-destination, claimable, past-owner and sale-history rows are separate storage entries), so loading the contract costs the same; every view still answers",
       "pass": true,
       "detail": {
-        "state_blob_bytes_before": 924,
-        "state_blob_bytes_after": 924,
+        "state_blob_bytes_before": 933,
+        "state_blob_bytes_after": 933,
         "payer_entries": 1006
       }
     },
@@ -605,8 +629,8 @@
       "what": "300 deed moves, each with a payout to a new destination, leave the state blob the same size (payout destinations are counters plus a pruned-prefix watermark)",
       "pass": true,
       "detail": {
-        "state_blob_bytes_before": 1081,
-        "state_blob_bytes_after": 1029
+        "state_blob_bytes_before": 1090,
+        "state_blob_bytes_after": 1038
       }
     },
     {
@@ -631,7 +655,7 @@
       "what": "wallet follows the name (mock MPC): the agent's Base address for path wallet-1 is the same before and after the sale; alice's runner signs a 1.00 USDC EIP-3009 authorization before, bob's after; each signature recovers to that address",
       "pass": true,
       "detail": {
-        "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+        "address": "0xa31c7c3634658837152f98a470070281ce6fc31d",
         "before_epoch": 1,
         "after_epoch": 2,
         "calldata_selector": "0xe3ee160e"
@@ -672,7 +696,7 @@
     }
   ],
   "summary": {
-    "passed": 73,
+    "passed": 76,
     "failed": 0
   },
   "not_covered_here": [

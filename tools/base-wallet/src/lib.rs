@@ -201,13 +201,22 @@ mod tests {
     fn derivation_is_stable_and_per_account_and_path() {
         let m = MockMpc::default();
         let a = m.derive_address("translator.factory.testnet", "wallet-1");
-        assert_eq!(a, m.derive_address("translator.factory.testnet", "wallet-1"));
-        assert_ne!(a, m.derive_address("translator.factory.testnet", "wallet-2"));
+        assert_eq!(
+            a,
+            m.derive_address("translator.factory.testnet", "wallet-1")
+        );
+        assert_ne!(
+            a,
+            m.derive_address("translator.factory.testnet", "wallet-2")
+        );
         assert_ne!(a, m.derive_address("cheat.testnet", "wallet-1"));
         assert!(b::parse_address(&a).is_some());
         // Public derivation (root pk only) equals the private one.
         let pk = parse_near_secp_pk(&near_secp_pk(&m.public_key())).unwrap();
-        assert_eq!(derive_address(&pk, "translator.factory.testnet", "wallet-1"), a);
+        assert_eq!(
+            derive_address(&pk, "translator.factory.testnet", "wallet-1"),
+            a
+        );
     }
 
     #[test]

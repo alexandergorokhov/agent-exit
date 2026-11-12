@@ -18,7 +18,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::cell::RefCell;
 
-pub const AGENT: &str = "translator.testnet";
+pub const AGENT: &str = "translator.factory.testnet";
 pub const SELLER: &str = "alice.testnet";
 pub const BUYER: &str = "bob.testnet";
 pub const INVESTOR: &str = "dave.testnet";
@@ -145,7 +145,7 @@ impl World {
         let w: Value = serde_json::from_str(WORLD).expect("fixtures/mcp/world.json");
         let template: ScanInput =
             serde_json::from_value(w["agents"][AGENT]["scan_input"].clone()).expect("scan_input");
-        let mut m = Machine::new(AGENT, SELLER);
+        let mut m = Machine::new_born(AGENT, SELLER);
         // The contract's 1% protocol fee, credited to the fee account.
         m.fee_to = FEE_ACCOUNT.into();
         let old = m
@@ -249,6 +249,7 @@ impl World {
         i.contract.known_keys = self.m.known_keys.iter().cloned().collect();
         i.contract.known_keys_hash = self.m.known_keys_hash();
         i.contract.frozen = self.m.frozen;
+        i.contract.born_clean = Some(self.m.born_clean);
         i.contract.paid_to_total = Some(self.m.paid_to_total());
         i.listing = self.m.listing.as_ref().map(|l| scan::ListingView {
             listing_version: l.version,
@@ -274,7 +275,7 @@ impl World {
         // Agent Exit contract and everything it promised (escrow, releases,
         // disputes, shares) are gone. Only a reset helps.
         if self.taken_over && !matches!(a, Action::Reset | Action::View | Action::Scan) {
-            return self.note(SELLER, false, "-> the account now runs alice's own code: the Agent Exit contract is gone, so no escrow, release, dispute or refund can run. bob lost the price. Only the scan protects the buyer (reset to try again).".into());
+            return self.note(SELLER, false, "-> the account now runs alice's own code: the Agent Exit contract is gone, so no escrow, release, dispute or refund can run (reset to try again).".into());
         }
         match a {
             Action::Reset => {
@@ -331,7 +332,10 @@ impl World {
                         permission: Permission::Full("FullAccess".into()),
                     });
                 }
-                self.note(s, true, "adds a hidden full-access key to the agent account (the contract never sees it)".into())
+                // The only way a seller keeps a full-access key is to deploy the
+                // agent on an account of their own, not through the factory.
+                self.m.born_clean = false;
+                self.note(s, true, "deploys the agent on a plain account of her own (not through the factory) and keeps a hidden full-access key (the contract never sees it)".into())
             }
             Action::RemoveKey => {
                 self.keys.retain(|k| k.public_key != HIDDEN_KEY);
@@ -579,7 +583,10 @@ impl World {
                 // DeployContract / DeleteKey actions never reach contract code.
                 self.taken_over = true;
                 self.keys.retain(|k| k.public_key == HIDDEN_KEY);
-                self.note(SELLER, true, "deploys her own code and deletes bob's key with the hidden key -> accepted by the node. The contract never runs, so it cannot stop this: bob paid and alice has the agent back. Only the scan protects the buyer.".into())
+                if self.m.sales.is_empty() {
+                    return self.note(SELLER, true, "deploys her own code with the hidden key -> accepted by the node, and the contract never runs. Nobody paid: the contract refuses to list or sell an agent that was not born clean (NotBornClean), so there is no buyer to take it from.".into());
+                }
+                self.note(SELLER, true, "deploys her own code and deletes bob's key with the hidden key -> accepted by the node. The contract never runs, so it cannot stop this: bob paid and alice has the agent back.".into())
             }
             Action::Wait { days } => {
                 self.now += days.unwrap_or(30) * DAY_NS;
@@ -656,6 +663,19 @@ impl World {
                     format!("buy -> SCAN_BLOCKED: the re-scan before paying said {verdict} ({codes}); the account changed after the earlier scan"),
                 );
             }
+        }
+        if !self.m.born_clean {
+            // K8: the contract refuses a buy of an agent that was not born
+            // clean, listed or not (the answer is the contract's own).
+            let e = self
+                .m
+                .begin_buy(BUYER, 0, 0, "", BUYER_KEY, true, self.now)
+                .expect_err("a plain deploy is never bought");
+            return self.note(
+                BUYER,
+                false,
+                format!("buy -> {e}: the contract refuses an agent that was not created by the factory, so nothing was paid"),
+            );
         }
         let Some(l) = self.m.listing.clone() else {
             return self.note(
@@ -742,6 +762,7 @@ impl World {
             "owner": self.m.owner,
             "status": format!("{:?}", self.m.status),
             "frozen": self.m.frozen,
+            "born_clean": self.m.born_clean,
             "listing": self.m.listing.as_ref().map(|l| json!({"price": usd(l.price), "version": l.version})),
             "earnings": {"gross": usd(e.gross), "counted": usd(e.counted), "verified": usd(e.verified), "flagged": usd(e.flagged)},
             "keys": self.keys.iter().map(|k| json!({

@@ -168,7 +168,7 @@ pub const NOT_CAUGHT: [(&str, &str, &str); 6] = [
     ("N1", "Copies of off-chain code, prompts, model weights", "Not on-chain; the earn-out prices it in"),
     ("N2", "Outside API keys and accounts (LLM keys, market tokens, customer contacts)", "Not on-chain"),
     ("N3", "Sybil payers on aged, fresh or exchange-funded accounts", "Look like customers on-chain; the meter only flags self, sub-accounts and round trips; earn-out share <= 50% makes wash-paying cost money"),
-    ("N4", "A hidden full-access key used directly by a buyer who skipped the scan", "The contract cannot list its own keys; the SDK and MCP never skip the scan; a hidden key calling the contract freezes it (A23)"),
+    ("N4", "A pinned factory account that still holds a full-access key (the factory could be redeployed to add a key to agents it creates later)", "Trust assumption: the factory must be locked after store_code. A seller can no longer rely on a buyer skipping the scan: the contract refuses to list or sell any agent the pinned factory did not create (NotBornClean, K8)"),
     ("N5", "Customers moving off-platform after the sale", "Business risk, not a key"),
     ("N6", "A compromised MPC network, NEAR AI signer or both RPC providers", "Trust assumptions"),
 ];
@@ -252,6 +252,11 @@ pub struct ContractView {
     pub open_auth_until: u64,
     #[serde(default)]
     pub frozen: bool,
+    /// `get_status.born_clean` (K8): the pinned factory created this agent.
+    /// `false` blocks: the contract itself refuses to list or sell it.
+    /// Missing = an older view; the contract still refuses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub born_clean: Option<bool>,
     /// `get_status.admin` / `get_status.token`. Missing = cannot check = block.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub admin: Option<String>,
@@ -703,6 +708,12 @@ pub fn scan(i: &ScanInput) -> Report {
         f.push(block(
             "frozen",
             "the agent is frozen (a backdoor was proven)".into(),
+        ));
+    }
+    if i.contract.born_clean == Some(false) {
+        f.push(block(
+            "contract_not_born_clean",
+            "the contract says this agent was not created by the pinned factory, so it refuses to list or sell it (NotBornClean)".into(),
         ));
     }
     if i.contract.status != "Listed" {

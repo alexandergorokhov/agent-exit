@@ -7,7 +7,7 @@
     "buyer": "bob.testnet",
     "agent_buyer": "summarizer.testnet",
     "second_buyer": "carol.testnet",
-    "honest_agent": "translator.testnet",
+    "honest_agent": "translator.factory.testnet",
     "backdoored_agent": "cheat.testnet",
     "token": "xusd.testnet",
     "payers": ["p1.testnet", "p2.testnet", "p3.testnet", "p4.testnet", "p5.testnet", "p6.testnet"],

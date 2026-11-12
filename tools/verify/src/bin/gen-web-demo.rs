@@ -113,9 +113,11 @@ fn break_in() -> Value {
     }));
     // A planted key: a self-call signed by a key the contract never added.
     let mut h = sold_translator();
-    let planted = rec("translator.testnet (hidden key)", "heartbeat()", || {
-        h.runner(key(HIDDEN_KEY)).heartbeat()
-    });
+    let planted = rec(
+        "translator.factory.testnet (hidden key)",
+        "heartbeat()",
+        || h.runner(key(HIDDEN_KEY)).heartbeat(),
+    );
     let refunded = h.m().claimable_of(BOB);
     // The heartbeat call itself returns without a panic, but its effect is the
     // freeze: label it that way, and only if the contract state shows it.
@@ -158,7 +160,7 @@ fn business() -> Value {
         ));
     }
     calls.push(rec(
-        "translator.testnet (runner key)",
+        "translator.factory.testnet (runner key)",
         "pay(summarizer, 8.00)",
         || {
             s.runner(key(BOB_RUNNER))
@@ -168,7 +170,7 @@ fn business() -> Value {
     s.callback(true)
         .on_transfer_out(OutKind::TreasuryPay, acc(SUMMARIZER), U128(8 * USD), None);
     calls.push(rec(
-        "translator.testnet (runner key)",
+        "translator.factory.testnet (runner key)",
         "pay(summarizer, 45.00)",
         || {
             s.runner(key(BOB_RUNNER))
@@ -176,7 +178,7 @@ fn business() -> Value {
         },
     ));
     calls.push(rec(
-        "translator.testnet (runner key)",
+        "translator.factory.testnet (runner key)",
         "pay(mallory, 1.00)",
         || s.runner(key(BOB_RUNNER)).pay(acc(MALLORY), U128(USD)),
     ));
@@ -255,6 +257,12 @@ fn verified() -> Value {
 fn cheat() -> Value {
     let mut c = cheat_world();
     let e = serde_json::to_value(c.by(MALLORY).get_earnings()).expect("json");
+    // K8: the contract refuses to list a plain deploy (not born clean).
+    let list_refused = rec(ALICE, "list_for_sale(500.00)", || {
+        c.by_1y(ALICE)
+            .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
+        Value::Null
+    });
     let input: scan::ScanInput = serde_json::from_str(
         &std::fs::read_to_string(format!("{ROOT}/fixtures/scan/cheat.json"))
             .expect("cheat fixture"),
@@ -266,13 +274,14 @@ fn cheat() -> Value {
         "id": "cheat",
         "title": "A cheat is caught before the sale",
         "scenarios": ["S1", "S4", "A1"],
-        "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account also has a hidden full-access key that the contract never added. In this offline page the scan reads a recorded key list (a JSON fixture), not a chain; a later testnet mode will read it from more than one RPC provider, which is not wired yet. The scan blocks the sale, and the buy tool refuses before any transaction is sent.",
+        "story": "cheat claims 500.00 of revenue, all of it paid by alice and her own sub-accounts: the meter counts none of it. The account was deployed as a plain account, not created by the born-clean factory, and has a hidden full-access key that the contract never added. The contract itself refuses to list it (NotBornClean), so there is nothing to buy even for a buyer who skips the scan. The buyer's scan blocks it too, as a second layer: in this offline page it reads a recorded key list (a JSON fixture), not a chain.",
         "headline": [
             {"label": "claimed gross", "value": usd(n("gross"))},
             {"label": "counted", "value": usd(n("counted"))},
+            {"label": "list_for_sale", "value": "refused: NotBornClean"},
             {"label": "scan verdict", "value": report.verdict.clone()},
         ],
-        "calls": [],
+        "calls": [list_refused],
         "scan": serde_json::to_value(&report).expect("json"),
         "view": {"name": "cheat: get_earnings()", "value": e},
     })
@@ -293,7 +302,7 @@ fn honest_sale() -> Value {
         },
     ));
     calls.push(rec(
-        "translator.testnet (callback)",
+        "translator.factory.testnet (callback)",
         "on_handover(sale 1) after the key batch",
         || json!({"unused": usd(s.callback(true).on_handover(1).0)}),
     ));

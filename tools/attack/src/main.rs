@@ -84,6 +84,21 @@ fn contract_layer() -> Vec<Value> {
         a8,
     );
 
+    // BC19 (K8): a plain deploy (the only way to keep a hidden full-access
+    // key) cannot be listed, so there is nothing to buy; a buyer who pays
+    // anyway is refunded in full.
+    let mut s = cheat_world();
+    let bc19 = panics_with("NotBornClean", || {
+        s.by_1y(ALICE)
+            .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
+    }) && s.m().listing.is_none();
+    let paid = s.buy(BOB, 500 * USD, BOB_RUNNER);
+    row(
+        "BC19",
+        "a plain deploy (not born clean, hidden full-access key) cannot be listed: NotBornClean; a buy sent anyway is refunded in full",
+        bc19 && paid == Some(500 * USD) && refused("NotBornClean"),
+    );
+
     let mut s = translator_world();
     let a14 = panics_with("UnknownToken", || {
         s.by(MALLORY)

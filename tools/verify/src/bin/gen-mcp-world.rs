@@ -5,8 +5,9 @@
 //! so the offline MCP answers are what the contract answers, not a second
 //! implementation. Money is xUSD-FAKE.
 //!
-//! - two listed agents: `translator` (honest) and `cheat` (fake earnings and
-//!   a hidden full-access key on the account);
+//! - `translator` (honest, born clean, listed) and `cheat` (fake earnings and
+//!   a hidden full-access key on a plain deploy: the contract refuses to list
+//!   it, `NotBornClean`, K8; the refusal is recorded);
 //! - one recorded buy: `summarizer` buys `translator` at 1,000.00 with the
 //!   listing version and key hash its scan saw, plus the after-state and the
 //!   old seller's refused calls (lockout probes);
@@ -84,6 +85,7 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
             "known_keys": st["known_keys"], "known_keys_hash": st["known_keys_hash"],
             "open_approvals": st["open_approvals"], "open_auth_until": 0,
             "frozen": st["frozen"],
+            "born_clean": st["born_clean"],
             "admin": st["admin"], "token": st["token"],
             "paid_to_total": st["paid_to_total"],
             "near_storage_solvent": st["near_storage"]["solvent"],
@@ -100,7 +102,7 @@ fn scan_input(s: &mut Sim, hidden_full: Option<String>) -> Value {
     })
 }
 
-const RESEARCH: &str = "research.testnet";
+const RESEARCH: &str = "research.factory.testnet";
 const DAVE: &str = "dave.testnet";
 
 /// One agent as the MCP server sees it.
@@ -141,10 +143,18 @@ fn build() -> String {
     let alice_key = key_str(ALICE_RUNNER);
     let translator = snapshot(&mut t, json!({ (alice_key.clone()): ALICE }), None);
 
-    // cheat, listed by alice at 500.00, with a hidden full-access key.
+    // cheat: a plain deploy (not born clean) with a hidden full-access key.
+    // Alice tries to list it at 500.00 and the contract refuses (K8); the
+    // refusal is what the offline MCP replays for that listing.
     let mut c = cheat_world();
-    c.by_1y(ALICE)
-        .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
+    let cheat_refusal = refusal(|| {
+        c.by_1y(ALICE)
+            .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
+    });
+    assert!(cheat_refusal.contains("NotBornClean"), "{cheat_refusal}");
+    // A buyer who pays anyway gets everything back and nothing is held.
+    let cheat_unused = c.buy(BOB, 500 * USD, BOB_RUNNER);
+    assert_eq!(cheat_unused, Some(500 * USD));
     let cheat = snapshot(
         &mut c,
         json!({ (alice_key.clone()): ALICE }),
@@ -247,6 +257,14 @@ fn build() -> String {
             "price": (1_200 * USD).to_string(),
             "listing": resale_card,
             "after": after_relist,
+        }],
+        "recorded_refusals": [{
+            "agent": CHEAT,
+            "seller": ALICE,
+            "call": "list_for_sale",
+            "price": (500 * USD).to_string(),
+            "error": cheat_refusal,
+            "buy_anyway_unused": cheat_unused.map(|u| u.to_string()),
         }],
         "recorded_share_buys": [{
             "agent": RESEARCH,

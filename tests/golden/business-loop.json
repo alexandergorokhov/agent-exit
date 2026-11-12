@@ -1,7 +1,7 @@
 {
   "schema": "business-loop.v1",
   "money": "xUSD-FAKE (test token)",
-  "agent": "translator.testnet",
+  "agent": "translator.factory.testnet",
   "human_calls_at_start": 3,
   "human_calls_during_30_days": 0,
   "customers_revenue": "1555.00",

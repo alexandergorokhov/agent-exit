@@ -12,7 +12,7 @@
     "Fields starting with _ are ignored. Schema: scan-input.v1 (tools/scan/src/lib.rs)."
   ],
   "schema": "scan-input.v1",
-  "agent": "translator.testnet",
+  "agent": "translator.factory.testnet",
   "now_ns": 1768089600000000000,
   "expected": {
     "code_hash": "fixture-release-hash-v1",
@@ -63,7 +63,7 @@
       {
         "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
         "permission": {
-          "receiver_id": "translator.testnet",
+          "receiver_id": "translator.factory.testnet",
           "method_names": [
             "heartbeat",
             "accept_job",
@@ -78,7 +78,7 @@
       {
         "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
         "permission": {
-          "receiver_id": "translator.testnet",
+          "receiver_id": "translator.factory.testnet",
           "method_names": [
             "heartbeat",
             "accept_job",
@@ -107,7 +107,7 @@
     "paid_to_total": 0,
     "near_storage_solvent": true,
     "base_wallet": {
-      "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+      "address": "0xa31c7c3634658837152f98a470070281ce6fc31d",
       "path": "wallet-1",
       "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
     }

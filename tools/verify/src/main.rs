@@ -250,6 +250,48 @@ fn run() -> Value {
     );
     r.check("A14", "fake token cannot record a payment", fake, json!({}));
 
+    // BC19-BC21 (K8): the contract itself refuses to list or sell an agent
+    // that the pinned factory did not create.
+    let mut ch = cheat_world();
+    let refused_list = panics_with("NotBornClean", || {
+        ch.by_1y(ALICE)
+            .list_for_sale(U128(500 * USD), CODE_HASH.into(), None);
+    });
+    r.check(
+        "BC19",
+        "a plain deploy (not born clean) cannot be listed: NotBornClean",
+        refused_list && ch.m().listing.is_none() && ch.m().status == Status::Active,
+        json!({"born_clean": ch.m().born_clean}),
+    );
+    let held_before = ch.m().held;
+    let paid = ch.buy(BOB, 500 * USD, BOB_RUNNER);
+    r.check(
+        "BC20",
+        "a buy sent to a plain deploy anyway is refunded in full, nothing is held",
+        paid == Some(500 * USD) && ch.m().held == held_before && ch.m().pending.is_none(),
+        json!({"refund": usd(paid.unwrap_or(0))}),
+    );
+    let mut tw = translator_world();
+    let st = tw.by(MALLORY).get_status();
+    r.check(
+        "BC21",
+        "a factory-born agent is born clean (get_status) and lists; share offers need no birth",
+        st["born_clean"] == true
+            && st["factory"] == agent_exit::FACTORY
+            && {
+                tw.by_1y(ALICE)
+                    .list_for_sale(U128(1_000 * USD), CODE_HASH.into(), None);
+                tw.m().status == Status::Listed
+            }
+            && {
+                let end = near_sdk::json_types::U64(ch.now + 365 * DAY);
+                !ch.by_1y(ALICE)
+                    .offer_share(2_000, U128(500 * USD), end)
+                    .is_null()
+            },
+        json!({"factory": st["factory"]}),
+    );
+
     // E15: dust.
     let mut s = translator_world();
     let dust = s.pay("dust.testnet", 50_000) == Some(50_000);

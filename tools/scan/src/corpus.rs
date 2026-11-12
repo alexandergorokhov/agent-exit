@@ -135,6 +135,7 @@ pub fn clean_agent(rng: &mut Rng, idx: usize) -> ScanInput {
             open_approvals: 0,
             open_auth_until: if rng.below(3) == 0 { NOW_NS - 1 } else { 0 },
             frozen: false,
+            born_clean: Some(true),
             admin: Some(PUBLISHED_ADMIN.into()),
             token: Some(PUBLISHED_TOKEN.into()),
             paid_to_total: Some(rng.below(1_500)),

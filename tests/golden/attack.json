@@ -6,7 +6,7 @@
     "families_blocked": 19,
     "false_positives": 0,
     "clean_cases": 50,
-    "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+    "code_hash": "F56WyouMoT7N6zQSEVHWtJz1zqJDutJVaRPjvDXy6VwY",
     "code_hash_source": "release"
   },
   "in_scope": {
@@ -230,8 +230,8 @@
     },
     {
       "id": "N4",
-      "not_caught": "A hidden full-access key used directly by a buyer who skipped the scan",
-      "why": "The contract cannot list its own keys; the SDK and MCP never skip the scan; a hidden key calling the contract freezes it (A23)"
+      "not_caught": "A pinned factory account that still holds a full-access key (the factory could be redeployed to add a key to agents it creates later)",
+      "why": "Trust assumption: the factory must be locked after store_code. A seller can no longer rely on a buyer skipping the scan: the contract refuses to list or sell any agent the pinned factory did not create (NotBornClean, K8)"
     },
     {
       "id": "N5",
@@ -258,6 +258,11 @@
     {
       "id": "A8",
       "what": "list with an open deed approval: refused OpenApproval",
+      "blocked": true
+    },
+    {
+      "id": "BC19",
+      "what": "a plain deploy (not born clean, hidden full-access key) cannot be listed: NotBornClean; a buy sent anyway is refunded in full",
       "blocked": true
     },
     {

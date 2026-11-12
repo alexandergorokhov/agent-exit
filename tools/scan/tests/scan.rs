@@ -128,7 +128,7 @@ fn c21_held_must_be_covered_by_the_token_balance() {
 #[test]
 fn e34_subaccount_warns_but_does_not_block() {
     let mut i = judge();
-    i.chain.subaccounts = vec!["data.translator.testnet".into()];
+    i.chain.subaccounts = vec!["data.translator.factory.testnet".into()];
     let r = scan(&i);
     assert_eq!(r.verdict, "clean");
     assert_eq!(r.findings[0].code, "subaccount_does_not_move");
@@ -156,6 +156,10 @@ fn each_rule_blocks_alone() {
             i.contract.open_auth_until = i.now_ns + 1
         }),
         ("frozen", |i| i.contract.frozen = true),
+        // K8: the contract says it was not created by the pinned factory.
+        ("contract_not_born_clean", |i| {
+            i.contract.born_clean = Some(false)
+        }),
         ("registry_mismatch", |i| {
             i.contract.admin = Some("alice.testnet".into())
         }),

@@ -36,22 +36,46 @@ fn p1_fake_revenue_is_flagged_not_counted() {
 }
 
 #[test]
-fn p2_hidden_key_blocks_the_scan_and_freezes_if_skipped() {
+fn p2_a_plain_deploy_with_a_hidden_key_cannot_be_listed_or_bought() {
     let mut w = World::new();
-    run(&mut w, r#"{"op":"plant_key"}"#);
-    run(&mut w, r#"{"op":"list","price":1000}"#);
+    let v = run(&mut w, r#"{"op":"plant_key"}"#);
+    assert!(last(&v).contains("not through the factory"), "{}", last(&v));
+    assert_eq!(v["view"]["born_clean"], false);
+    // K8: the contract itself refuses to list it.
+    let v = run(&mut w, r#"{"op":"list","price":1000}"#);
+    assert!(last(&v).contains("NotBornClean"), "{}", last(&v));
+    assert_eq!(v["view"]["status"], "Active");
+    assert!(v["view"]["listing"].is_null());
+    // The scan blocks it too (second layer): hidden key and the contract's own flag.
     let v = run(&mut w, r#"{"op":"scan"}"#);
     assert_eq!(v["view"]["scan"]["verdict"], "blocked");
     assert!(last(&v).contains("full_access_key_present"), "{}", last(&v));
+    assert!(last(&v).contains("contract_not_born_clean"), "{}", last(&v));
     let v = run(&mut w, r#"{"op":"buy"}"#);
     assert!(last(&v).contains("SCAN_BLOCKED"));
-    assert_eq!(v["view"]["owner"], "alice.testnet");
-    // A buyer who skips the scan gets the agent, but the hidden key is still there.
+    // A buyer who skips the scan still cannot buy: the contract refuses.
     let v = run(&mut w, r#"{"op":"buy","skip_scan":true}"#);
-    assert_eq!(v["view"]["owner"], "bob.testnet");
-    assert!(last(&v).contains("hidden key is still on the account"));
-    assert_eq!(v["view"]["escrow_left"], "300.00");
-    // alice uses it: the contract proves the backdoor, freezes, escrow goes to bob.
+    assert!(last(&v).contains("NotBornClean"), "{}", last(&v));
+    assert_eq!(v["view"]["owner"], "alice.testnet");
+    assert_eq!(v["view"]["claimable"]["bob"], "0.00");
+    assert_eq!(v["view"]["solvent"], true);
+}
+
+/// Second line of defence (A23), still in the contract: if a key the contract
+/// never added is ever used on the agent's methods, it freezes and the open
+/// escrow goes to the buyer. A factory-born agent has no such key; this puts
+/// one there by hand, as the engine allows, after an honest sale.
+#[test]
+fn p2e_a_key_the_contract_never_added_freezes_the_agent_and_returns_escrow() {
+    use scan::{AccessKey, Permission};
+    let mut w = World::new();
+    for a in ["list", "scan", "buy"] {
+        run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
+    }
+    w.keys.push(AccessKey {
+        public_key: playground::HIDDEN_KEY.into(),
+        permission: Permission::Full("FullAccess".into()),
+    });
     let v = run(&mut w, r#"{"op":"hidden_key"}"#);
     assert!(
         last(&v).contains("FROZEN") && last(&v).contains("300.00"),
@@ -64,17 +88,22 @@ fn p2_hidden_key_blocks_the_scan_and_freezes_if_skipped() {
 }
 
 #[test]
-fn p2c_skipping_the_scan_lets_a_hidden_key_take_the_agent_back() {
+fn p2d_an_honest_agent_is_born_clean_and_lists() {
+    let mut w = World::new();
+    let v = run(&mut w, r#"{"op":"view"}"#);
+    assert_eq!(v["view"]["born_clean"], true);
+    let v = run(&mut w, r#"{"op":"list"}"#);
+    assert!(last(&v).contains("Listed"), "{}", last(&v));
+    let v = run(&mut w, r#"{"op":"scan"}"#);
+    assert_eq!(v["view"]["scan"]["verdict"], "clean", "{}", last(&v));
+}
+
+#[test]
+fn p2c_a_full_access_redeploy_without_a_sale_takes_nothing_from_a_buyer() {
     let mut w = World::new();
     run(&mut w, r#"{"op":"plant_key"}"#);
-    run(&mut w, r#"{"op":"list"}"#);
-    run(&mut w, r#"{"op":"buy","skip_scan":true}"#);
     let v = run(&mut w, r#"{"op":"hidden_redeploy"}"#);
-    assert!(
-        last(&v).contains("Only the scan protects the buyer"),
-        "{}",
-        last(&v)
-    );
+    assert!(last(&v).contains("Nobody paid"), "{}", last(&v));
     assert_eq!(v["view"]["taken_over"], true);
     assert!(v["view"]["keys"]
         .as_array()
@@ -300,10 +329,7 @@ fn p6b_sealed_config_honest_delivery_and_no_delivery() {
 #[test]
 fn p7_after_a_hidden_redeploy_the_contract_promises_nothing() {
     let mut w = World::new();
-    for a in ["plant_key", "list"] {
-        run(&mut w, &format!(r#"{{"op":"{a}"}}"#));
-    }
-    run(&mut w, r#"{"op":"buy","skip_scan":true}"#);
+    run(&mut w, r#"{"op":"plant_key"}"#);
     let v = run(&mut w, r#"{"op":"hidden_redeploy"}"#);
     assert_eq!(v["view"]["taken_over"], true);
     for a in [

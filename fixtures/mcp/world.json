@@ -6,18 +6,20 @@
   "decimals": 6,
   "expected_code_hash": "fixture-release-hash-v1",
   "agents": {
-    "translator.testnet": {
+    "translator.factory.testnet": {
       "shares": [],
       "holdings": {},
       "status": {
         "schema": "agent-status.v1",
-        "agent": "translator.testnet",
+        "agent": "translator.factory.testnet",
         "owner": "alice.testnet",
         "owner_epoch": 1,
         "status": "Listed",
         "listing_version": 1,
         "paused": false,
         "frozen": false,
+        "born_clean": true,
+        "factory": "factory.testnet",
         "token": "xusd.testnet",
         "admin": "admin.testnet",
         "signers": [
@@ -131,7 +133,7 @@
       },
       "listing": {
         "schema": "listing.v1",
-        "agent": "translator.testnet",
+        "agent": "translator.factory.testnet",
         "seller": "alice.testnet",
         "listing_version": 1,
         "price": "1000000000",
@@ -182,7 +184,7 @@
         {
           "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
           "permission": {
-            "receiver_id": "translator.testnet",
+            "receiver_id": "translator.factory.testnet",
             "method_names": [
               "heartbeat",
               "accept_job",
@@ -198,7 +200,7 @@
       },
       "scan_input": {
         "schema": "scan-input.v1",
-        "agent": "translator.testnet",
+        "agent": "translator.factory.testnet",
         "now_ns": 1768089600000000000,
         "expected": {
           "code_hash": "fixture-release-hash-v1",
@@ -280,7 +282,7 @@
             {
               "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
               "permission": {
-                "receiver_id": "translator.testnet",
+                "receiver_id": "translator.factory.testnet",
                 "method_names": [
                   "heartbeat",
                   "accept_job",
@@ -295,7 +297,7 @@
             {
               "public_key": "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
               "permission": {
-                "receiver_id": "translator.testnet",
+                "receiver_id": "translator.factory.testnet",
                 "method_names": [
                   "heartbeat",
                   "accept_job",
@@ -319,12 +321,13 @@
           "open_approvals": 0,
           "open_auth_until": 0,
           "frozen": false,
+          "born_clean": true,
           "admin": "admin.testnet",
           "token": "xusd.testnet",
           "paid_to_total": 0,
           "near_storage_solvent": true,
           "base_wallet": {
-            "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+            "address": "0xa31c7c3634658837152f98a470070281ce6fc31d",
             "path": "wallet-1",
             "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
           }
@@ -349,10 +352,12 @@
         "agent": "cheat.testnet",
         "owner": "alice.testnet",
         "owner_epoch": 1,
-        "status": "Listed",
-        "listing_version": 1,
+        "status": "Active",
+        "listing_version": 0,
         "paused": false,
         "frozen": false,
+        "born_clean": false,
+        "factory": "factory.testnet",
         "token": "xusd.testnet",
         "admin": "admin.testnet",
         "signers": [
@@ -457,38 +462,7 @@
           }
         ]
       },
-      "listing": {
-        "schema": "listing.v1",
-        "agent": "cheat.testnet",
-        "seller": "alice.testnet",
-        "listing_version": 1,
-        "price": "500000000",
-        "paid_now": "350000000",
-        "escrow": "150000000",
-        "terms": {
-          "earnout_bps": 3000,
-          "share_bps": 5000,
-          "floor_bps": 2000,
-          "window_secs": 2592000
-        },
-        "config": null,
-        "terms_min": {
-          "min_earnout_bps": 3000,
-          "max_floor_bps": 5000,
-          "min_window_secs": 2592000
-        },
-        "terms_config": "prod",
-        "code_hash": "sha256:fixture-code-hash",
-        "known_keys": [
-          "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
-        ],
-        "known_keys_hash": "cb207a8fe5e9617e5e72ba72918431a7d4578d28b10a474a36c22a373a582572",
-        "token": "xusd.testnet",
-        "listed_at": "1768089600000000000",
-        "treasury_snapshot": "0",
-        "shares_bps": 0,
-        "shares": []
-      },
+      "listing": null,
       "limits": {
         "schema": "limits.v1",
         "owner": "alice.testnet",
@@ -534,7 +508,7 @@
         "now_ns": 1768089600000000000,
         "expected": {
           "code_hash": "fixture-release-hash-v1",
-          "listing_version": 1
+          "listing_version": 0
         },
         "chain": {
           "code_hash": "fixture-release-hash-v1",
@@ -649,9 +623,9 @@
           "subaccounts": []
         },
         "contract": {
-          "status": "Listed",
+          "status": "Active",
           "owner": "alice.testnet",
-          "listing_version": 1,
+          "listing_version": 0,
           "known_keys": [
             "ed25519:4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
           ],
@@ -659,6 +633,7 @@
           "open_approvals": 0,
           "open_auth_until": 0,
           "frozen": false,
+          "born_clean": false,
           "admin": "admin.testnet",
           "token": "xusd.testnet",
           "paid_to_total": 0,
@@ -669,19 +644,10 @@
             "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
           }
         },
-        "listing": {
-          "listing_version": 1,
-          "price": "500000000",
-          "terms": {
-            "earnout_bps": 3000,
-            "share_bps": 5000,
-            "floor_bps": 2000,
-            "window_secs": 2592000
-          }
-        }
+        "listing": null
       }
     },
-    "research.testnet": {
+    "research.factory.testnet": {
       "shares": [
         {
           "offer_id": 1,
@@ -698,7 +664,7 @@
       ],
       "holdings": {
         "dave.testnet": {
-          "agent": "research.testnet",
+          "agent": "research.factory.testnet",
           "investor": "dave.testnet",
           "holdings": [],
           "claimable": "0"
@@ -706,13 +672,15 @@
       },
       "status": {
         "schema": "agent-status.v1",
-        "agent": "research.testnet",
+        "agent": "research.factory.testnet",
         "owner": "carol.testnet",
         "owner_epoch": 1,
         "status": "Active",
         "listing_version": 0,
         "paused": false,
         "frozen": false,
+        "born_clean": true,
+        "factory": "factory.testnet",
         "token": "xusd.testnet",
         "admin": "admin.testnet",
         "signers": [
@@ -825,7 +793,7 @@
         {
           "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
           "permission": {
-            "receiver_id": "research.testnet",
+            "receiver_id": "research.factory.testnet",
             "method_names": [
               "heartbeat",
               "accept_job",
@@ -841,7 +809,7 @@
       },
       "scan_input": {
         "schema": "scan-input.v1",
-        "agent": "research.testnet",
+        "agent": "research.factory.testnet",
         "now_ns": 1768089600000000000,
         "expected": {
           "code_hash": "fixture-release-hash-v1",
@@ -923,7 +891,7 @@
             {
               "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
               "permission": {
-                "receiver_id": "research.testnet",
+                "receiver_id": "research.factory.testnet",
                 "method_names": [
                   "heartbeat",
                   "accept_job",
@@ -938,7 +906,7 @@
             {
               "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
               "permission": {
-                "receiver_id": "research.testnet",
+                "receiver_id": "research.factory.testnet",
                 "method_names": [
                   "heartbeat",
                   "accept_job",
@@ -962,12 +930,13 @@
           "open_approvals": 0,
           "open_auth_until": 0,
           "frozen": false,
+          "born_clean": true,
           "admin": "admin.testnet",
           "token": "xusd.testnet",
           "paid_to_total": 0,
           "near_storage_solvent": true,
           "base_wallet": {
-            "address": "0xc1d125508afa7c06899ada3d205e147c0496308f",
+            "address": "0xe445c03ba5586b9743d0fec5dda77f376949c754",
             "path": "wallet-1",
             "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
           }
@@ -978,7 +947,7 @@
   },
   "recorded_buys": [
     {
-      "agent": "translator.testnet",
+      "agent": "translator.factory.testnet",
       "buyer": "summarizer.testnet",
       "buyer_runner_pk": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
       "amount": "1000000000",
@@ -1039,13 +1008,15 @@
         "holdings": {},
         "status": {
           "schema": "agent-status.v1",
-          "agent": "translator.testnet",
+          "agent": "translator.factory.testnet",
           "owner": "summarizer.testnet",
           "owner_epoch": 2,
           "status": "Sold",
           "listing_version": 2,
           "paused": false,
           "frozen": false,
+          "born_clean": true,
+          "factory": "factory.testnet",
           "token": "xusd.testnet",
           "admin": "admin.testnet",
           "signers": [
@@ -1194,7 +1165,7 @@
           {
             "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
             "permission": {
-              "receiver_id": "translator.testnet",
+              "receiver_id": "translator.factory.testnet",
               "method_names": [
                 "heartbeat",
                 "accept_job",
@@ -1211,7 +1182,7 @@
         },
         "scan_input": {
           "schema": "scan-input.v1",
-          "agent": "translator.testnet",
+          "agent": "translator.factory.testnet",
           "now_ns": 1768089600000000000,
           "expected": {
             "code_hash": "fixture-release-hash-v1",
@@ -1293,7 +1264,7 @@
               {
                 "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
                 "permission": {
-                  "receiver_id": "translator.testnet",
+                  "receiver_id": "translator.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -1308,7 +1279,7 @@
               {
                 "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
                 "permission": {
-                  "receiver_id": "translator.testnet",
+                  "receiver_id": "translator.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -1332,12 +1303,13 @@
             "open_approvals": 0,
             "open_auth_until": 0,
             "frozen": false,
+            "born_clean": true,
             "admin": "admin.testnet",
             "token": "xusd.testnet",
             "paid_to_total": 0,
             "near_storage_solvent": true,
             "base_wallet": {
-              "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+              "address": "0xa31c7c3634658837152f98a470070281ce6fc31d",
               "path": "wallet-1",
               "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
             }
@@ -1349,12 +1321,12 @@
   ],
   "recorded_listings": [
     {
-      "agent": "translator.testnet",
+      "agent": "translator.factory.testnet",
       "seller": "summarizer.testnet",
       "price": "1200000000",
       "listing": {
         "schema": "listing.v1",
-        "agent": "translator.testnet",
+        "agent": "translator.factory.testnet",
         "seller": "summarizer.testnet",
         "listing_version": 3,
         "price": "1200000000",
@@ -1389,13 +1361,15 @@
         "holdings": {},
         "status": {
           "schema": "agent-status.v1",
-          "agent": "translator.testnet",
+          "agent": "translator.factory.testnet",
           "owner": "summarizer.testnet",
           "owner_epoch": 2,
           "status": "Listed",
           "listing_version": 3,
           "paused": false,
           "frozen": false,
+          "born_clean": true,
+          "factory": "factory.testnet",
           "token": "xusd.testnet",
           "admin": "admin.testnet",
           "signers": [
@@ -1509,7 +1483,7 @@
         },
         "listing": {
           "schema": "listing.v1",
-          "agent": "translator.testnet",
+          "agent": "translator.factory.testnet",
           "seller": "summarizer.testnet",
           "listing_version": 3,
           "price": "1200000000",
@@ -1575,7 +1549,7 @@
           {
             "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
             "permission": {
-              "receiver_id": "translator.testnet",
+              "receiver_id": "translator.factory.testnet",
               "method_names": [
                 "heartbeat",
                 "accept_job",
@@ -1592,7 +1566,7 @@
         },
         "scan_input": {
           "schema": "scan-input.v1",
-          "agent": "translator.testnet",
+          "agent": "translator.factory.testnet",
           "now_ns": 1768089600000000000,
           "expected": {
             "code_hash": "fixture-release-hash-v1",
@@ -1674,7 +1648,7 @@
               {
                 "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
                 "permission": {
-                  "receiver_id": "translator.testnet",
+                  "receiver_id": "translator.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -1689,7 +1663,7 @@
               {
                 "public_key": "ed25519:GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
                 "permission": {
-                  "receiver_id": "translator.testnet",
+                  "receiver_id": "translator.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -1713,12 +1687,13 @@
             "open_approvals": 0,
             "open_auth_until": 0,
             "frozen": false,
+            "born_clean": true,
             "admin": "admin.testnet",
             "token": "xusd.testnet",
             "paid_to_total": 0,
             "near_storage_solvent": true,
             "base_wallet": {
-              "address": "0xf1e4aa61e3f624e873f4f92217dcee594e092544",
+              "address": "0xa31c7c3634658837152f98a470070281ce6fc31d",
               "path": "wallet-1",
               "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
             }
@@ -1737,9 +1712,19 @@
       }
     }
   ],
+  "recorded_refusals": [
+    {
+      "agent": "cheat.testnet",
+      "seller": "alice.testnet",
+      "call": "list_for_sale",
+      "price": "500000000",
+      "error": "NotBornClean",
+      "buy_anyway_unused": "500000000"
+    }
+  ],
   "recorded_share_buys": [
     {
-      "agent": "research.testnet",
+      "agent": "research.factory.testnet",
       "investor": "dave.testnet",
       "offer_id": 1,
       "part": 1000,
@@ -1778,7 +1763,7 @@
         ],
         "holdings": {
           "dave.testnet": {
-            "agent": "research.testnet",
+            "agent": "research.factory.testnet",
             "investor": "dave.testnet",
             "holdings": [
               {
@@ -1795,13 +1780,15 @@
         },
         "status": {
           "schema": "agent-status.v1",
-          "agent": "research.testnet",
+          "agent": "research.factory.testnet",
           "owner": "carol.testnet",
           "owner_epoch": 1,
           "status": "Active",
           "listing_version": 0,
           "paused": false,
           "frozen": false,
+          "born_clean": true,
+          "factory": "factory.testnet",
           "token": "xusd.testnet",
           "admin": "admin.testnet",
           "signers": [
@@ -1914,7 +1901,7 @@
           {
             "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
             "permission": {
-              "receiver_id": "research.testnet",
+              "receiver_id": "research.factory.testnet",
               "method_names": [
                 "heartbeat",
                 "accept_job",
@@ -1930,7 +1917,7 @@
         },
         "scan_input": {
           "schema": "scan-input.v1",
-          "agent": "research.testnet",
+          "agent": "research.factory.testnet",
           "now_ns": 1768089600000000000,
           "expected": {
             "code_hash": "fixture-release-hash-v1",
@@ -2012,7 +1999,7 @@
               {
                 "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
                 "permission": {
-                  "receiver_id": "research.testnet",
+                  "receiver_id": "research.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -2027,7 +2014,7 @@
               {
                 "public_key": "ed25519:CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
                 "permission": {
-                  "receiver_id": "research.testnet",
+                  "receiver_id": "research.factory.testnet",
                   "method_names": [
                     "heartbeat",
                     "accept_job",
@@ -2051,12 +2038,13 @@
             "open_approvals": 0,
             "open_auth_until": 0,
             "frozen": false,
+            "born_clean": true,
             "admin": "admin.testnet",
             "token": "xusd.testnet",
             "paid_to_total": 0,
             "near_storage_solvent": true,
             "base_wallet": {
-              "address": "0xc1d125508afa7c06899ada3d205e147c0496308f",
+              "address": "0xe445c03ba5586b9743d0fec5dda77f376949c754",
               "path": "wallet-1",
               "mpc_public_key": "secp256k1:jCrfJ5wjMBroDh6Mefb1bohaBtzE9me5MaKEhmfmFqK5CudvdSWviXXxfowdtttqh9KWN3zNK9QQu5kq8FfXBK8"
             }
