@@ -5,7 +5,7 @@ All money shown is `xUSD-FAKE`; say so once, on screen.
 
 ## The narrated page video (scripted, offline)
 
-`web/media/agent-exit-demo.mp4` (2:12) is recorded from the market page with captions and a voiceover:
+`web/media/agent-exit-demo.mp4` (2:01) is recorded from the market page with captions and a voiceover:
 
 ```bash
 PIPER=/path/to/piper PIPER_MODEL=/path/to/en-us-libritts-high.onnx PIPER_SPEAKER=100 node scripts/video/voice.mjs # optional: one wav per narration line in scripts/video/script.mjs, Piper TTS, free and offline
@@ -13,7 +13,7 @@ node web/serve.mjs 8090 &  node scripts/video/record.mjs                        
 bash scripts/video/encode.sh                                                                      # mp4 + GIF; mixes the narration in (scripts/video/mix.mjs)
 ```
 
-Without `voice.mjs` the video is the same, silent. Voice: Piper (MIT) with `en-us-libritts-high`, speaker 100, trained on LibriTTS (CC BY 4.0), from the rhasspy/piper v0.0.2 release.
+The video opens on the market page with the Alice and Polyglot hook, shows the "Run and verify" check on the proof page (the chain answers are replayed from the recorded run, because the recorder has no chain access, and the caption says so), runs the playground at 1920x1080 with the page zoomed, and ends on a one-second logo. Without `voice.mjs` the video is the same, silent. Voice: Piper (MIT) with `en-us-libritts-high`, speaker 100, trained on LibriTTS (CC BY 4.0), from the rhasspy/piper v0.0.2 release.
 
 ## Before recording
 
