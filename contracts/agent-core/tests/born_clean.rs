@@ -54,9 +54,13 @@ fn list_is_refused_when_not_born_clean() {
 fn list_works_when_born_clean_and_pay_from_revenue_too() {
     let mut m = Machine::new_born("translator", "alice");
     runner(&mut m);
-    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0).unwrap();
+    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
     m.cancel_listing("alice").unwrap();
-    let t = Terms { earnout_bps: MAX_EARNOUT_BPS, ..Terms::default() };
+    let t = Terms {
+        earnout_bps: MAX_EARNOUT_BPS,
+        ..Terms::default()
+    };
     m.list("alice", 1_000 * USD, t, "hash", T0).unwrap();
 }
 
@@ -66,7 +70,8 @@ fn buy_is_refused_when_not_born_clean_even_if_a_listing_exists() {
     // from before the rule, or a bug) and the buy still refuses.
     let mut m = Machine::new_born("translator", "alice");
     runner(&mut m);
-    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0).unwrap();
+    m.list("alice", 1_000 * USD, Terms::default(), "hash", T0)
+        .unwrap();
     m.born_clean = false;
     let h = m.known_keys_hash();
     let e = m
