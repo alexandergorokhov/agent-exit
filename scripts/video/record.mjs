@@ -161,7 +161,7 @@ const openingScene = N(FULL + "background:#050505", [
 const problemScene = N(FULL + "background:#000", [
   N(`font:800 190px/1 Inter,system-ui,sans-serif;letter-spacing:-6px;color:#fff`, "Fake revenue.", { at: 0.1 }),
   N(`font:800 190px/1 Inter,system-ui,sans-serif;letter-spacing:-6px;color:${RED}`, "Hidden keys.", { at: 1.1 }),
-  N(`font:500 48px Inter,system-ui,sans-serif;color:${MUTE};margin-top:24px`, "Buying an AI agent today is blind trust.", { at: 2.1 }),
+  N(`font:500 48px Inter,system-ui,sans-serif;color:${MUTE};margin-top:24px`, "Buying an agent today is blind trust.", { at: 2.1 }),
 ]);
 // The climax, modelled on the deck's "how" slide: three red rows, each stamped REFUSED in time with the voice, then the struck-out key.
 const row = (label, err, at, stampAt) => N(`display:flex;align-items:center;justify-content:space-between;gap:40px;width:1500px;padding:26px 48px;background:#1b0b0a;border:4px solid ${RED};border-radius:24px;position:relative`, [
@@ -175,23 +175,24 @@ const keyIcon = (col) => N("display:flex;align-items:center", [
 ]);
 const climaxScene = N(FULL + "background:#000;gap:26px", [
   eyebrow("AFTER THE SALE · ALICE TRIES EVERY WAY BACK IN"),
-  row("Withdraw the treasury", "NotOwner", 1.7, 2.35),
-  row("Add her own key", "NotOwner", 2.9, 3.45),
-  row("Use her old key", "AccessKeyNotFound", 4.0, 5.3),
+  row("Withdraw the treasury", "NotOwner", 2.3, 4.0),
+  row("Add her own key", "NotOwner", 4.5, 6.2),
+  row("Use her old key", "AccessKeyNotFound", 6.7, 8.7),
   N("display:flex;align-items:center;gap:90px;margin-top:10px", [
     N("display:flex;align-items:center;gap:20px;position:relative", [keyIcon(RED), N(`font:700 50px Inter,system-ui,sans-serif;color:${RED}`, "Alice's key"),
-      N(`position:absolute;left:-14px;right:-14px;top:50%;height:8px;background:#fff;transform-origin:left`, [], { grow: 5.8 })], { at: 5.6 }),
-    N("display:flex;align-items:center;gap:20px", [keyIcon(GREEN), N(`font:700 50px Inter,system-ui,sans-serif;color:${GREEN}`, "Bob's key")], { at: 5.6 }),
+      N(`position:absolute;left:-14px;right:-14px;top:50%;height:8px;background:#fff;transform-origin:left`, [], { grow: 9.4 })], { at: 9.0 }),
+    N("display:flex;align-items:center;gap:20px", [keyIcon(GREEN), N(`font:700 50px Inter,system-ui,sans-serif;color:${GREEN}`, "Bob's key")], { at: 9.0 }),
   ]),
-  N(`font:800 76px Inter,system-ui,sans-serif;color:#fff`, "Sold means locked out.", { at: 6.3 }),
+  N(`font:800 76px Inter,system-ui,sans-serif;color:#fff`, "Sold means locked out.", { at: 9.9 }),
 ]);
-// The end card: tagline, URL, the one command, and the testnet line.
-const endScene = N(FULL + "background:#000;gap:30px", [
-  N("width:460px;height:auto;border-radius:24px", [], { img: "media/logo.png" }),
-  N(`font:800 76px Inter,system-ui,sans-serif;letter-spacing:-2px;color:#fff`, "Buy AI agents by what they really earn.", { at: 0.2 }),
-  N(`font:600 44px ${MONO_};color:${GREEN}`, "near-transparent-agent-market-web.vercel.app", { at: 1.0 }),
-  N(`display:flex;font:700 54px ${MONO_};color:#fff;border:4px solid ${GREEN};border-radius:20px;padding:16px 44px;white-space:pre`, [N("", "make judge \u2192 "), N(`color:${GREEN}`, "9/9")], { at: 1.8 }),
-  N(`font:500 36px Inter,system-ui,sans-serif;color:${MUTE}`, "Live on NEAR testnet. Test money only (xUSD-FAKE).", { at: 2.6 }),
+// The end card: the name first, then the one command; the page address is small.
+const endScene = N(FULL + "background:#000;gap:34px", [
+  N("width:380px;height:auto;border-radius:24px", [], { img: "media/logo.png" }),
+  N(`font:800 120px/1 Inter,system-ui,sans-serif;letter-spacing:-4px;color:#fff`, "Agent Exit", { at: 0.2 }),
+  N(`font:600 52px Inter,system-ui,sans-serif;color:${MUTE}`, "Buy agents by what they really earn.", { at: 0.9 }),
+  N(`display:flex;font:700 68px ${MONO_};color:#fff;border:4px solid ${GREEN};border-radius:20px;padding:20px 52px;white-space:pre`, [N("", "make judge \u2192 "), N(`color:${GREEN}`, "9/9")], { at: 1.6 }),
+  N(`font:500 34px Inter,system-ui,sans-serif;color:${MUTE}`, "Live on NEAR testnet. Test money only: test dollars (xUSD-FAKE).", { at: 2.4 }),
+  N(`font:500 26px ${MONO_};color:#6b7075;margin-top:10px`, "near-transparent-agent-market-web.vercel.app", { at: 3.0 }),
 ]);
 // Bring an element into view, instantly (smooth scrolling and page zoom do not mix well).
 async function show(sel, block = "start") {
@@ -237,26 +238,26 @@ await scene(problemScene, { ms: 4000, line: LINES.problem });
 await clearScene();
 
 // Shot 1: the market page, 2 s of hero, then the verdict cards. Alice and Polyglot come in with the voice.
-await caption("Alice built Polyglot to sell. Every agent here carries a verdict, counted from who actually paid", 0, LINES.market, true);
+await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 0, LINES.market, true);
 await wait(1800);
 await show("#market", "start");
 await p.evaluate(() => window.scrollBy(0, -140));
-await caption("Alice built Polyglot to sell. Every agent here carries a verdict, counted from who actually paid", 800);
+await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 800);
 
 // Shot 2: the verdicts a buyer sees before paying.
 await p.click('#filters button[data-f="flag"]');
 await openAgent("pump-bot", 0);
 await glow(".mk-panel .kpis");
-await caption("TrendPulse (ill-intended test): 400 of 410 is self-paid, so the price is flagged", 800, LINES.pump);
+await caption("TrendPulse (ill-intended test agent): 400 of 410 is self-paid, so the price is flagged", 800, LINES.pump);
 await closeAgent();
 await openAgent("cheat", 0);
 await glow(".mk-panel .mk-bad");
-await caption("QuickQuote (test): the scan catches the key. K8: the contract refuses a keyed agent (tested offline; testnet after the redeploy)", 800, LINES.cheat);
+await caption("QuickQuote (test agent): the scan catches the key. The contract also refuses keyed agents (proven offline; live on testnet with our next deploy)", 800, LINES.cheat);
 await closeAgent();
 await p.click('#filters button[data-f="sold"]');
 await openAgent("translator", 0);
 await glow(".mk-panel .mk-sold");
-await caption("Polyglot: sold in one transaction; 6 take-backs refused, Alice's key gone", 800, LINES.sold);
+await caption("Polyglot: sold in one transaction. Alice's six tries to take it back all failed.", 800, LINES.sold);
 await closeAgent();
 
 // Shot 3: check it, on the proof page: Run and verify ticks through the recorded testnet transactions.
@@ -267,7 +268,7 @@ await zoom(1.5);
 await wait(600);
 await show('[data-run="sale"]', "start");
 await p.evaluate(() => window.scrollBy(0, -260));
-await caption("Every step re-checked on testnet (answers replayed in this recording)", 0, LINES.evidence);
+await caption("Recorded testnet answers, replayed. The live page re-checks them.", 0, LINES.evidence);
 await wait(1200);
 await p.locator('[data-run="sale"]').click();
 await wait(1400);
@@ -284,11 +285,11 @@ await p.click('#filters button[data-f="all"]');
 await openAgent("translator3", 0);
 await p.fill("#mk-account", "judge.testnet");
 await glow("#mk-invest");
-await caption("Dave invests: 2.5% of Lingo Live's earnings for 25 test dollars", 800, LINES.invest);
+await caption("Open now: invest 2.5% of Lingo Live's earnings for 25 test dollars", 800, LINES.invest);
 await closeAgent();
 await openAgent("research-desk", 0);
 await glow(".mk-panel pre.mcp");
-await caption("AI agents can buy too, over MCP: scan first", 3700, LINES.mcp);
+await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 3700, LINES.mcp);
 await glow(null);
 await closeAgent();
 
@@ -298,10 +299,10 @@ await show("#missions", "start");
 await p.evaluate(() => window.scrollBy(0, -110));
 await p.locator('#missions button[data-mission="invest"]').click();
 await wait(300);
-await caption("The same contract code, run in your browser: Alice sells 20% to Dave", 0, LINES.playInvest);
+await caption("The same contract code, run in your browser: Alice sells 20% of her agent's earnings to Dave", 0, LINES.playInvest);
 await act("offer_share", 900);
 await act("buy_share", 1000);
-await caption("Each payment pays Dave first, even Alice's fake one", 0, LINES.playPay);
+await caption("Each payment pays Dave first, even one Alice makes to herself", 0, LINES.playPay);
 await act("pay_customer_inv", 1000);
 await act("pay_self_inv", 1200, "feed");
 
@@ -316,27 +317,12 @@ await act("scan", 600);
 await act("buy", 1200);
 // The climax: a full-screen card; Alice's three real attempts run in the playground behind it.
 await caption("", 0);
-await scene(climaxScene, { ms: 7800, line: LINES.breakin, during: async () => {
+await scene(climaxScene, { ms: 11500, line: LINES.breakin, during: async () => {
   await act("withdraw", 300, "feed");
   await act("set_key", 300, "feed");
   await act("old_key", 300, "feed");
 } });
 await clearScene();
-
-await quiet();
-await show("#missions", "start");
-await p.evaluate(() => window.scrollBy(0, -110));
-await p.locator('#missions button[data-mission="brain"]').click();
-await wait(300);
-await caption("The prompt is sealed by its hash; a cheaper one is delivered; Bob is refunded in full", 0, LINES.brain);
-await act("commit_config", 600);
-await act("list", 500);
-await act("scan", 500);
-await act("buy", 600);
-await act("pay_customer", 500);
-await act("deliver_fake", 700);
-await act("open_config", 700);
-await act("dispute_config", 1400, "feed");
 
 // Shot 6: what is new, then the end card.
 await caption("", 0);

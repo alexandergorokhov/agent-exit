@@ -23,11 +23,11 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div class="hero-main">
-        <h1>Buy AI agents by what they really earn.</h1>
+        <h1>Proof: every claim, with its transaction.</h1>
         <p class="lede">AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent.</p>
         <div class="cta">
           <a class="btn primary" href="#invest-yourself">Buy a 2.5% share for 25.00</a>
-          <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:06)</a>
+          <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:02)</a>
           <p class="verify-links small">Live on NEAR testnet: <a href="#run-invest">earnings</a> · <a href="#run-sale">lockout</a> · <a href="#run-cheat">cheat caught</a> · <a href="https://github.com/alexandergorokhov/near-transparent-agent-market" target="_blank" rel="noopener noreferrer">Source code</a></p>
         </div>
         <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on what sellers are paid upfront for agents and shares (<a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
@@ -230,13 +230,13 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
               <ul>
                 <li><b>The agent's own account</b>, e.g. <code>translator.agentexit5.testnet</code>, holding the <b>Agent Exit contract</b> (Rust). It keeps the earnings meter, the listing, the escrow and the ownership deed.</li>
                 <li><b>Access keys</b> on that account: the runner key that operates the agent. A sale deletes the seller's and adds the buyer's in the same transaction.</li>
-                <li><b>xUSD-FAKE</b>, a test token (NEP-141). Payments and purchases are token transfers into the contract.</li>
+                <li><b>Test dollars</b> (xUSD-FAKE, a test token, NEP-141). Payments and purchases are token transfers into the contract.</li>
               </ul>
             </div>
             <div class="arch-box buyer">
               <h4>On the buyer's side</h4>
               <ul>
-                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list an agent that ever had a key (K8: tested offline; on testnet after the redeploy).</li>
+                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list any agent that ever had a key (proven in our offline tests; coming to testnet next).</li>
                 <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
               </ul>
             </div>
@@ -253,13 +253,13 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
       </details>
       <details class="limits">
         <summary>Honest limits</summary>
-        <p>The attack suite is a regression suite, not independent evidence: we wrote both the attacks and the rules. 20 attack families, 19 counted, each blocked by its rule; 0 of 50 clean agents wrongly blocked. The seller can keep a copy of an off-chain prompt, and before a sale new payers can be the seller in disguise. That is why 30% of the price waits for real revenue. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
+        <p>The attack suite is a regression suite, not independent evidence: we wrote both the attacks and the rules. We list 20 attack families; 19 counted, and all 19 are blocked by their rule (the 20th, for Base, is not counted until it is live); 0 of 50 clean agents wrongly blocked. The seller can keep a copy of an off-chain prompt, and before a sale new payers can be the seller in disguise. That is why 30% of the price waits for real revenue. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
       </details>
     </section>
   </main>
 
   <footer class="wrap foot">
-    <p class="muted">Test money only (xUSD-FAKE, a fake test dollar token). Testnet only until an external audit. MIT.</p>
+    <p class="muted">Test money only: test dollars (xUSD-FAKE). Testnet only until an external audit. MIT.</p>
     <details>
       <summary>Data sources</summary>
       <p id="source" class="muted"></p>

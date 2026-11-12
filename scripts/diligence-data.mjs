@@ -19,6 +19,9 @@ const s3 = scene(3), s4 = scene(4), s5 = scene(5), s8 = scene(8);
 // Scene 12 (optional): the open offer anyone can buy into, on the scene-8 agent.
 let s12 = null;
 try { s12 = scene(12); } catch { /* not recorded */ }
+// Today's totals for the open-offer agent (page data, written just before this runs): the card's headline numbers match the market table.
+let now = null;
+try { now = JSON.parse(readFileSync(new URL("web/data/testnet.json", root), "utf8")).open_offer?.earnings || null; } catch { /* first run */ }
 const money = (x) => Number(usd(x)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function terms(l) {
@@ -139,10 +142,11 @@ const cards = [
     role: ROLE.translator3,
     deal: `20% of future earnings for a year, ${usd(h.paid_in)}`,
     rows: [
-      ["As of", "scene 8, right after the 20% sale. Later scenes added more customer payments (100.00 counted when the MCP agent bought its part)."],
-      ["Revenue paid in", `${usd(counted + flagged)} from ${jobs.length + 1} payments`],
-      ["Counted (real customers)", `${usd(counted)} from ${jobs.length} paying accounts`],
-      ["Signed by NEAR AI, checked on-chain", `${usd(verified)} (${pct(verified, counted)}% of counted): each job's output signed in a TEE by ${s8.jobs[0].nearai.signing_address.slice(0, 10)}…`],
+      ...(now ? [["Now", `${now.counted} real revenue (${now.verified} of it signed by NEAR AI), ${now.flagged} self-paid, ${now.gross} paid in. Later payments were added after the first investment below.`]] : []),
+      ["At the first investment", "the 20% sale, before those later payments."],
+      ["Revenue paid in then", `${usd(counted + flagged)} from ${jobs.length + 1} payments`],
+      ["Counted then (real customers)", `${usd(counted)} from ${jobs.length} paying accounts`],
+      ["Signed by NEAR AI then, checked on-chain", `${usd(verified)} (${pct(verified, counted)}% of counted): each job's output signed in a TEE by ${s8.jobs[0].nearai.signing_address.slice(0, 10)}…`],
       ["Flagged, not counted", `${usd(flagged)} from ${short(s8.flagged.payment.payer)} (the owner's sub-account); it still paid the investor ${usd(s8.flagged.split.to_investors)}`],
       ["Investor received", `${usd(s8.check.dave_gained)} = 20% of all ${usd(s8.check.paid)} paid in. The payout is on all money paid in, self-paid too; the valuation uses only real revenue.`],
       ["Investor's money at risk", `half paid to the owner now, half (${usd(h.escrow)} left) in escrow and returned if the agent stops earning`],
@@ -150,20 +154,20 @@ const cards = [
     ],
     verdict: "Passes the investor's checks",
     ok: true,
-    why: "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
+    why: "At the first investment every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
     run: "#run-invest",
     tx: buy ? nb(buy.tx) : null,
-    short: "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
+    short: now ? `Pass: ${now.verified} of ${now.counted} signed by NEAR AI; first investor paid to the cent.` : "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
     // dave's 20% stays in the proof scenario; the card points at the offer a visitor can buy.
     deal_short: s12 && s12.agent === s8.holdings_after_jobs.agent ? `Open now: ${Number(s12.buy_part.part_bps) / 100}% parts, ${usd(s12.buy_part.amount)} each` : "20% sold to an investor",
     deal_link: s12 && s12.agent === s8.holdings_after_jobs.agent ? "#invest-yourself" : null,
     metrics: [
-      ["Real revenue", `${usd(counted)} (${pct(verified, counted)}% NEAR AI)`],
-      ["Self-paid", usd(flagged)],
+      ["Real revenue", now ? `${now.counted} (${now.verified} NEAR AI)` : `${usd(counted)} (${pct(verified, counted)}% NEAR AI)`],
+      ["Self-paid", now ? now.flagged : usd(flagged)],
       ["Keys", keys(s8.investor_scan).ok ? "clean" : "hidden full-access key"],
-      ["Earlier investor got", `${usd(s8.check.dave_gained)} (20% of all ${usd(s8.check.paid)})`],
+      ["First investor got", `${usd(s8.check.dave_gained)} (20% of ${usd(s8.check.paid)} then)`],
     ],
-    bar: { real: Number(usd(counted)), self: Number(usd(flagged)) },
+    bar: now ? { real: Number(now.counted), self: Number(now.flagged) } : { real: Number(usd(counted)), self: Number(usd(flagged)) },
     // Days with counted revenue (the contract's day index): the page calls a multiple on so little history early.
     revenue_days: new Set(jobs.filter((p) => p.counted).map((p) => p.day)).size,
   });

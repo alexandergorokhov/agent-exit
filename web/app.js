@@ -326,7 +326,7 @@ async function renderProofStrip() {
   const stats = [];
   if (jobs.length) stats.push(stat(`${jobs.length}/${jobs.length}`, "payments in the first investment signed by NEAR AI", jobs[0]));
   if (payout) stats.push(stat(fmt(payout.investor), `of ${fmt(payout.total)} paid to the investor (${payout.pct}%)`, payout.claim));
-  stats.push(stat(`${tries.length}/${tries.length}`, "take-backs refused after a sale", tries[0]));
+  stats.push(stat(`${tries.length}/${tries.length}`, "ways back in refused after a sale", tries[0]));
   const after = document.getElementById("story-after");
   if (after) after.textContent = `All ${tries.length} of her ways back refused.`;
   box.replaceChildren(
@@ -381,7 +381,7 @@ async function renderDiligence() {
     const self = el("span", { class: "dd-self" });
     if (total) { real.style.setProperty("width", `${(100 * c.bar.real) / total}%`); self.style.setProperty("width", `${(100 * c.bar.self) / total}%`); }
     const full = el("details", { class: "dd-full" }, el("summary", { text: "Full due diligence" }),
-      c.name === "cheat" ? el("p", { class: "small dd-k8" }, el("b", { text: "New rule (K8): " }), "the contract now refuses to list an agent that ever had a key (offline; testnet after the redeploy).") : null,
+      c.name === "cheat" ? el("p", { class: "small dd-k8" }, el("b", { text: "New rule: " }), "the contract also refuses to list any agent that ever had a key. Proven in our offline tests; coming to testnet next.") : null,
       el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
       el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })));
     if (c.name === "translator" && deed) { deed.hidden = false; full.append(deed); }

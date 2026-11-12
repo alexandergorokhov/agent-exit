@@ -237,7 +237,7 @@ function scenarioCard(sc, data) {
     run.disabled = true;
     list.replaceChildren();
     summary.className = "run-summary muted small";
-    let ok = 0, bad = 0, na = 0, nokey = 0;
+    let ok = 0, bad = 0, na = 0, nokey = 0, refusedTx = 0;
     for (let i = 0; i < stages.length; i++) {
       const d = stageView(stages[i], i);
       list.append(d);
@@ -252,9 +252,9 @@ function scenarioCard(sc, data) {
         summary.textContent = "Could not reach NEAR testnet from here. Showing the recorded results: open any stage for its transaction on NearBlocks.";
         break;
       }
-      if (r === true) ok++; else if (r === false) bad++; else if (r === "nokey") nokey++; else na++;
+      if (r === true) { ok++; if (stages[i].kind === "tx" && !stages[i].t.ok) refusedTx++; } else if (r === false) bad++; else if (r === "nokey") nokey++; else na++;
       if (i > 0) list.children[i - 1].open = false;
-      summary.textContent = `${ok + nokey} of ${n(stages.length)} match the chain${nokey ? ` (${nokey} refused, as expected)` : ""}${bad ? `, ${bad} DIFFER from the recording` : ""}${na ? `, ${na} not found` : ""}.`;
+      summary.textContent = `${ok + nokey} of ${n(stages.length)} match the chain${refusedTx || nokey ? `: ${[refusedTx ? `${refusedTx} refused by the contract` : "", nokey ? `${nokey} rejected at the node (deleted keys)` : ""].filter(Boolean).join(", ")}, as expected` : ""}${bad ? `, ${bad} DIFFER from the recording` : ""}${na ? `, ${na} not found` : ""}.`;
     }
     run.disabled = false;
     run.textContent = "Run again";

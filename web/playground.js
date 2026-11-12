@@ -245,11 +245,11 @@ function renderState() {
     el("span", { class: `chip ${k.known_to_contract ? "green" : "red"}`, text: k.known_to_contract ? "added by the contract" : "unknown to the contract" }))));
   const kids = [
     el("div", { class: "agent-card" },
-      el("div", {}, el("div", { class: "agent-name", text: "Polyglot (simulated)" }), el("code", { class: "muted small", text: "translator.factory.testnet" })),
+      el("div", {}, el("div", { class: "agent-name", text: "Demo agent (simulated)" }), el("code", { class: "muted small", text: "demo.testnet" })),
       el("span", { class: `status ${status.toLowerCase()}`, text: status })),
     el("dl", { class: "facts-grid" },
       el("dt", { text: "Owner" }), el("dd", { class: "owner", text: v.owner }),
-      el("dt", { text: "Listing" }), el("dd", { text: v.listing ? `${v.listing.price} xUSD (version ${v.listing.version})` : "not listed" })),
+      el("dt", { text: "Listing" }), el("dd", { text: v.listing ? `${v.listing.price} test dollars (version ${v.listing.version})` : "not listed" })),
     el("h4", { text: "Earnings the buyer sees" }),
     bar("counted", e.counted, gross, "green"),
     bar("verified", e.verified, gross, "blue"),

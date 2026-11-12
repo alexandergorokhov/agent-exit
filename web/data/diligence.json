@@ -145,19 +145,23 @@
       "deal": "20% of future earnings for a year, 500.00",
       "rows": [
         [
-          "As of",
-          "scene 8, right after the 20% sale. Later scenes added more customer payments (100.00 counted when the MCP agent bought its part)."
+          "Now",
+          "100.00 real revenue (50.00 of it signed by NEAR AI), 20.00 self-paid, 120.00 paid in. Later payments were added after the first investment below."
         ],
         [
-          "Revenue paid in",
+          "At the first investment",
+          "the 20% sale, before those later payments."
+        ],
+        [
+          "Revenue paid in then",
           "70.00 from 6 payments"
         ],
         [
-          "Counted (real customers)",
+          "Counted then (real customers)",
           "50.00 from 5 paying accounts"
         ],
         [
-          "Signed by NEAR AI, checked on-chain",
+          "Signed by NEAR AI then, checked on-chain",
           "50.00 (100% of counted): each job's output signed in a TEE by 0xfe007189…"
         ],
         [
@@ -179,16 +183,16 @@
       ],
       "verdict": "Passes the investor's checks",
       "ok": true,
-      "why": "Every counted job was signed by NEAR AI and checked by the contract, and the owner's own payment was flagged but still paid the investor.",
+      "why": "At the first investment every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
       "tx": "https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B",
-      "short": "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
+      "short": "Pass: 50.00 of 100.00 signed by NEAR AI; first investor paid to the cent.",
       "deal_short": "Open now: 2.5% parts, 25.00 each",
       "deal_link": "#invest-yourself",
       "metrics": [
         [
           "Real revenue",
-          "50.00 (100% NEAR AI)"
+          "100.00 (50.00 NEAR AI)"
         ],
         [
           "Self-paid",
@@ -199,12 +203,12 @@
           "clean"
         ],
         [
-          "Earlier investor got",
-          "14.00 (20% of all 70.00)"
+          "First investor got",
+          "14.00 (20% of 70.00 then)"
         ]
       ],
       "bar": {
-        "real": 50,
+        "real": 100,
         "self": 20
       },
       "revenue_days": 1
