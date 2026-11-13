@@ -1,30 +1,30 @@
 {
   "pass": true,
   "payment_event": {
-    "amount": "5000000",
+    "amount": "1000000",
     "counted": true,
-    "day": 20767,
+    "day": 20770,
     "flags": {
       "round_trip": false,
       "self": false,
       "seller_subaccount": false
     },
-    "job_id": "g6-1794280718",
-    "payer": "p1.agentexit4.testnet",
+    "job_id": "g6-1794543602",
+    "payer": "p1.agentexit6.testnet",
     "verified": true,
     "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
   },
   "refused_event": null,
   "samples": [
     {
-      "chat_id": "chatcmpl-67865283-daed-4748-b858-7e4fbb3148ec",
+      "chat_id": "chatcmpl-e253d87f-90cf-4d40-9895-1069b9fcdc88",
       "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ms": 3195,
+      "ms": 4663,
       "recovered_offline": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-      "request_len": 301,
-      "request_sha256": "0648277b7b4abe57e0c1b7dd94a9755c56756a0a1fd4af130e5c65038b3372c5",
-      "response_sha256": "ae9b54110d00c52a2027cf2bb4834b06adfeb5b78ec5c9cb9fcabce28822806e",
-      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:0648277b7b4abe57e0c1b7dd94a9755c56756a0a1fd4af130e5c65038b3372c5:ae9b54110d00c52a2027cf2bb4834b06adfeb5b78ec5c9cb9fcabce28822806e",
+      "request_len": 309,
+      "request_sha256": "95fc59cf79e06af6a24362cc5a43bd8f44851bf14048dbe322e418cd8341904d",
+      "response_sha256": "bf1f4b8c6a5cb9afc8f37586629783d7dbe8ce72a86a119f7786141b85c7e3cc",
+      "signed_text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:95fc59cf79e06af6a24362cc5a43bd8f44851bf14048dbe322e418cd8341904d:bf1f4b8c6a5cb9afc8f37586629783d7dbe8ce72a86a119f7786141b85c7e3cc",
       "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
       "signing_algo": "ecdsa",
       "text_form": "provider (model:req:resp), the form the contract checks"
@@ -39,7 +39,7 @@
   ],
   "txs": [
     {
-      "by": "agentexit4.testnet",
+      "by": "agentexit6.testnet",
       "error": null,
       "events": [
         {
@@ -53,25 +53,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/4k3Do9DeuzBVuLscodf37J2XhZ3pWa2dyPEuqmscpWFx",
+      "explorer": "https://testnet.nearblocks.io/txns/BoBVVPGP4h2PUUFwMFDefgV8cWboEAwqjwqLDXU2S2qo",
       "label": "registry admin: add_signer",
       "method": "add_signer",
-      "ms": 4978,
+      "ms": 4975,
       "ok": true,
-      "receiver": "translator.agentexit4.testnet",
-      "tx": "4k3Do9DeuzBVuLscodf37J2XhZ3pWa2dyPEuqmscpWFx",
+      "receiver": "translator.factory.agentexit6.testnet",
+      "tx": "BoBVVPGP4h2PUUFwMFDefgV8cWboEAwqjwqLDXU2S2qo",
       "value": null
     },
     {
-      "by": "p1.agentexit4.testnet",
+      "by": "p1.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "amount": "5000000",
-              "new_owner_id": "translator.agentexit4.testnet",
-              "old_owner_id": "p1.agentexit4.testnet"
+              "amount": "1000000",
+              "new_owner_id": "translator.factory.agentexit6.testnet",
+              "old_owner_id": "p1.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -81,16 +81,16 @@
         {
           "data": [
             {
-              "amount": "5000000",
+              "amount": "1000000",
               "counted": true,
-              "day": 20767,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
-              "job_id": "g6-1794280718",
-              "payer": "p1.agentexit4.testnet",
+              "job_id": "g6-1794543602",
+              "payer": "p1.agentexit6.testnet",
               "verified": true,
               "verify": "ok:0xfe0071895500a9755c18044948ab4f4e1a7f337e"
             }
@@ -102,38 +102,26 @@
         {
           "data": [
             {
-              "amount": "5000000",
-              "seller_earnout_release": "2500000",
+              "amount": "1000000",
+              "seller_earnout_release": "0",
               "to_investors": "0",
-              "to_owner": "4000000",
-              "to_treasury": "1000000"
+              "to_owner": "1000000",
+              "to_treasury": "0"
             }
           ],
           "event": "split",
           "standard": "agent_exit",
           "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "2500000",
-              "sale_id": 1,
-              "seller": "alice.agentexit4.testnet"
-            }
-          ],
-          "event": "earnout_release",
-          "standard": "agent_exit",
-          "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb",
+      "explorer": "https://testnet.nearblocks.io/txns/3Z29iLiZet2ydtqbEy63jM7nx621cosBx1rYYby1b7qY",
       "label": "p1 pays (at least the price floor) with the NEAR AI proof",
       "method": "ft_transfer_call",
-      "ms": 6192,
+      "ms": 6002,
       "ok": true,
-      "receiver": "xusd.agentexit4.testnet",
-      "tx": "GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb",
-      "value": "5000000"
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "3Z29iLiZet2ydtqbEy63jM7nx621cosBx1rYYby1b7qY",
+      "value": "1000000"
     }
   ]
 }

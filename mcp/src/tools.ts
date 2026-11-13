@@ -1050,7 +1050,7 @@ export class Tools {
       const bc = (id: string) => rows.find((x) => x.agent === id)?.born_clean;
       const sold = [a("translator"), a("translator3")];
       const okLive = bc(a("cheat")) === false && sold.every((id) => bc(id) !== false);
-      add("K8", "The contract refuses to list an agent that was not born clean (NotBornClean): the cheat's list_for_sale and a buy sent to it anyway were refused on chain, and the agents that were sold were created by the factory", nb(ch.txs),
+      add("K8", "The contract refuses to list an agent that was not born clean (NotBornClean): the cheat's listing and a buy sent anyway were refused on chain; the sold agents were made by the factory", nb(ch.txs),
         "the refused list_for_sale and the refunded buy confirmed as recorded; cheat born_clean false, the sold agents not false (live)",
         `${ch.text}; live: cheat born_clean ${bc(a("cheat"))}, ${sold.map((id) => `${id.split(".")[0]} ${bc(id)}`).join(", ")}`,
         ch.n > 0 && ch.ok === ch.n && okLive, [ch, seen(lr, okLive)]);

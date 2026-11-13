@@ -1,13 +1,32 @@
 {
-  "buy_sent": false,
+  "buy_refunded": true,
+  "buy_sent": true,
+  "cheat_born_clean": false,
+  "factory": "factory.agentexit6.testnet",
+  "list_refused": true,
   "pass": true,
   "scan": {
-    "agent": "cheat.agentexit5.testnet",
+    "agent": "cheat.agentexit6.testnet",
     "buy_args": null,
     "findings": [
       {
         "code": "full_access_key_present",
         "detail": "ed25519:7ry3xWSwa1iuN3Go9Wj34BdeKPVF7zRKViM4KG3M4g8R has full access to the agent account",
+        "severity": "block"
+      },
+      {
+        "code": "contract_not_born_clean",
+        "detail": "the contract says this agent was not created by the pinned factory, so it refuses to list or sell it (NotBornClean)",
+        "severity": "block"
+      },
+      {
+        "code": "not_listed",
+        "detail": "status is Active",
+        "severity": "block"
+      },
+      {
+        "code": "listing_missing",
+        "detail": "no listing (get_listing) to check the price and earn-out terms against",
         "severity": "block"
       }
     ],
@@ -15,9 +34,9 @@
     "verdict": "blocked"
   },
   "scan_input": {
-    "agent": "cheat.agentexit5.testnet",
+    "agent": "cheat.agentexit6.testnet",
     "chain": {
-      "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+      "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
       "keys": [
         {
           "permission": {
@@ -28,7 +47,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "cheat.agentexit5.testnet"
+            "receiver_id": "cheat.agentexit6.testnet"
           },
           "public_key": "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
         },
@@ -47,7 +66,7 @@
               "pay",
               "pay_base"
             ],
-            "receiver_id": "cheat.agentexit5.testnet"
+            "receiver_id": "cheat.agentexit6.testnet"
           },
           "public_key": "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
         },
@@ -131,135 +150,105 @@
       "subaccounts": []
     },
     "contract": {
-      "admin": "agentexit5.testnet",
+      "admin": "agentexit6.testnet",
       "base_wallet": {
-        "address": "0xb4feb6b7723dd2a72245bfa62ca0027e674be2f8",
+        "address": "0x432d2353203799177ac1bb248e129e48275757b2",
         "mpc_public_key": "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3",
         "path": "wallet-1"
       },
+      "born_clean": false,
       "frozen": false,
       "known_keys": [
         "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
       ],
       "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
-      "listing_version": 1,
+      "listing_version": 0,
       "near_storage_solvent": true,
       "open_approvals": 0,
       "open_auth_until": 0,
-      "owner": "alice.agentexit5.testnet",
+      "owner": "alice.agentexit6.testnet",
       "paid_to_total": 0,
-      "status": "Listed",
-      "token": "xusd.agentexit5.testnet"
+      "status": "Active",
+      "token": "xusd.agentexit6.testnet"
     },
     "expected": {
-      "admin": "agentexit5.testnet",
-      "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-      "listing_version": 1,
-      "price": "500000000",
-      "token": "xusd.agentexit5.testnet"
+      "admin": "agentexit6.testnet",
+      "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
+      "listing_version": 0,
+      "price": null,
+      "token": "xusd.agentexit6.testnet"
     },
-    "listing": {
-      "listing_version": 1,
-      "price": "500000000",
-      "shares": [],
-      "shares_bps": 0,
-      "terms": {
-        "earnout_bps": 3000,
-        "floor_bps": 2000,
-        "share_bps": 5000,
-        "window_secs": 2592000
-      }
-    },
-    "now_ns": 1794355803327194067,
+    "listing": null,
+    "now_ns": 1794554438671768367,
     "schema": "scan-input.v1"
   },
   "scene": 4,
   "schema": "scene.v1",
   "txs": [
     {
-      "by": "alice.agentexit5.testnet",
+      "by": "alice.agentexit6.testnet",
+      "error": "ExecutionFailure: ActionError(ActionError { index: Some(0), kind: FunctionCallError(ExecutionError(\"Smart contract panicked: NotBornClean\")) })",
+      "events": [],
+      "explorer": "https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu",
+      "label": "alice: list_for_sale 500.00 on cheat (refused: NotBornClean)",
+      "method": "list_for_sale",
+      "ms": 4342,
+      "ok": false,
+      "receiver": "cheat.agentexit6.testnet",
+      "tx": "BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu",
+      "value": null
+    },
+    {
+      "by": "bob.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "cheat.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-              "config": null,
-              "escrow": "150000000",
-              "known_keys": [
-                "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
-              ],
-              "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
-              "listed_at": "1794355795833495723",
-              "listing_version": 1,
-              "paid_now": "350000000",
-              "price": "500000000",
-              "schema": "listing.v1",
-              "seller": "alice.agentexit5.testnet",
-              "shares": [],
-              "shares_bps": 0,
-              "terms": {
-                "earnout_bps": 3000,
-                "floor_bps": 2000,
-                "share_bps": 5000,
-                "window_secs": 2592000
-              },
-              "terms_config": "prod",
-              "terms_min": {
-                "max_floor_bps": 5000,
-                "min_earnout_bps": 3000,
-                "min_window_secs": 2592000
-              },
-              "token": "xusd.agentexit5.testnet",
-              "treasury_snapshot": "0"
+              "amount": "500000000",
+              "new_owner_id": "cheat.agentexit6.testnet",
+              "old_owner_id": "bob.agentexit6.testnet"
             }
           ],
-          "event": "listed",
+          "event": "ft_transfer",
+          "standard": "nep141",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "500000000",
+              "reason": "NotBornClean",
+              "sender": "bob.agentexit6.testnet"
+            }
+          ],
+          "event": "refused",
           "standard": "agent_exit",
+          "version": "1.0.0"
+        },
+        {
+          "data": [
+            {
+              "amount": "500000000",
+              "memo": "refund",
+              "new_owner_id": "bob.agentexit6.testnet",
+              "old_owner_id": "cheat.agentexit6.testnet"
+            }
+          ],
+          "event": "ft_transfer",
+          "standard": "nep141",
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/3dZ6MiNsMSPT1tE3zgfMDj3Qmm13g27kqRuYpLUm5LMi",
-      "label": "alice lists cheat at 500.00",
-      "method": "list_for_sale",
-      "ms": 4824,
+      "explorer": "https://testnet.nearblocks.io/txns/2Rf95RJft2qHJbtJfXKYGihbnLjtFbpLinuL8wkgQP6H",
+      "label": "bob pays cheat 500.00 anyway (refunded in full: NotBornClean)",
+      "method": "ft_transfer_call",
+      "ms": 5470,
       "ok": true,
-      "receiver": "cheat.agentexit5.testnet",
-      "tx": "3dZ6MiNsMSPT1tE3zgfMDj3Qmm13g27kqRuYpLUm5LMi",
-      "value": {
-        "agent": "cheat.agentexit5.testnet",
-        "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-        "config": null,
-        "escrow": "150000000",
-        "known_keys": [
-          "ed25519:5afvjpoJHhAF7jK7Jki4K4PT24SqZL1yw7jVY3DN1yXt"
-        ],
-        "known_keys_hash": "8e651ccc6435e5fdc180769094686c39f40e727796e4dfb718be287b901863fc",
-        "listed_at": "1794355795833495723",
-        "listing_version": 1,
-        "paid_now": "350000000",
-        "price": "500000000",
-        "schema": "listing.v1",
-        "seller": "alice.agentexit5.testnet",
-        "shares": [],
-        "shares_bps": 0,
-        "terms": {
-          "earnout_bps": 3000,
-          "floor_bps": 2000,
-          "share_bps": 5000,
-          "window_secs": 2592000
-        },
-        "terms_config": "prod",
-        "terms_min": {
-          "max_floor_bps": 5000,
-          "min_earnout_bps": 3000,
-          "min_window_secs": 2592000
-        },
-        "token": "xusd.agentexit5.testnet",
-        "treasury_snapshot": "0"
-      }
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "2Rf95RJft2qHJbtJfXKYGihbnLjtFbpLinuL8wkgQP6H",
+      "value": "0"
     }
   ],
-  "what": "cheat caught: alice lists cheat at 500.00; key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present; no buy is sent"
+  "what": "cheat refused by the contract and caught by the scan: alice (owner of cheat, a plain deploy that is not born clean) calls list_for_sale at 500.00 and the contract refuses, NotBornClean (K8; the failed transaction is recorded); bob sends a buy anyway and the token refunds him in full (NotBornClean); key list from both RPCs + get_status -> scan-input.v1 -> scan: blocked full_access_key_present and contract_not_born_clean"
 }

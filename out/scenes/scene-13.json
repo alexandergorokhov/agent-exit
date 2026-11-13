@@ -1,7 +1,7 @@
 {
   "board": [
     {
-      "agent": "translate-pro.factory.agentexit5.testnet",
+      "agent": "translate-pro.factory.agentexit6.testnet",
       "born_clean": true,
       "earnings": {
         "counted": 100000000,
@@ -10,7 +10,7 @@
         "days": [
           {
             "counted": 100000000,
-            "day": 20768,
+            "day": 20770,
             "gross": 100000000,
             "payments": 7,
             "verified": 0
@@ -31,150 +31,38 @@
       },
       "listing": null,
       "name": "translate-pro",
-      "owner": "alice.agentexit5.testnet",
+      "owner": "alice.agentexit6.testnet",
       "shares": [
         {
           "bps": 1000,
-          "created": "1794362355602151588",
-          "end": "1799546352747984887",
+          "created": "1794544283522479772",
+          "end": "1799728281292713627",
           "escrow": "0",
           "holders": [],
           "min_part": 100,
           "offer_id": 1,
           "price": "50000000",
-          "seller": "alice.agentexit5.testnet",
+          "seller": "alice.agentexit6.testnet",
           "sold_bps": 0
         }
       ],
       "status": "Active"
-    },
-    {
-      "agent": "research-desk.factory.agentexit5.testnet",
-      "born_clean": true,
-      "earnings": {
-        "counted": 120000000,
-        "counted_from_fresh_payers": 120000000,
-        "counted_payers": 4,
-        "days": [
-          {
-            "counted": 120000000,
-            "day": 20768,
-            "gross": 120000000,
-            "payments": 4,
-            "verified": 0
-          }
-        ],
-        "days_total": 1,
-        "flagged": 0,
-        "flagged_round_trip": 0,
-        "flagged_self": 0,
-        "flagged_seller_subaccount": 0,
-        "fresh_payers": 4,
-        "gross": 120000000,
-        "other_payers_gross": 0,
-        "payments": 4,
-        "schema": "earnings.v1",
-        "tracked_payers": 4,
-        "verified": 0
-      },
-      "listing": null,
-      "name": "research-desk",
-      "owner": "alice.agentexit5.testnet",
-      "shares": [
-        {
-          "bps": 2000,
-          "created": "1794362455135490572",
-          "end": "1799546450354564156",
-          "escrow": "0",
-          "holders": [],
-          "min_part": 200,
-          "offer_id": 1,
-          "price": "100000000",
-          "seller": "alice.agentexit5.testnet",
-          "sold_bps": 0
-        }
-      ],
-      "status": "Active"
-    },
-    {
-      "agent": "pump-bot.factory.agentexit5.testnet",
-      "born_clean": true,
-      "earnings": {
-        "counted": 10000000,
-        "counted_from_fresh_payers": 10000000,
-        "counted_payers": 1,
-        "days": [
-          {
-            "counted": 10000000,
-            "day": 20768,
-            "gross": 410000000,
-            "payments": 5,
-            "verified": 0
-          }
-        ],
-        "days_total": 1,
-        "flagged": 400000000,
-        "flagged_round_trip": 0,
-        "flagged_self": 300000000,
-        "flagged_seller_subaccount": 100000000,
-        "fresh_payers": 1,
-        "gross": 410000000,
-        "other_payers_gross": 400000000,
-        "payments": 5,
-        "schema": "earnings.v1",
-        "tracked_payers": 1,
-        "verified": 0
-      },
-      "listing": {
-        "agent": "pump-bot.factory.agentexit5.testnet",
-        "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-        "config": null,
-        "escrow": "300000000",
-        "known_keys": [],
-        "known_keys_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "listed_at": "1794362553045052624",
-        "listing_version": 1,
-        "paid_now": "700000000",
-        "price": "1000000000",
-        "schema": "listing.v1",
-        "seller": "alice.agentexit5.testnet",
-        "shares": [],
-        "shares_bps": 0,
-        "terms": {
-          "earnout_bps": 3000,
-          "floor_bps": 2000,
-          "share_bps": 5000,
-          "window_secs": 2592000
-        },
-        "terms_config": "prod",
-        "terms_min": {
-          "max_floor_bps": 5000,
-          "min_earnout_bps": 3000,
-          "min_window_secs": 2592000
-        },
-        "token": "xusd.agentexit5.testnet",
-        "treasury_snapshot": "0"
-      },
-      "name": "pump-bot",
-      "owner": "alice.agentexit5.testnet",
-      "shares": [],
-      "status": "Listed"
     }
   ],
-  "factory": "factory.agentexit5.testnet",
+  "factory": "factory.agentexit6.testnet",
   "pass": true,
   "scene": 13,
   "schema": "scene.v1",
   "txs": [
     {
-      "by": "agentexit5.testnet",
+      "by": "agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "memo": "agent_exit:deed",
-              "owner_id": "alice.agentexit5.testnet",
+              "owner_id": "alice.agentexit6.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -188,10 +76,10 @@
           "data": [
             {
               "access_keys_added": 0,
-              "agent": "translate-pro.factory.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+              "agent": "translate-pro.factory.agentexit6.testnet",
+              "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
               "deposit": "10200000000000000000000000",
-              "owner": "alice.agentexit5.testnet"
+              "owner": "alice.agentexit6.testnet"
             }
           ],
           "event": "agent_born",
@@ -199,17 +87,17 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7",
+      "explorer": "https://testnet.nearblocks.io/txns/7w7Ed7GX8N5YUdKXHfQktvQoodF7J5JBJhdVzKs4Dk5w",
       "label": "create_agent translate-pro for alice (born clean)",
       "method": "create_agent",
-      "ms": 9068,
+      "ms": 7202,
       "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7",
+      "receiver": "factory.agentexit6.testnet",
+      "tx": "7w7Ed7GX8N5YUdKXHfQktvQoodF7J5JBJhdVzKs4Dk5w",
       "value": true
     },
     {
-      "by": "agentexit5.testnet",
+      "by": "agentexit6.testnet",
       "error": null,
       "events": [
         {
@@ -217,7 +105,7 @@
             {
               "amount": "0",
               "memo": "FAKE test dollars",
-              "owner_id": "translate-pro.factory.agentexit5.testnet"
+              "owner_id": "translate-pro.factory.agentexit6.testnet"
             }
           ],
           "event": "ft_mint",
@@ -225,24 +113,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CfUk31EbVjeVTjMB3w6dJ7rzXYdrjQaPEt8pexMMjuy4",
-      "label": "register translate-pro.factory.agentexit5.testnet with xUSD-FAKE",
+      "explorer": "https://testnet.nearblocks.io/txns/DZx6W7hcwSxktYZX6WHTaLGyL1frUa9CLUMUzv1nQeu3",
+      "label": "register translate-pro.factory.agentexit6.testnet with xUSD-FAKE",
       "method": "mint",
-      "ms": 7390,
+      "ms": 5565,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "CfUk31EbVjeVTjMB3w6dJ7rzXYdrjQaPEt8pexMMjuy4",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "DZx6W7hcwSxktYZX6WHTaLGyL1frUa9CLUMUzv1nQeu3",
       "value": null
     },
     {
-      "by": "p1.agentexit5.testnet",
+      "by": "p1.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p1.agentexit5.testnet",
-              "by": "p1.agentexit5.testnet"
+              "account": "p1.agentexit6.testnet",
+              "by": "p1.agentexit6.testnet"
             }
           ],
           "event": "payer_registered",
@@ -250,28 +138,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/D41QjdN9fTWpwtDLXyWrDnqjeiAMmA21VJ8DhKoWbyWC",
+      "explorer": "https://testnet.nearblocks.io/txns/4atTUSabwdEQnnMebC15svQYk3GtxMZQQPpoH1MXm2dz",
       "label": "p1 registers a payer row on translate-pro",
       "method": "storage_deposit",
-      "ms": 6385,
+      "ms": 5447,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "D41QjdN9fTWpwtDLXyWrDnqjeiAMmA21VJ8DhKoWbyWC",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "4atTUSabwdEQnnMebC15svQYk3GtxMZQQPpoH1MXm2dz",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p1.agentexit5.testnet",
+      "by": "p1.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "10000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p1.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p1.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -283,14 +171,14 @@
             {
               "amount": "10000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p1-0",
-              "payer": "p1.agentexit5.testnet",
+              "payer": "p1.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -314,25 +202,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/6mnAzbnmw3AQoDg1dDp2NBKKtgvBfhRaXMDvQFf4nutc",
+      "explorer": "https://testnet.nearblocks.io/txns/HyQTQbUVr8ANqVe7srixFS1WmLrNegxd7k3UgJ4nUVkQ",
       "label": "p1 pays translate-pro 10.00",
       "method": "ft_transfer_call",
-      "ms": 10238,
+      "ms": 6350,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "6mnAzbnmw3AQoDg1dDp2NBKKtgvBfhRaXMDvQFf4nutc",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "HyQTQbUVr8ANqVe7srixFS1WmLrNegxd7k3UgJ4nUVkQ",
       "value": "10000000"
     },
     {
-      "by": "p1.agentexit5.testnet",
+      "by": "p1.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "10000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p1.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p1.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -344,14 +232,14 @@
             {
               "amount": "10000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p1-1",
-              "payer": "p1.agentexit5.testnet",
+              "payer": "p1.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -375,24 +263,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/Cb6GUB5ZVSjMcBtNpNTMtpL1LgYVMXtJKDYeq1dtPCRj",
+      "explorer": "https://testnet.nearblocks.io/txns/6Euzf1mu2eVVtRvUEd2kpJ5buEo5aWcwTzT3AZxRZphc",
       "label": "p1 pays translate-pro 10.00",
       "method": "ft_transfer_call",
-      "ms": 6879,
+      "ms": 6421,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "Cb6GUB5ZVSjMcBtNpNTMtpL1LgYVMXtJKDYeq1dtPCRj",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "6Euzf1mu2eVVtRvUEd2kpJ5buEo5aWcwTzT3AZxRZphc",
       "value": "10000000"
     },
     {
-      "by": "p2.agentexit5.testnet",
+      "by": "p2.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p2.agentexit5.testnet",
-              "by": "p2.agentexit5.testnet"
+              "account": "p2.agentexit6.testnet",
+              "by": "p2.agentexit6.testnet"
             }
           ],
           "event": "payer_registered",
@@ -400,28 +288,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/BvHE8EUB97dLW6rXRfqvdUEf5wQmvcr5VfNm4BLjstjh",
+      "explorer": "https://testnet.nearblocks.io/txns/ChrumpycgEBNbdDCXGLXmJi737yFVs9EQSq6ARV87YTs",
       "label": "p2 registers a payer row on translate-pro",
       "method": "storage_deposit",
-      "ms": 5405,
+      "ms": 4835,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "BvHE8EUB97dLW6rXRfqvdUEf5wQmvcr5VfNm4BLjstjh",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "ChrumpycgEBNbdDCXGLXmJi737yFVs9EQSq6ARV87YTs",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p2.agentexit5.testnet",
+      "by": "p2.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "10000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p2.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p2.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -433,14 +321,14 @@
             {
               "amount": "10000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p2-0",
-              "payer": "p2.agentexit5.testnet",
+              "payer": "p2.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -464,25 +352,25 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/EWGEWkJCjwvbxrcN1tBMRJ1V1i83ND8RH5sTUnw1ic7k",
+      "explorer": "https://testnet.nearblocks.io/txns/DZsCsovuMiEeiREciSj66aCQz84Nfy4sV6PUQ7tPfySN",
       "label": "p2 pays translate-pro 10.00",
       "method": "ft_transfer_call",
-      "ms": 7579,
+      "ms": 6647,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "EWGEWkJCjwvbxrcN1tBMRJ1V1i83ND8RH5sTUnw1ic7k",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "DZsCsovuMiEeiREciSj66aCQz84Nfy4sV6PUQ7tPfySN",
       "value": "10000000"
     },
     {
-      "by": "p2.agentexit5.testnet",
+      "by": "p2.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "10000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p2.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p2.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -494,14 +382,14 @@
             {
               "amount": "10000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p2-1",
-              "payer": "p2.agentexit5.testnet",
+              "payer": "p2.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -525,24 +413,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/EwBA3RdZW3Vqx3WdtRAgQDM8wwWeK4y9Lr1UnuLG9Smg",
+      "explorer": "https://testnet.nearblocks.io/txns/3ammkTxpkQN42xiktpjvoA14CgWgX3VdYw5EgKbYo5v9",
       "label": "p2 pays translate-pro 10.00",
       "method": "ft_transfer_call",
-      "ms": 7791,
+      "ms": 7437,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "EwBA3RdZW3Vqx3WdtRAgQDM8wwWeK4y9Lr1UnuLG9Smg",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "3ammkTxpkQN42xiktpjvoA14CgWgX3VdYw5EgKbYo5v9",
       "value": "10000000"
     },
     {
-      "by": "p3.agentexit5.testnet",
+      "by": "p3.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p3.agentexit5.testnet",
-              "by": "p3.agentexit5.testnet"
+              "account": "p3.agentexit6.testnet",
+              "by": "p3.agentexit6.testnet"
             }
           ],
           "event": "payer_registered",
@@ -550,28 +438,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9JUS7i8yKH3hsXeCWc4kusTohLzFt1Fv4jZsxsfdQE8z",
+      "explorer": "https://testnet.nearblocks.io/txns/8f4RjCeSru23QiPHgxzDvi7L1o88dJCd36gjtNWMzovK",
       "label": "p3 registers a payer row on translate-pro",
       "method": "storage_deposit",
-      "ms": 7590,
+      "ms": 5364,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "9JUS7i8yKH3hsXeCWc4kusTohLzFt1Fv4jZsxsfdQE8z",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "8f4RjCeSru23QiPHgxzDvi7L1o88dJCd36gjtNWMzovK",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p3.agentexit5.testnet",
+      "by": "p3.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "20000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p3.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p3.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -583,14 +471,14 @@
             {
               "amount": "20000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p3-0",
-              "payer": "p3.agentexit5.testnet",
+              "payer": "p3.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -614,24 +502,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/CR2Bnzhc6YgJ644SEtfeD6pVK18CcyRZJrE9vw96W5Lp",
+      "explorer": "https://testnet.nearblocks.io/txns/2fS1dwtvkVD5NuBuN7mQuBMC6133Moz3hQozdTjiPjqc",
       "label": "p3 pays translate-pro 20.00",
       "method": "ft_transfer_call",
-      "ms": 7523,
+      "ms": 6093,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "CR2Bnzhc6YgJ644SEtfeD6pVK18CcyRZJrE9vw96W5Lp",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "2fS1dwtvkVD5NuBuN7mQuBMC6133Moz3hQozdTjiPjqc",
       "value": "20000000"
     },
     {
-      "by": "p4.agentexit5.testnet",
+      "by": "p4.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p4.agentexit5.testnet",
-              "by": "p4.agentexit5.testnet"
+              "account": "p4.agentexit6.testnet",
+              "by": "p4.agentexit6.testnet"
             }
           ],
           "event": "payer_registered",
@@ -639,28 +527,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/342qm7jbG62zUBExpiBNS4eHFW8CnthDByWQtaV6VUPy",
+      "explorer": "https://testnet.nearblocks.io/txns/B11gLdZ3vKn7eW8eHQTDqK6TMzXf6RoWkdcQKSwQfk6S",
       "label": "p4 registers a payer row on translate-pro",
       "method": "storage_deposit",
-      "ms": 5992,
+      "ms": 4934,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "342qm7jbG62zUBExpiBNS4eHFW8CnthDByWQtaV6VUPy",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "B11gLdZ3vKn7eW8eHQTDqK6TMzXf6RoWkdcQKSwQfk6S",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p4.agentexit5.testnet",
+      "by": "p4.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "20000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p4.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p4.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -672,14 +560,14 @@
             {
               "amount": "20000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p4-0",
-              "payer": "p4.agentexit5.testnet",
+              "payer": "p4.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -703,24 +591,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/9hx1sRee2fMEjxdmvaFnLmU2QWYTeC1RUmbnttGFv4rU",
+      "explorer": "https://testnet.nearblocks.io/txns/2khA9Gt2d1xNi379ZGVP9ytofXreqsxBNCx1LeKzaHzT",
       "label": "p4 pays translate-pro 20.00",
       "method": "ft_transfer_call",
-      "ms": 8667,
+      "ms": 6728,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "9hx1sRee2fMEjxdmvaFnLmU2QWYTeC1RUmbnttGFv4rU",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "2khA9Gt2d1xNi379ZGVP9ytofXreqsxBNCx1LeKzaHzT",
       "value": "20000000"
     },
     {
-      "by": "p5.agentexit5.testnet",
+      "by": "p5.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "account": "p5.agentexit5.testnet",
-              "by": "p5.agentexit5.testnet"
+              "account": "p5.agentexit6.testnet",
+              "by": "p5.agentexit6.testnet"
             }
           ],
           "event": "payer_registered",
@@ -728,28 +616,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/8Z8Xd9zDcFYhyS4wv9qr5oEYyZhh74JkAvVJP5EReo9a",
+      "explorer": "https://testnet.nearblocks.io/txns/HioJ39VvR8TEvdRDtcNPvLcynuX8a8cTZWyitvrPaCVJ",
       "label": "p5 registers a payer row on translate-pro",
       "method": "storage_deposit",
-      "ms": 7348,
+      "ms": 5052,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "8Z8Xd9zDcFYhyS4wv9qr5oEYyZhh74JkAvVJP5EReo9a",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "HioJ39VvR8TEvdRDtcNPvLcynuX8a8cTZWyitvrPaCVJ",
       "value": {
         "available": "0",
         "total": "24000000000000000000000"
       }
     },
     {
-      "by": "p5.agentexit5.testnet",
+      "by": "p5.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "amount": "20000000",
-              "new_owner_id": "translate-pro.factory.agentexit5.testnet",
-              "old_owner_id": "p5.agentexit5.testnet"
+              "new_owner_id": "translate-pro.factory.agentexit6.testnet",
+              "old_owner_id": "p5.agentexit6.testnet"
             }
           ],
           "event": "ft_transfer",
@@ -761,14 +649,14 @@
             {
               "amount": "20000000",
               "counted": true,
-              "day": 20768,
+              "day": 20770,
               "flags": {
                 "round_trip": false,
                 "self": false,
                 "seller_subaccount": false
               },
               "job_id": "ex-translate-pro-p5-0",
-              "payer": "p5.agentexit5.testnet",
+              "payer": "p5.agentexit6.testnet",
               "verified": false,
               "verify": "NoProof"
             }
@@ -792,31 +680,31 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/HJP4uCgXC8F4TfDmHak2wjWnjLA49q2CnZHSgVefcNy",
+      "explorer": "https://testnet.nearblocks.io/txns/51qjc2f9zMjQKGdqhMAg8SVFBYQPP8s68xRFdpZmVQsg",
       "label": "p5 pays translate-pro 20.00",
       "method": "ft_transfer_call",
-      "ms": 8194,
+      "ms": 5995,
       "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "HJP4uCgXC8F4TfDmHak2wjWnjLA49q2CnZHSgVefcNy",
+      "receiver": "xusd.agentexit6.testnet",
+      "tx": "51qjc2f9zMjQKGdqhMAg8SVFBYQPP8s68xRFdpZmVQsg",
       "value": "20000000"
     },
     {
-      "by": "alice.agentexit5.testnet",
+      "by": "alice.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "bps": 1000,
-              "created": "1794362355602151588",
-              "end": "1799546352747984887",
+              "created": "1794544283522479772",
+              "end": "1799728281292713627",
               "escrow": "0",
               "holders": [],
               "min_part": 100,
               "offer_id": 1,
               "price": "50000000",
-              "seller": "alice.agentexit5.testnet",
+              "seller": "alice.agentexit6.testnet",
               "sold_bps": 0
             }
           ],
@@ -825,1001 +713,26 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/D3Ms3YAxdbXr5CToPdy5PFp4ECGJWQUqFbNbD1KgXqBn",
+      "explorer": "https://testnet.nearblocks.io/txns/GwpyeGVCeoCyBEyPvB15XGcfeVtLjwZ45PLo3uDGWqhB",
       "label": "alice offers 10% of translate-pro's earnings for 50.00",
       "method": "offer_share",
-      "ms": 5467,
+      "ms": 4998,
       "ok": true,
-      "receiver": "translate-pro.factory.agentexit5.testnet",
-      "tx": "D3Ms3YAxdbXr5CToPdy5PFp4ECGJWQUqFbNbD1KgXqBn",
+      "receiver": "translate-pro.factory.agentexit6.testnet",
+      "tx": "GwpyeGVCeoCyBEyPvB15XGcfeVtLjwZ45PLo3uDGWqhB",
       "value": {
         "bps": 1000,
-        "created": "1794362355602151588",
-        "end": "1799546352747984887",
+        "created": "1794544283522479772",
+        "end": "1799728281292713627",
         "escrow": "0",
         "holders": [],
         "min_part": 100,
         "offer_id": 1,
         "price": "50000000",
-        "seller": "alice.agentexit5.testnet",
+        "seller": "alice.agentexit6.testnet",
         "sold_bps": 0
-      }
-    },
-    {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "memo": "agent_exit:deed",
-              "owner_id": "alice.agentexit5.testnet",
-              "token_ids": [
-                "deed"
-              ]
-            }
-          ],
-          "event": "nft_mint",
-          "standard": "nep171",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "access_keys_added": 0,
-              "agent": "research-desk.factory.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-              "deposit": "10200000000000000000000000",
-              "owner": "alice.agentexit5.testnet"
-            }
-          ],
-          "event": "agent_born",
-          "standard": "agent_exit_factory",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/52vkFvTKg7ymPpfaF9gLpbyDyM2MdPb3pCuP2VR1Tair",
-      "label": "create_agent research-desk for alice (born clean)",
-      "method": "create_agent",
-      "ms": 8878,
-      "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "52vkFvTKg7ymPpfaF9gLpbyDyM2MdPb3pCuP2VR1Tair",
-      "value": true
-    },
-    {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "0",
-              "memo": "FAKE test dollars",
-              "owner_id": "research-desk.factory.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_mint",
-          "standard": "nep141",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/2RGhQCQLr5LFKprbHZV6JFCgS7gupNwHQm4K5mcVhvnE",
-      "label": "register research-desk.factory.agentexit5.testnet with xUSD-FAKE",
-      "method": "mint",
-      "ms": 8105,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "2RGhQCQLr5LFKprbHZV6JFCgS7gupNwHQm4K5mcVhvnE",
-      "value": null
-    },
-    {
-      "by": "p2.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "account": "p2.agentexit5.testnet",
-              "by": "p2.agentexit5.testnet"
-            }
-          ],
-          "event": "payer_registered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/FoUWNnYtTGB1CWAfbfyQn1MatX32KmpXURPkGcTbMCMF",
-      "label": "p2 registers a payer row on research-desk",
-      "method": "storage_deposit",
-      "ms": 7893,
-      "ok": true,
-      "receiver": "research-desk.factory.agentexit5.testnet",
-      "tx": "FoUWNnYtTGB1CWAfbfyQn1MatX32KmpXURPkGcTbMCMF",
-      "value": {
-        "available": "0",
-        "total": "24000000000000000000000"
-      }
-    },
-    {
-      "by": "p2.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "new_owner_id": "research-desk.factory.agentexit5.testnet",
-              "old_owner_id": "p2.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "counted": true,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-research-desk-p2-0",
-              "payer": "p2.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "30000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/8krP8ekPp3yUz4rrqJe7vXzvpBFNM2k8dBwCo3dStBjp",
-      "label": "p2 pays research-desk 30.00",
-      "method": "ft_transfer_call",
-      "ms": 9462,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "8krP8ekPp3yUz4rrqJe7vXzvpBFNM2k8dBwCo3dStBjp",
-      "value": "30000000"
-    },
-    {
-      "by": "p3.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "account": "p3.agentexit5.testnet",
-              "by": "p3.agentexit5.testnet"
-            }
-          ],
-          "event": "payer_registered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/8r1iygm5TqtNkvRcWvP4nRDreEzoMy46KyZBZSXRXjWe",
-      "label": "p3 registers a payer row on research-desk",
-      "method": "storage_deposit",
-      "ms": 5168,
-      "ok": true,
-      "receiver": "research-desk.factory.agentexit5.testnet",
-      "tx": "8r1iygm5TqtNkvRcWvP4nRDreEzoMy46KyZBZSXRXjWe",
-      "value": {
-        "available": "0",
-        "total": "24000000000000000000000"
-      }
-    },
-    {
-      "by": "p3.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "new_owner_id": "research-desk.factory.agentexit5.testnet",
-              "old_owner_id": "p3.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "counted": true,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-research-desk-p3-0",
-              "payer": "p3.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "30000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/61M8kGFjjT56xm3JQ7GePA6MtFHNoJ4qNEFtHAiB37VY",
-      "label": "p3 pays research-desk 30.00",
-      "method": "ft_transfer_call",
-      "ms": 8131,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "61M8kGFjjT56xm3JQ7GePA6MtFHNoJ4qNEFtHAiB37VY",
-      "value": "30000000"
-    },
-    {
-      "by": "p6.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "account": "p6.agentexit5.testnet",
-              "by": "p6.agentexit5.testnet"
-            }
-          ],
-          "event": "payer_registered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/2eViHCS9ntDYD3eL2DBVBYgWkDQJipvb9y8s8R5tsWzb",
-      "label": "p6 registers a payer row on research-desk",
-      "method": "storage_deposit",
-      "ms": 8780,
-      "ok": true,
-      "receiver": "research-desk.factory.agentexit5.testnet",
-      "tx": "2eViHCS9ntDYD3eL2DBVBYgWkDQJipvb9y8s8R5tsWzb",
-      "value": {
-        "available": "0",
-        "total": "24000000000000000000000"
-      }
-    },
-    {
-      "by": "p6.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "new_owner_id": "research-desk.factory.agentexit5.testnet",
-              "old_owner_id": "p6.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "counted": true,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-research-desk-p6-0",
-              "payer": "p6.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "30000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/2qMkdA6ESg3KDXW3HHMxHaNCgjZ4BqHnP2YeiU4mgnQT",
-      "label": "p6 pays research-desk 30.00",
-      "method": "ft_transfer_call",
-      "ms": 8466,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "2qMkdA6ESg3KDXW3HHMxHaNCgjZ4BqHnP2YeiU4mgnQT",
-      "value": "30000000"
-    },
-    {
-      "by": "dave.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "account": "dave.agentexit5.testnet",
-              "by": "dave.agentexit5.testnet"
-            }
-          ],
-          "event": "payer_registered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/GfpFgFA7rfRyDjPMCfgUk1sZzG5gWoLfH7ubn6gYF3vM",
-      "label": "dave registers a payer row on research-desk",
-      "method": "storage_deposit",
-      "ms": 5898,
-      "ok": true,
-      "receiver": "research-desk.factory.agentexit5.testnet",
-      "tx": "GfpFgFA7rfRyDjPMCfgUk1sZzG5gWoLfH7ubn6gYF3vM",
-      "value": {
-        "available": "0",
-        "total": "24000000000000000000000"
-      }
-    },
-    {
-      "by": "dave.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "new_owner_id": "research-desk.factory.agentexit5.testnet",
-              "old_owner_id": "dave.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "counted": true,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-research-desk-dave-0",
-              "payer": "dave.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "30000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "30000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/B6KxgAqWXqF3WqpTE8EPutf1bjez6gzaHDBmFCyqAGbJ",
-      "label": "dave pays research-desk 30.00",
-      "method": "ft_transfer_call",
-      "ms": 7704,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "B6KxgAqWXqF3WqpTE8EPutf1bjez6gzaHDBmFCyqAGbJ",
-      "value": "30000000"
-    },
-    {
-      "by": "alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "bps": 2000,
-              "created": "1794362455135490572",
-              "end": "1799546450354564156",
-              "escrow": "0",
-              "holders": [],
-              "min_part": 200,
-              "offer_id": 1,
-              "price": "100000000",
-              "seller": "alice.agentexit5.testnet",
-              "sold_bps": 0
-            }
-          ],
-          "event": "share_offered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/6zyAxd72KG1tYKPVB7J6JdZ7X1uW1iGLkKiuaDgcecyf",
-      "label": "alice offers 20% of research-desk's earnings for 100.00",
-      "method": "offer_share",
-      "ms": 7376,
-      "ok": true,
-      "receiver": "research-desk.factory.agentexit5.testnet",
-      "tx": "6zyAxd72KG1tYKPVB7J6JdZ7X1uW1iGLkKiuaDgcecyf",
-      "value": {
-        "bps": 2000,
-        "created": "1794362455135490572",
-        "end": "1799546450354564156",
-        "escrow": "0",
-        "holders": [],
-        "min_part": 200,
-        "offer_id": 1,
-        "price": "100000000",
-        "seller": "alice.agentexit5.testnet",
-        "sold_bps": 0
-      }
-    },
-    {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "memo": "agent_exit:deed",
-              "owner_id": "alice.agentexit5.testnet",
-              "token_ids": [
-                "deed"
-              ]
-            }
-          ],
-          "event": "nft_mint",
-          "standard": "nep171",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "access_keys_added": 0,
-              "agent": "pump-bot.factory.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-              "deposit": "10200000000000000000000000",
-              "owner": "alice.agentexit5.testnet"
-            }
-          ],
-          "event": "agent_born",
-          "standard": "agent_exit_factory",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/QzXQM73j19TWocXcYcu6zfCXoX57EVH2GCPaJuVZhQa",
-      "label": "create_agent pump-bot for alice (born clean)",
-      "method": "create_agent",
-      "ms": 9592,
-      "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "QzXQM73j19TWocXcYcu6zfCXoX57EVH2GCPaJuVZhQa",
-      "value": true
-    },
-    {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "0",
-              "memo": "FAKE test dollars",
-              "owner_id": "pump-bot.factory.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_mint",
-          "standard": "nep141",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/A5ggpbBkCRbTkybtd7KonnNJUW8JyzYbi9J8bixd6Fwh",
-      "label": "register pump-bot.factory.agentexit5.testnet with xUSD-FAKE",
-      "method": "mint",
-      "ms": 7453,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "A5ggpbBkCRbTkybtd7KonnNJUW8JyzYbi9J8bixd6Fwh",
-      "value": null
-    },
-    {
-      "by": "alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "new_owner_id": "pump-bot.factory.agentexit5.testnet",
-              "old_owner_id": "alice.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "counted": false,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": true,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-pump-bot-alice-0",
-              "payer": "alice.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "100000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/6gCvS37PgGJ54vpBLz3tDbqbycjchLMz1uLanpkDpPuh",
-      "label": "alice pays pump-bot 100.00",
-      "method": "ft_transfer_call",
-      "ms": 9494,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "6gCvS37PgGJ54vpBLz3tDbqbycjchLMz1uLanpkDpPuh",
-      "value": "100000000"
-    },
-    {
-      "by": "alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "new_owner_id": "pump-bot.factory.agentexit5.testnet",
-              "old_owner_id": "alice.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "counted": false,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": true,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-pump-bot-alice-1",
-              "payer": "alice.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "100000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/8f4BMMb6dyY3QBNXx28r3sBuDT3vFbWc7mCKJzo1H7Kk",
-      "label": "alice pays pump-bot 100.00",
-      "method": "ft_transfer_call",
-      "ms": 9199,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "8f4BMMb6dyY3QBNXx28r3sBuDT3vFbWc7mCKJzo1H7Kk",
-      "value": "100000000"
-    },
-    {
-      "by": "alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "new_owner_id": "pump-bot.factory.agentexit5.testnet",
-              "old_owner_id": "alice.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "counted": false,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": true,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-pump-bot-alice-2",
-              "payer": "alice.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "100000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/5Y3R4Av5DJn9Gx8QdFchDpkNsUwhhC4KtYBCDa1W3yq1",
-      "label": "alice pays pump-bot 100.00",
-      "method": "ft_transfer_call",
-      "ms": 8956,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "5Y3R4Av5DJn9Gx8QdFchDpkNsUwhhC4KtYBCDa1W3yq1",
-      "value": "100000000"
-    },
-    {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "memo": "FAKE test dollars",
-              "owner_id": "x.alice.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_mint",
-          "standard": "nep141",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/2jCmS2tT7dPPg4UMWdAmBmuFNHi7ARd36Ld8M2YoNpPw",
-      "label": "mint x.alice",
-      "method": "mint",
-      "ms": 7171,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "2jCmS2tT7dPPg4UMWdAmBmuFNHi7ARd36Ld8M2YoNpPw",
-      "value": null
-    },
-    {
-      "by": "x.alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "new_owner_id": "pump-bot.factory.agentexit5.testnet",
-              "old_owner_id": "x.alice.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "counted": false,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": true
-              },
-              "job_id": "ex-pump-bot-x.alice-0",
-              "payer": "x.alice.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "100000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "100000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/2uUwfqRdZTX9TkQQJGTwo5HFTpr1H3nVAW125nFr8xRZ",
-      "label": "x.alice pays pump-bot 100.00",
-      "method": "ft_transfer_call",
-      "ms": 7384,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "2uUwfqRdZTX9TkQQJGTwo5HFTpr1H3nVAW125nFr8xRZ",
-      "value": "100000000"
-    },
-    {
-      "by": "p1.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "account": "p1.agentexit5.testnet",
-              "by": "p1.agentexit5.testnet"
-            }
-          ],
-          "event": "payer_registered",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/FQBW2JgubHDWHLykiDUzPVifdTQW6WyWGq3VSrdC98HL",
-      "label": "p1 registers a payer row on pump-bot",
-      "method": "storage_deposit",
-      "ms": 7276,
-      "ok": true,
-      "receiver": "pump-bot.factory.agentexit5.testnet",
-      "tx": "FQBW2JgubHDWHLykiDUzPVifdTQW6WyWGq3VSrdC98HL",
-      "value": {
-        "available": "0",
-        "total": "24000000000000000000000"
-      }
-    },
-    {
-      "by": "p1.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "amount": "10000000",
-              "new_owner_id": "pump-bot.factory.agentexit5.testnet",
-              "old_owner_id": "p1.agentexit5.testnet"
-            }
-          ],
-          "event": "ft_transfer",
-          "standard": "nep141",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "10000000",
-              "counted": true,
-              "day": 20768,
-              "flags": {
-                "round_trip": false,
-                "self": false,
-                "seller_subaccount": false
-              },
-              "job_id": "ex-pump-bot-p1-0",
-              "payer": "p1.agentexit5.testnet",
-              "verified": false,
-              "verify": "NoProof"
-            }
-          ],
-          "event": "payment",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        },
-        {
-          "data": [
-            {
-              "amount": "10000000",
-              "seller_earnout_release": "0",
-              "to_investors": "0",
-              "to_owner": "10000000",
-              "to_treasury": "0"
-            }
-          ],
-          "event": "split",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/7xMWRqM88Zmh5TveVTkFbiq61UH24qGyCkov4sP9V8PN",
-      "label": "p1 pays pump-bot 10.00",
-      "method": "ft_transfer_call",
-      "ms": 8148,
-      "ok": true,
-      "receiver": "xusd.agentexit5.testnet",
-      "tx": "7xMWRqM88Zmh5TveVTkFbiq61UH24qGyCkov4sP9V8PN",
-      "value": "10000000"
-    },
-    {
-      "by": "alice.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "agent": "pump-bot.factory.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-              "config": null,
-              "escrow": "300000000",
-              "known_keys": [],
-              "known_keys_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "listed_at": "1794362553045052624",
-              "listing_version": 1,
-              "paid_now": "700000000",
-              "price": "1000000000",
-              "schema": "listing.v1",
-              "seller": "alice.agentexit5.testnet",
-              "shares": [],
-              "shares_bps": 0,
-              "terms": {
-                "earnout_bps": 3000,
-                "floor_bps": 2000,
-                "share_bps": 5000,
-                "window_secs": 2592000
-              },
-              "terms_config": "prod",
-              "terms_min": {
-                "max_floor_bps": 5000,
-                "min_earnout_bps": 3000,
-                "min_window_secs": 2592000
-              },
-              "token": "xusd.agentexit5.testnet",
-              "treasury_snapshot": "0"
-            }
-          ],
-          "event": "listed",
-          "standard": "agent_exit",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/F4ud23g4BGCym936X43Bmyvdhiq3bhAYoka1HhioWo1R",
-      "label": "alice lists pump-bot at 1000.00",
-      "method": "list_for_sale",
-      "ms": 6250,
-      "ok": true,
-      "receiver": "pump-bot.factory.agentexit5.testnet",
-      "tx": "F4ud23g4BGCym936X43Bmyvdhiq3bhAYoka1HhioWo1R",
-      "value": {
-        "agent": "pump-bot.factory.agentexit5.testnet",
-        "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-        "config": null,
-        "escrow": "300000000",
-        "known_keys": [],
-        "known_keys_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "listed_at": "1794362553045052624",
-        "listing_version": 1,
-        "paid_now": "700000000",
-        "price": "1000000000",
-        "schema": "listing.v1",
-        "seller": "alice.agentexit5.testnet",
-        "shares": [],
-        "shares_bps": 0,
-        "terms": {
-          "earnout_bps": 3000,
-          "floor_bps": 2000,
-          "share_bps": 5000,
-          "window_secs": 2592000
-        },
-        "terms_config": "prod",
-        "terms_min": {
-          "max_floor_bps": 5000,
-          "min_earnout_bps": 3000,
-          "min_window_secs": 2592000
-        },
-        "token": "xusd.agentexit5.testnet",
-        "treasury_snapshot": "0"
       }
     }
   ],
-  "what": "the Exchange (after scene-9; EXCHANGE_AGENTS=3): the born-clean factory creates 3 agents for alice, each paid by its own mix of payers: translate-pro (5 outside customers, 100.00 counted) offers 10% of its earnings for 50.00; research-desk (4 outside customers, 120.00 counted) offers 20% for 100.00; pump-bot (410.00 gross, but 400.00 flagged: alice paid 300.00 herself and her sub-account x.alice 100.00; 10.00 counted) is listed for sale at 1,000.00; the page's board shows counted and flagged revenue and the price multiple"
+  "what": "the Exchange (after scene-9): the born-clean factory creates up to six agents for alice (translate-pro, research-desk, pump-bot, support-247, trend-trader, summarize-it; EXCHANGE_AGENTS=N runs the first N), each paid by its own mix of outside customers, the owner and her sub-account; some offer shares of earnings, the others are listed for sale; the page's board shows counted and flagged revenue and the price multiple"
 }

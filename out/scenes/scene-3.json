@@ -6,7 +6,7 @@
     "days": [
       {
         "counted": 0,
-        "day": 20768,
+        "day": 20770,
         "gross": 500000000,
         "payments": 5,
         "verified": 0
@@ -29,16 +29,16 @@
   "scene": 3,
   "schema": "scene.v1",
   "translator": {
-    "counted": 360000000,
-    "counted_from_fresh_payers": 360000000,
+    "counted": 361000000,
+    "counted_from_fresh_payers": 361000000,
     "counted_payers": 6,
     "days": [
       {
-        "counted": 360000000,
-        "day": 20768,
-        "gross": 500000000,
-        "payments": 33,
-        "verified": 0
+        "counted": 361000000,
+        "day": 20770,
+        "gross": 501000000,
+        "payments": 34,
+        "verified": 1000000
       }
     ],
     "days_total": 1,
@@ -47,12 +47,12 @@
     "flagged_self": 100000000,
     "flagged_seller_subaccount": 40000000,
     "fresh_payers": 6,
-    "gross": 500000000,
+    "gross": 501000000,
     "other_payers_gross": 140000000,
-    "payments": 33,
+    "payments": 34,
     "schema": "earnings.v1",
     "tracked_payers": 6,
-    "verified": 0
+    "verified": 1000000
   },
   "what": "verified vs unverified: get_earnings of translator and cheat side by side"
 }

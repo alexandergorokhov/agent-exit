@@ -1,14 +1,14 @@
 {
-  "agent": "born1.factory.agentexit5.testnet",
-  "agent_code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+  "agent": "born1.factory.agentexit6.testnet",
+  "agent_code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
   "birth": {
-    "agent": "born1.factory.agentexit5.testnet",
-    "block_height": "277139931",
-    "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-    "created_at_ns": "1794356089773830630",
+    "agent": "born1.factory.agentexit6.testnet",
+    "block_height": "277461150",
+    "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
+    "created_at_ns": "1794544002103216150",
     "deposit": "10200000000000000000000000",
-    "owner_at_birth": "alice.agentexit5.testnet",
-    "paid_by": "agentexit5.testnet",
+    "owner_at_birth": "alice.agentexit6.testnet",
+    "paid_by": "agentexit6.testnet",
     "state": "Born"
   },
   "check": {
@@ -19,8 +19,9 @@
     "scan_born_clean": true,
     "scan_cheat_born_clean": false
   },
-  "code_hash_on_chain": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
-  "factory": "factory.agentexit5.testnet",
+  "code_hash_on_chain": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
+  "factory": "factory.agentexit6.testnet",
+  "factory_keys": [],
   "keys_after_runner": [
     {
       "permission": {
@@ -31,7 +32,7 @@
           "pay",
           "pay_base"
         ],
-        "receiver_id": "born1.factory.agentexit5.testnet"
+        "receiver_id": "born1.factory.agentexit6.testnet"
       },
       "public_key": "ed25519:HoMYKFHbrLS4Yo42YMdpHvr52x64dLcGYjov9MhJv8zz"
     }
@@ -65,8 +66,23 @@
         "severity": "block"
       },
       {
+        "code": "contract_not_born_clean",
+        "detail": "the contract says this agent was not created by the pinned factory, so it refuses to list or sell it (NotBornClean)",
+        "severity": "block"
+      },
+      {
+        "code": "not_listed",
+        "detail": "status is Active",
+        "severity": "block"
+      },
+      {
+        "code": "listing_missing",
+        "detail": "no listing (get_listing) to check the price and earn-out terms against",
+        "severity": "block"
+      },
+      {
         "code": "not_born_clean",
-        "detail": "cheat.agentexit5.testnet was not created by the factory factory.agentexit5.testnet: hidden keys and pre-written state are caught only by this scan",
+        "detail": "cheat.agentexit6.testnet was not created by the factory factory.agentexit6.testnet: hidden keys and pre-written state are caught only by this scan",
         "severity": "warn"
       }
     ]
@@ -75,65 +91,14 @@
   "schema": "scene.v1",
   "txs": [
     {
-      "by": "agentexit5.testnet",
-      "error": null,
-      "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/F1oJBRF68bhLSj9dY2nZCeVmRnRqWoYCjKrF22pAUngJ",
-      "label": "create factory.agentexit5.testnet",
-      "method": "create_account",
-      "ms": 4388,
-      "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "F1oJBRF68bhLSj9dY2nZCeVmRnRqWoYCjKrF22pAUngJ",
-      "value": null
-    },
-    {
-      "by": "factory.agentexit5.testnet",
-      "error": null,
-      "events": [],
-      "explorer": "https://testnet.nearblocks.io/txns/HriZp9QDbXWPo8YLxkJWK7HrvAo3F7z8edQ1CVZRUqCZ",
-      "label": "deploy the factory",
-      "method": "deploy+new",
-      "ms": 3852,
-      "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "HriZp9QDbXWPo8YLxkJWK7HrvAo3F7z8edQ1CVZRUqCZ",
-      "value": null
-    },
-    {
-      "by": "factory.agentexit5.testnet",
-      "error": null,
-      "events": [
-        {
-          "data": [
-            {
-              "bytes": 641087,
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF"
-            }
-          ],
-          "event": "code_stored",
-          "standard": "agent_exit_factory",
-          "version": "1.0.0"
-        }
-      ],
-      "explorer": "https://testnet.nearblocks.io/txns/HJB1kChV5xMS1Kgujbfe7Tv8LrgFjmRM7TQvF6jdTnHJ",
-      "label": "factory: store_code (the published agent wasm)",
-      "method": "store_code",
-      "ms": 6276,
-      "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "HJB1kChV5xMS1Kgujbfe7Tv8LrgFjmRM7TQvF6jdTnHJ",
-      "value": null
-    },
-    {
-      "by": "agentexit5.testnet",
+      "by": "agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "memo": "agent_exit:deed",
-              "owner_id": "alice.agentexit5.testnet",
+              "owner_id": "alice.agentexit6.testnet",
               "token_ids": [
                 "deed"
               ]
@@ -147,10 +112,10 @@
           "data": [
             {
               "access_keys_added": 0,
-              "agent": "born1.factory.agentexit5.testnet",
-              "code_hash": "5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF",
+              "agent": "born1.factory.agentexit6.testnet",
+              "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
               "deposit": "10200000000000000000000000",
-              "owner": "alice.agentexit5.testnet"
+              "owner": "alice.agentexit6.testnet"
             }
           ],
           "event": "agent_born",
@@ -158,24 +123,24 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD",
+      "explorer": "https://testnet.nearblocks.io/txns/2vrntG2pwA9MDbrnEp4WBNvtNuj7hAjR6bDmWECrKo2M",
       "label": "create_agent born1 for alice (one batch, no key)",
       "method": "create_agent",
-      "ms": 6781,
+      "ms": 6260,
       "ok": true,
-      "receiver": "factory.agentexit5.testnet",
-      "tx": "2Rgj3r37wUx22ySBK5PZWM45JNP68U4RxRDHzv5zDpLD",
+      "receiver": "factory.agentexit6.testnet",
+      "tx": "2vrntG2pwA9MDbrnEp4WBNvtNuj7hAjR6bDmWECrKo2M",
       "value": true
     },
     {
-      "by": "alice.agentexit5.testnet",
+      "by": "alice.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
               "key": "ed25519:HoMYKFHbrLS4Yo42YMdpHvr52x64dLcGYjov9MhJv8zz",
-              "owner": "alice.agentexit5.testnet",
+              "owner": "alice.agentexit6.testnet",
               "pending": true,
               "removed": []
             }
@@ -196,15 +161,15 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/AM5cz7WMTRcWoq7vtNqjKRWgZsU8RU494kDznKcgk7f2",
+      "explorer": "https://testnet.nearblocks.io/txns/8fzpB67T9qc2AVTveZTgkwc6QzBsWJjngoVYUM49k7hL",
       "label": "alice: set_runner_key",
       "method": "set_runner_key",
-      "ms": 6246,
+      "ms": 5053,
       "ok": true,
-      "receiver": "born1.factory.agentexit5.testnet",
-      "tx": "AM5cz7WMTRcWoq7vtNqjKRWgZsU8RU494kDznKcgk7f2",
+      "receiver": "born1.factory.agentexit6.testnet",
+      "tx": "8fzpB67T9qc2AVTveZTgkwc6QzBsWJjngoVYUM49k7hL",
       "value": true
     }
   ],
-  "what": "born clean (not part of `scenes`): ROOT creates factory.ROOT, deploys contracts/res/agent_factory.wasm with new(code_hash = the agent build), uploads the agent wasm (store_code: refused unless its sha256 matches); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean"
+  "what": "born clean (not part of `scenes`): factory.ROOT already exists from the deploy (scene 9 creates, deploys and stores only what is missing: contracts/res/agent_factory.wasm with new(code_hash = the agent build), the agent wasm via store_code); ROOT pays 10.2 NEAR for create_agent(BORN_AGENT, default born1, owner alice): one batch creates the account, deploys the code and runs new, with no access key; both RPCs list zero keys; get_agent shows the birth; alice adds a runner key (function-call only); bob's scan with the factory record says born_clean true; cheat's says not_born_clean"
 }

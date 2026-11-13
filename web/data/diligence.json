@@ -1,20 +1,20 @@
 {
   "schema": "diligence.v1",
-  "note": "Recorded on NEAR testnet (out/scenes, world agentexit5.testnet). All money is xUSD-FAKE, a test token.",
+  "note": "Recorded on NEAR testnet (out/scenes, world agentexit6.testnet). All money is xUSD-FAKE, a test token.",
   "cards": [
     {
-      "agent": "translator.agentexit5.testnet",
+      "agent": "translator.factory.agentexit6.testnet",
       "name": "translator",
       "role": "The sold agent",
       "deal": "For sale at 1000.00",
       "rows": [
         [
           "Revenue paid in",
-          "500.00 from 33 payments"
+          "501.00 from 34 payments"
         ],
         [
           "Counted (real customers)",
-          "360.00 (72%) from 6 paying accounts"
+          "361.00 (72%) from 6 paying accounts"
         ],
         [
           "Flagged, not counted",
@@ -22,11 +22,11 @@
         ],
         [
           "Payer age and spread",
-          "6 paying accounts over 1 day(s); 100% of counted revenue from payers first seen in the last 7 days, so it weighs 180.00 (new payers count half). Weigh it down: most of it is from payers first seen in the last 7 days; only 6 paying accounts; 1 day(s) of history"
+          "6 paying accounts over 1 day(s); 100% of counted revenue from payers first seen in the last 7 days, so it weighs 180.50 (new payers count half). Weigh it down: most of it is from payers first seen in the last 7 days; only 6 paying accounts; 1 day(s) of history"
         ],
         [
           "Price ÷ counted revenue",
-          "2.8× the counted revenue recorded so far (5.6× the age-weighted figure)"
+          "2.8× the counted revenue recorded so far (5.5× the age-weighted figure)"
         ],
         [
           "Keys and code",
@@ -50,7 +50,7 @@
       "metrics": [
         [
           "Real revenue",
-          "360.00 (72%)"
+          "361.00 (72%)"
         ],
         [
           "Self-paid",
@@ -66,15 +66,15 @@
         ]
       ],
       "bar": {
-        "real": 360,
+        "real": 361,
         "self": 140
       }
     },
     {
-      "agent": "cheat.agentexit5.testnet",
+      "agent": "cheat.agentexit6.testnet",
       "name": "cheat",
       "role": "The cheat",
-      "deal": "For sale at 500.00",
+      "deal": "Not for sale: the contract refused to list it (NotBornClean)",
       "rows": [
         [
           "Revenue paid in",
@@ -94,27 +94,27 @@
         ],
         [
           "Price ÷ counted revenue",
-          "no counted revenue: the price buys nothing proven"
+          "no price: it cannot be listed"
         ],
         [
           "Keys and code",
-          "blocked: full_access_key_present"
+          "blocked: full_access_key_present, contract_not_born_clean, not_listed, listing_missing"
         ],
         [
           "Payment terms",
-          "70% to the seller now; 30% held for 30 days and released by counted customer payments (50% of each); after that the buyer gets the rest back, except a floor of 20% of the held part"
+          "none: list_for_sale was refused NotBornClean (a plain deploy, not created by the born-clean factory, may hold a key no contract can list), and a buy sent anyway is refunded"
         ],
         [
           "Cost to fake this revenue",
-          "before the sale: about 0 (payments from unlinked wallets come back to the seller as revenue, so weigh new payers down); after the sale: 2.00 paid in for each 1.00 of escrow released, so faking then always loses money. Only the 70% paid now (350.00) rests on the history alone; listing with the whole price held removes even that"
+          "not applicable: nothing can be sold"
         ]
       ],
-      "verdict": "Blocked before any money moves",
+      "verdict": "Refused by the contract and blocked by the scan",
       "ok": false,
-      "why": "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back.",
+      "why": "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back. It is a plain deploy, not created by the factory, so the contract itself refuses to list it.",
       "run": "#run-cheat",
-      "short": "Blocked: all 500 was self-paid, and a hidden key lets her take it back.",
-      "deal_short": "For sale at 500.00",
+      "short": "Refused: not born clean, so it cannot be listed. All 500 was self-paid and a hidden key lets her take it back.",
+      "deal_short": "Refused: NotBornClean",
       "metrics": [
         [
           "Real revenue",
@@ -139,7 +139,7 @@
       }
     },
     {
-      "agent": "translator3.agentexit5.testnet",
+      "agent": "translator3.factory.agentexit6.testnet",
       "name": "translator3",
       "role": "Open to investors",
       "deal": "20% of future earnings for a year, 500.00",
@@ -185,7 +185,7 @@
       "ok": true,
       "why": "At the first investment every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
-      "tx": "https://testnet.nearblocks.io/txns/D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B",
+      "tx": "https://testnet.nearblocks.io/txns/FkU5rFkydgtagPRdcGGv4hnivACnEPMku26guehEZhQJ",
       "short": "Pass: 50.00 of 100.00 signed by NEAR AI; first investor paid to the cent.",
       "deal_short": "Open now: 2.5% parts, 25.00 each",
       "deal_link": "#invest-yourself",

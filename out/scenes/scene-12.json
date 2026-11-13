@@ -1,5 +1,5 @@
 {
-  "agent": "translator3.agentexit5.testnet",
+  "agent": "translator3.factory.agentexit6.testnet",
   "buy_part": {
     "amount": "25000000",
     "msg": "{\"bps\":2500,\"end\":\"1796083199000000000\",\"kind\":\"buy_share\",\"offer_id\":2,\"part\":250,\"price\":\"250000000\"}",
@@ -7,26 +7,64 @@
   },
   "offer": {
     "bps": 2500,
-    "created": "1794356277379740183",
+    "created": "1794544108877700023",
     "end": "1796083199000000000",
-    "escrow": "12500000",
-    "holders": [
-      {
-        "account": "carol.agentexit5.testnet",
-        "bps": 250,
-        "earned": "0",
-        "escrow": "12500000",
-        "paid_in": "25000000"
-      }
-    ],
+    "escrow": "0",
+    "holders": [],
     "min_part": 250,
     "offer_id": 2,
     "price": "250000000",
-    "seller": "alice.agentexit5.testnet",
-    "sold_bps": 250
+    "seller": "alice.agentexit6.testnet",
+    "sold_bps": 0
   },
   "pass": true,
   "scene": 12,
   "schema": "scene.v1",
+  "txs": [
+    {
+      "by": "alice.agentexit6.testnet",
+      "error": null,
+      "events": [
+        {
+          "data": [
+            {
+              "bps": 2500,
+              "created": "1794544108877700023",
+              "end": "1796083199000000000",
+              "escrow": "0",
+              "holders": [],
+              "min_part": 250,
+              "offer_id": 2,
+              "price": "250000000",
+              "seller": "alice.agentexit6.testnet",
+              "sold_bps": 0
+            }
+          ],
+          "event": "share_offered",
+          "standard": "agent_exit",
+          "version": "1.0.0"
+        }
+      ],
+      "explorer": "https://testnet.nearblocks.io/txns/F4JJEwJXswpuF2EGgpSECTDk9xx1yoSzy3SE6JfGqyQb",
+      "label": "alice offers 25% of translator3's earnings to anyone, 2.5% parts at 25.00",
+      "method": "offer_share",
+      "ms": 5044,
+      "ok": true,
+      "receiver": "translator3.factory.agentexit6.testnet",
+      "tx": "F4JJEwJXswpuF2EGgpSECTDk9xx1yoSzy3SE6JfGqyQb",
+      "value": {
+        "bps": 2500,
+        "created": "1794544108877700023",
+        "end": "1796083199000000000",
+        "escrow": "0",
+        "holders": [],
+        "min_part": 250,
+        "offer_id": 2,
+        "price": "250000000",
+        "seller": "alice.agentexit6.testnet",
+        "sold_bps": 0
+      }
+    }
+  ],
   "what": "an open offer for anyone (after scene-11): on the scene-8 agent (INVEST_AGENT, default translator3) alice offers 25% of every future payment for 250.00 xUSD-FAKE until 2026-11-30, sold in 10 parts of 2.5% (25.00 each); anyone with a testnet account takes free xUSD-FAKE from the faucet and buys a part with one ft_transfer_call; no purchase is made here"
 }

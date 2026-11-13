@@ -1,33 +1,33 @@
 {
-  "buyer": "carol.agentexit4.testnet",
+  "buyer": "carol.agentexit6.testnet",
   "buyer_xusd": "2000000000",
-  "cheat_status": "Listed",
+  "cheat_status": "Active",
   "pass": true,
   "scene": 7,
   "schema": "scene.v1",
   "translator_status": "Listed",
   "txs": [
     {
-      "by": "summarizer.agentexit4.testnet",
+      "by": "summarizer.agentexit6.testnet",
       "error": null,
       "events": [
         {
           "data": [
             {
-              "agent": "translator.agentexit4.testnet",
-              "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+              "agent": "translator.factory.agentexit6.testnet",
+              "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
               "config": null,
               "escrow": "300000000",
               "known_keys": [
                 "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
               ],
               "known_keys_hash": "e49e57be6c30b2b6c8b7ac5001254e546fc62f491b1f0de413afd1501dc50c39",
-              "listed_at": "1794280738036510307",
+              "listed_at": "1794543794310853815",
               "listing_version": 5,
               "paid_now": "700000000",
               "price": "1000000000",
               "schema": "listing.v1",
-              "seller": "summarizer.agentexit4.testnet",
+              "seller": "summarizer.agentexit6.testnet",
               "shares": [],
               "shares_bps": 0,
               "terms": {
@@ -42,8 +42,8 @@
                 "min_earnout_bps": 3000,
                 "min_window_secs": 2592000
               },
-              "token": "xusd.agentexit4.testnet",
-              "treasury_snapshot": "3000000"
+              "token": "xusd.agentexit6.testnet",
+              "treasury_snapshot": "2000000"
             }
           ],
           "event": "listed",
@@ -51,28 +51,28 @@
           "version": "1.0.0"
         }
       ],
-      "explorer": "https://testnet.nearblocks.io/txns/FyK47wYyTJ8xWtS8Yb8hN4xbRugwcRCNBNgTN4i4XYce",
+      "explorer": "https://testnet.nearblocks.io/txns/3ouuHjHKqME99r3xJXcWRXw51crdUcizuEVuPd6JL92J",
       "label": "summarizer lists translator at 1000.00",
       "method": "list_for_sale",
-      "ms": 5231,
+      "ms": 4303,
       "ok": true,
-      "receiver": "translator.agentexit4.testnet",
-      "tx": "FyK47wYyTJ8xWtS8Yb8hN4xbRugwcRCNBNgTN4i4XYce",
+      "receiver": "translator.factory.agentexit6.testnet",
+      "tx": "3ouuHjHKqME99r3xJXcWRXw51crdUcizuEVuPd6JL92J",
       "value": {
-        "agent": "translator.agentexit4.testnet",
-        "code_hash": "6wb4xz3ftpzZ2BKu7PjmxMw6Nc7eq8CdanY5hFncr9T1",
+        "agent": "translator.factory.agentexit6.testnet",
+        "code_hash": "3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw",
         "config": null,
         "escrow": "300000000",
         "known_keys": [
           "ed25519:HjRTuo4nYEgfyQfZXjYk6RmAavEmGCYwE3ZDGzgFbeyb"
         ],
         "known_keys_hash": "e49e57be6c30b2b6c8b7ac5001254e546fc62f491b1f0de413afd1501dc50c39",
-        "listed_at": "1794280738036510307",
+        "listed_at": "1794543794310853815",
         "listing_version": 5,
         "paid_now": "700000000",
         "price": "1000000000",
         "schema": "listing.v1",
-        "seller": "summarizer.agentexit4.testnet",
+        "seller": "summarizer.agentexit6.testnet",
         "shares": [],
         "shares_bps": 0,
         "terms": {
@@ -87,10 +87,10 @@
           "min_earnout_bps": 3000,
           "min_window_secs": 2592000
         },
-        "token": "xusd.agentexit4.testnet",
-        "treasury_snapshot": "3000000"
+        "token": "xusd.agentexit6.testnet",
+        "treasury_snapshot": "2000000"
       }
     }
   ],
-  "what": "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays listed; then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet"
+  "what": "AI buyer setup (run after scene 6, not part of `scenes`): summarizer lists translator at 1,000.00; cheat stays unlisted (the contract refused it, scene 4); then `make llm-buyer-testnet` lets a real model, through carol's MCP server, scan both and buy on testnet"
 }
