@@ -14,6 +14,5 @@ export const LINES = {
   playPay: "Dave's share is paid from every customer payment.",
   playBuy: "Bob buys the agent, and part of the price waits for real customers.",
   breakin: "Alice tries to get back in. Every attempt is refused.",
-  whyNew: "Code, not promises, locks the seller out.",
   close: "Agent Exit. Buy agents by what they really earn.",
 };

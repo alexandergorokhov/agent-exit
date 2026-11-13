@@ -196,7 +196,7 @@ const climaxScene = N(FULL + "background:#000;gap:26px", [
       N(`position:absolute;left:-14px;right:-14px;top:50%;height:8px;background:#fff;transform-origin:left`, [], { grow: 9.4 })], { at: 9.0 }),
     N("display:flex;align-items:center;gap:20px", [keyIcon(GREEN), N(`font:700 50px Inter,system-ui,sans-serif;color:${GREEN}`, "Bob's key")], { at: 9.0 }),
   ]),
-  N(`font:800 76px Inter,system-ui,sans-serif;color:#fff`, "Sold means locked out.", { at: 9.9 }),
+  N(`font:800 76px Inter,system-ui,sans-serif;color:#fff`, "Her key is deleted, so she cannot get back in.", { at: 9.9 }),
 ]);
 // The end card: the name first, then the one command; the page address is small.
 const endScene = N(FULL + "background:#000;gap:34px", [
@@ -344,9 +344,8 @@ await scene(climaxScene, { ms: 10900, line: LINES.breakin, during: async () => {
 } });
 await clearScene();
 
-// Shot 6: what is new, then the end card.
+// Shot 6: the end card.
 await caption("", 0);
-await scene(N(FULL + "background:#000", [N(`font:800 84px/1.15 Inter,system-ui,sans-serif;letter-spacing:-2px;max-width:1500px`, "Code, not promises, locks the seller out.", { at: 0.1 })]), { ms: 3400, line: LINES.whyNew });
 await scene(endScene, { ms: 5300, line: LINES.close });
 
 await quiet();

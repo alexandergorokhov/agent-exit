@@ -5,7 +5,7 @@ All money shown is `xUSD-FAKE`; say so once, on screen.
 
 ## The narrated page video (scripted, offline)
 
-`web/media/agent-exit-demo.mp4` (2:13) is recorded from the market page with captions and a voiceover:
+`web/media/agent-exit-demo.mp4` (2:09) is recorded from the market page with captions and a voiceover:
 
 ```bash
 # narration: one wav per line of scripts/video/script.mjs in out/video/voice/ (Kokoro, voice af_heart; manifest.json keys must equal speech(line))

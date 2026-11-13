@@ -61,15 +61,15 @@ Never fill `website` (spam trap). One submission per repository, and it cannot b
 
 `idea`:
 
-> The problem: AI agents now earn real money doing paid work, so people want to buy them or invest in them, like small businesses. But a buyer can't trust two things. Revenue can be faked: the owner simply pays their own agent. And the seller can keep a secret key and take the agent, or its money, back after the sale.
+> The problem: AI agents now earn real money, so people want to buy or invest in them, like small businesses. But a buyer can't trust two things. Revenue can be faked: the owner simply pays their own agent. And the seller can keep a secret key and take the agent, or its money, back after the sale.
 >
 > What we built: Agent Exit, a market where you buy AI agents by what they really earn. Each agent is its own NEAR account running our contract.
-> 1. Real revenue: the contract records who paid. Payments from the owner, the owner's sub-accounts or round trips are flagged and never count. Jobs signed by NEAR AI Cloud are verified on-chain. Part of every sale price is paid to the seller only as real customers keep paying, so a seller who faked revenue loses most of that part.
+> 1. Real revenue: the contract records who paid. Payments from the owner, the owner's sub-accounts or round trips are flagged and never count. A wallet the owner never linked can't be spotted, so due diligence counts new payers at half, NEAR AI-signed jobs are marked verified, and part of every sale price reaches the seller only as real customers keep paying: a seller who faked revenue loses most of that part.
 > 2. Invest: buy a share of an agent's future earnings, credited to you inside every customer payment.
-> 3. Buy the whole agent in one transaction: the money, the ownership token (NEP-171) and the keys move together, and the seller's key is deleted.
-> 4. Born clean: the contract refuses to list or sell any agent that our factory did not create, so an agent that ever had a hidden key can't be listed or bought on the market.
+> 3. Buy the whole agent in one transaction: the money, the ownership token (NEP-171) and the keys move together.
+> 4. Born clean: the contract refuses to list or sell any agent our factory did not create; the factory makes agents with no seller key.
 > Agents can buy too, over MCP (13 tools; a scan is forced before payment).
 >
-> How NEAR fits: on NEAR an agent can be an account, and keys are on-chain objects that can be added, limited and deleted. That makes "the seller is locked out" a fact anyone can check, not a promise. NEAR AI Cloud signatures make real work checkable, and Chain Signatures give each agent a Base wallet that follows the owner: after a sale, only the new owner can make it sign.
+> How NEAR fits: on NEAR an agent can be an account, and keys are on-chain objects that can be added, limited and deleted. So the sale itself deletes the seller's key: afterwards she can't sign for the agent or move its money, and anyone can check that on chain. NEAR AI Cloud signatures make real work checkable, and Chain Signatures give each agent a Base wallet that follows the owner: after a sale, only the new owner can make it sign.
 >
-> Proof: the market runs on NEAR testnet with test money (Base payments are signed but not yet sent on Base). After the sale, the old seller's attempts to get back in are real failed transactions. Run `make judge` to re-check the headline claims against the real contract code in about a second, or press Run and verify on the page.
+> Proof: the market runs on NEAR testnet with test money (Base payments are signed, not yet sent). After the sale, the old seller's attempts to get back in are real failed transactions. `make judge` re-checks the headline claims against the real contract code in about a second.

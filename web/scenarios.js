@@ -18,7 +18,7 @@ function el(tag, attrs = {}, ...kids) {
 }
 
 const SCENARIOS = [
-  { id: "sale", title: "Sell an agent, lock the seller out", steps: ["honest-sale", "break-in"],
+  { id: "sale", title: "Sell an agent: the seller's key is deleted", steps: ["honest-sale", "break-in"],
     intro: "alice lists Polyglot, bob buys it in one transaction, then alice tries every way back in." },
   { id: "cheat", title: "A cheat is caught before the sale", steps: ["cheat"],
     intro: "alice lists an agent that carries a hidden full-access key. bob's scan reads the account's keys and refuses to buy." },

@@ -59,7 +59,7 @@ make judge-testnet             # optional, read-only, needs a testnet RPC: re-re
 
 ![The demo page](docs/img/demo.png)
 
-[Watch the 2:13 demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4) (recorded from the page).
+[Watch the 2:09 demo video](https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4) (recorded from the page).
 
 ## What is real, and what is not yet
 
