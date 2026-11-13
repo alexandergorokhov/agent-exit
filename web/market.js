@@ -167,7 +167,7 @@ function actionFor(a) {
       el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. Buying needs a write-enabled server with your own testnet account. ", link("https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/AGENTS.md", "Connect your agent")));
   }
   if (a.kind === "held") return el("div", { class: "mk-act" }, el("p", { text: "Not offered for sale right now." }));
-  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }), a.kind === "blocked" ? el("p", { class: "small", text: "The contract also refuses to list any agent that ever had a key: proven in our offline tests; coming to testnet next." }) : null);
+  if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }), a.kind === "blocked" ? el("p", { class: "small", text: "The contract also refuses to list any agent that ever had a key (NotBornClean): refused on testnet." }) : null);
   return el("div", { class: "mk-act mk-sold" }, el("p", { text: "The new owner holds the only key. 300.00 of the price is released to the seller only as customers keep paying." }));
 }
 

@@ -291,11 +291,11 @@ await p.locator('[data-run="sale"]').click();
 await p.waitForFunction(() => /Run again/.test(document.querySelector('[data-run="sale"]').textContent));
 await p.waitForFunction(() => /12 of 12/.test(document.querySelector('[data-scenario="sale"]').textContent), null, { timeout: 30000 });
 await hideRun("visible");
-await wait(500);
+await wait(300);
 // All 12 stages are checked: show the list, where every refused attack carries a red "refused, confirmed on chain" badge.
 await show('[data-scenario="sale"] .stages', "start");
 await p.evaluate(() => window.scrollBy(0, -150));
-await wait(3000);
+await wait(1400);
 
 // Shot 4: invest, and AI buyers (back on the market page). The MCP scene is 4 s.
 await home();
@@ -307,7 +307,7 @@ await caption("Open now: invest 2.5% of Lingo Live's earnings for 25 test dollar
 await closeAgent();
 await openAgent("translate-pro", 0);
 await glow(".mk-panel pre.mcp");
-await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 3700, LINES.mcp);
+await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 0, LINES.mcp);
 await glow(null);
 await closeAgent();
 
@@ -335,7 +335,7 @@ await act("scan", 600);
 await act("buy", 1200);
 // The climax: a full-screen card; Alice's three real attempts run in the playground behind it.
 await caption("", 0);
-await scene(climaxScene, { ms: 11500, line: LINES.breakin, during: async () => {
+await scene(climaxScene, { ms: 10900, line: LINES.breakin, during: async () => {
   await act("withdraw", 300, "feed");
   await act("set_key", 300, "feed");
   await act("old_key", 300, "feed");
@@ -345,7 +345,7 @@ await clearScene();
 // Shot 6: what is new, then the end card.
 await caption("", 0);
 await scene(N(FULL + "background:#000", [N(`font:800 84px/1.15 Inter,system-ui,sans-serif;letter-spacing:-2px;max-width:1500px`, "Code, not trust, locks the seller out.", { at: 0.1 })]), { ms: 3400, line: LINES.whyNew });
-await scene(endScene, { ms: 6400, line: LINES.close });
+await scene(endScene, { ms: 5300, line: LINES.close });
 
 await quiet();
 await ctx.close();
