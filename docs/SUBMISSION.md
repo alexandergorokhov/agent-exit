@@ -35,7 +35,7 @@ Rules (HACKATHON.md Procedure 2): say it was built at NEAR HACKATHON, tag @NEARP
 >
 > Buying an AI agent is risky: owners fake revenue, sellers keep a key.
 >
-> Agent Exit counts revenue by who paid, and one transaction hands over the agent and deletes the seller's key. @NEARProtocol testnet.
+> Agent Exit counts revenue by who paid, and one transaction hands over the agent, deleting the seller's key. @NEARProtocol testnet.
 >
 > https://near-transparent-agent-market-web.vercel.app/
 > #NEARHackathon

@@ -309,7 +309,7 @@ await caption("Open now: invest 2.5% of Lingo Live's earnings for 25 test dollar
 await closeAgent();
 await openAgent("translate-pro", 0);
 await glow(".mk-panel pre.mcp");
-await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 0, LINES.mcp);
+await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 1, LINES.mcp); // hold the MCP panel for the whole line
 await glow(null);
 await closeAgent();
 
@@ -346,7 +346,7 @@ await clearScene();
 
 // Shot 6: what is new, then the end card.
 await caption("", 0);
-await scene(N(FULL + "background:#000", [N(`font:800 84px/1.15 Inter,system-ui,sans-serif;letter-spacing:-2px;max-width:1500px`, "Code, not trust, locks the seller out.", { at: 0.1 })]), { ms: 3400, line: LINES.whyNew });
+await scene(N(FULL + "background:#000", [N(`font:800 84px/1.15 Inter,system-ui,sans-serif;letter-spacing:-2px;max-width:1500px`, "Code, not promises, locks the seller out.", { at: 0.1 })]), { ms: 3400, line: LINES.whyNew });
 await scene(endScene, { ms: 5300, line: LINES.close });
 
 await quiet();
