@@ -405,7 +405,7 @@ else
 	$(TESTNET_RUN) scene-10
 endif
 
-scene-13: ## [testnet] The Exchange: up to six agents born clean in the factory (EXCHANGE_AGENTS=N; 3 recorded on agentexit5), each with its own revenue mix, share offer or sale listing, for the page's board -> out/scenes/scene-13.json [DRY_RUN=1] (after scene-9)
+scene-13: ## [testnet] The Exchange: up to six agents born clean in the factory (EXCHANGE_AGENTS=N; 1 recorded on agentexit6), each with its own revenue mix, share offer or sale listing, for the page's board -> out/scenes/scene-13.json [DRY_RUN=1] (after scene-9)
 ifdef DRY_RUN
 	@$(PLAN) scene-13
 else
@@ -447,7 +447,7 @@ demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-b
 	@node scripts/demo-summary.mjs $(OUT)
 	@echo "== 3/3 open the page"
 	@echo "Run: make web   then open http://127.0.0.1:$(WEB_PORT)/   (recorded results; nothing here touches a chain)"
-	@echo "Real testnet transactions (2026-11-10, agentexit5.testnet; G6 and the AI buyer on agentexit4.testnet): README section 'Proven on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
+	@echo "Real testnet transactions (2026-11-13, agentexit6.testnet; the MCP investor was recorded on agentexit5.testnet): README section 'Proven on NEAR testnet' and the page's 'Run and verify' scenarios. A real AI model (Claude Haiku) buying on testnet: out/llm-buyer-testnet.json."
 demo-setup: ## [testnet] Fresh demo world on a NEW root: reproducible build, deploy, G1, scenes, page data [DRY_RUN=1] [FORCE=1]
 ifdef DRY_RUN
 	@$(PLAN) deploy && $(PLAN) g1 && $(PLAN) scenes

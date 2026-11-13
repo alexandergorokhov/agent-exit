@@ -11,7 +11,7 @@ const USD = 1_000_000;
 const usd = (x) => (Number(x) / USD).toFixed(2);
 const pct = (a, b) => (Number(b) ? Math.round((100 * Number(a)) / Number(b)) : 0);
 const nb = (tx) => `https://testnet.nearblocks.io/txns/${tx}`;
-// The world is the account the agents live under, e.g. agentexit4.testnet.
+// The world is the account the agents live under, e.g. agentexit6.testnet.
 const worldOf = (cards) => (cards[0]?.agent || "").split(".").slice(-2).join(".") || "unknown";
 const short = (a) => a.replace(/(\.factory)?(\.w\d+)?\.agentexit\d*\.testnet$/, "");
 

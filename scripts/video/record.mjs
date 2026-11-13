@@ -157,6 +157,14 @@ const openingScene = N(FULL + "background:#050505", [
   ]),
   N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$400 paid by its own owner", { at: 4.3 }),
   N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $10 counts: price flagged", { at: 8.1 }),
+  N(`font:500 28px ${MONO_};color:#6b7075`, "numbers recorded on the earlier testnet world (agentexit5)", { at: 0.6 }),
+]);
+// The same verdict as a short card, while the voice names TrendPulse (the current testnet world has no TrendPulse card).
+const pumpScene = N(FULL + "background:#050505", [
+  eyebrow("TRENDPULSE · AN ILL-INTENDED TEST AGENT"),
+  N(`font:800 260px/1 Inter,system-ui,sans-serif;letter-spacing:-8px;color:${GREEN}`, "$10", { at: 0.1 }),
+  N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "of $410 counts. The other $400 paid itself.", { at: 0.4 }),
+  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "price flagged", { at: 0.9 }),
 ]);
 // A 4 s card: the problem in four words.
 const problemScene = N(FULL + "background:#000", [
@@ -239,21 +247,21 @@ await scene(problemScene, { ms: 4000, line: LINES.problem });
 await clearScene();
 
 // Shot 1: the market page, 2 s of hero, then the verdict cards. Alice and Polyglot come in with the voice.
-await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 0, LINES.market, true);
+await caption("Agent Exit, on NEAR: revenue counted by who paid; one transaction deletes the seller's keys", 0, LINES.market, true);
 await wait(1800);
 await show("#market", "start");
 await p.evaluate(() => window.scrollBy(0, -30));
-await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 800);
+await caption("Agent Exit, on NEAR: revenue counted by who paid; one transaction deletes the seller's keys", 800);
 
 // Shot 2: the verdicts a buyer sees before paying.
+await caption("", 0);
+await scene(pumpScene, { ms: 3300, line: LINES.pump });
+await clearScene();
 await p.click('#filters button[data-f="flag"]');
-await openAgent("pump-bot", 0);
-await glow(".mk-panel .kpis");
-await caption("TrendPulse (ill-intended test agent): 400 of 410 is self-paid, so the price is flagged", 800, LINES.pump);
-await closeAgent();
 await openAgent("cheat", 0);
 await glow(".mk-panel .mk-bad");
-await caption("QuickQuote (test agent): the scan catches the key. The contract also refuses keyed agents (proven offline; live on testnet with our next deploy)", 800, LINES.cheat);
+const refusal = rec.steps.cheat.txs.find((t) => t.method === "list_for_sale" && t.ok === false);
+await caption(`QuickQuote: on testnet, list_for_sale refused NotBornClean (tx ${refusal.tx.slice(0, 8)}…) and the buy was refunded`, 800, LINES.cheat);
 await closeAgent();
 await p.click('#filters button[data-f="sold"]');
 await openAgent("translator", 0);
@@ -297,7 +305,7 @@ await p.fill("#mk-account", "judge.testnet");
 await glow("#mk-invest");
 await caption("Open now: invest 2.5% of Lingo Live's earnings for 25 test dollars", 800, LINES.invest);
 await closeAgent();
-await openAgent("research-desk", 0);
+await openAgent("translate-pro", 0);
 await glow(".mk-panel pre.mcp");
 await caption("Agents can buy agents over MCP: scan first, spending limit enforced", 3700, LINES.mcp);
 await glow(null);
