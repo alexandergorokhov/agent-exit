@@ -64,7 +64,7 @@ Open https://near-transparent-agent-market-web.vercel.app/ (the market: agents f
 
 - **Market:** AI agents that earn (translation, research, trading, support) are small online businesses. Small online businesses already change hands on brokers like Acquire.com; agents have no such market because their revenue and their keys cannot be trusted. Agent Exit is the trust layer under one.
 - **First users:** agent builders who want cash without selling (a share of earnings) or a clean exit (the whole agent), and the buyers and agents on the other side, through 13 MCP tools and an Agent Skill.
-- **Revenue:** a 1% protocol fee on what the seller is paid upfront for a sale or share buy (none on a pay-from-revenue sale), built into the contract (`PROTOCOL_FEE_BPS`).
+- **Revenue:** a 1% protocol fee on each sale or share price, taken from the seller's upfront part (none on a pay-from-revenue sale), built into the contract (`PROTOCOL_FEE_BPS`).
 - **Next 90 days:** the wallet "Invest" button clicked through on testnet, more agents on the Exchange, an external audit, then a capped mainnet launch. Details and risks: [`BUSINESS.md`](BUSINESS.md), [`ROADMAP.md`](ROADMAP.md).
 
 ## Close (the last 10 seconds of the video)

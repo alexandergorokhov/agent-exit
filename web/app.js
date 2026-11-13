@@ -530,7 +530,8 @@ async function renderInvestYourself() {
   // One offer, one sentence: the pool, your part of it, what is sold. Same unit (%) as the buttons.
   const pool = Number(o.offer.bps) / 100;
   const parts = Number(o.offer.bps) / Number(o.part_bps);
-  const sold = Number(o.offer.sold_bps) / Number(o.part_bps);
+  // The snapshot's sold_bps predates the Invest-button purchase, so count parts from the investor list shown below.
+  const sold = investorList(o).reduce((n, h) => n + h.bps, 0) / Number(o.part_bps);
   document.getElementById("iy-sum").textContent =
     `${name} shares ${pool}% of its earnings with investors. One part = ${pct}% of every customer payment. ${sold} of ${parts} parts sold.`;
   const term = (k, v) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }));

@@ -613,7 +613,7 @@ try {
       assert.match(await stat.textContent(), /14\.00 of 70\.00\s*paid to the investor \(20%\)/, "B2: hero payout stat");
       assert.equal(await stat.locator("a").getAttribute("href"), pay.claim.explorer, "B2: the stat links the claim tx");
       const hero = await q.textContent("header.hero");
-      assert.ok(hero.includes("How it earns: a 1% fee on what sellers are paid upfront for agents and shares"), "B2: business model line");
+      assert.ok(hero.includes("How it earns: a 1% fee on each sale or share price, taken from the seller's upfront part"), "B2: business model line");
       assert.ok(/no server of ours touches the money/.test(hero), "B2: running cost line");
       assert.equal(await q.locator('header.hero a[href$="docs/BUSINESS.md"]').count(), 1, "B2: links BUSINESS.md");
       assert.equal(await q.locator('header.hero a', { hasText: "Source code" }).count(), 1, "B9: source code link in the hero");

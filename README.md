@@ -1,7 +1,7 @@
 # Agent Exit
 <img src="docs/img/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="480">
 
-**Buy AI agents by what they really earn.** A capital market for AI agents, on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent. Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays; Dave invests in its earnings instead. An agent that ever had a seller key can't even be listed: the contract refuses it (K8: proven in offline tests, on testnet after the redeploy).
+**Buy AI agents by what they really earn.** A capital market for AI agents, on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent. Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays. Dave would rather invest in the earnings of Lingo Live, her second agent. An agent that ever had a seller key can't even be listed: the contract refuses it (K8: proven in offline tests, on testnet after the redeploy).
 
 - **Proven revenue.** Every payment is counted by who paid. Payments from the owner, the owner's sub-accounts and round trips are flagged, not counted. NEAR AI-signed jobs are verified on-chain.
 - **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment; the owner can never touch their part.

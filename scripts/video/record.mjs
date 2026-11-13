@@ -82,6 +82,7 @@ async function caption(text, ms = 1200, line = null, big = false) {
     c.style.right = d ? `${d.offsetWidth}px` : "0";
     c.style.fontSize = big ? "34px" : "26px";
     c.textContent = t;
+    document.body.style.paddingTop = t ? "76px" : ""; // the page starts below the caption bar, so no heading is clipped under it
     c.style.display = t ? "block" : "none";
     if (c.matches(":popover-open")) c.hidePopover();
     if (t) c.showPopover();
@@ -241,7 +242,7 @@ await clearScene();
 await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 0, LINES.market, true);
 await wait(1800);
 await show("#market", "start");
-await p.evaluate(() => window.scrollBy(0, -140));
+await p.evaluate(() => window.scrollBy(0, -30));
 await caption("Alice built Polyglot to sell. Revenue is counted by who actually paid.", 800);
 
 // Shot 2: the verdicts a buyer sees before paying.
@@ -257,23 +258,32 @@ await closeAgent();
 await p.click('#filters button[data-f="sold"]');
 await openAgent("translator", 0);
 await glow(".mk-panel .mk-sold");
-await caption("Polyglot: sold in one transaction. Alice's six tries to take it back all failed.", 800, LINES.sold);
+await caption("Polyglot: sold in one transaction. Its 140 of self-payments never counted. Alice's six tries all failed.", 800, LINES.sold);
 await closeAgent();
 
 // Shot 3: check it, on the proof page: Run and verify ticks through the recorded testnet transactions.
 await caption("", 0);
-await p.goto(URL_ + "proof.html#run-sale");
+await p.goto(URL_ + "proof.html");
 await p.waitForSelector('#scenarios[data-ready="1"]');
 await zoom(1.5);
 await wait(600);
-await show('[data-run="sale"]', "start");
-await p.evaluate(() => window.scrollBy(0, -260));
+await p.evaluate(() => { document.querySelector('[data-scenario="sale"]').open = true; }); // the hash used to open it
+await show('[data-scenario="sale"]', "start");
+await p.evaluate(() => window.scrollBy(0, -120));
 await caption("Recorded testnet answers, replayed. The live page re-checks them.", 0, LINES.evidence);
 await wait(1200);
+// The replay runs unseen (its half-done counts such as "4 of 12" would read as failures); the shot starts once it has finished.
+const hideRun = (v) => p.evaluate((v) => {
+  window.__hide ||= new CSSStyleSheet(); // a constructed sheet: the page's CSP blocks inline styles, and the run builds its list while it runs
+  window.__hide.replaceSync(v === "hidden" ? '[data-scenario="sale"] .run-summary, [data-scenario="sale"] .stages { visibility: hidden !important }' : "");
+  document.adoptedStyleSheets = [window.__hide];
+}, v);
+await hideRun("hidden");
 await p.locator('[data-run="sale"]').click();
-await wait(1400);
 await p.waitForFunction(() => /Run again/.test(document.querySelector('[data-run="sale"]').textContent));
-await wait(300);
+await p.waitForFunction(() => /12 of 12/.test(document.querySelector('[data-scenario="sale"]').textContent), null, { timeout: 30000 });
+await hideRun("visible");
+await wait(500);
 // All 12 stages are checked: show the list, where every refused attack carries a red "refused, confirmed on chain" badge.
 await show('[data-scenario="sale"] .stages', "start");
 await p.evaluate(() => window.scrollBy(0, -150));
