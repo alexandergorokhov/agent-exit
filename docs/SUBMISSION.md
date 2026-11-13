@@ -25,7 +25,7 @@ Autonomous Business, AI Security & Defense, NFTs That Do Something, Agent Econom
 
 ## Other project (FAQ Q-015)
 
-The same author also entered Hire Tree (https://github.com/alexandergorokhov/agent-hire), a separate, independent project.
+The same author also entered Hire Tree (https://github.com/alexandergorokhov/hire-tree), a separate, independent project.
 
 ## X post (owner posts it, with the video attached)
 

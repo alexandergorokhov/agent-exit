@@ -790,7 +790,7 @@ fn scenarios_name_real_files() {
 fn readme_names_the_second_project() {
     let r = std::fs::read_to_string(root().join("README.md")).unwrap();
     assert!(
-        r.contains("https://github.com/alexandergorokhov/agent-hire"),
+        r.contains("https://github.com/alexandergorokhov/hire-tree"),
         "README must link the author's second entry (FAQ Q-015)"
     );
 }
@@ -926,7 +926,7 @@ fn submission_is_short_and_complete() {
         "make judge",
         "make judge-testnet",
         "judge_tour",
-        "https://github.com/alexandergorokhov/agent-hire",
+        "https://github.com/alexandergorokhov/hire-tree",
         "Hire Tree",
         "Autonomous Business",
         "AI Security & Defense",
