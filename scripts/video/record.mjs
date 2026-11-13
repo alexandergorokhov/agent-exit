@@ -145,18 +145,30 @@ const MONO_ = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 const FULL = "display:flex;flex-direction:column;align-items:center;justify-content:center;width:100vw;height:100vh;box-sizing:border-box;text-align:center;gap:28px;";
 const eyebrow = (t, at = 0) => N(`font:600 30px ${MONO_};letter-spacing:4px;color:${GREEN}`, t, { at });
 
-// Opening: Polyglot took in 501, 140 of it from its owner's own accounts, so 361 counts (agentexit6, web/data/diligence.json).
-const openingScene = N(FULL + "background:#050505", [
-  eyebrow("POLYGLOT · RECORDED ON NEAR TESTNET"),
-  N("position:relative;display:flex;flex-direction:column;align-items:center;gap:6px", [
-    N(`font:800 340px/1 Inter,system-ui,sans-serif;letter-spacing:-12px;color:#fff;min-width:900px`, "$0",
-      { counts: [{ from: 0, to: 501, at: 0.1, dur: 1.2, pre: "$" }, { from: 501, to: 361, at: 7.9, dur: 1.1, pre: "$" }], color: [[7.9, GREEN]] }),
-    N(`position:absolute;left:0;right:0;top:170px;height:14px;background:${RED};border-radius:7px;transform-origin:left`, [], { grow: 4.3, out: 7.9 }),
-    N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "paid in", { at: 1.3, out: 7.9 }),
-    N(`position:absolute;left:0;right:0;top:346px;text-align:center;font:600 44px Inter,system-ui,sans-serif;color:${GREEN}`, "from real customers", { at: 8.0 }),
+// Opening, timed to the hook line (23.3 s): agents earn and get bought (0-9 s), two problems (9-16 s),
+// then Polyglot's real agentexit6 numbers: 501 paid in, 140 of it from its owner, 361 counts (web/data/diligence.json).
+const LAYER = "position:absolute;inset:0;" + FULL;
+const openingScene = N(FULL + "background:#050505;position:relative", [
+  N(LAYER, [
+    N(`font:800 120px/1.05 Inter,system-ui,sans-serif;letter-spacing:-4px;color:#fff`, "Agents earn real money.", { at: 0.2, out: 9.0 }),
+    N(`font:600 56px Inter,system-ui,sans-serif;color:${MUTE}`, "So people want to buy them, like small online businesses.", { at: 4.0, out: 9.0 }),
   ]),
-  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$140 paid by its own owner", { at: 4.3 }),
-  N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $361 counts", { at: 8.1 }),
+  N(LAYER, [
+    N(`font:800 120px/1.05 Inter,system-ui,sans-serif;letter-spacing:-4px;color:#fff`, "But a buyer faces two problems.", { at: 9.3, out: 15.7 }),
+    N(`font:700 72px Inter,system-ui,sans-serif;color:${RED}`, "1. Revenue can be faked.", { at: 13.7, out: 15.7 }),
+  ]),
+  N(LAYER, [
+    eyebrow("POLYGLOT · RECORDED ON NEAR TESTNET", 16.0),
+    N("position:relative;display:flex;flex-direction:column;align-items:center;gap:6px", [
+      N(`font:800 340px/1 Inter,system-ui,sans-serif;letter-spacing:-12px;color:#fff;min-width:900px`, "$0",
+        { at: 16.0, counts: [{ from: 0, to: 501, at: 16.1, dur: 1.2, pre: "$" }, { from: 501, to: 361, at: 22.0, dur: 1.1, pre: "$" }], color: [[22.0, GREEN]] }),
+      N(`position:absolute;left:0;right:0;top:170px;height:14px;background:${RED};border-radius:7px;transform-origin:left`, [], { grow: 20.0, out: 22.0 }),
+      N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "paid in", { at: 16.6, out: 22.0 }),
+      N(`position:absolute;left:0;right:0;top:346px;text-align:center;font:600 44px Inter,system-ui,sans-serif;color:${GREEN}`, "from real customers", { at: 22.1 }),
+    ]),
+    N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$140 paid by its own owner", { at: 20.2 }),
+    N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $361 counts", { at: 22.3 }),
+  ]),
 ]);
 // A 4 s card: the problem in four words.
 const problemScene = N(FULL + "background:#000", [
@@ -234,7 +246,7 @@ async function home() {
 
 // Shot 0: open on motion (Polyglot 501 -> 361), then a 4 s problem card. The page is already loaded behind.
 await home();
-await scene(openingScene, { ms: 9700, line: LINES.hook, first: true });
+await scene(openingScene, { ms: 25000, line: LINES.hook, first: true });
 await scene(problemScene, { ms: 4000, line: LINES.problem });
 await clearScene();
 

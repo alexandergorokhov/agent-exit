@@ -5,7 +5,7 @@ All money shown is `xUSD-FAKE`; say so once, on screen.
 
 ## The narrated page video (scripted, offline)
 
-`web/media/agent-exit-demo.mp4` (2:13) is recorded from the market page with captions and a voiceover:
+`web/media/agent-exit-demo.mp4` (2:12) is recorded from the market page with captions and a voiceover:
 
 ```bash
 # narration: one wav per line of scripts/video/script.mjs in out/video/voice/ (Kokoro, voice af_heart; manifest.json keys must equal speech(line))
@@ -13,7 +13,7 @@ node web/serve.mjs 8090 &  node scripts/video/record.mjs                        
 bash scripts/video/encode.sh                                                                      # mp4 + GIF; mixes the narration in (scripts/video/mix.mjs)
 ```
 
-The video opens on the market page with the Alice and Polyglot hook, shows the "Run and verify" check on the proof page (the chain answers are replayed from the recorded run, because the recorder has no chain access, and the caption says so), runs the playground at 1920x1080 with the page zoomed, and ends on a one-second logo. Without `voice.mjs` the video is the same, silent. Voice: Kokoro (af_heart), generated offline.
+The video opens on Polyglot's recorded testnet revenue (501.00 paid in, 140.00 of it from its owner, 361.00 counts), then the market page, shows the "Run and verify" check on the proof page (the chain answers are replayed from the recorded run, because the recorder has no chain access, and the caption says so), runs the playground at 1920x1080 with the page zoomed, and ends on a one-second logo. Without `voice.mjs` the video is the same, silent. Voice: Kokoro (af_heart), generated offline.
 
 ## Before recording
 
