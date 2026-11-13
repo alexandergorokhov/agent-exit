@@ -533,7 +533,7 @@ async function renderInvestYourself() {
   // The snapshot's sold_bps predates the Invest-button purchase, so count parts from the investor list shown below.
   const sold = investorList(o).reduce((n, h) => n + h.bps, 0) / Number(o.part_bps);
   document.getElementById("iy-sum").textContent =
-    `${name} shares ${pool}% of its earnings with investors. One part = ${pct}% of every customer payment. ${sold} of ${parts} parts sold.`;
+    `${name} offers ${pool}% of its earnings in this open offer. One part = ${pct}% of every customer payment. ${sold} of ${parts} parts sold.`;
   const term = (k, v) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }));
   document.getElementById("iy-terms").replaceChildren(
     term("You get", `${pct}% of every customer payment`),

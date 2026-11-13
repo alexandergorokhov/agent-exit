@@ -13,7 +13,7 @@
 ```bash
 # Needs Rust (rustup reads rust-toolchain.toml) and Node 20+, about 3 GB of disk; no NEAR account, keys or wallet. Offline unless marked. All money is xUSD-FAKE.
 make setup && make mcp-build   # once: crates, npm, the MCP server, the scan binary (the first build takes a few minutes)
-make judge                     # ~1 s; last line: judge: 9/9 claims pass (offline sandbox, real contract code, xUSD-FAKE). 9/9 = code hash check K0 + claims K1-K8; the testnet judge covers K1-K9
+make judge                     # ~1 s; last line: judge: 9/9 claims pass (offline sandbox, real contract code, xUSD-FAKE). 9/9 = code hash check K0 + claims K1-K8; the testnet judge covers K1-K9 (offline fixtures count Polyglot at 360.00; testnet at 361.00)
 make demo                      # ~1-2 min: the offline story (verify replay vs goldens, then an agent buys an agent)
 make screen                    # ~1-3 min: 7 rows, each with its promised result -> out/screen.json; last line: all 7 rows pass
 make web                       # the market page on http://127.0.0.1:8080 (WEB_PORT=8090 make web if 8080 is taken)
