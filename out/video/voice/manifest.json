@@ -1,0 +1,62 @@
+{
+  "Agents now earn money doing real work, so people want to buy them, like small online businesses. But a buyer faces two problems. First, revenue can be faked. This agent claims four hundred and ten dollars, and four hundred came from its own owner.": {
+    "file": "f72e6b25dbcf.wav",
+    "dur": 22.293
+  },
+  "Second, the seller can keep a secret key, and take the agent back after the sale.": {
+    "file": "d22e0751abae.wav",
+    "dur": 6.72
+  },
+  "Agent Exit solves both, on NEAR. Each agent is its own account. Its contract counts only money from real customers. And a sale happens in one transaction that deletes the seller's keys.": {
+    "file": "b8e227a14c2e.wav",
+    "dur": 17.877
+  },
+  "Trend Pulse paid itself, so it's flagged.": {
+    "file": "3b1066a829e7.wav",
+    "dur": 3.179
+  },
+  "Quick Quote hides a secret key. The contract refuses to sell it, and a buyer who pays anyway gets the money back.": {
+    "file": "00833918426c.wav",
+    "dur": 9.771
+  },
+  "Polyglot sold in one transaction. Alice's key was deleted, and all six of her attempts to get back in failed.": {
+    "file": "1a4cd853f44d.wav",
+    "dur": 10.176
+  },
+  "The page re-checks every recorded transaction on test net.": {
+    "file": "d9cbf5146ebf.wav",
+    "dur": 5.099
+  },
+  "Or buy a share of future earnings: two and a half percent of Lingo Live, for twenty five test dollars.": {
+    "file": "e53c6c26790f.wav",
+    "dur": 8.555
+  },
+  "Agents can buy too. Our server makes them scan before they pay.": {
+    "file": "ef6f46389bea.wav",
+    "dur": 5.333
+  },
+  "Try it in your browser.": {
+    "file": "de0a0e32cb7e.wav",
+    "dur": 1.899
+  },
+  "Dave's share is paid from every customer payment.": {
+    "file": "09f5e0e0d205.wav",
+    "dur": 4.053
+  },
+  "Bob buys the agent, and part of the price waits for real customers.": {
+    "file": "ce5a876caa91.wav",
+    "dur": 5.909
+  },
+  "Alice tries to get back in. Every attempt is refused.": {
+    "file": "aa7da1352266.wav",
+    "dur": 4.779
+  },
+  "Code, not promises, locks the seller out.": {
+    "file": "2be0808dd1da.wav",
+    "dur": 3.648
+  },
+  "Agent Exit. Buy agents by what they really earn.": {
+    "file": "2f87a864f098.wav",
+    "dur": 4.651
+  }
+}
