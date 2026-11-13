@@ -339,20 +339,40 @@ async fn deploy(c: &Chain, secrets: Vec<String>) -> Res<()> {
     println!("deploy-xusd");
     let xusd = c.acct("xusd")?;
     let has_xusd = c.code(&c.id("xusd")).await.map(|(h, _)| h).ok();
-    if has_xusd.as_deref() != Some(sha256_b58(&xusd_wasm).as_str()) {
-        if has_xusd.is_some() && has_xusd.as_deref() != Some("11111111111111111111111111111111") {
-            return Err("xusd already holds other code; not redeploying".into());
+    let redeploy = std::env::var("AGENT_EXIT_REDEPLOY_XUSD").as_deref() == Ok("1");
+    match xusd_action(has_xusd.as_deref(), &sha256_b58(&xusd_wasm), redeploy) {
+        XusdAction::Skip => {}
+        XusdAction::Refuse => {
+            return Err("xusd already holds other code; not redeploying (AGENT_EXIT_REDEPLOY_XUSD=1 replaces the code of the same token source, keeping its state)".into());
         }
-        let t = c
-            .deploy(
-                "deploy xusd",
-                &xusd,
-                xusd_wasm,
-                json!({"admin_id": c.cfg.root}),
-            )
-            .await?;
-        out.tx(&t);
-        ok(&t)?;
+        XusdAction::DeployAndInit => {
+            let t = c
+                .deploy(
+                    "deploy xusd",
+                    &xusd,
+                    xusd_wasm,
+                    json!({"admin_id": c.cfg.root}),
+                )
+                .await?;
+            out.tx(&t);
+            ok(&t)?;
+        }
+        XusdAction::DeployCodeOnly => {
+            println!(
+                "  AGENT_EXIT_REDEPLOY_XUSD=1: replacing xusd code {} with {} (no `new`: the state stays)",
+                has_xusd.as_deref().unwrap_or("?"),
+                sha256_b58(&xusd_wasm)
+            );
+            let t = c
+                .deploy_code_only(
+                    "redeploy xusd code (same source, state kept)",
+                    &xusd,
+                    xusd_wasm,
+                )
+                .await?;
+            out.tx(&t);
+            ok(&t)?;
+        }
     }
 
     println!("mint-xusd");
@@ -1640,6 +1660,27 @@ async fn scene(c: &Chain, n: u8, secrets: Vec<String>) -> Res<()> {
     r
 }
 
+/// What deploy-testnet does with the token account (empty, same code, other code).
+#[derive(Debug, PartialEq, Eq)]
+enum XusdAction {
+    Skip,
+    DeployAndInit,
+    DeployCodeOnly,
+    Refuse,
+}
+
+/// `has`: the code hash on chain (None or all-1s = no code); `want`: contracts/res.
+/// Other code is refused unless `redeploy` (AGENT_EXIT_REDEPLOY_XUSD=1), which
+/// replaces the code only: calling `new` on an initialised token would fail.
+fn xusd_action(has: Option<&str>, want: &str, redeploy: bool) -> XusdAction {
+    match has {
+        Some(h) if h == want => XusdAction::Skip,
+        None | Some("11111111111111111111111111111111") => XusdAction::DeployAndInit,
+        Some(_) if redeploy => XusdAction::DeployCodeOnly,
+        Some(_) => XusdAction::Refuse,
+    }
+}
+
 #[cfg(test)]
 mod seed_tests {
     use super::*;
@@ -2925,5 +2966,40 @@ async fn sealed(c: &Chain, env: &BTreeMap<String, String>, secrets: Vec<String>)
         Ok(())
     } else {
         Err("scene 10 checks failed (see out/scenes/scene-10.json)".into())
+    }
+}
+
+#[cfg(test)]
+mod xusd_redeploy_tests {
+    use super::*;
+
+    const WANT: &str = "WantHash";
+
+    #[test]
+    fn a_fresh_account_is_deployed_and_initialised() {
+        assert_eq!(xusd_action(None, WANT, false), XusdAction::DeployAndInit);
+        assert_eq!(
+            xusd_action(Some("11111111111111111111111111111111"), WANT, false),
+            XusdAction::DeployAndInit
+        );
+    }
+
+    #[test]
+    fn the_same_code_is_left_alone() {
+        assert_eq!(xusd_action(Some(WANT), WANT, false), XusdAction::Skip);
+        assert_eq!(xusd_action(Some(WANT), WANT, true), XusdAction::Skip);
+    }
+
+    #[test]
+    fn other_code_is_refused_unless_the_redeploy_flag_is_set() {
+        assert_eq!(
+            xusd_action(Some("OldHash"), WANT, false),
+            XusdAction::Refuse
+        );
+        // The flag replaces the code only: `new` would fail on an initialised token.
+        assert_eq!(
+            xusd_action(Some("OldHash"), WANT, true),
+            XusdAction::DeployCodeOnly
+        );
     }
 }

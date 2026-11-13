@@ -497,6 +497,25 @@ impl Chain {
         ))
     }
 
+    /// Replace an account's code without an init call (its state stays).
+    pub async fn deploy_code_only(&self, label: &str, who: &Acct, wasm: Vec<u8>) -> Res<Tx> {
+        let t0 = Instant::now();
+        let r = Contract::deploy(who.id.clone())
+            .use_code(wasm)
+            .without_init_call()
+            .with_signer(who.signer.clone())
+            .send_to(&self.net)
+            .await;
+        Ok(self.record(
+            label,
+            who.id.as_ref(),
+            who.id.as_ref(),
+            "deploy",
+            r.map_err(|e| format!("{e:?}")),
+            t0,
+        ))
+    }
+
     pub async fn delete_key(&self, label: &str, who: &Acct, pk: &str) -> Res<Tx> {
         let t0 = Instant::now();
         let key: near_api::types::PublicKey = pk.parse().map_err(|e| format!("{e:?}"))?;
