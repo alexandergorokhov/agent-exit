@@ -31,9 +31,11 @@ The same author also entered Hire Tree (https://github.com/alexandergorokhov/age
 
 Rules (HACKATHON.md Procedure 2): say it was built at NEAR HACKATHON, tag @NEARProtocol and #NEARHackathon, attach the video or screenshots. Optional tags: @NearLegion, @NearBuilders. The post's URL is the form's `demoUrl`.
 
-> AI agents earn money, but buying one is risky: owners can pay their own agent, sellers can keep a key.
+> Built at NEAR Hackathon: Agent Exit
 >
-> Agent Exit on @NEARProtocol testnet counts revenue by who paid, and one transaction hands over the agent and deletes the seller's key.
+> Buying an AI agent is risky: owners fake revenue, sellers keep a key.
+>
+> Agent Exit counts revenue by who paid, and one transaction hands over the agent and deletes the seller's key. @NEARProtocol testnet.
 >
 > https://near-transparent-agent-market-web.vercel.app/
 > #NEARHackathon
