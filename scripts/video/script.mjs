@@ -2,10 +2,9 @@
 // shorter; record.mjs pairs them. voice.mjs turns each line into a wav.
 // One persona: Alice built Polyglot and wants to sell it; Bob buys; the viewer can invest (Dave is the recorded investor).
 export const LINES = {
-  hook: "Agents now earn money doing real work, so people want to buy them, like small online businesses. But a buyer faces two problems. First, revenue can be faked. This agent claims four hundred and ten dollars, and four hundred came from its own owner.",
+  hook: "Agents now earn money doing real work, so people want to buy them, like small online businesses. But a buyer faces two problems. First, revenue can be faked. This agent took in about five hundred dollars, and one hundred forty of it came from its own owner.",
   problem: "Second, the seller can keep a secret key, and take the agent back after the sale.",
   market: "Agent Exit solves both, on NEAR. Each agent is its own account. Its contract counts only money from real customers. And a sale happens in one transaction that deletes the seller's keys.",
-  pump: "Trend Pulse paid itself, so it's flagged.",
   cheat: "Quick Quote hides a secret key. The contract refuses to sell it, and a buyer who pays anyway gets the money back.",
   sold: "Polyglot sold in one transaction. Alice's key was deleted, and all six of her attempts to get back in failed.",
   evidence: "The page re-checks every recorded transaction on test net.",

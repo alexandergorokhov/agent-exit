@@ -145,26 +145,18 @@ const MONO_ = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 const FULL = "display:flex;flex-direction:column;align-items:center;justify-content:center;width:100vw;height:100vh;box-sizing:border-box;text-align:center;gap:28px;";
 const eyebrow = (t, at = 0) => N(`font:600 30px ${MONO_};letter-spacing:4px;color:${GREEN}`, t, { at });
 
-// Opening: TrendPulse claims 410, 400 is its owner paying itself, only 10 counts (voice: 7.5 s).
+// Opening: Polyglot took in 501, 140 of it from its owner's own accounts, so 361 counts (agentexit6, web/data/diligence.json).
 const openingScene = N(FULL + "background:#050505", [
-  eyebrow("TRENDPULSE · AN ILL-INTENDED TEST AGENT"),
+  eyebrow("POLYGLOT · RECORDED ON NEAR TESTNET"),
   N("position:relative;display:flex;flex-direction:column;align-items:center;gap:6px", [
     N(`font:800 340px/1 Inter,system-ui,sans-serif;letter-spacing:-12px;color:#fff;min-width:900px`, "$0",
-      { counts: [{ from: 0, to: 410, at: 0.1, dur: 1.2, pre: "$" }, { from: 410, to: 10, at: 7.9, dur: 1.1, pre: "$" }], color: [[7.9, GREEN]] }),
+      { counts: [{ from: 0, to: 501, at: 0.1, dur: 1.2, pre: "$" }, { from: 501, to: 361, at: 7.9, dur: 1.1, pre: "$" }], color: [[7.9, GREEN]] }),
     N(`position:absolute;left:0;right:0;top:170px;height:14px;background:${RED};border-radius:7px;transform-origin:left`, [], { grow: 4.3, out: 7.9 }),
-    N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "revenue it claims", { at: 1.3, out: 7.9 }),
-    N(`position:absolute;left:0;right:0;top:346px;text-align:center;font:600 44px Inter,system-ui,sans-serif;color:${GREEN}`, "revenue that counts", { at: 8.0 }),
+    N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "paid in", { at: 1.3, out: 7.9 }),
+    N(`position:absolute;left:0;right:0;top:346px;text-align:center;font:600 44px Inter,system-ui,sans-serif;color:${GREEN}`, "from real customers", { at: 8.0 }),
   ]),
-  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$400 paid by its own owner", { at: 4.3 }),
-  N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $10 counts: price flagged", { at: 8.1 }),
-  N(`font:500 28px ${MONO_};color:#6b7075`, "numbers recorded on the earlier testnet world (agentexit5)", { at: 0.6 }),
-]);
-// The same verdict as a short card, while the voice names TrendPulse (the current testnet world has no TrendPulse card).
-const pumpScene = N(FULL + "background:#050505", [
-  eyebrow("TRENDPULSE · AN ILL-INTENDED TEST AGENT"),
-  N(`font:800 260px/1 Inter,system-ui,sans-serif;letter-spacing:-8px;color:${GREEN}`, "$10", { at: 0.1 }),
-  N(`font:600 44px Inter,system-ui,sans-serif;color:${MUTE}`, "of $410 counts. The other $400 paid itself.", { at: 0.4 }),
-  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "price flagged", { at: 0.9 }),
+  N(`font:700 54px Inter,system-ui,sans-serif;color:${RED};border:4px solid ${RED};border-radius:20px;padding:14px 40px`, "$140 paid by its own owner", { at: 4.3 }),
+  N(`font:700 54px Inter,system-ui,sans-serif;color:${GREEN};border:4px solid ${GREEN};border-radius:20px;padding:14px 40px`, "only $361 counts", { at: 8.1 }),
 ]);
 // A 4 s card: the problem in four words.
 const problemScene = N(FULL + "background:#000", [
@@ -240,7 +232,7 @@ async function home() {
   await wait(300);
 }
 
-// Shot 0: open on motion (TrendPulse 410 -> 10), then a 4 s problem card. The page is already loaded behind.
+// Shot 0: open on motion (Polyglot 501 -> 361), then a 4 s problem card. The page is already loaded behind.
 await home();
 await scene(openingScene, { ms: 9700, line: LINES.hook, first: true });
 await scene(problemScene, { ms: 4000, line: LINES.problem });
@@ -255,8 +247,6 @@ await caption("Agent Exit, on NEAR: revenue counted by who paid; one transaction
 
 // Shot 2: the verdicts a buyer sees before paying.
 await caption("", 0);
-await scene(pumpScene, { ms: 3300, line: LINES.pump });
-await clearScene();
 await p.click('#filters button[data-f="flag"]');
 await openAgent("cheat", 0);
 await glow(".mk-panel .mk-bad");

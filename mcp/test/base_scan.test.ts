@@ -183,7 +183,7 @@ test("SH7 open earnings slices reach the scan input; buy_agent's limit defaults 
 });
 
 test("BW6 an open Base authorization reaches the scan and blocks the buy (review 1 L1)", async () => {
-  const later = String((BigInt(Date.now()) + 3_600_000n) * 1_000_000n);
+  const later = String((BigInt(Date.now()) + 86_400_000n) * 1_000_000n);
   const { b } = backend({ openAuthUntil: later });
   const input = (await b.scanInput(AGENT, {})) as { contract: { open_auth_until: number } };
   assert.ok(input.contract.open_auth_until > Date.now() * 1_000_000);
