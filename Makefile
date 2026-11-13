@@ -276,7 +276,8 @@ test-sandbox: ## near-sandbox integration tests (S5, E5, A17, A21, SC-S1/S2 seal
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked -- --test-threads=1 --nocapture
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm FACTORY_WASM=../../target/near-sandbox/agent_factory.wasm cargo test --locked -- --test-threads=1 --nocapture
 
 test-born-sandbox: ## BC-S1: the born-clean factory creates an agent with no key on a real local node; a stranger cannot run new (~30 s)
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
@@ -288,7 +289,8 @@ test-sealed-sandbox: ## SC-S1/S2: sealed-config dispute + honest accept on a rea
 	@command -v cargo-near >/dev/null || { echo "cargo-near not installed: cargo install cargo-near --locked" >&2; exit 1; }
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked --test sealed -- --test-threads=1 --nocapture
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm FACTORY_WASM=../../target/near-sandbox/agent_factory.wasm cargo test --locked --test sealed -- --test-threads=1 --nocapture
 
 # Stress scenarios (docs/SCENARIOS.md "Stress (STR-*)"): scale and hostile load.
 # Offline part always runs; the MCP part needs Node; the sandbox part needs
@@ -307,7 +309,8 @@ stress-sandbox: ## STR-S1..S5 on a real local node (needs cargo-near; skipped wi
 	@if ! command -v cargo-near >/dev/null; then echo "stress-sandbox: skipped, cargo-near not installed" >&2; exit 0; fi
 	cd contracts/xusd && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
 	cd contracts/agent && AGENT_EXIT_TOKEN=xusd.sandbox AGENT_EXIT_ADMIN=xusd.sandbox AGENT_EXIT_FACTORY=factory.sandbox cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
-	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm cargo test --locked --test stress -- --test-threads=1 --nocapture
+	cd contracts/factory && cargo near build non-reproducible-wasm --out-dir ../../target/near-sandbox
+	cd tests/sandbox && $(FDSHIM) LD_PRELOAD="$$pre" AGENT_WASM=../../target/near-sandbox/agent_exit.wasm XUSD_WASM=../../target/near-sandbox/xusd.wasm FACTORY_WASM=../../target/near-sandbox/agent_factory.wasm cargo test --locked --test stress -- --test-threads=1 --nocapture
 
 # ------------------------------------------------------------- testnet day
 # Runs on the owner's machine (NEAR RPC, Base Sepolia and NEAR AI Cloud are
