@@ -39,7 +39,7 @@
   <main class="wrap">
     <section id="exchange" class="exchange" hidden>
       <h2>Agents with on-chain revenue</h2>
-      <p class="lead-in">Self-paid revenue never counts. </p>
+      <p class="lead-in">Self-payments the contract can trace never count. </p>
       <div class="ex-wrap card"><table id="ex-table" class="ex-table"><thead><tr>
         <th data-k="name" scope="col">Agent</th><th data-k="counted" scope="col" class="num" title="paid by accounts not linked to the owner">Real revenue</th><th data-k="flaggedPct" scope="col" class="num" title="paid by the owner or the owner's own accounts: not counted">Self-paid</th><th data-k="payers" scope="col" class="num">Customers</th><th data-k="deal" scope="col">Deal</th><th data-k="multiple" scope="col" class="num" title="asking price, or the value an offer implies, over real revenue">Price ÷ revenue</th>
       </tr></thead><tbody></tbody></table></div>
@@ -98,7 +98,7 @@
         <dl class="glossary">
           <div><dt>Ownership token</dt><dd>An NFT (NEP-171) that says who owns the agent. It moves to the buyer in the sale.</dd></div>
           <div><dt>Operating key</dt><dd>The agent's limited key (a function-call key, the "runner key"). The owner's agent software signs with it.</dd></div>
-          <div><dt>No admin key</dt><dd>Exchange agents are created by a contract (the factory) that never adds one, so no seller ever held a key.</dd></div>
+          <div><dt>No admin key</dt><dd>Exchange agents are created by a contract (the factory) that never adds one, so no seller ever held a full-access key.</dd></div>
         </dl>
         <figure class="story"><img src="media/sold-means-locked-out.svg" width="1200" height="420" alt="Sold means locked out: before the sale alice owns translator; one transaction deletes her key, adds bob's and moves the ownership token; after the sale every way back in is refused on NEAR testnet"></figure>
       </details>
@@ -193,7 +193,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
           <li><b>Payments</b><span>NEP-141, counted by who paid</span><a href="https://testnet.nearblocks.io/txns/BR8UV6q3gEcbcUJyWgu8MPpkmkipi1fUzGy5HLri4kA9" target="_blank" rel="noopener noreferrer">paid</a></li>
           <li><b>Sale</b><span>seller's key deleted, buyer's function-call key added, one transaction</span><a href="https://testnet.nearblocks.io/txns/Hh9kTyAPxL8yMFAawj6rDtf2eGFtGZiXCKuRFnbwBkUs" target="_blank" rel="noopener noreferrer">sale</a></li>
           <li><b>No key, ever</b><span>agent account made by a factory with no key</span><a href="https://testnet.nearblocks.io/txns/7w7Ed7GX8N5YUdKXHfQktvQoodF7J5JBJhdVzKs4Dk5w" target="_blank" rel="noopener noreferrer">birth</a></li>
-          <li><b>Base wallet</b><span>Chain Signatures; NEAR-side lockout live, Base Sepolia payment not yet</span><a href="https://testnet.nearblocks.io/txns/APU9pV4ZMDVYjTJxKeb1T75Vocncq9bFGSmLdBwQnVjC" target="_blank" rel="noopener noreferrer">refused</a></li>
+          <li><b>Base wallet</b><span>Chain Signatures; NEAR-side lockout live, Base Sepolia payment not yet sent; old seller's spend</span><a href="https://testnet.nearblocks.io/txns/APU9pV4ZMDVYjTJxKeb1T75Vocncq9bFGSmLdBwQnVjC" target="_blank" rel="noopener noreferrer">refused</a></li>
           <li><b>Verified</b><span>NEAR AI Cloud signature checked on-chain; proves the job ran, not payer independence</span><a href="https://testnet.nearblocks.io/txns/3Z29iLiZet2ydtqbEy63jM7nx621cosBx1rYYby1b7qY" target="_blank" rel="noopener noreferrer">job</a></li>
           <li><b>Agent buyers</b><span>MCP; a Claude model bought an agent</span><a href="https://testnet.nearblocks.io/txns/9zF8jhYZdocLzjCY5U7NVJtfZnZQ6BSx1YvyFBPP3m8t" target="_blank" rel="noopener noreferrer">buy</a></li>
         </ul>
@@ -205,7 +205,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
         <a href="#play"><b>Design</b><span>Six missions against the real code</span></a>
         <a href="#exchange"><b>Impact</b><span>Agents become businesses you can buy</span></a>
         <a href="#why-near"><b>Originality</b><span>Selling deletes the seller's keys on-chain</span></a>
-        <a href="#backend"><b>Sustainability</b><span>Standard NEPs, MCP server, <span id="test-count">329 Rust tests and 205 MCP tests</span></span></a>
+        <a href="#backend"><b>Sustainability</b><span>Standard NEPs, MCP server, <span id="test-count">320+ Rust tests and 205 MCP tests</span></span></a>
       </div>
       <p class="tracks"><span class="track">Autonomous Business</span><span class="track">AI Security</span><span class="track">NFTs That Do Something</span><span class="track">Agent Economy</span></p>
       </details>
@@ -236,7 +236,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
             <div class="arch-box buyer">
               <h4>On the buyer's side</h4>
               <ul>
-                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list any agent that ever had a key (refused on testnet: <a href="https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu" target="_blank" rel="noopener noreferrer">the cheat's listing</a>).</li>
+                <li><b>The scan</b> reads the account from a NEAR node (keys, code hash, listing) and flags anything extra. It sees keys at one moment, so the contract itself also refuses to list any agent our factory did not create (refused on testnet: <a href="https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu" target="_blank" rel="noopener noreferrer">the cheat's listing</a>).</li>
                 <li><b>An MCP server and Agent Skill</b>, so an AI agent can list, scan and buy by itself. A real Claude model bought an agent through it.</li>
               </ul>
             </div>

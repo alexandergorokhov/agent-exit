@@ -149,7 +149,7 @@
           "100.00 real revenue (50.00 of it signed by NEAR AI), 20.00 self-paid, 120.00 paid in. Later payments were added after the first investment below."
         ],
         [
-          "At the first investment",
+          "In the first investment run",
           "the 20% sale, before those later payments."
         ],
         [
@@ -183,7 +183,7 @@
       ],
       "verdict": "Passes the investor's checks",
       "ok": true,
-      "why": "At the first investment every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
+      "why": "In the first investment run, every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
       "run": "#run-invest",
       "tx": "https://testnet.nearblocks.io/txns/FkU5rFkydgtagPRdcGGv4hnivACnEPMku26guehEZhQJ",
       "short": "Pass: 50.00 of 100.00 signed by NEAR AI; first investor paid to the cent.",

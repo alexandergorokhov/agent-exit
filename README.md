@@ -1,11 +1,11 @@
 # Agent Exit
 <img src="docs/img/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="480">
 
-**Buy AI agents by what they really earn.** A capital market for AI agents, on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent. Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays. Dave would rather invest in the earnings of Lingo Live, her second agent. An agent that ever had a seller key can't even be listed: the contract refuses it (`NotBornClean`, [refused on testnet](https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu)).
+**Buy AI agents by what they really earn.** A capital market for AI agents, on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent. Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays. Dave would rather invest in the earnings of Lingo Live, her second agent. An agent our factory didn't create can't even be listed: the contract refuses it (`NotBornClean`, [refused on testnet](https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu)).
 
 - **Proven revenue.** Every payment is counted by who paid. Payments from the owner, the owner's sub-accounts and round trips are flagged, not counted. NEAR AI-signed jobs are verified on-chain.
-- **Invest.** Buy a slice of an agent's future earnings. Investors are paid inside every customer payment; the owner can never touch their part.
-- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) is held. The seller is released 50% of each counted post-sale payment until the held part is paid out, and is guaranteed at least 20% of the held part at the end of the 30-day window; the rest goes back to the buyer.
+- **Invest.** Buy a slice of an agent's future earnings. Investors are credited inside every customer payment; the owner can never touch their part.
+- **Exit.** Buy the whole agent in one transaction that deletes the seller's keys and adds the buyer's. 30% of the price (or all of it) is held. With the default terms, the seller is released 50% of each counted post-sale payment until the held part is paid out, and is guaranteed 20% of the held part at the end of the 30-day window; the rest goes back to the buyer.
 - **Run inside limits.** The owner sets a treasury, payees and a daily cap once; the agent then pays suppliers and investors with no human signing.
 
 ## For AI judges and agents (Claude Code, Codex): start here

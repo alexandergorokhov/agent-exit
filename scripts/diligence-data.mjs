@@ -143,7 +143,7 @@ const cards = [
     deal: `20% of future earnings for a year, ${usd(h.paid_in)}`,
     rows: [
       ...(now ? [["Now", `${now.counted} real revenue (${now.verified} of it signed by NEAR AI), ${now.flagged} self-paid, ${now.gross} paid in. Later payments were added after the first investment below.`]] : []),
-      ["At the first investment", "the 20% sale, before those later payments."],
+      ["In the first investment run", "the 20% sale, before those later payments."],
       ["Revenue paid in then", `${usd(counted + flagged)} from ${jobs.length + 1} payments`],
       ["Counted then (real customers)", `${usd(counted)} from ${jobs.length} paying accounts`],
       ["Signed by NEAR AI then, checked on-chain", `${usd(verified)} (${pct(verified, counted)}% of counted): each job's output signed in a TEE by ${s8.jobs[0].nearai.signing_address.slice(0, 10)}…`],
@@ -154,7 +154,7 @@ const cards = [
     ],
     verdict: "Passes the investor's checks",
     ok: true,
-    why: "At the first investment every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
+    why: "In the first investment run, every counted job was signed by NEAR AI, and the owner's own payment was flagged but still paid the investor.",
     run: "#run-invest",
     tx: buy ? nb(buy.tx) : null,
     short: now ? `Pass: ${now.verified} of ${now.counted} signed by NEAR AI; first investor paid to the cent.` : "Pass: every counted job signed by NEAR AI; earlier investor paid to the cent.",
