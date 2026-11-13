@@ -182,8 +182,8 @@ try {
 
   // W10: wallet-link's borsh matches @near-js/transactions byte for byte (vector made once with @near-js/transactions 1.3.3).
   {
-    const offer = { xusd: "xusd.agentexit4.testnet", agent: "translator3.agentexit4.testnet", amount: "10000000", msg: "{\"kind\":\"buy_share\"}" };
-    assert.equal(base64(encodeTx(investTx(offer, "you.testnet"))), "CwAAAHlvdS50ZXN0bmV0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAAAAeHVzZC5hZ2VudGV4aXQ0LnRlc3RuZXQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACBgAAAGZhdWNldBUAAAB7ImFtb3VudCI6IjEwMDAwMDAwIn0A4FfrSBsAAAAAAAAAAAAAAAAAAAAAAAACEAAAAGZ0X3RyYW5zZmVyX2NhbGxlAAAAeyJyZWNlaXZlcl9pZCI6InRyYW5zbGF0b3IzLmFnZW50ZXhpdDQudGVzdG5ldCIsImFtb3VudCI6IjEwMDAwMDAwIiwibXNnIjoie1wia2luZFwiOlwiYnV5X3NoYXJlXCJ9In0AYLeYbIgAAAEAAAAAAAAAAAAAAAAAAAA=", "W10: borsh golden vector");
+    const offer = { xusd: "xusd.agentexit6.testnet", agent: "translator3.agentexit6.testnet", amount: "10000000", msg: "{\"kind\":\"buy_share\"}" };
+    assert.equal(base64(encodeTx(investTx(offer, "you.testnet"))), "CwAAAHlvdS50ZXN0bmV0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAAAAeHVzZC5hZ2VudGV4aXQ2LnRlc3RuZXQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACBgAAAGZhdWNldBUAAAB7ImFtb3VudCI6IjEwMDAwMDAwIn0A4FfrSBsAAAAAAAAAAAAAAAAAAAAAAAACEAAAAGZ0X3RyYW5zZmVyX2NhbGxlAAAAeyJyZWNlaXZlcl9pZCI6InRyYW5zbGF0b3IzLmFnZW50ZXhpdDYudGVzdG5ldCIsImFtb3VudCI6IjEwMDAwMDAwIiwibXNnIjoie1wia2luZFwiOlwiYnV5X3NoYXJlXCJ9In0AYLeYbIgAAAEAAAAAAAAAAAAAAAAAAAA=", "W10: borsh golden vector");
     assert.throws(() => encodeTx({ signerId: "x", receiverId: "a.testnet", actions: [] }), "W10: rejects bad input");
     checks++;
   }
@@ -243,7 +243,7 @@ try {
   // Testnet flag: labelled, offers login, never loaded unless asked.
   await p.goto(`${base}?network=testnet`);
   await p.waitForSelector("#testnet-label");
-  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: agentexit5, run of 2026-11-11 (recorded; \"Read live\" checks the chain now)");
+  assert.equal((await p.textContent("#testnet-label")).trim(), "testnet: agentexit6, run of 2026-11-13 (recorded; \"Read live\" checks the chain now)");
   assert.equal(await p.locator("#login").count(), 0, "S27: no wallet login button until testnet mode is live");
   await noHorizontalScroll(p, "testnet mode at 375px");
   checks += 2;
@@ -590,8 +590,11 @@ try {
       assert.equal(n.text, "Early: 1 day of revenue (50.00). The price is 250.00 for 25% of earnings until 30 Nov 2026.");
       assert.equal(earlyNote({ days: 3, counted: 5000, price: 25000, bps: 2500, end: 0 }).short, "early: 3 days of revenue");
       assert.equal(earlyNote({ days: 40, counted: 5000, price: 25000, bps: 2500, end: 0 }), null, "E1: no note once there is a month of revenue");
-      const list = investorList(world.open_offer);
-      assert.deepEqual(list.map((x) => x.account), ["carol.agentexit5.testnet", "p6.agentexit5.testnet"]);
+      // The recorded agentexit6 offer has no buyer yet (the earlier investor records are from agentexit5 and are not mixed in).
+      assert.deepEqual(investorList(world.open_offer).filter((x) => !/agentexit6\.testnet$/.test(x.account)), [], "E1: no investor from another world on the page");
+      // The labels, on a constructed offer.
+      const list = investorList({ offer: { holders: [{ account: "carol.example.testnet", bps: "250" }] }, example_tx: { account: "p6.example.testnet", tx: "x", holdings_bps: 250 } });
+      assert.deepEqual(list.map((x) => x.account), ["carol.example.testnet", "p6.example.testnet"]);
       assert.match(list[0].label, /MCP agent investor/);
       assert.match(list[1].label, /Invest button tx, signed by script/);
       checks += 3;
@@ -656,7 +659,7 @@ try {
       });
       const wp = await ctx.newPage();
       wp.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
-      const h = "D4xQARvNcaL4euHzvMVWFBt7gg8SnYQGHPuiPbD1ML7B";
+      const h = "FkU5rFkydgtagPRdcGGv4hnivACnEPMku26guehEZhQJ";
       await wp.goto(`${base}?iy=judge.testnet&transactionHashes=${h}`);
       await wp.locator("#iy-receipt").waitFor({ state: "visible" });
       assert.equal(await wp.locator(`#iy-receipt a[href="https://testnet.nearblocks.io/txns/${h}"]`).count(), 1, "W11: the receipt links the tx");
@@ -727,13 +730,13 @@ try {
     await q.goto(root);
     await q.waitForSelector("#market[data-ready]");
     const names = await q.locator(".mk-deed").evaluateAll((d) => d.map((x) => x.dataset.agent));
-    assert.deepEqual([...names].sort(), ["cheat", "pump-bot", "research-desk", "translate-pro", "translator", "translator3"], "M1: six agents in the catalog");
+    assert.deepEqual([...names].sort(), ["cheat", "translate-pro", "translator", "translator3"], "M1: four agents in the catalog (the recorded Exchange has one agent)");
     const stamps = Object.fromEntries(await q.locator(".mk-deed").evaluateAll((d) => d.map((x) => [x.dataset.agent, x.querySelector(".stamp").textContent])));
     assert.equal(stamps.cheat, "Blocked", "M2: the cheat is stamped Blocked");
-    assert.equal(stamps["pump-bot"], "Self-paid", "M2: pump-bot is stamped Self-paid");
+    assert.equal(stamps["translate-pro"], "Clean", "M2: translate-pro is stamped Clean");
     assert.equal(stamps.translator, "Sold", "M2: translator is stamped Sold");
     await q.click('#filters button[data-f="flag"]');
-    assert.equal(await q.locator(".mk-deed").count(), 2, "M3: the Flagged filter shows 2");
+    assert.equal(await q.locator(".mk-deed").count(), 1, "M3: the Flagged filter shows 1 (the cheat)");
     await q.click('#filters button[data-f="all"]');
     await q.click('.mk-deed[data-agent="translator3"]');
     assert.ok(await q.locator("#agent-panel").evaluate((d) => d.open), "M4: a card opens the agent panel");
@@ -745,9 +748,9 @@ try {
     const rec = JSON.parse(readFileSync(new URL("../data/testnet.json", import.meta.url), "utf8"));
     assert.equal(new URL(href).searchParams.get("transactions"), base64(encodeTx(investTx(rec.open_offer, "judge.testnet"))), "M6: the panel's invest link carries the faucet + buy transaction");
     await q.keyboard.press("Escape");
-    await q.click('.mk-deed[data-agent="research-desk"]');
+    await q.click('.mk-deed[data-agent="translate-pro"]');
     const call = await q.textContent("#agent-panel pre.mcp");
-    assert.match(call, /^buy_share \{"agent":"research-desk\./, "M7: an agent can buy through MCP (buy_share)");
+    assert.match(call, /^buy_share \{"agent":"translate-pro\./, "M7: an agent can buy through MCP (buy_share)");
     const args = JSON.parse(call.slice("buy_share ".length));
     const schema = JSON.parse(readFileSync(new URL("../../schemas/mcp/buy_share.input.v1.json", import.meta.url), "utf8"));
     for (const k of schema.required || []) assert.ok(k in args, `M7: the snippet has the required ${k}`);

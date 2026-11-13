@@ -895,7 +895,7 @@ fn readme_top_is_short_and_links_the_moved_proof() {
         );
     }
     for moved in [
-        "re-recorded 2026-11-10 on `agentexit5.testnet` with every link checked",
+        "re-recorded 2026-11-13 on `agentexit6.testnet` with every link checked",
         "a fresh-agent sale check (gate G1)",
         "Old-seller lockout, the cheat's scan",
     ] {
@@ -910,7 +910,7 @@ fn readme_top_is_short_and_links_the_moved_proof() {
 fn submission_is_short_and_complete() {
     let s = read("docs/SUBMISSION.md");
     assert!(
-        s.chars().count() < 4500, // the form fields and X post text (867ba6d) live here too
+        s.chars().count() < 6000, // the form fields, the X post and the 2,000-character idea text live here too
         "docs/SUBMISSION.md is {} characters",
         s.chars().count()
     );

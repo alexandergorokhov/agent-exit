@@ -1,7 +1,7 @@
 // Agent Exit demo page. Offline by default: every result shown is read from
 // data/demo.json, which tools/verify/src/bin/gen-web-demo.rs records from the
 // contract in near-sdk's mocked runtime. `?network=testnet` shows the testnet
-// mode: the recorded testnet run of 2026-11-11 (agentexit5.testnet) with explorer links, plus read-only live reads.
+// mode: the recorded testnet run of 2026-11-13 (agentexit6.testnet) with explorer links, plus read-only live reads.
 
 // Vendored and hash-pinned (web/vendor/SHA256SUMS); the page CSP allows no remote script.
 const NEAR_CONNECT = "./vendor/near-connect-0.11.4.esm.js";
@@ -75,7 +75,7 @@ let demo;
 let testnet = null;
 let current = 0;
 
-const TESTNET_LABEL = "testnet: agentexit5, run of 2026-11-11 (recorded; \"Read live\" checks the chain now)";
+const TESTNET_LABEL = "testnet: agentexit6, run of 2026-11-13 (recorded; \"Read live\" checks the chain now)";
 
 // ----- live reads (testnet mode only, on click) ------------------------------
 // The CSP allows only 'self', so reads go through the read-only relay at
@@ -150,7 +150,7 @@ const SHORT = {
   "break-in": "The old seller tries every way back in. Every call is refused.",
   business: "The agent pays for its work, but only inside the owner's daily limits.",
   verified: "Only payments from real customers count. NEAR AI-signed work gets a Verified badge.",
-  cheat: "A seller hides a backdoor key. The buyer's scan finds it and blocks the sale.",
+  cheat: "A seller hides a backdoor key. The contract refuses to list it, and a buy sent anyway is refunded.",
   "honest-sale": "One transaction: buyer pays, keys swap, 30% stays in escrow as an earn-out.",
   "agent-buys-agent": "An AI agent scans both agents, refuses the cheat and buys the good one.",
 };
@@ -381,7 +381,7 @@ async function renderDiligence() {
     const self = el("span", { class: "dd-self" });
     if (total) { real.style.setProperty("width", `${(100 * c.bar.real) / total}%`); self.style.setProperty("width", `${(100 * c.bar.self) / total}%`); }
     const full = el("details", { class: "dd-full" }, el("summary", { text: "Full due diligence" }),
-      c.name === "cheat" ? el("p", { class: "small dd-k8" }, el("b", { text: "New rule: " }), "the contract also refuses to list any agent that ever had a key. Proven in our offline tests; coming to testnet next.") : null,
+      c.name === "cheat" ? el("p", { class: "small dd-k8" }, el("b", { text: "On chain: " }), "the contract refuses to list any agent that ever had a key. Recorded on testnet: the listing was refused and a buy sent anyway was refunded.") : null,
       el("dl", {}, c.rows.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])),
       el("p", { class: "dd-verdict" }, el("b", { text: c.verdict }), ": ", el("span", { text: c.why })));
     if (c.name === "translator" && deed) { deed.hidden = false; full.append(deed); }

@@ -145,21 +145,21 @@ test("JF3 testnet: an account that does not exist is UNKNOWN_AGENT naming AGENT_
     new Response(JSON.stringify({ error: { name: "HANDLER_ERROR", cause: { name: "UNKNOWN_ACCOUNT" }, message: "account nobody.testnet does not exist while viewing" } }), {
       status: 200,
     })) as unknown as typeof fetch;
-  const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet", AGENT_EXIT_AGENTS: "translator.agentexit5.testnet,cheat.agentexit5.testnet" });
+  const cfg = loadConfig({ AGENT_EXIT_NETWORK: "testnet", AGENT_EXIT_AGENTS: "translator.agentexit6.testnet,cheat.agentexit6.testnet" });
   const t = new Tools(cfg, new TestnetBackend(cfg, f), loadSchemas(REPO));
   const r = await t.call("get_earnings", { agent: "nobody.testnet" });
   assert.equal(r.ok, false);
   assert.equal(r.body.error.code, "UNKNOWN_AGENT", JSON.stringify(r.body));
-  assert.match(r.body.error.message, /known agents: cheat\.agentexit5\.testnet, translator\.agentexit5\.testnet$/);
+  assert.match(r.body.error.message, /known agents: cheat\.agentexit6\.testnet, translator\.agentexit6\.testnet$/);
 });
 
 test("JF3 testnet allowlist refusals name the known agents too", async () => {
   const mk = (agents: string) =>
     new Tools(loadConfig({ ...env, AGENT_EXIT_NETWORK: "testnet", AGENT_EXIT_PRIVATE_KEY: "ed25519:x", AGENT_EXIT_AGENTS: agents }), new OfflineBackend(WORLD), loadSchemas(REPO));
-  let r = await mk("translator.agentexit5.testnet").call("buy_agent", { agent: "other.testnet", max_price: 1, confirm: true });
+  let r = await mk("translator.agentexit6.testnet").call("buy_agent", { agent: "other.testnet", max_price: 1, confirm: true });
   assert.equal(r.body.error.code, "UNKNOWN_AGENT");
   assert.match(r.body.error.message, /AGENT_EXIT_AGENTS/);
-  assert.match(r.body.error.message, /known agents: translator\.agentexit5\.testnet$/);
+  assert.match(r.body.error.message, /known agents: translator\.agentexit6\.testnet$/);
   r = await mk("").call("buy_agent", { agent: "other.testnet", max_price: 1, confirm: true });
   assert.match(r.body.error.message, /known agents: none \(AGENT_EXIT_AGENTS is empty\)$/);
 });

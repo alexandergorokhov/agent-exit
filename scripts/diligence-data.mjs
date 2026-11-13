@@ -125,7 +125,7 @@ const cards = [
       "Refused by the contract and blocked by the scan",
       "All 500.00 of its revenue came from the owner and the owner's own sub-accounts, and a hidden full-access key would let the seller take it back. It is a plain deploy, not created by the factory, so the contract itself refuses to list it.",
       "#run-cheat",
-      "Refused: not born clean, so it cannot be listed. All 500 was self-paid and a hidden key lets her take it back."),
+      "Refused: it was deployed with a key, so the contract will not list it. All 500 was self-paid and a hidden key lets her take it back."),
 ];
 
 // Investor's card: translator3 (scene 8), a 20% slice of future earnings.

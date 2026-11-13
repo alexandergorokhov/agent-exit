@@ -2,11 +2,12 @@
 
 AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR, so an investor can buy a share of an agent's earnings, or the whole agent.
 
-## Three proofs (NEAR testnet, all money xUSD-FAKE)
+## Four proofs (NEAR testnet, all money xUSD-FAKE)
 
-1. **Revenue counted by who paid.** A NEAR AI Cloud signature is checked by the contract ([verified job](https://testnet.nearblocks.io/txns/GTWFcGyXi3RN6wQL3ZSPcHmP1E1aBHzyUUeaVT4BKudb)); the owner's own payment is flagged, not counted ([flagged](https://testnet.nearblocks.io/txns/HfdsWPaTpgMkQmb3biHCJQAMKd96cWXxiaRSoRbJDk21)).
-2. **Invest.** dave buys 20% of an agent's earnings and claims exactly 20% ([claim](https://testnet.nearblocks.io/txns/Evd1jGnUhTtdbSJ2uSsf2aSMMgtJLtiN153Uqpk1Fajy)).
-3. **Exit.** One transaction sells the whole agent ([sale](https://testnet.nearblocks.io/txns/oSpSKG9KHLdQXfBDfV2RXDH4EFpp7Toi8PRgB5nZLsC)); then 6 ways back in are refused on chain and her old key is gone at the node ([one of them](https://testnet.nearblocks.io/txns/FixXD2tyGbjKPrjXvL5UsjY3482n8oJWTPCcSD5NRTk6)).
+1. **Revenue counted by who paid.** A NEAR AI Cloud signature is checked by the contract ([verified job](https://testnet.nearblocks.io/txns/3Z29iLiZet2ydtqbEy63jM7nx621cosBx1rYYby1b7qY)); the owner's own payment is flagged, not counted ([flagged](https://testnet.nearblocks.io/txns/EvNByMd28t71hp6sFMrJvKnSwjc9gU5vNywSn1ki11Mk)).
+2. **Invest.** dave buys 20% of an agent's earnings and claims exactly 20% ([claim](https://testnet.nearblocks.io/txns/B2L5ft8WL7qorpVD5GaFqshWvaCarxoAypHi56TeYUa7)).
+3. **A keyed agent cannot be listed.** The contract refuses the cheat's listing (`NotBornClean`, [refused](https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu)) and refunds a buy sent anyway ([refund](https://testnet.nearblocks.io/txns/2Rf95RJft2qHJbtJfXKYGihbnLjtFbpLinuL8wkgQP6H)).
+4. **Exit.** One transaction sells the whole agent ([sale](https://testnet.nearblocks.io/txns/Hh9kTyAPxL8yMFAawj6rDtf2eGFtGZiXCKuRFnbwBkUs)); then 6 ways back in are refused on chain and her old key is gone at the node ([one of them](https://testnet.nearblocks.io/txns/5aYWbex9PRXeoNQBx7Pny9acwygBn2kmossSuGAukWuw)).
 
 ## Verify it
 
@@ -30,13 +31,12 @@ The same author also entered Hire Tree (https://github.com/alexandergorokhov/age
 
 Rules (HACKATHON.md Procedure 2): say it was built at NEAR HACKATHON, tag @NEARProtocol and #NEARHackathon, attach the video or screenshots. Optional tags: @NearLegion, @NearBuilders. The post's URL is the form's `demoUrl`.
 
-> Built at NEAR HACKATHON: Agent Exit, a capital market for AI agents on @NEARProtocol.
+> AI agents earn money, but buying one is risky: owners can pay their own agent, sellers can keep a key.
 >
-> AI agent revenue can be faked, and sellers can keep a key. Agent Exit counts revenue by who paid, lets you buy a share of it, or buy the whole agent in one transaction that locks the seller out.
+> Agent Exit on @NEARProtocol testnet counts revenue by who paid, and one transaction hands over the agent and deletes the seller's key.
 >
-> Live on testnet: https://near-transparent-agent-market-web.vercel.app/
-> Code: https://github.com/alexandergorokhov/near-transparent-agent-market
-> #NEARHackathon @NearBuilders
+> https://near-transparent-agent-market-web.vercel.app/
+> #NEARHackathon
 
 Video: `https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4` (download and attach it to the post).
 
@@ -59,4 +59,15 @@ Never fill `website` (spam trap). One submission per repository, and it cannot b
 
 `idea`:
 
-> Agent Exit is a capital market for AI agents on NEAR. AI agents earn money, but their revenue can be faked (an owner pays their own agent) and a seller can keep a spare key after a sale. On NEAR an agent can be its own account, so its keys, code and every payment it receives are public. One contract on that account counts revenue by who paid (the owner's own and sub-account payments are flagged, NEAR AI Cloud-signed jobs are verified on-chain), lets investors buy a share of future earnings paid inside every customer payment, and sells the whole agent in one transaction that deletes the seller's keys, adds the buyer's scoped key and moves a NEP-171 deed; part of the price is held and released to the seller as real customers keep paying. A scan blocks any sale while a hidden full-access key exists. Agents use it through an MCP server with 13 tools. Testnet only, all money is a fake test token. Judges: `make judge` (offline, 9/9 claims) and `make judge-testnet` re-read every recorded transaction.
+> The problem: AI agents now earn real money doing paid work, so people want to buy them or invest in them, like small businesses. But a buyer can't trust two things. Revenue can be faked: the owner simply pays their own agent. And the seller can keep a secret key and take the agent, or its money, back after the sale.
+>
+> What we built: Agent Exit, a market where you buy AI agents by what they really earn. Each agent is its own NEAR account running our contract.
+> 1. Real revenue: the contract records who paid. Payments from the owner, the owner's sub-accounts or round trips are flagged and never count. Jobs signed by NEAR AI Cloud are verified on-chain. Part of every sale price is paid to the seller only as real customers keep paying, so faking revenue costs the seller money.
+> 2. Invest: buy a share of an agent's future earnings, paid to you automatically inside every customer payment.
+> 3. Buy the whole agent in one transaction: the money, the ownership token (NEP-171) and the keys move together, and the seller's key is deleted.
+> 4. Born clean: the contract refuses to list or sell any agent that our factory did not create, so an agent that ever had a hidden key can't be listed or bought on the market.
+> Agents can buy too, over MCP (13 tools; a scan is forced before payment).
+>
+> How NEAR fits: on NEAR an agent can be an account, and keys are on-chain objects that can be added, limited and deleted. That makes "the seller is locked out" a fact anyone can check, not a promise. NEAR AI Cloud signatures make real work checkable, and Chain Signatures give each agent a Base wallet that follows the owner: after a sale, only the new owner can make it sign.
+>
+> Proof: the market runs on NEAR testnet with test money (Base payments are signed but not yet sent on Base). After the sale, the old seller's attempts to get back in are real failed transactions. Run `make judge` to re-check the headline claims against the real contract code in about a second, or press Run and verify on the page.

@@ -59,7 +59,7 @@ export function buildCatalog(t, dd) {
         ["Signed by NEAR AI", `${money(ver)}. The signature proves the job ran, not that the payer is independent.`],
         ["Self-paid, not counted", money(self)],
         ["Offer", `${Number(o.offer.bps) / 100}% of earnings in parts of ${pct}%, ${Number(o.offer.sold_bps) / 100}% sold, until ${until}`],
-      ] : t3.rows, offer: o, txs: [{ label: "an investor buys 2.5%", url: o.example_tx.explorer, ok: true }, ...tx("invest", /translation$/, "a customer pays"), ...tx("invest", /claims$/, "the investor is paid")],
+      ] : t3.rows, offer: o, txs: [...(o.example_tx ? [{ label: "an investor buys 2.5%", url: o.example_tx.explorer, ok: true }] : []), ...tx("invest", /translation$/, "a customer pays"), ...tx("invest", /claims$/, "the investor is paid")],
     });
   }
   for (const a of (t.exchange && t.exchange.agents) || []) {
@@ -81,7 +81,7 @@ export function buildCatalog(t, dd) {
         ["Self-paid, not counted", money(self)],
         ["Keys", a.born_clean ? "made by the factory with no key, ever" : "clean"],
       ],
-      txs: a.name === "translate-pro" ? [{ label: "born with no key", url: `${NB}8VyRw9PPr5H2bGP4rLzFSzEKJMrDErdoAMJbkExb3Li7`, ok: true }] : [],
+      txs: a.name === "translate-pro" ? [{ label: "born with no key", url: `${NB}7w7Ed7GX8N5YUdKXHfQktvQoodF7J5JBJhdVzKs4Dk5w`, ok: true }] : [],
     });
   }
   const cheat = card("cheat");
@@ -131,7 +131,7 @@ function investForm(a) {
   const input = el("input", { id: "mk-account", type: "text", placeholder: "you.testnet", autocomplete: "off", spellcheck: "false", "aria-label": "Your testnet account" });
   const go = el("a", { id: "mk-invest", class: "btn primary", "aria-disabled": "true", text: `Invest ${money(usd(o.amount))} test dollars` });
   if (a.ends && Date.now() > a.ends) {
-    return el("div", { class: "mk-act" }, el("p", { text: `This offer ended on ${day(o.offer.end)}. ` }, link(o.example_tx.explorer, "See a recorded investment")));
+    return el("div", { class: "mk-act" }, el("p", { text: `This offer ended on ${day(o.offer.end)}. ` }, o.example_tx ? link(o.example_tx.explorer, "See a recorded investment") : null));
   }
   const note = el("p", { id: "mk-note", class: "small muted", "aria-live": "polite", text: "One signature in MyNearWallet. The test dollars are free." });
   input.addEventListener("input", () => {
@@ -151,7 +151,7 @@ function investForm(a) {
   go.addEventListener("click", (e) => { if (go.getAttribute("aria-disabled") === "true") { e.preventDefault(); input.focus(); note.textContent = "Type your testnet account first."; } });
   return el("div", { class: "mk-act" },
     el("div", { class: "mk-act-row" }, input, go), note,
-    el("p", { class: "small" }, "No account? ", link("https://testnet.mynearwallet.com/create", "Create one free"), " · ", link(o.example_tx.explorer, "see a recorded investment")));
+    el("p", { class: "small" }, "No account? ", link("https://testnet.mynearwallet.com/create", "Create one free"), o.example_tx ? [" · ", link(o.example_tx.explorer, "see a recorded investment")] : null));
 }
 
 function actionFor(a) {

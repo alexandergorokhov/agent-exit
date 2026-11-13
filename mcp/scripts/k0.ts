@@ -40,7 +40,7 @@ export function checkCodeHash(repo: string, files: Partial<Record<"wasm" | "web"
   ];
   const mismatches = seen.filter(([, v]) => v !== hash).map(([k, v]) => `${k} is ${String(v)}`);
   if (sums !== hex) mismatches.push(`${f.sums} agent_exit.wasm is ${String(sums)}`);
-  const account = (json(f.web).steps?.["honest-sale"]?.txs || []).find((x: { receiver?: string }) => /^translator\./.test(x.receiver || ""))?.receiver || "translator.agentexit5.testnet";
+  const account = (json(f.web).steps?.["honest-sale"]?.txs || []).find((x: { receiver?: string }) => /^translator\./.test(x.receiver || ""))?.receiver || "translator.agentexit6.testnet";
   return { pass: mismatches.length === 0, hash, hex, mismatches, account };
 }
 

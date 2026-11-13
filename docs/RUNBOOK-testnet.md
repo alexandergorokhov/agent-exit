@@ -50,12 +50,13 @@ Clone into the Linux file system (`~/src/near-transparent-agent-market`), not
     make build                 # reproducible, in Docker; writes contracts/res + SHA256SUMS
     (cd contracts/res && sha256sum -c SHA256SUMS)
 
-Current build (2026-11-03, root `agentexit3.testnet`, STR-12 and STR-19 fixes):
-agent_exit.wasm `5dc306a2c08322c2287eb2ae41d920e6ba0f0cf7c99950a2f202431fef9e371c`
-(the first world; the current recording is `agentexit5.testnet`, code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF`, see README), xusd.wasm
-`f744bec2c1b4d3ba486624783530d596915a78fcd4a6e9298c72bc3bd7b0dde1`. The root is
-compiled in, so another root gives other hashes. The first run (2026-11-02,
-`agentexit.testnet`) was `be4b898d…` / `DoqGZ6zx…`, before the fixes.
+Current build (2026-11-13, root `agentexit6.testnet`, born-clean rule): agent_exit.wasm
+sha256 `259d414a75fb83010140fa27cdc29e20cce79b4674600860ff2e5813a25e827e`, code hash
+`3XqAPt3krfpJG9UWFHnZVyDYSws4ZnN4H3B27hCXPuuw`, built from commit `1dc6ca1`; the testnet
+world runs exactly this committed build (see README). The root is compiled in, so
+another root gives other hashes. Earlier builds: `5VqS52NR…` on `agentexit5` (2026-11-10),
+`5dc306a2…` on `agentexit3` (2026-11-03) and the first run (2026-11-02, `agentexit.testnet`),
+`be4b898d…` / `DoqGZ6zx…`, before the fixes.
 `make build-testnet` gives different hashes (local toolchain); deploy and
 scenes use contracts/res whenever SHA256SUMS exists.
 
@@ -83,25 +84,25 @@ G2 not run (no Base Sepolia key). Output: `out/gates/`.
 
 ## 6. The six scenes
 
-The links below are from the first run, on an older world. The current recordings are on `agentexit5.testnet` (scene 7 and gate G6 on `agentexit4.testnet`); every scene, 1-13, with its world and key transaction: [`docs/TESTNET.md`](TESTNET.md#scenes).
+The links below are the current recording, on `agentexit6.testnet`; every scene, 1-13, gates G1 and G6, with its key transaction: [`docs/TESTNET.md`](TESTNET.md#scenes).
 
     make scenes      # recording order 3 4 5 1 2 6 -> out/scenes/
 
-| Scene | What it shows | First-run proof |
+| Scene | What it shows | Proof |
 |---|---|---|
 | 3 | Verified vs unverified revenue: `get_earnings` of translator (360.00 of 500.00 counted, 140.00 flagged) next to cheat (all 500.00 flagged as self-paid) | out/scenes/scene-3.json (views only, no tx) |
-| 4 | Cheat refused: alice (cheat is a plain deploy) calls `list_for_sale` and the contract answers `NotBornClean` (K8; the failed tx is recorded); a buy sent anyway is refunded; the scan (keys from both RPCs + `get_status`) blocks it with `full_access_key_present` and `contract_not_born_clean` | scene-4.json |
-| 5 | The honest sale: bob buys `translator` in one transaction | [Auv99RhD…](https://testnet.nearblocks.io/txns/Auv99RhD4YmYkSNwKSGyf7p84GuqJMgWKiRBQY2EH3CF) |
-| 1 | Break-in: the old seller is refused on-chain (withdraw, own key, re-list, `set_limits` NotOwner, deed move NotOwner, `pay_base` NotRunner); her old keys are rejected by the node | [set_limits refused](https://testnet.nearblocks.io/txns/A49Gt1m8ZYLqoewPumackPUt84w4zgnaaa2vrRnyb4VB) |
-| 2 | Spending limits: cap 50.00, a pay of 8.00 passes, 45.00 is refused (PolicyViolation) | [refused pay](https://testnet.nearblocks.io/txns/4jL6cCWBK8TqWCZVkfLUz2SP7XNeEQ9nv2odsJpif7Ci) |
-| 6 | An agent buys an agent: summarizer buys translator from bob | [summarizer buys](https://testnet.nearblocks.io/txns/26F5bi5ymjEYYz6AFqeS9EmRpj5gv9beehtBN3L11VbL) |
+| 4 | Cheat refused: alice (cheat is a plain deploy) calls `list_for_sale` and the contract answers `NotBornClean` (K8; the failed tx is recorded); a buy sent anyway is refunded; the scan (keys from both RPCs + `get_status`) blocks it with `full_access_key_present` and `contract_not_born_clean` | [BQrAUGB6…](https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu) (list refused), [2Rf95RJf…](https://testnet.nearblocks.io/txns/2Rf95RJft2qHJbtJfXKYGihbnLjtFbpLinuL8wkgQP6H) (buy refunded) |
+| 5 | The honest sale: bob buys `translator` in one transaction | [Hh9kTyAP…](https://testnet.nearblocks.io/txns/Hh9kTyAPxL8yMFAawj6rDtf2eGFtGZiXCKuRFnbwBkUs) |
+| 1 | Break-in: the old seller is refused on-chain (withdraw, own key, re-list, `set_limits` NotOwner, deed move NotOwner, `pay_base` NotRunner); her old keys are rejected by the node | [set_limits refused](https://testnet.nearblocks.io/txns/CV5Jo1D4GwosqDDh8gFvDvmrXQbzv3UGnQk25gjs5odh) |
+| 2 | Spending limits: cap 50.00, a pay of 8.00 passes, 45.00 is refused (PolicyViolation) | [refused pay](https://testnet.nearblocks.io/txns/FxS4XaWc7FBE4nzR1EH8QossqNf4Q16HKho8FanxiRZM) |
+| 6 | An agent buys an agent: summarizer buys translator from bob | [summarizer buys](https://testnet.nearblocks.io/txns/FoEELL432dz35DJoS7LbXPa8nBAE1cMUykL8GBAP87RF) |
 
-All outputs of the first run are committed in `out/testnet/`, `out/gates/` and `out/scenes/`.
+All outputs of the current run are committed in `out/testnet/`, `out/gates/` and `out/scenes/`.
 
 ## 7. Replay the demo
 
 The scenes change the world (sales move the deed: after the first run
-translator belongs to summarizer and cheat is listed). There is no reset
+translator belongs to summarizer; cheat is a plain deploy the contract refuses to list). There is no reset
 way back on the same root: a sale cannot be undone. To replay from a clean world:
 
 1. Create and fund a new root (section 2), about 40 test NEAR, and put it in
@@ -141,7 +142,7 @@ After `make scenes` (translator is owned by summarizer):
 
 | Step | Command | Cost |
 |---|---|---|
-| 1 | `make scene-7` (summarizer lists translator at 1,000; cheat stays listed) | test NEAR only |
+| 1 | `make scene-7` (summarizer lists translator at 1,000; cheat stays unlisted: the contract refused it in scene 4) | test NEAR only |
 | 2 | `make llm-buyer-testnet` (ONE run: Anthropic Haiku, 12 steps, 150k tokens max) | about $0.05 real (Anthropic) |
 | 3 | Commit `out/llm-buyer-testnet.json` and `out/scenes/scene-7.json` | |
 

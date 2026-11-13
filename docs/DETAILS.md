@@ -23,10 +23,10 @@ sequenceDiagram
 
 The long version, with every link: "Evidence" in [`docs/PROOF.md`](PROOF.md#evidence).
 
-- **Real node:** the handover tests passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`); the sealed-prompt dispute too (`make test-sealed-sandbox`).
+- **Real node:** the handover tests passed on a local NEAR node at commits `609b135` and `63d597c` (`make test-sandbox`; not yet re-run green on the current code); the sealed-prompt dispute too (`make test-sealed-sandbox`).
 - **Offline, every run:** 76 checks through the real contract code against checked-in goldens (`make verify`), property tests, 205 MCP tests. Attack suite: 20 attack families, 19 counted (A9 Base not counted until live); each blocked by its rule; 0/50 false positives. It is a regression suite, not independent evidence, written by the same author. The code-hash check uses the reproducible build in `contracts/res/SHA256SUMS`.
 - **Found and fixed on a real node:** a stress run bricked an agent at about 585 payers; the cause is unconfirmed. The fix keeps payer rows out of the state blob (test `a47_thousand_long_payers_then_buy_and_views`). A payer row now costs 0.024 NEAR (`storage_deposit`).
-- **Live on NEAR testnet:** scenes 1-6 and 8-13, gate G1 and an MCP agent that invests by a fixed rule, on `agentexit5.testnet`; scene 7 (the AI buyer's listing), the AI buyer and gate G6 on `agentexit4.testnet`. Every testnet transaction: [`docs/TESTNET.md`](TESTNET.md).
+- **Live on NEAR testnet:** scenes 1-13, gates G1 and G6 and the AI buyer, on `agentexit6.testnet` (the cheat's listing refused `NotBornClean`); the MCP agent that invests by a fixed rule is recorded on the earlier world `agentexit5.testnet`. Every testnet transaction: [`docs/TESTNET.md`](TESTNET.md).
 
 ## Try it in 2 minutes (do X, see Y)
 

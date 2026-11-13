@@ -144,7 +144,7 @@ function selfCheck(t) {
   -d '${body}'`;
 }
 
-/** "translator3.agentexit5.testnet" -> "translator3": the first part is the name people read. */
+/** "translator3.factory.agentexit6.testnet" -> "translator3": the first part is the name people read. */
 const shortAcc = (text) => String(text).replace(/\b([a-z0-9_-]+)(?:\.[a-z0-9_-]+)*\.testnet\b/g, "$1");
 
 /** Plain words for the recorded labels; the method name stays in the stage's monospace hint. */
@@ -274,8 +274,7 @@ async function main() {
   const r = await fetch("data/testnet.json");
   if (!r.ok) return;
   const data = await r.json();
-  // A scenario shows only once its testnet scene is recorded (scenes 9-10
-  // after the redeploy): never an empty card.
+  // A scenario shows only once its testnet scene is recorded: never an empty card.
   // The three that carry the story stay open to view; the rest fold under "N more scenarios".
   const FIRST = ["sale", "cheat", "invest"];
   const shown = SCENARIOS.filter((sc) => stagesFor(data, sc.steps).length > 0);

@@ -10,7 +10,7 @@ import { loadConfig } from "../src/config.js";
 import { valid } from "./helpers.js";
 import { connect } from "../src/client.js";
 
-const FACTORY = "factory.agentexit4.testnet";
+const FACTORY = "factory.agentexit6.testnet";
 const AGENT = `born1.${FACTORY}`;
 const HASH = "11111111111111111111111111111111";
 
@@ -49,7 +49,7 @@ test("BC16 a factory-born agent's birth record goes into the scan input", async 
 
 test("BC16b an agent that is not a child of the factory has no record (and the factory is not asked)", async () => {
   const c = fakeChain();
-  const input = (await new TestnetBackend(cfg(FACTORY), c.f).scanInput("translator.agentexit4.testnet", {})) as { born?: { record: unknown } };
+  const input = (await new TestnetBackend(cfg(FACTORY), c.f).scanInput("translator.agentexit6.testnet", {})) as { born?: { record: unknown } };
   assert.equal(input.born?.record, null);
   assert.ok(!c.asked.includes(`${FACTORY}.get_agent`));
 });

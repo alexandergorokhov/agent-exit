@@ -20,7 +20,7 @@ The video opens on the market page with the Alice and Polyglot hook, shows the "
 1. Testnet world is deployed and seeded: `make deploy-testnet` (on the owner's PC).
 2. Record the scenes in **recording order** 3, 4, 5, 1, 2, 6 (the sale must happen before the break-in): `make scenes`. Each writes `out/scenes/scene-N.json` with explorer links.
 3. Replay any scene offline for a clean take: `make scene-N RECORDED=1`.
-4. Open in tabs: the demo page (`make web`, or https://near-transparent-agent-market-web.vercel.app/proof.html?network=testnet), testnet.nearblocks.io for `translator.agentexit5.testnet`, a terminal at the repo root with a large font.
+4. Open in tabs: the demo page (`make web`, or https://near-transparent-agent-market-web.vercel.app/proof.html?network=testnet), testnet.nearblocks.io for `translator.factory.agentexit6.testnet`, a terminal at the repo root with a large font.
 5. Recorder: OBS or the Windows Game Bar (Win+Alt+R), 1920x1080, mic on. No edits needed beyond cutting between scenes.
 
 ## Video 1: 3-minute pitch
@@ -33,7 +33,7 @@ The break-in still starts inside the first 90 seconds. Edited in this order (not
 | 0:00-0:12 | Hook | Page title + "All money here is fake" | "AI agents are becoming small businesses: they do jobs and get paid. Agent Exit turns one into a business you can trust: earnings proven on-chain, shares you can invest in, and a safe exit." |
 | 0:12-0:35 | **Earnings proven** (scene 3) | Page proof tiles, then the "Fake revenue" tab | "The agent is its own NEAR account, and its contract counts every payment by who paid. Payments from the owner or the owner's own accounts are flagged, not counted. Two agents both show 500: one has 360 counted, the other zero. Work signed by NEAR AI Cloud is checked on-chain and marked verified." |
 | 0:35-0:55 | **Invest in a share** (scene 8) | Page scenario "invest", NearBlocks claim tx | "Proven earnings unlock money. Dave buys 20 percent of this agent's future earnings. A customer pays for a NEAR AI translation, and Dave claims exactly 20 percent. A payment the owner makes to himself is flagged and releases nothing." |
-| 0:55-1:05 | Cheat caught (scene 4) | Page step 4 | "Or buy the whole agent. First the buyer scans it: this seller kept a hidden full-access key, so the sale is blocked before any money moves." |
+| 0:55-1:05 | Cheat refused on chain (scene 4) | Page step 4, then NearBlocks: the refused `list_for_sale` | "Or buy the whole agent. This seller kept a hidden key, so the contract refuses even to list it, and a buy sent anyway is refunded. The refusal is a real testnet transaction." |
 | 1:05-1:20 | Honest sale (scene 5) | Page proof strip, then NearBlocks: the buy tx | "An honest sale is one transaction: the deed moves, the seller's key is deleted, the buyer's key is added. The seller gets 70 percent now; 30 percent is paid only from real customer payments after the sale." |
 | 1:20-1:55 | **The seller is locked out** (scene 1) | Page proof strip: the 6 refused calls, open two on NearBlocks | "Now the old seller tries to get back in. Withdraw the money: refused. Add her own key: refused. List it for sale: refused. Move the deed: refused. Spend from the Base wallet: refused. Her old key no longer exists. Every line is a real testnet transaction." |
 | 1:55-2:15 | Business inside limits (scene 2) | Page step 2 | "The new owner sets limits. Customers pay, the money is split automatically, and the agent pays another agent 8. It tries 45, and the contract refuses: daily cap." |
@@ -51,7 +51,7 @@ If the real AI-buyer run (`out/llm-buyer-testnet.json`) does not exist, use page
 | 0:55-1:20 | Why NEAR: deletable and scoped keys; Chain Signatures Base wallet derived from the account name; NEAR AI signatures checked on-chain with `ecrecover` | README "Why only on NEAR" |
 | 1:20-1:50 | Found on a real node: the 585-payer brick (A47), how state was split into rows, the sandbox test with 1,000 payers | README Evidence, `tests/sandbox` |
 | 1:50-2:20 | For agents: MCP server with 13 tools (incl. shares, check_claims, the live sandbox, check_account and sealed_delivery), spend caps, allowlist, untrusted chain text | `mcp/`, `AGENTS.md` |
-| 2:20-2:45 | Verify it: `make verify`, `make attack`; `make build` reproduces `contracts/res/SHA256SUMS` (agent_exit.wasm `42d1c5d9…`, code hash `5VqS52NR…`), the same code hash NearBlocks shows for the deployed agent | Terminal |
+| 2:20-2:45 | Verify it: `make verify`, `make attack`; `make build` reproduces `contracts/res/SHA256SUMS` (agent_exit.wasm `259d414a…`, code hash `3XqAPt3k…`), the same code hash NearBlocks shows for the deployed agent | Terminal |
 
 ## Rules
 

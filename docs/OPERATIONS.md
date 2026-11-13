@@ -65,7 +65,7 @@ one. Anything but testnet is refused. The runner is `tools/testnet` (Rust,
 near-api); the plan it runs is `tools/testnet-plan` (offline, tested in
 `make verify`).
 
-Funding: the root account (`AGENT_EXIT_ROOT` in the env file, e.g. `agentexit.testnet`; the current recorded world is `agentexit5.testnet`)
+Funding: the root account (`AGENT_EXIT_ROOT` in the env file, e.g. `agentexit.testnet`; the current recorded world is `agentexit6.testnet`)
 needs about 30 NEAR for the deploy (`near_needed` in the dry run is
 authoritative). The two agent accounts, `translator` and `cheat`, get 9.5 NEAR
 each: their code (~5.3), the growth reserve the contract demands (1.83) and the

@@ -67,7 +67,7 @@ test("J6 testnet check_claims: recorded transactions confirmed from archival nod
   assert.notEqual(body.pass, true);
   assert.equal(body.status, "unverified_network");
   assert.equal(body.failed, 0);
-  assert.equal(by.K9.world, "agentexit4.testnet");
+  assert.equal(by.K9.world, "agentexit6.testnet");
   assert.equal(by.K4.world, data.root);
   assert.ok(urls.every((u) => ARCHIVAL_RPC.includes(u) || cfg.rpc.includes(u)), "only allowlisted hosts");
 
