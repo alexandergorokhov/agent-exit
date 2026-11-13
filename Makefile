@@ -2,7 +2,7 @@
 # and exits non-zero. Nothing here fakes success.
 #
 # Offline targets: verify, test, lint, audit (needs the advisory DB), hash, demo.
-# Targets whose help line says "(not built yet)" print that and exit non-zero.
+# Stub targets (attack-sandbox, attack-testnet, e2e, record) print "not built yet" and exit non-zero; they are hidden from `make help`.
 # Testnet targets are marked [testnet]; they never touch mainnet.
 
 SHELL := /bin/bash
@@ -429,9 +429,9 @@ testnet-plan-test: ## Offline: the testnet plan, guards and dry runs (no network
 	AGENT_EXIT_ENV=/nonexistent $(MAKE) -s scenes DRY_RUN=1 > /dev/null
 
 .PHONY: attack-sandbox attack-testnet demo demo-setup record web-deploy e2e
-attack-sandbox: ## (not built yet) Attack corpus against near-sandbox
+attack-sandbox: # (not built yet, hidden from make help) Attack corpus against near-sandbox
 	$(call not_built,attack-sandbox,M2 B2)
-attack-testnet: ## (not built yet) [testnet] A1 A5 A17-A21 live
+attack-testnet: # (not built yet, hidden from make help) [testnet] A1 A5 A17-A21 live
 	$(call not_built,attack-testnet,M2 B2 on the owner's PC)
 demo: mcp-build ## Offline story: quick verify subset, then the scripted agent-buys-agent replay, then how to open the page
 	@mkdir -p $(OUT)
@@ -460,12 +460,12 @@ else
 	$(MAKE) web-testnet-data
 	@echo "demo-setup: done on $(TESTNET_ROOT). Update the README testnet links from out/scenes, then commit out/ contracts/res web/data."
 endif
-record: ## (not built yet) [testnet] Save receipts to fixtures/recorded
+record: # (not built yet, hidden from make help) [testnet] Save receipts to fixtures/recorded
 	$(call not_built,record,M2 B3)
 web-deploy: ## Hosted page: Vercel's Git integration deploys web/ on each push to main (no GitHub Actions)
 	@echo "web-deploy: Vercel deploys web/ on each push to main: https://near-transparent-agent-market-web.vercel.app/"
 	@echo "Settings: Root Directory web, Framework Other, no build command, Output Directory ."
-e2e: ## (not built yet) [testnet] Playwright against the deployed page with a real wallet
+e2e: # (not built yet, hidden from make help) [testnet] Playwright against the deployed page with a real wallet
 	$(call not_built,e2e,M3 B5)
 
 SCENES := 1 2 3 4 5 6

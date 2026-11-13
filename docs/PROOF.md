@@ -4,7 +4,7 @@ Moved out of the README. Every claim says whether it is shown offline, on a loca
 
 ## Claims and evidence
 
-One row per headline claim: how to check it offline (no network, no account), the recorded testnet file, one NearBlocks link and the world it ran on. Offline checks run on the `agent-exit` server from `.mcp.json` (you are `summarizer.testnet`) or with `make`. `check_claims` runs K1-K8 offline; on the `agent-exit-testnet` server it runs K1-K9 live.
+One row per headline claim: how to check it offline (no network, no account), the recorded testnet file, one NearBlocks link and the world it ran on. Offline checks run on the `agent-exit` server from `.mcp.json` (you are `summarizer.testnet`) or with `make`. `check_claims` runs K1-K8 offline (plus the K0 file check, so `make judge` prints 9/9); on the `agent-exit-testnet` server it runs K1-K9 live.
 
 | Claim | Offline check (expected) | Recorded testnet file | NearBlocks | World |
 |---|---|---|---|---|
@@ -48,10 +48,12 @@ Use it with your own agent (a standalone account check, a payment guard, the MCP
 
 ## Code hash in 3 commands
 
-The deployed agents run code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF` (sha256 `42d1c5d9f80dee431c930dd5a80061ee425c1ee043d57859b927dea144fe07b2`). Source: commit `70d06b2`, built with `make build` in `sourcescan/cargo-near:0.22.0-rust-1.97.0`. HEAD differs in the contract source by one lint-only line (`aa95854`).
+The testnet world runs code hash `5VqS52NR…` (commit `70d06b2`, reproducible Docker build). HEAD adds the born-clean rule; its committed wasm is a labelled non-reproducible build (`F56WyouM…`) until the next testnet deploy.
+
+The deployed agents run code hash `5VqS52NRV3Ak7jiEs95rocWfgaaRV9Z2b8m47R3gCjsF` (sha256 `42d1c5d9f80dee431c930dd5a80061ee425c1ee043d57859b927dea144fe07b2`). Source: commit `70d06b2`, built with `make build` in `sourcescan/cargo-near:0.22.0-rust-1.97.0`. The committed `contracts/res/agent_exit.wasm` at HEAD is a different, non-reproducible build (sha256 `d1102d9c…`, code hash `F56WyouMoT7N6zQSEVHWtJz1zqJDutJVaRPjvDXy6VwY`, 633,861 bytes); the deployed build is 641,087 bytes (`out/scenes/scene-9.json`).
 
 ```sh
-# 1. The committed wasm (offline): prints the hex above
+# 1. At commit 70d06b2 (git checkout 70d06b2 && make build) this prints the sha256 above; at HEAD it prints d1102d9c…, the labelled non-reproducible build
 sha256sum contracts/res/agent_exit.wasm
 # 2. The deployed account (read-only, public RPC): result.code_hash is the base58 above
 curl -s https://rpc.testnet.near.org -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"translator.agentexit5.testnet"}}'
@@ -59,7 +61,7 @@ curl -s https://rpc.testnet.near.org -H 'Content-Type: application/json' -d '{"j
 near contract call-function as-read-only translator.agentexit5.testnet contract_source_metadata json-args '{}' network-config testnet now
 ```
 
-`make judge` runs check K0 on the files: the hash of `contracts/res/agent_exit.wasm` must equal `web/data/testnet.json`, `out/testnet/deploy.json`, `.mcp.json` and `SHA256SUMS`. It prints commands 2 and 3.
+`make judge` runs check K0 on the files: the hash of the committed `contracts/res/agent_exit.wasm` (`F56WyouM…`, not the `5VqS52NR…` the testnet world runs) must equal `web/data/testnet.json`, `out/testnet/deploy.json`, `.mcp.json` and `SHA256SUMS`. It prints commands 2 and 3.
 
 ## Verify testnet without our server
 

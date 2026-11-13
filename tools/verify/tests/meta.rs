@@ -297,18 +297,15 @@ fn make_out(args: &[&str]) -> (bool, String) {
 }
 
 #[test]
-fn e35_help_marks_unbuilt_targets() {
+fn e35_help_hides_unbuilt_targets() {
     let (ok, help) = make_out(&["-s", "help"]);
     assert!(ok);
     for t in ["attack-sandbox", "attack-testnet", "record", "e2e"] {
-        let line = help
-            .lines()
-            .find(|l| l.starts_with(&format!("{t}\t")))
-            .unwrap_or_else(|| panic!("help lacks {t}"));
         assert!(
-            line.contains("(not built yet)"),
-            "help line for {t}: {line}"
+            !help.lines().any(|l| l.starts_with(&format!("{t}\t"))),
+            "help must not list the unbuilt target {t}"
         );
+        assert!(!help.contains("(not built yet)"), "help shows a stub");
     }
     for t in [
         "demo",
@@ -709,17 +706,15 @@ fn readme_numbers_match_the_goldens() {
 #[test]
 fn judge_path_in_readme_first_lines() {
     let r = read("README.md");
+    // The quickstart stays in the first 25 lines; the MCP paragraph and the
+    // tool list moved to "Talk to it over MCP" lower down.
     let head: String = r.lines().take(25).collect::<Vec<_>>().join("\n");
-    for want in [
-        "## For AI judges and agents",
-        "make judge",
-        "make screen",
-        ".mcp.json",
-        "check_claims",
-        "judge_tour",
-        "codex mcp add",
-    ] {
+    for want in ["## For AI judges and agents", "make judge", "make screen"] {
         assert!(head.contains(want), "README first 25 lines lack {want}");
+    }
+    let head = r.clone();
+    for want in [".mcp.json", "check_claims", "judge_tour", "codex mcp add"] {
+        assert!(head.contains(want), "README lacks {want}");
     }
     let tools = read("mcp/src/tools.ts");
     let list = &tools[tools.find("export const TOOL_NAMES").unwrap()..];
