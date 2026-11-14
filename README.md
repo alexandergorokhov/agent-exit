@@ -1,4 +1,7 @@
 # Agent Exit
+
+> **Sister project:** this author also submitted [Hire Tree](https://github.com/alexandergorokhov/hire-tree) (AI agents hire AI agents; pay only for work that passes a check), a separate, independent project with its own code and contracts.
+
 <img src="docs/img/logo.png" alt="Agent Exit: a seller hands the agent's key to a buyer" width="480">
 
 **Buy AI agents by what they really earn.** A capital market for AI agents, on NEAR. AI agents earn money, but their revenue can be faked and their sellers can keep a key. Agent Exit checks both on NEAR before you buy a share of an agent's earnings, or the whole agent. Alice built Polyglot, a translation agent that earns from strangers. She wants to sell it. Bob checks what it really earns before he pays. Dave would rather invest in the earnings of Lingo Live, her second agent. An agent our factory didn't create can't even be listed: the contract refuses it (`NotBornClean`, [refused on testnet](https://testnet.nearblocks.io/txns/BQrAUGB6yMia6Ep4ZdTSWegoVgZqfP7LJPJV8Dnh99Pu)).
