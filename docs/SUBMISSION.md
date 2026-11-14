@@ -31,13 +31,10 @@ The same author also entered Hire Tree (https://github.com/alexandergorokhov/hir
 
 Rules (HACKATHON.md Procedure 2): say it was built at NEAR HACKATHON, tag @NEARProtocol and #NEARHackathon, attach the video or screenshots. Optional tags: @NearLegion, @NearBuilders. The post's URL is the form's `demoUrl`.
 
-> Built at NEAR Hackathon: Agent Exit
+> AI agents earn real money. But buying one is risky: the seller can fake its revenue, or keep a key and take it back.
 >
-> Buying an AI agent is risky: owners fake revenue, sellers keep a key.
+> Built at NEAR HACKATHON: Agent Exit. One @NEARProtocol transaction gives the buyer the agent, its money and keys, and deletes the seller's key.
 >
-> Agent Exit counts revenue by who paid, and one transaction hands over the agent, deleting the seller's key. @NEARProtocol testnet.
->
-> https://near-transparent-agent-market-web.vercel.app/
 > #NEARHackathon
 
 Video: `https://near-transparent-agent-market-web.vercel.app/media/agent-exit-demo.mp4` (download and attach it to the post).
@@ -61,15 +58,19 @@ Never fill `website` (spam trap). One submission per repository, and it cannot b
 
 `idea`:
 
-> The problem: AI agents now earn real money, so people want to buy or invest in them, like small businesses. But a buyer can't trust two things. Revenue can be faked: the owner simply pays their own agent. And the seller can keep a secret key and take the agent, or its money, back after the sale.
+> THE PROBLEM
+> AI agents now earn real money, so people want to buy or invest in them, like small businesses. But a buyer can't check two things. First, revenue can be faked: the owner pays their own agent. Second, the seller can keep a secret key and use it after the sale to take the agent or its money back.
 >
-> What we built: Agent Exit, a market where you buy AI agents by what they really earn. Each agent is its own NEAR account running our contract.
-> 1. Real revenue: the contract records who paid. Payments from the owner, the owner's sub-accounts or round trips are flagged and never count. A wallet the owner never linked can't be spotted, so due diligence counts new payers at half, NEAR AI-signed jobs are marked verified, and part of every sale price reaches the seller only as real customers keep paying: a seller who faked revenue loses most of that part.
-> 2. Invest: buy a share of an agent's future earnings, credited to you inside every customer payment.
-> 3. Buy the whole agent in one transaction: the money, the ownership token (NEP-171) and the keys move together.
-> 4. Born clean: the contract refuses to list or sell any agent our factory did not create; the factory makes agents with no seller key.
-> Agents can buy too, over MCP (13 tools; a scan is forced before payment).
+> WHAT WE BUILT
+> Agent Exit: a market where you buy AI agents by what they really earn. Each agent is its own NEAR account.
+> 1. Real revenue. The contract records who paid. Payments from the owner, from the owner's sub-accounts, or money the agent sent out that comes back are flagged and never counted. Payments from a wallet with no link to the owner can't be spotted. To limit that, due diligence counts new payers at half, NEAR AI-signed jobs are marked verified, and part of the price reaches the seller only as real customers keep paying, so a seller who faked revenue loses most of that part.
+> 2. Invest. Buy a share of an agent's future earnings. It is credited to you inside every customer payment.
+> 3. Buy. One transaction moves the money, the ownership token (NEP-171) and the keys, and deletes the seller's key.
+> 4. Born clean. The contract refuses to list or sell any agent our factory did not create. The factory creates agents with no seller key.
+> AI agents can buy too, via our MCP server, which forces a scan before payment.
 >
-> How NEAR fits: on NEAR an agent can be an account, and keys are on-chain objects that can be added, limited and deleted. So the sale itself deletes the seller's key: afterwards she can't sign for the agent or move its money, and anyone can check that on chain. NEAR AI Cloud signatures make real work checkable, and Chain Signatures give each agent a Base wallet that follows the owner: after a sale, only the new owner can make it sign.
+> HOW NEAR FITS
+> On NEAR, an agent can be an account, and keys are on-chain objects that can be added, limited and deleted. So the sale itself deletes the seller's key: after the sale, the seller can't sign for the agent or move its money, and anyone can check that on chain. NEAR AI Cloud signatures make real work checkable. Chain Signatures give each agent a Base wallet only its current owner can use.
 >
-> Proof: the market runs on NEAR testnet with test money (Base payments are signed, not yet sent). After the sale, the old seller's attempts to get back in are real failed transactions. `make judge` re-checks the headline claims against the real contract code in about a second.
+> PROOF
+> Live on NEAR testnet with test money (Base payments are signed, not yet sent). After a test sale, the seller's six attempts to get back in are real failed transactions. `make judge` re-checks the headline claims offline in about a second.
