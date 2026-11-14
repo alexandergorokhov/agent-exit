@@ -52,7 +52,7 @@ Video: `https://near-transparent-agent-market-web.vercel.app/media/agent-exit-de
 | `size` | `1` |
 | `tracks` | `["business", "security", "nfts", "agents"]` |
 | `nearAddress` | owner's **mainnet** payout account (`name.near` or 64-hex implicit) |
-| `projectUrl` | `https://github.com/alexandergorokhov/near-transparent-agent-market` (must be public by 2026-11-14 23:59 UTC) |
+| `projectUrl` | `https://github.com/alexandergorokhov/agent-exit` (must be public by 2026-11-14 23:59 UTC) |
 | `demoUrl` | URL of the X post above |
 | `idea` | the text below (20-2000 characters) |
 | `consent` | `true`, only after reading the contact notice |

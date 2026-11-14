@@ -65,7 +65,7 @@ const ACTIONS = {
 // wasm ran (file, line, signature start; the smoke test checks the line).
 // `near`: what it is on NEAR. `tx`: the label of the same call in the
 // recorded testnet run (data/testnet.json), linked to NearBlocks.
-const REPO = "https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/";
+const REPO = "https://github.com/alexandergorokhov/agent-exit/blob/main/";
 const CORE = "contracts/agent-core/src/lib.rs";
 const CODE = {
   pay_customer: { code: [CORE, 1410, "pub fn pay("], near: "xusd ft_transfer_call -> agent ft_on_transfer (kind pay)", tx: "p1 pays 25.00 for a job" },

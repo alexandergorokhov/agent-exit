@@ -28,9 +28,9 @@
         <div class="cta">
           <a class="btn primary" href="#invest-yourself">Buy a 2.5% share for 25.00</a>
           <a class="btn" href="media/agent-exit-demo.mp4">Watch the demo (2:09)</a>
-          <p class="verify-links small">Live on NEAR testnet: <a href="#run-invest">earnings</a> · <a href="#run-sale">lockout</a> · <a href="#run-cheat">cheat caught</a> · <a href="https://github.com/alexandergorokhov/near-transparent-agent-market" target="_blank" rel="noopener noreferrer">Source code</a></p>
+          <p class="verify-links small">Live on NEAR testnet: <a href="#run-invest">earnings</a> · <a href="#run-sale">lockout</a> · <a href="#run-cheat">cheat caught</a> · <a href="https://github.com/alexandergorokhov/agent-exit" target="_blank" rel="noopener noreferrer">Source code</a></p>
         </div>
-        <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on each sale or share price, taken from the seller's upfront part (<a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
+        <p class="biz small" id="biz"><b>How it earns:</b> a 1% fee on each sale or share price, taken from the seller's upfront part (<a href="https://github.com/alexandergorokhov/agent-exit/blob/main/docs/BUSINESS.md" target="_blank" rel="noopener noreferrer">business model</a>). <b>Running cost:</b> one static page. The NEAR contract is the backend; no server of ours touches the money.</p>
       </div>
       <div id="proof-strip" class="proofstrip" aria-live="polite"><p class="small muted">Recorded on NEAR testnet. <a href="#evidence-run">Check it yourself</a>.</p></div>
     </div>
@@ -174,8 +174,8 @@
       <div class="judge-top">
       <div class="judge-run">
         <p>Check every claim offline:</p>
-        <div class="cmd"><pre><code id="judge-cmd">git clone https://github.com/alexandergorokhov/near-transparent-agent-market
-cd near-transparent-agent-market
+        <div class="cmd"><pre><code id="judge-cmd">git clone https://github.com/alexandergorokhov/agent-exit
+cd agent-exit
 make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judge" class="linkish" data-copy="judge-cmd">Copy</button></div>
         <p class="small muted">The last line reads <code>judge: 9/9</code>. In Claude Code, run the prompt <code>/mcp__agent-exit__judge_tour</code>.</p>
       </div>
@@ -187,7 +187,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
       </div>
       <section id="why-near" class="built-on" aria-labelledby="built-on-title">
         <h3 id="built-on-title">Built on NEAR</h3>
-        <p class="small muted">Why only on NEAR. Written up as <a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/STANDARD.md" target="_blank" rel="noopener noreferrer">a standard</a>.</p>
+        <p class="small muted">Why only on NEAR. Written up as <a href="https://github.com/alexandergorokhov/agent-exit/blob/main/docs/STANDARD.md" target="_blank" rel="noopener noreferrer">a standard</a>.</p>
         <ul class="bon">
           <li><b>Deed</b><span>NEP-171 token from the agent's own account</span><a href="https://testnet.nearblocks.io/txns/CjZ4a1ZtZ93K6NzH4fF1PZ8Fzy5KCaV9Jqf1U2jpYUEt" target="_blank" rel="noopener noreferrer">minted</a></li>
           <li><b>Payments</b><span>NEP-141, counted by who paid</span><a href="https://testnet.nearblocks.io/txns/BR8UV6q3gEcbcUJyWgu8MPpkmkipi1fUzGy5HLri4kA9" target="_blank" rel="noopener noreferrer">paid</a></li>
@@ -211,7 +211,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
       </details>
       <details id="how-it-works" class="how">
         <summary>Technical details: build, code hash, what runs where</summary>
-        <p>The deployed contract has code hash <code>3XqAPt3k…</code>, exactly the committed reproducible build in <code>contracts/res</code> (<code>make build</code>, image <code>sourcescan/cargo-near:0.22.0-rust-1.97.0</code>, from commit <code>1dc6ca1</code>). Test counts: <a href="https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/docs/COMMANDS.md" target="_blank" rel="noopener noreferrer">COMMANDS.md</a>. Each scenario re-checks the signer, method, outcome and event logs against the chain.</p>
+        <p>The deployed contract has code hash <code>3XqAPt3k…</code>, exactly the committed reproducible build in <code>contracts/res</code> (<code>make build</code>, image <code>sourcescan/cargo-near:0.22.0-rust-1.97.0</code>, from commit <code>1dc6ca1</code>). Test counts: <a href="https://github.com/alexandergorokhov/agent-exit/blob/main/docs/COMMANDS.md" target="_blank" rel="noopener noreferrer">COMMANDS.md</a>. Each scenario re-checks the signer, method, outcome and event logs against the chain.</p>
         <div class="problem">
           <h3>The problem</h3>
           <p>AI agents now earn money: they sell translations, research, trades. They are small businesses, yet no one can invest in one or buy one from a stranger, because two things cannot be trusted:</p>
@@ -253,7 +253,7 @@ make setup &amp;&amp; make judge</code></pre><button type="button" id="copy-judg
       </details>
       <details class="limits">
         <summary>Honest limits</summary>
-        <p>The attack suite is a regression suite, not independent evidence: we wrote both the attacks and the rules. We list 20 attack families; 19 counted, and all 19 are blocked by their rule (the 20th, for Base, is not counted until it is live); 0 of 50 clean agents wrongly blocked. The seller can keep a copy of an off-chain prompt, and before a sale new payers can be the seller in disguise. That is why 30% of the price waits for real revenue. <a href="https://github.com/alexandergorokhov/near-transparent-agent-market#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
+        <p>The attack suite is a regression suite, not independent evidence: we wrote both the attacks and the rules. We list 20 attack families; 19 counted, and all 19 are blocked by their rule (the 20th, for Base, is not counted until it is live); 0 of 50 clean agents wrongly blocked. The seller can keep a copy of an off-chain prompt, and before a sale new payers can be the seller in disguise. That is why 30% of the price waits for real revenue. <a href="https://github.com/alexandergorokhov/agent-exit#honest-limits" target="_blank" rel="noopener noreferrer">What it cannot catch</a>.</p>
       </details>
     </section>
   </main>

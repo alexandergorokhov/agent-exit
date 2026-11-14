@@ -164,7 +164,7 @@ function actionFor(a) {
     return el("div", { class: "mk-act" },
       el("p", { class: "small", text: "Your AI agent can buy this through our MCP server:" }),
       el("pre", { class: "mcp" }, el("code", { text: call })),
-      el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. Buying needs a write-enabled server with your own testnet account. ", link("https://github.com/alexandergorokhov/near-transparent-agent-market/blob/main/AGENTS.md", "Connect your agent")));
+      el("p", { class: "small muted" }, "The server scans first and refuses a bad buy. Buying needs a write-enabled server with your own testnet account. ", link("https://github.com/alexandergorokhov/agent-exit/blob/main/AGENTS.md", "Connect your agent")));
   }
   if (a.kind === "held") return el("div", { class: "mk-act" }, el("p", { text: "Not offered for sale right now." }));
   if (a.kind === "flagged" || a.kind === "blocked") return el("div", { class: "mk-act mk-bad" }, el("p", { text: a.kind === "blocked" ? "Buying is refused before any money moves." : `Price unsupported: only ${money(a.real)} of its revenue is real.` }), a.kind === "blocked" ? el("p", { class: "small", text: "The contract also refuses to list any agent that ever had a key (NotBornClean): refused on testnet." }) : null);
